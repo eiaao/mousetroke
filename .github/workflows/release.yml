@@ -28,9 +28,12 @@ jobs:
         run: |
           $v = (Select-String -Path Cargo.toml -Pattern '^version = "(.+)"').Matches[0].Groups[1].Value
           if ("v$v" -ne "${{ github.ref_name }}") { throw "Tag ${{ github.ref_name }} does not match Cargo version $v" }
-      - name: Install UI dependencies
+      # 设置界面的 crate 编译时要内嵌 ui/dist，测试前必须先构建前端
+      - name: Build settings UI
         working-directory: crates/mousetroke-settings/ui
-        run: npm ci
+        run: |
+          npm ci
+          npm run build
       - name: Test
         run: cargo test --workspace --locked
       - name: Build
