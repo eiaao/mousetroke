@@ -42,7 +42,7 @@ const clickAll = async (sel, i) => {
 
 const hasCJK = (s) => /[一-鿿　-〿＀-￯]/.test(s);
 // 语言选项按设计用自身语言显示（简体中文永远是简体中文）
-const EXCEPT = ["简体中文"];
+const EXCEPT = ["简体中文", "日本語"];
 
 const check = async (where) => {
   const text = await page.evaluate(() => document.body.innerText);
