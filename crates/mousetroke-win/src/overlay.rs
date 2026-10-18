@@ -101,7 +101,7 @@ impl Overlay {
                 ..Default::default()
             };
             let atom = RegisterClassW(&wc);
-            if atom == 0 && windows::core::Error::from_win32().code().0 != 1410 {
+            if atom == 0 && windows::core::Error::from_thread().code().0 != 1410 {
                 // 1410 = ERROR_CLASS_ALREADY_EXISTS，重复创建时忽略
                 return None;
             }
@@ -670,7 +670,7 @@ impl Overlay {
                 // 回退整窗提交（只报一次）
                 if !self.ulw_warned {
                     self.ulw_warned = true;
-                    let e = windows::core::Error::from_win32();
+                    let e = windows::core::Error::from_thread();
                     crate::log!("UpdateLayeredWindowIndirect 失败: {e}，回退整窗");
                 }
                 let _ = UpdateLayeredWindow(
