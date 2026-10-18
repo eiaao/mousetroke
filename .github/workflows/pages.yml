@@ -31,7 +31,7 @@ jobs:
         # 生成器、校验脚本和替换表不属于网站内容
         run: rm -rf site/gen.py site/check.py site/langs site/README.md
       - uses: actions/configure-pages@v5
-      - uses: actions/upload-pages-artifact@v3
+      - uses: actions/upload-pages-artifact@v5
         with:
           path: site
       - id: deployment
