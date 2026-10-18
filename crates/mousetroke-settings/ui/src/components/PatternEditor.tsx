@@ -1,11 +1,12 @@
 import * as React from "react";
 import { useEffect, useRef, useState } from "react";
-import type { MouseButton, Step } from "../types";
+import type { Binding, MouseButton, Step } from "../types";
 import { EDGE, arrows, buttonName, buttonPhrase, codeToVk, compose, decompose, keyTagName, type PatternItem, type PatternModel } from "../gesture";
 import { t } from "../i18n";
 import { EdgePicker } from "./EdgePicker";
 import { Recorder } from "./Recorder";
-import { TraceGlyph } from "./Glyph";
+import { ShapeGlyph, TraceGlyph } from "./Glyph";
+import { ShapeRecorder } from "./ShapeRecorder";
 
 /** 触发方式候选（标签按当前语言取词条）。 */
 const TRIGGERS: { id: string }[] = [
@@ -17,28 +18,29 @@ const TRIGGERS: { id: string }[] = [
 ];
 
 /** 手势模式编辑：触发方式 + 有序的附加步骤（鼠标键/滚轮/键盘/轨迹）+ 录制画布。 */
-export function PatternEditor({ pattern, onChange, conflictHint }: { pattern: Step[]; onChange: (p: Step[]) => void; conflictHint?: React.ReactNode }) {
+export function PatternEditor({ pattern, onChange, conflictHint, others }: { pattern: Step[]; onChange: (p: Step[]) => void; conflictHint?: React.ReactNode; others: Binding[] }) {
   const model = decompose(pattern);
   const set = (m: PatternModel) => onChange(compose(m));
-  const traceIdx = model.items.findIndex((i) => i.kind === "trace");
-  const trace = traceIdx >= 0 ? (model.items[traceIdx] as { kind: "trace"; points: number[] }).points : null;
+  const strokeIdx = model.items.findIndex((i) => i.kind === "trace" || i.kind === "shape");
+  const stroke = model.items[strokeIdx];
+  const trace = stroke?.kind === "trace" ? stroke.points : null;
   const [wantTrace, setWantTrace] = useState(false);
-  const showRecorder = model.trigger.kind === "button" || trace !== null || wantTrace;
+  const showRecorder = model.trigger.kind === "button" || stroke != null || wantTrace;
 
   const setTrigger = (id: string) => {
     if (id === "edge") set({ ...model, trigger: { kind: "edge", edge: model.trigger.kind === "edge" ? model.trigger.edge : EDGE.leftBottom } });
     else set({ ...model, trigger: { kind: "button", button: id as MouseButton } });
   };
 
-  const setTrace = (points: number[]) => {
+  const setStroke = (item: Extract<PatternItem, { kind: "trace" | "shape" }>) => {
     const items = [...model.items];
-    if (traceIdx >= 0) items[traceIdx] = { kind: "trace", points };
-    else items.push({ kind: "trace", points });
+    if (strokeIdx >= 0) items[strokeIdx] = item;
+    else items.push(item);
     set({ ...model, items });
   };
 
   const removeItem = (i: number) => {
-    if (model.items[i].kind === "trace") setWantTrace(false);
+    if (model.items[i].kind !== "key") setWantTrace(false);
     set({ ...model, items: model.items.filter((_, j) => j !== i) });
   };
 
@@ -74,7 +76,12 @@ export function PatternEditor({ pattern, onChange, conflictHint }: { pattern: St
           ))}
           <AddStepMenu
             hasTrace={trace !== null}
-            onTrace={() => setWantTrace(true)}
+            hasShape={stroke?.kind === "shape"}
+            onTrace={() => {
+              if (stroke?.kind === "shape") setStroke({ kind: "trace", points: [] });
+              setWantTrace(true);
+            }}
+            onShape={() => setStroke({ kind: "shape", templates: [] })}
             onKey={addKey}
             exclude={model.trigger.kind === "button" ? model.trigger.button : null}
           />
@@ -83,7 +90,11 @@ export function PatternEditor({ pattern, onChange, conflictHint }: { pattern: St
 
       {showRecorder && (
         <div className="field">
-          <Recorder points={trace} onChange={setTrace} hint={conflictHint} />
+          {stroke?.kind === "shape" ? (
+            <ShapeRecorder templates={stroke.templates} onChange={(templates) => setStroke({ kind: "shape", templates })} others={others} />
+          ) : (
+            <Recorder key="trace" points={trace} onChange={(points) => setStroke({ kind: "trace", points })} hint={conflictHint} />
+          )}
         </div>
       )}
     </div>
@@ -92,11 +103,16 @@ export function PatternEditor({ pattern, onChange, conflictHint }: { pattern: St
 
 function Chip({ item, onRemove }: { item: PatternItem; onRemove: () => void }) {
   return (
-    <span className={`chip ${item.kind === "trace" ? "chip-trace" : ""}`}>
+    <span className={`chip ${item.kind !== "key" ? "chip-trace" : ""}`}>
       {item.kind === "trace" ? (
         <>
           <TraceGlyph points={item.points} size={18} stroke={1.6} />
           {t("ui.pattern.draw", { arrows: arrows(item.points) })}
+        </>
+      ) : item.kind === "shape" ? (
+        <>
+          {item.templates[0] && <ShapeGlyph template={item.templates[0]} size={18} stroke={1.6} />}
+          {t("ui.pattern.draw_shape")}
         </>
       ) : item.key.startsWith("mouse:") ? (
         buttonPhrase(item.key.slice(6) as MouseButton, "click")
@@ -111,7 +127,7 @@ function Chip({ item, onRemove }: { item: PatternItem; onRemove: () => void }) {
 }
 
 /** "添加一步"弹出菜单。键盘键通过"按下任意键"捕获。 */
-function AddStepMenu({ hasTrace, onTrace, onKey, exclude }: { hasTrace: boolean; onTrace: () => void; onKey: (k: string) => void; exclude: MouseButton | null }) {
+function AddStepMenu({ hasTrace, hasShape, onTrace, onShape, onKey, exclude }: { hasTrace: boolean; hasShape: boolean; onTrace: () => void; onShape: () => void; onKey: (k: string) => void; exclude: MouseButton | null }) {
   const [open, setOpen] = useState(false);
   const [capturing, setCapturing] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
@@ -149,8 +165,13 @@ function AddStepMenu({ hasTrace, onTrace, onKey, exclude }: { hasTrace: boolean;
       {open && (
         <div className="popover" role="menu">
           {!hasTrace && (
-            <button role="menuitem" onClick={() => (onTrace(), setOpen(false))}>
+            <button role="menuitem" data-step="trace" onClick={() => (onTrace(), setOpen(false))}>
               {t("ui.pattern.draw_trace")}
+            </button>
+          )}
+          {!hasShape && (
+            <button role="menuitem" data-step="shape" onClick={() => (onShape(), setOpen(false))}>
+              {t("ui.pattern.draw_shape")}
             </button>
           )}
           <div className="popover-group">{t("ui.pattern.click_mouse")}</div>

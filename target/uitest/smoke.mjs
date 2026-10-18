@@ -24,7 +24,7 @@ const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 const shot = async (n) => {
   // 检查控件自身的内容尺寸；滚动容器中尚未滚到的控件不算文字裁剪。
   const clipped = await page.evaluate(() => {
-    const selectors = ".action-types button, .tab, .filter, .chip, .nav-item, .nav-label, .guide .btn, .guide-app, .toast-action, .toast-text, .segmented button, .app-list .muted, .keys-row .btn";
+    const selectors = ".action-types button, .tab, .filter, .chip, .nav-item, .nav-label, .guide .btn, .guide-app, .toast-action, .toast-text, .segmented button, .app-list .muted, .keys-row .btn, .shape-instruction, .shape-samples-head, .shape-feedback p, .recorder-error";
     return [...document.querySelectorAll(selectors)].flatMap((el) => {
       if (!el.getClientRects().length) return [];
       const style = getComputedStyle(el);
@@ -106,11 +106,120 @@ for (let i = 1; i <= 3; i++) { await click(".guide .btn.primary"); await sleep(1
 await click(".guide .btn.primary"); // 开始使用
 await sleep(300);
 await check("list"); await shot("01-list");
+if (await page.$(".toast-close")) await click(".toast-close");
 
 // 编辑面板 + 动作类型
 await clickAll(".row", 2);
 await sleep(300); await check("editor"); await shot("02-editor");
 await page.keyboard.press("Escape"); await sleep(200);
+
+// 形状在鼠标手势列表中显示曲线字形与完整画法描述。
+const fixture = JSON.parse(await readFile(lang === "zh-CN" ? "config.json" : "config-en.json", "utf8"));
+// 引导完成时会按勾选项添加禁用程序，以进入形状编辑前的配置作为基准。
+const beforeShapeEdits = await page.evaluate(() => window.__saved) ?? fixture;
+const shapeBinding = fixture.scopes[0].bindings.find((b) => b.pattern.some((s) => s.type === "shape"));
+const shapePattern = shapeBinding.pattern;
+const sample = shapePattern.find((s) => s.type === "shape").templates[0];
+if (sample.length !== 128) errors.push("shape fixture must contain 64 encoded points");
+if (await page.$$(".row .shape-glyph").then((els) => els.length) !== 1) errors.push("shape row must render a glyph");
+const shapeDescription = await page.$eval(".row:has(.shape-glyph) .row-pattern", (el) => el.textContent);
+if (catalog && !shapeDescription.includes(catalog["ui.pattern.draw_shape"])) errors.push("shape row is missing its description");
+const gestureCount = await page.$eval(".tab .tab-count", (el) => Number(el.textContent));
+if (gestureCount !== fixture.scopes[0].bindings.filter((b) => b.pattern[0].type === "press").length) errors.push("shape must count as a mouse gesture");
+await clickAll(".filters .filter", 1);
+if (!await page.$(".row .shape-glyph")) errors.push("shape must appear in its mouse button filter");
+await clickAll(".filters .filter", 0);
+await page.type(".search", shapeDescription); await sleep(150);
+if (await page.$$(".row:has(.shape-glyph)").then((els) => els.length) !== 1) errors.push("search must find the shape description");
+await page.focus(".search");
+await page.keyboard.down("Control"); await page.keyboard.press("a"); await page.keyboard.up("Control");
+await page.keyboard.press("Backspace"); await sleep(150);
+await click(".row:has(.shape-glyph)");
+await page.waitForSelector(".shape-sample .shape-glyph");
+await check("shape-editor"); await shot("02-shape-editor");
+
+// 修改触发方式再改回来，确保真实经过 decompose/compose，配置仍无损往返。
+await clickAll(".pattern-editor .segmented button", 1);
+await clickAll(".pattern-editor .segmented button", 0);
+await sleep(500);
+const roundTrip = await page.evaluate(() => window.__saved);
+if (JSON.stringify(roundTrip) !== JSON.stringify(beforeShapeEdits)) {
+  const diff = (a, b, path = "config") => {
+    if (JSON.stringify(a) === JSON.stringify(b)) return [];
+    if (!a || !b || typeof a !== "object" || typeof b !== "object") return [`${path}: ${JSON.stringify(a)} != ${JSON.stringify(b)}`];
+    return [...new Set([...Object.keys(a), ...Object.keys(b)])].flatMap((k) => diff(a[k], b[k], `${path}.${k}`));
+  };
+  errors.push(`editing the trigger must round-trip the whole config exactly: ${diff(roundTrip, beforeShapeEdits).join("; ") || "property order changed"}`);
+}
+
+// 退化绘制必须显示本地化错误，不能追加或保存无效样本。
+const drawSample = async (reverse = false) => {
+  const rect = await page.$eval(".shape-recorder canvas", (el) => { const r = el.getBoundingClientRect(); return { x: r.x, y: r.y, w: r.width, h: r.height }; });
+  const pts = Array.from({ length: sample.length / 2 }, (_, i) => [rect.x + rect.w / 2 + sample[i * 2] * 0.14, rect.y + rect.h / 2 + sample[i * 2 + 1] * 0.14]);
+  if (reverse) pts.reverse();
+  await page.mouse.move(...pts[0]); await page.mouse.down();
+  for (const p of pts.slice(1)) await page.mouse.move(...p);
+  await page.mouse.up(); await sleep(450);
+};
+await page.click(".shape-recorder canvas");
+await page.waitForSelector(".recorder-error");
+if (catalog && await page.$eval(".recorder-error", (el) => el.textContent) !== catalog["ui.shape.too_short"]) errors.push("shape error must be localized");
+if (await page.$$(".shape-sample").then((els) => els.length) !== 1) errors.push("invalid drawing must not add a sample");
+await drawSample();
+await page.waitForSelector(".shape-consistency");
+if (await page.$$(".shape-sample").then((els) => els.length) !== 2) errors.push("drawing must add a shape sample");
+const savedWithSample = await page.evaluate(() => window.__saved.scopes[0].bindings.find((b) => b.name === "G").pattern);
+if (savedWithSample[1]?.type !== "shape" || savedWithSample[1].templates.length !== 2 || JSON.stringify(savedWithSample[1].templates[0]) !== JSON.stringify(sample)) errors.push("saving must keep the shape step and original sample intact");
+await check("shape-samples"); await shot("02-shape-samples");
+
+// 相反方向的样本给出友好提示；最多 5 个，移除后可继续添加。
+await drawSample(true);
+if (!await page.$(".shape-advice")) errors.push("inconsistent samples must show a hint");
+await drawSample(); await drawSample();
+if (await page.$$(".shape-sample").then((els) => els.length) !== 5) errors.push("shape must allow five samples");
+const callsAtLimit = await page.evaluate(() => window.__calls.filter(([cmd]) => cmd === "shape_sample").length);
+await drawSample();
+if (await page.evaluate(() => window.__calls.filter(([cmd]) => cmd === "shape_sample").length) !== callsAtLimit) errors.push("shape must stop recording at five samples");
+for (let i = 0; i < 4; i++) await click(".shape-sample:last-child .chip-x");
+
+// 同作用域中的近似绑定会点名警告；停用绑定不参与比较。
+await click(".editor-foot .btn");
+await page.waitForSelector(".shape-conflict");
+const conflict = await page.$eval(".shape-conflict", (el) => el.textContent);
+if (!conflict.includes("G")) errors.push("shape conflict must name the other gesture");
+await page.$eval(".shape-conflict", (el) => el.scrollIntoView({ block: "nearest" }));
+await check("shape-conflict"); await shot("02-shape-conflict");
+await click(".editor-enable input");
+await page.keyboard.press("Escape"); await sleep(150);
+await click(".row:has(.shape-glyph):not(.off)");
+await sleep(150);
+if (await page.$(".shape-conflict")) errors.push("disabled shapes must not cause a conflict");
+
+// 移除最后一个样本不能写盘；补录后才恢复自动保存。
+await sleep(500);
+const savesBeforeEmpty = await page.evaluate(() => window.__calls.filter(([cmd]) => cmd === "save_config").length);
+await click(".shape-sample .chip-x"); await sleep(500);
+if (await page.evaluate(() => window.__calls.filter(([cmd]) => cmd === "save_config").length) !== savesBeforeEmpty) errors.push("empty shape must not be saved");
+await drawSample();
+await page.waitForFunction((n) => window.__calls.filter(([cmd]) => cmd === "save_config").length > n, {}, savesBeforeEmpty);
+
+// trace 和 shape 互相替换，始终只保留一个笔画步骤，撤销恢复原来的整数模板。
+const beforeSwitch = await page.evaluate(() => window.__saved);
+const savesBeforeSwitch = await page.evaluate(() => window.__calls.filter(([cmd]) => cmd === "save_config").length);
+await click(".chip-add"); await click('[data-step="trace"]');
+if (await page.$(".shape-recorder")) errors.push("switching to trace must replace shape");
+await sleep(500);
+if (await page.evaluate(() => window.__calls.filter(([cmd]) => cmd === "save_config").length) !== savesBeforeSwitch) errors.push("switching to an empty trace must not save");
+await click(".chip-add"); await click('[data-step="shape"]');
+if (await page.$$(".chip-trace").then((els) => els.length) !== 1) errors.push("switching stroke types must not append a second stroke");
+await page.keyboard.press("Escape");
+await page.evaluate(() => document.activeElement?.blur());
+await page.keyboard.down("Control"); await page.keyboard.press("z"); await page.keyboard.press("z"); await page.keyboard.up("Control");
+await sleep(500);
+if (JSON.stringify(await page.evaluate(() => window.__saved)) !== JSON.stringify(beforeSwitch)) errors.push("undoing stroke switches must restore the exact config");
+await click(".row:has(.shape-glyph):not(.off)");
+await page.waitForSelector(".shape-recorder");
+await page.keyboard.press("Escape"); await sleep(150);
 
 // 触发角标签页
 await clickAll(".tab", 1); await sleep(200); await shot("03-edges");

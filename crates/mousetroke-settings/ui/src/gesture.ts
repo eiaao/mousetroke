@@ -159,8 +159,11 @@ export function keyseqToCaps(keys: string): string[][] {
 
 export type TriggerSpec = { kind: "button"; button: MouseButton } | { kind: "edge"; edge: number };
 
-/** 触发之后的有序步骤：附加键或轨迹。 */
-export type PatternItem = { kind: "key"; key: KeyTag } | { kind: "trace"; points: number[] };
+/** 触发之后的有序步骤；保留非 press 步骤的原始编码，编辑其他步骤时无损往返。 */
+export type PatternItem =
+  | { kind: "key"; key: KeyTag; step?: Extract<Step, { type: "edge" | "wheel" }> }
+  | { kind: "trace"; points: number[] }
+  | { kind: "shape"; templates: number[][] };
 
 export interface PatternModel {
   trigger: TriggerSpec;
@@ -173,22 +176,28 @@ export function decompose(pattern: Step[]): PatternModel {
   if (first?.type === "edge") trigger = { kind: "edge", edge: first.edge };
   else if (first?.type === "press" && first.key.startsWith("mouse:"))
     trigger = { kind: "button", button: first.key.slice(6) as MouseButton };
-  const items: PatternItem[] = rest.map((s) =>
-    s.type === "trace"
-      ? { kind: "trace", points: s.points }
-      : s.type === "press"
-        ? { kind: "key", key: s.key }
-        : s.type === "wheel"
-          ? { kind: "key", key: "wheel:1" }
-          : { kind: "key", key: `edge:${s.edge}` },
-  );
+  const items: PatternItem[] = rest.map((s) => {
+    switch (s.type) {
+      case "trace": return { kind: "trace", points: s.points };
+      case "shape": return { kind: "shape", templates: s.templates };
+      case "press": return { kind: "key", key: s.key };
+      case "wheel": return { kind: "key", key: "wheel:1", step: s };
+      case "edge": return { kind: "key", key: `edge:${s.edge}`, step: s };
+    }
+  });
   return { trigger, items };
 }
 
 export function compose(m: PatternModel): Step[] {
   const first: Step =
     m.trigger.kind === "edge" ? { type: "edge", edge: m.trigger.edge } : { type: "press", key: `mouse:${m.trigger.button}` };
-  return [first, ...m.items.map((it): Step => (it.kind === "trace" ? { type: "trace", points: it.points } : { type: "press", key: it.key }))];
+  return [first, ...m.items.map((it): Step => {
+    switch (it.kind) {
+      case "trace": return { type: "trace", points: it.points };
+      case "shape": return { type: "shape", templates: it.templates };
+      case "key": return it.step ?? { type: "press", key: it.key };
+    }
+  })];
 }
 
 export function traceOf(pattern: Step[]): number[] | null {
@@ -212,7 +221,7 @@ export function arrows(points: number[]): string {
 export function describePattern(pattern: Step[]): string {
   const m = decompose(pattern);
   const head = m.trigger.kind === "edge" ? t(`ui.pattern.move_to_edge.${m.trigger.edge}` as MsgKey) : buttonPhrase(m.trigger.button, "hold");
-  const parts = m.items.map((it) => (it.kind === "trace" ? t("ui.pattern.draw", { arrows: arrows(it.points) || t("ui.pattern.stroke") }) : keyTagName(it.key)));
+  const parts = m.items.map((it) => (it.kind === "trace" ? t("ui.pattern.draw", { arrows: arrows(it.points) || t("ui.pattern.stroke") }) : it.kind === "shape" ? t("ui.pattern.draw_shape") : keyTagName(it.key)));
   return [head, ...parts].join(t("ui.pattern.join"));
 }
 
@@ -226,6 +235,8 @@ function stepKey(s: Step): string {
       return "wheel:any";
     case "trace":
       return `trace:${arrows(s.points)}`;
+    case "shape":
+      return `shape:${JSON.stringify(s.templates)}`;
   }
 }
 
