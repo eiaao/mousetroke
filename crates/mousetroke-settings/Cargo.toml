@@ -23,7 +23,7 @@ mousetroke-core = { path = "../mousetroke-core" }
 mousetroke-win = { path = "../mousetroke-win" }
 tauri = { version = "2.12.4", features = [] }
 rfd = "0.17.2"
-png = "0.17"
+png = "0.18"
 serde = { workspace = true }
 serde_json = { workspace = true }
 windows = { workspace = true }
