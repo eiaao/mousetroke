@@ -15,11 +15,11 @@ def base(d, lang_tag, og_locale, summary_label, self_name):
     """机械部分（canonical/og/url/lang 等），返回 list[(old,new)]。"""
     return [
         ('<html lang="en">', f'<html lang="{lang_tag}">'),
-        ('<link rel="canonical" href="https://eiaao.github.io/mousetroke/en/">',
-         f'<link rel="canonical" href="https://eiaao.github.io/mousetroke/{d}/">'),
+        ('<link rel="canonical" href="https://mousetroke.pages.dev/en/">',
+         f'<link rel="canonical" href="https://mousetroke.pages.dev/{d}/">'),
         ('<meta property="og:locale" content="en_US">', f'<meta property="og:locale" content="{og_locale}">'),
-        ('<meta property="og:url" content="https://eiaao.github.io/mousetroke/en/">',
-         f'<meta property="og:url" content="https://eiaao.github.io/mousetroke/{d}/">'),
+        ('<meta property="og:url" content="https://mousetroke.pages.dev/en/">',
+         f'<meta property="og:url" content="https://mousetroke.pages.dev/{d}/">'),
         ('<summary aria-label="Language">English ▾</summary>',
          f'<summary aria-label="{summary_label}">{self_name} ▾</summary>'),
         # 模板里 English 是当前项：改回普通链接；本语言那一项改成当前项
@@ -27,8 +27,8 @@ def base(d, lang_tag, og_locale, summary_label, self_name):
          '<a href="../en/index.html" hreflang="en" lang="en">English</a>'),
         (f'<a href="../{d}/index.html" hreflang="{lang_tag}" lang="{lang_tag}">{self_name}</a>',
          f'<a class="cur" href="index.html" hreflang="{lang_tag}" lang="{lang_tag}">{self_name}</a>'),
-        ('"url": "https://eiaao.github.io/mousetroke/en/",', f'"url": "https://eiaao.github.io/mousetroke/{d}/",'),
-        ('"@id": "https://eiaao.github.io/mousetroke/en/#site",', f'"@id": "https://eiaao.github.io/mousetroke/{d}/#site",'),
+        ('"url": "https://mousetroke.pages.dev/en/",', f'"url": "https://mousetroke.pages.dev/{d}/",'),
+        ('"@id": "https://mousetroke.pages.dev/en/#site",', f'"@id": "https://mousetroke.pages.dev/{d}/#site",'),
         ('"inLanguage": "en"', f'"inLanguage": "{lang_tag.split("-")[0]}"'),
     ]
 

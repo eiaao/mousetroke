@@ -5,7 +5,7 @@
 **免费开源的 Windows 鼠标手势工具。** 按住右键画一笔：`←` 后退，`↓→` 关闭标签页，`↙` 最小化窗口。
 鼠标推到屏幕左下角打开开始菜单，贴着上边滚动滚轮调音量。只是单击右键时，菜单照常弹出。
 
-**[产品主页](https://eiaao.github.io/mousetroke/) · [下载](https://github.com/eiaao/mousetroke/releases/latest) · [English](README.md)**
+**[产品主页](https://mousetroke.pages.dev/) · [下载](https://github.com/eiaao/mousetroke/releases/latest) · [English](README.md)**
 
 ![Mousetroke 设置界面](docs/images/settings-zh.png)
 

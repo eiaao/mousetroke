@@ -7,7 +7,7 @@ back, `↓→` closes the tab, `↙` minimizes the window. Push the cursor into 
 the Start menu, or scroll along the top edge to change the volume. A plain right-click still
 opens the context menu.
 
-**[Website](https://eiaao.github.io/mousetroke/) · [Download](https://github.com/eiaao/mousetroke/releases/latest) · [简体中文](README.zh-CN.md)**
+**[Website](https://mousetroke.pages.dev/) · [Download](https://github.com/eiaao/mousetroke/releases/latest) · [简体中文](README.zh-CN.md)**
 
 ![Mousetroke settings](docs/images/settings-en.png)
 

@@ -54,8 +54,8 @@ Mousetroke（中文）：免费开源的 Windows 鼠标手势工具。按住右�
 
 ## Pages
 
-- [Product page (Chinese)](https://eiaao.github.io/mousetroke/): features, interactive gesture demo, FAQ
-- [Product page (English)](https://eiaao.github.io/mousetroke/en/): same content in English
+- [Product page (Chinese)](https://mousetroke.pages.dev/): features, interactive gesture demo, FAQ
+- [Product page (English)](https://mousetroke.pages.dev/en/): same content in English
 
 ## FAQ
 

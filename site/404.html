@@ -1,0 +1,46 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex">
+<title>页面不存在 / Page not found — Mousetroke</title>
+<base href="/">
+<script>
+document.querySelector("base").href = location.pathname === "/mousetroke" || location.pathname.startsWith("/mousetroke/") ? "/mousetroke/" : "/";
+</script>
+<link rel="icon" href="assets/icon.svg" type="image/svg+xml">
+<style>
+:root { color-scheme: light; --bg: #e9edf2; --ink: #10151f; --muted: #5b6576; --rule: #cfd6e0; --accent: #0098d9; }
+@media (prefers-color-scheme: dark) {
+  :root { color-scheme: dark; --bg: #0f141c; --ink: #e8edf4; --muted: #8d98a9; --rule: #263142; --accent: #2ec5ff; }
+}
+* { box-sizing: border-box; }
+body { margin: 0; min-height: 100vh; min-height: 100svh; display: grid; place-items: center; padding: 24px; background: var(--bg); color: var(--ink); font: 17px/1.65 "Schibsted Grotesk", "HarmonyOS Sans SC", "MiSans", "PingFang SC", "Microsoft YaHei UI", "Microsoft YaHei", system-ui, sans-serif; }
+main { width: 100%; max-width: 36rem; }
+.brand { display: flex; align-items: center; gap: 10px; font-weight: 800; }
+.code { margin: 32px 0 8px; color: var(--accent); font-weight: 700; }
+h1 { margin: 0 0 32px; font-size: clamp(30px, 6vw, 48px); line-height: 1.2; letter-spacing: -0.035em; }
+h1 span { display: block; margin-top: 12px; color: var(--muted); font-size: 0.55em; font-weight: 400; letter-spacing: normal; }
+nav { display: flex; flex-wrap: wrap; gap: 12px; }
+a { padding: 12px 20px; border: 1px solid var(--rule); border-radius: 12px; color: var(--ink); font-weight: 600; text-decoration: none; }
+a:first-child { background: var(--ink); border-color: var(--ink); color: var(--bg); }
+a:hover { text-decoration: underline; text-underline-offset: 4px; }
+a:focus-visible { outline: 3px solid var(--accent); outline-offset: 4px; }
+</style>
+</head>
+<body>
+<main>
+  <div class="brand">
+    <svg width="28" height="28" viewBox="0 0 32 32" aria-hidden="true"><rect width="32" height="32" rx="8" fill="#0098d9"/><polyline points="7,11 13.5,21 19,13 25,21" fill="none" stroke="#fff" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    Mousetroke
+  </div>
+  <p class="code">404</p>
+  <h1>页面不存在<span lang="en">Page not found</span></h1>
+  <nav aria-label="首页 / Home">
+    <a href="./" hreflang="zh-CN">返回中文首页</a>
+    <a href="en/" hreflang="en" lang="en">English home</a>
+  </nav>
+</main>
+</body>
+</html>
