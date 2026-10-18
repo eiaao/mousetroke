@@ -2,8 +2,9 @@
 //!
 //! 纯逻辑（不依赖平台），由引擎在识别中/识别结束时调用。
 
-use crate::recognizer::{best_score, Segment};
+use crate::recognizer::{best_score, Segment, EXACT_EPS};
 use crate::schema::{Action, Binding, Config, MouseButton, PatternKey, Scope, ScopeKind, Step};
+use crate::shape;
 
 /// 捕获会话的触发源。
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -61,6 +62,11 @@ fn compare<'a>(pattern: &'a [Step], built: &[Step]) -> Option<Option<&'a [i32]>>
 /// - 无轨迹模式：完全相等即命中；同名重复时取最后一个（旧格式语义）。
 /// - 带轨迹模式：其余步骤相等、轨迹位置一致且段数一致的候选中，取识别评分唯一最优者。
 pub fn match_binding<'a>(scope: &'a Scope, built: &[Step], segs: &[Segment]) -> Option<&'a Binding> {
+    match_binding_with_exact(scope, built, segs).map(|(binding, _)| binding)
+}
+
+/// 保留旧匹配的候选和消歧规则，并标记精确命中（含无轨迹模式）。
+fn match_binding_with_exact<'a>(scope: &'a Scope, built: &[Step], segs: &[Segment]) -> Option<(&'a Binding, bool)> {
     let has_trace = built.iter().any(|s| matches!(s, Step::Trace { .. }));
     let mut cands: Vec<(&[i32], &[Segment])> = Vec::new();
     let mut feasible: Vec<&Binding> = Vec::new();
@@ -77,18 +83,50 @@ pub fn match_binding<'a>(scope: &'a Scope, built: &[Step], segs: &[Segment]) -> 
         }
     }
     if pure_hit.is_some() {
-        return pure_hit;
+        return pure_hit.map(|binding| (binding, true));
     }
-    best_score(&cands).map(|(idx, _)| feasible[idx])
+    best_score(&cands).map(|(idx, score)| (feasible[idx], score < EXACT_EPS))
+}
+
+/// 在单个作用域内依次选择：精确折线、达标 Shape、模糊折线。
+/// `None` 不启用形状识别；量化段为空时仍可识别有效原始路径。
+pub fn match_binding_path<'a>(scope: &'a Scope, built: &[Step], segs: &[Segment], path: Option<&[(f64, f64)]>) -> Option<&'a Binding> {
+    match_chain_path(&[scope], built, segs, path).map(|(binding, _)| binding)
+}
+
+/// 非笔画步骤沿用折线的精确比较规则；只允许一个 Shape 对应一个 Trace 占位。
+fn shape_templates<'a>(pattern: &'a [Step], built: &[Step]) -> Option<&'a [Vec<i32>]> {
+    if pattern.len() != built.len() {
+        return None;
+    }
+    let mut samples = None;
+    for (p, b) in pattern.iter().zip(built) {
+        match (p, b) {
+            (Step::Shape { templates }, Step::Trace { .. }) => {
+                if samples.replace(templates.as_slice()).is_some() {
+                    return None;
+                }
+            }
+            _ if step_equal(p, b) => {}
+            _ => return None,
+        }
+    }
+    samples
+}
+
+fn match_shape_binding<'a>(scope: &'a Scope, built: &[Step], normalized: &[(f64, f64)]) -> Option<&'a Binding> {
+    let candidates: Vec<_> = scope.bindings.iter().enumerate().filter(|(_, b)| !b.disabled)
+        .filter_map(|(id, b)| shape_templates(&b.pattern, built).map(|samples| (id, samples))).collect();
+    shape::best_match(normalized, &candidates).map(|(id, _)| &scope.bindings[id])
 }
 
 /// 是否存在以 `built` 为前缀（且更长或等长）的绑定——用于判断某个输入是否值得继续捕获。
-/// 前缀中的轨迹占位与模式中同位置的轨迹视为相容（不比较点）。
+/// 前缀中的 Trace 占位与模式中同位置的 Trace/Shape 相容（不比较点）。
 pub fn is_feasible_prefix(scope: &Scope, built: &[Step]) -> bool {
     scope.bindings.iter().filter(|b| !b.disabled).any(|b| {
         b.pattern.len() >= built.len()
             && b.pattern.iter().zip(built).all(|(p, q)| match (p, q) {
-                (Step::Trace { .. }, Step::Trace { .. }) => true,
+                (Step::Trace { .. } | Step::Shape { .. }, Step::Trace { .. }) => true,
                 _ => step_equal(p, q),
             })
     })
@@ -133,6 +171,22 @@ pub fn gestures_off(cfg: &Config, is_desktop: bool, exe: Option<&str>) -> bool {
 /// 在作用域链上依次匹配，返回 (命中绑定, 所在作用域)。
 pub fn match_chain<'a>(scopes: &[&'a Scope], built: &[Step], segs: &[Segment]) -> Option<(&'a Binding, &'a Scope)> {
     scopes.iter().find_map(|s| match_binding(s, built, segs).map(|b| (b, *s)))
+}
+
+/// 按作用域链顺序匹配，首个命中的作用域获胜。
+/// 每个作用域内依次选择：精确折线、达标 Shape、模糊折线；原始路径按需归一化一次。
+pub fn match_chain_path<'a>(scopes: &[&'a Scope], built: &[Step], segs: &[Segment], path: Option<&[(f64, f64)]>) -> Option<(&'a Binding, &'a Scope)> {
+    let mut normalized = None;
+    scopes.iter().find_map(|s| {
+        let polyline = match_binding_with_exact(s, built, segs);
+        if let Some((binding, true)) = polyline {
+            return Some((binding, *s));
+        }
+        normalized.get_or_insert_with(|| path.and_then(shape::normalize)).as_deref()
+            .and_then(|points| match_shape_binding(s, built, points))
+            .or_else(|| polyline.map(|(binding, _)| binding))
+            .map(|binding| (binding, *s))
+    })
 }
 
 /// exe 匹配：规则含路径分隔符时比较完整路径，否则只比较文件名（均大小写不敏感）。
