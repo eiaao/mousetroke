@@ -14,7 +14,7 @@ jobs:
     permissions:
       contents: write   # 只有这一步需要写权限：创建 Release 并上传文件
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - uses: actions/setup-node@v4
         with:
           node-version: 22
