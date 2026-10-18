@@ -34,7 +34,9 @@ jobs:
             echo "::error::CLOUDFLARE_API_TOKEN 或 CLOUDFLARE_ACCOUNT_ID 为空：在仓库 Settings → Secrets and variables → Actions 里设置"
             exit 1
           fi
-          npx --yes wrangler@4 whoami
+          # 不用 wrangler whoami：它要读账号成员信息，只有 Pages 权限的令牌会被拒绝。
+          # 直接用要用到的权限验证：能列出 Pages 项目，令牌和账号 ID 就都是对的。
+          npx --yes wrangler@4 pages project list > /dev/null
       - name: Check pages
         run: python3 site/check.py
       - name: Prepare
