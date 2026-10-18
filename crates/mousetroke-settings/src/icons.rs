@@ -145,17 +145,74 @@ fn base64(data: &[u8]) -> String {
 
 #[cfg(test)]
 mod tests {
+    fn decode_base64(encoded: &str) -> Vec<u8> {
+        assert_eq!(encoded.len() % 4, 0);
+        let padding = encoded.bytes().rev().take_while(|&b| b == b'=').count();
+        assert!(padding <= 2);
+        let mut out = Vec::new();
+        let (mut acc, mut bits) = (0u32, 0);
+        for b in encoded.bytes().take(encoded.len() - padding) {
+            let value = match b {
+                b'A'..=b'Z' => b - b'A',
+                b'a'..=b'z' => b - b'a' + 26,
+                b'0'..=b'9' => b - b'0' + 52,
+                b'+' => 62,
+                b'/' => 63,
+                _ => panic!("无效的 base64 字符"),
+            };
+            acc = (acc << 6) | u32::from(value);
+            bits += 6;
+            if bits >= 8 {
+                bits -= 8;
+                out.push((acc >> bits) as u8);
+            }
+        }
+        assert_eq!(bits, padding * 2);
+        assert_eq!(acc & ((1 << bits) - 1), 0);
+        out
+    }
+
+    pub(super) fn assert_png_data_url(url: &str, w: u32, h: u32) -> Vec<u8> {
+        let encoded = url.strip_prefix("data:image/png;base64,").expect("应为 PNG data URL");
+        let png = decode_base64(encoded);
+        let mut reader = png::Decoder::new(std::io::Cursor::new(png)).read_info().expect("PNG 头应有效");
+        let mut rgba = vec![0; reader.output_buffer_size().expect("图像大小应有效")];
+        let info = reader.next_frame(&mut rgba).expect("PNG 像素应能解码");
+        assert_eq!((info.width, info.height), (w, h));
+        assert_eq!(info.color_type, png::ColorType::Rgba);
+        assert_eq!(info.bit_depth, png::BitDepth::Eight);
+        assert_eq!(info.buffer_size(), (w * h * 4) as usize);
+        rgba.truncate(info.buffer_size());
+        assert!(rgba.chunks_exact(4).any(|p| p[3] != 0), "图标不能完全透明");
+        reader.finish().expect("PNG 应完整结束");
+        rgba
+    }
+
     #[test]
     fn base64_matches_reference() {
         assert_eq!(super::base64(b"Man"), "TWFu");
         assert_eq!(super::base64(b"Ma"), "TWE=");
         assert_eq!(super::base64(b"M"), "TQ==");
+        assert_eq!(decode_base64("TWFu"), b"Man");
+        assert_eq!(decode_base64("TWE="), b"Ma");
+        assert_eq!(decode_base64("TQ=="), b"M");
+        assert_eq!(decode_base64("+/8="), [251, 255]);
+    }
+
+    #[test]
+    fn png_data_url_round_trips_rgba() {
+        for (w, h) in [(2, 3), (super::SIZE, super::SIZE)] {
+            let rgba: Vec<u8> = (0..w * h).flat_map(|i| [i as u8, 128, 255, [0, 128, 255][i as usize % 3]]).collect();
+            let png = super::encode_png(&rgba, w, h).expect("RGBA 应能编码为 PNG");
+            let url = format!("data:image/png;base64,{}", super::base64(&png));
+            assert_eq!(assert_png_data_url(&url, w, h), rgba);
+        }
     }
 
     #[test]
     fn explorer_icon_resolves_by_name() {
         let url = super::icon_data_url("explorer.exe").expect("explorer.exe 应能取到图标");
-        assert!(url.starts_with("data:image/png;base64,iVBOR"));
+        assert_png_data_url(&url, super::SIZE, super::SIZE);
     }
 }
 
@@ -172,7 +229,10 @@ mod preview {
             let rgba = path.as_deref().and_then(super::extract_rgba);
             println!("{exe}: {:?} {}", path, rgba.is_some());
             if let Some(px) = rgba {
-                std::fs::write(dir.join(format!("{exe}.png")), super::encode_png(&px, 32, 32).unwrap()).unwrap();
+                let png = super::encode_png(&px, super::SIZE, super::SIZE).unwrap();
+                let url = super::icon_data_url(exe).expect("已提取的图标应能生成 data URL");
+                assert_eq!(super::tests::assert_png_data_url(&url, super::SIZE, super::SIZE), px);
+                std::fs::write(dir.join(format!("{exe}.png")), png).unwrap();
             }
         }
     }
