@@ -4,7 +4,8 @@
 //! 钩子回调据此放行，避免自触发递归。
 
 use mousetroke_core::keyseq::{Action, Key, KeySeq, ModKey, MouseKey};
-use windows::Win32::Foundation::{BOOL, CloseHandle, HANDLE, HGLOBAL, HWND, LPARAM, WPARAM};
+use windows::core::BOOL;
+use windows::Win32::Foundation::{CloseHandle, HANDLE, HGLOBAL, HWND, LPARAM, WPARAM};
 use windows::Win32::UI::WindowsAndMessaging::HMENU as HMENU_W;
 use windows::Win32::System::Threading::{CreateProcessW, PROCESS_INFORMATION, STARTUPINFOW};
 use windows::Win32::UI::Input::KeyboardAndMouse::{
