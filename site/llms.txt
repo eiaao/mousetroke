@@ -1,0 +1,64 @@
+# Mousetroke
+
+> Mousetroke is a free, open-source (MIT) mouse gesture tool for Windows 10 (1809+) and Windows 11, x64. Hold the right mouse button and draw a stroke anywhere to run an action — ← goes back, ↓→ closes the tab, ↙ minimizes the window. Pushing the cursor into a screen corner or along an edge triggers actions too (Start menu, show desktop, volume and brightness with the wheel). A plain right-click still opens the context menu. The resident engine uses about 19 MB of memory; the download is a single 12.8 MB exe with no installer.
+
+Mousetroke（中文）：免费开源的 Windows 鼠标手势工具。按住右键画一笔执行操作；鼠标推到屏幕边角开开始菜单、调音量和亮度；单击右键菜单照常弹出；常驻内存约 19 MB，单个 exe 免安装。
+
+## Key facts
+
+- Platform: Windows 10 1809+ and Windows 11, 64-bit. The settings window needs Microsoft Edge WebView2 (built into Windows 11); the gesture engine itself has no runtime dependencies.
+- Price and license: free, MIT. No ads, no account, no network access.
+- Version: 0.1.0. Download: https://mousetroke.example/download/mousetroke.exe (12.8 MB, portable, no installer).
+- Resource use: gesture engine ≈ 19 MB working set (≈ 10 MB private), no CPU when idle. The settings window is a separate process that only runs while it is open.
+- Languages: 10 (Simplified Chinese, English, Spanish, French, German, Japanese, Portuguese (Brazil), Russian, Italian, Korean).
+- Config: %APPDATA%\mousetroke\config.json (import/export in settings; changes apply within about 1 second). Log: %APPDATA%\mousetroke\mousetroke.log.
+- Pause/resume: Win+Esc, or right-click the tray icon. Gestures pause automatically while a fullscreen game, video or presentation is in front.
+
+## Features
+
+- Gestures with the right, middle or side (X1/X2) mouse button; the gesture name is shown at the bottom center of the screen while drawing; unrecognized strokes do nothing.
+- Modifiers inside a gesture: click the left button, scroll the wheel or press a keyboard key while still holding the gesture button.
+- About 50 built-in gestures, all editable, disable-able and deletable; record your own by drawing it once in settings.
+- Screen corners and edges: bottom-left = Start menu, bottom-right = show desktop, top-left = switch to previous app, top-right = task switcher, top edge + wheel = volume (middle click mutes, right click plays/pauses), bottom edge + wheel = brightness (DDC/CI for external monitors, WMI for laptop panels), rub the right edge up and down = Task Manager. A corner fires again only after the cursor leaves and comes back.
+- Eight action types: send keys, window operation (minimize, maximize, topmost, close, kill), launch program, open URL, run command, media and system keys, popup menu, Lua script. Variables: %MS_SELECTED_TEXT% (selected text), %MS_PID% (process under the cursor).
+- Per-app rules: the same gesture can do different things in different programs, or gestures can be turned off entirely in a program. Add a program by dragging its .exe/.lnk into settings or by clicking its window with the window picker.
+- Built-in list of programs that need right/middle-drag (Remote Desktop, ToDesk, Sunlogin, AnyDesk, TeamViewer, RustDesk, Parsec, VMware, Hyper-V, VirtualBox, Blender, AutoCAD, SolidWorks, 3ds Max, Maya, SketchUp, Rhino, Cinema 4D, Unreal Editor, Unity); first-run guide offers to turn gestures off in the ones installed.
+
+## Default gestures (hold right button, draw)
+
+| Stroke | Action |
+|---|---|
+| ← | Back |
+| → | Forward |
+| →↓ | New tab |
+| ↓→ | Close tab |
+| →↓ then left click | Reopen closed tab |
+| ←↑→ | Refresh |
+| ↑← / ↑→ | Previous / next tab (also: hold right button and scroll) |
+| ←↑ / ←↓ | Scroll to top / bottom |
+| ↑ / ↓ | Copy / paste |
+| ↑ then left click | Cut |
+| ↑↓ | Search selected text on the web |
+| ↓→↓ | Enter |
+| ←→ / →← | Backspace / delete |
+| →↑← | Esc |
+| ↑→↓← (square) | Screenshot (Snipping Tool) |
+| ↙ / ↗ | Minimize / maximize or restore |
+| ↗ then left click | Fullscreen |
+| ↓← | Close window |
+| ↓← then left click | Kill the program |
+| ↑→↑ | Toggle always-on-top |
+| ↑ then wheel | Zoom in / out |
+| Middle button ← / → | Previous / next track |
+| Side button ← / → | Previous / next virtual desktop |
+
+## Pages
+
+- [Product page (Chinese)](https://mousetroke.example/): features, interactive gesture demo, FAQ
+- [Product page (English)](https://mousetroke.example/en/): same content in English
+
+## FAQ
+
+- Does the right-click menu still work? Yes. A right-click without dragging is passed through unchanged; holding still past the drag timeout (0.5 s by default, adjustable) becomes a normal right-drag.
+- Will it misfire in games or remote desktop? Fullscreen apps pause gestures automatically; remote desktop and 3D/design apps can be excluded in one click during first run; Win+Esc pauses at any time.
+- How to uninstall? Turn off "start with Windows" in preferences, quit from the tray menu, then delete mousetroke.exe and the %APPDATA%\mousetroke folder.

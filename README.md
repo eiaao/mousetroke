@@ -1,0 +1,57 @@
+# Mousetroke
+
+**Free, open-source mouse gestures for Windows.** Hold the right button and draw — `←` goes
+back, `↓→` closes the tab, `↙` minimizes the window. Push the cursor into a screen corner for
+the Start menu, or scroll along the top edge to change the volume. A plain right-click still
+opens the context menu.
+
+[简体中文](README.zh-CN.md)
+
+- About 50 built-in gestures, all editable; record your own by drawing it once
+- Screen corners and edges: Start menu, show desktop, volume, brightness (DDC/CI for external monitors)
+- Eight action types: send keys, window actions, open an app, open a URL, run a command,
+  media & system keys, popup menu, Lua script
+- Per-app rules, or turn gestures off entirely in remote-desktop / 3D / design apps
+- Pauses automatically for fullscreen games, video and presentations; `Win+Esc` pauses any time
+- About 19 MB of memory; a single portable exe (≈13 MB); 10 interface languages
+
+## Install
+
+1. Download `mousetroke.exe` from the [latest release](../../releases/latest) and check its
+   SHA-256 against `SHA256SUMS.txt` on the same page.
+2. Double-click it. An icon appears in the notification area: left-click for settings,
+   right-click to pause or quit. A short guide runs the first time.
+
+Requirements: Windows 10 1809+ or Windows 11, 64-bit. The settings window uses Microsoft Edge
+WebView2 (built into Windows 11). The exe is not code-signed yet, so SmartScreen may warn on
+first run — choose **More info → Run anyway**.
+
+Uninstall: turn off *Start with Windows* in preferences, quit from the tray menu, then delete
+`mousetroke.exe` and `%APPDATA%\mousetroke`.
+
+## Build from source
+
+Needs Rust (stable, MSVC toolchain), Node.js 20.19+ and Python 3, on Windows.
+
+```bat
+scripts\build.cmd            :: UI + release exe → dist\mousetroke.exe
+cargo test --workspace       :: engine, importer, i18n and settings tests
+```
+
+| Path | What it is |
+|---|---|
+| `crates/mousetroke-core` | Platform-independent logic: config schema, recognizer, matcher, key-sequence syntax, built-in defaults, legacy-format importer |
+| `crates/mousetroke-win` | Windows layer: low-level hooks, capture state machine, trail overlay, input injection, tray |
+| `crates/mousetroke-settings` | Settings window (Tauri 2 + React); runs as a separate process only while open |
+| `crates/mousetroke` | The `mousetroke.exe` entry point and CLI |
+| `i18n/` | Shared UI strings for every language (see `i18n/README.md`) |
+| `site/` | Product web page (static) |
+
+## Security
+
+Shell and Lua actions run with your user rights — only import configurations you trust.
+See [SECURITY.md](SECURITY.md) for what the program does and how to report a vulnerability.
+
+## License
+
+[MIT](LICENSE)

@@ -1,0 +1,411 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<script>document.documentElement.classList.add("js")</script>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Mousetroke：Windows 鼠标手势工具，免费开源</title>
+<meta name="description" content="Mousetroke 是免费开源的 Windows 鼠标手势工具：按住右键画一笔就能后退、关标签页、最小化窗口；鼠标推到屏幕边角可开开始菜单、调音量和亮度。常驻内存约 19 MB，单个 exe 免安装，支持 Windows 10 / 11。">
+<meta name="keywords" content="鼠标手势,Windows 鼠标手势,鼠标手势软件,触发角,屏幕边角,右键手势,效率工具,Mousetroke">
+<link rel="canonical" href="https://mousetroke.example/">
+<link rel="alternate" hreflang="zh-CN" href="https://mousetroke.example/">
+<link rel="alternate" hreflang="en" href="https://mousetroke.example/en/">
+<link rel="alternate" hreflang="es" href="https://mousetroke.example/es/">
+<link rel="alternate" hreflang="fr" href="https://mousetroke.example/fr/">
+<link rel="alternate" hreflang="de" href="https://mousetroke.example/de/">
+<link rel="alternate" hreflang="ja" href="https://mousetroke.example/ja/">
+<link rel="alternate" hreflang="pt-BR" href="https://mousetroke.example/pt/">
+<link rel="alternate" hreflang="ru" href="https://mousetroke.example/ru/">
+<link rel="alternate" hreflang="it" href="https://mousetroke.example/it/">
+<link rel="alternate" hreflang="ko" href="https://mousetroke.example/ko/">
+<link rel="alternate" hreflang="x-default" href="https://mousetroke.example/en/">
+<link rel="alternate" type="text/markdown" title="LLM 摘要" href="llms.txt">
+<link rel="icon" href="assets/icon.svg" type="image/svg+xml">
+<meta name="theme-color" content="#e9edf2" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#0f141c" media="(prefers-color-scheme: dark)">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Mousetroke">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:locale:alternate" content="en_US">
+<meta property="og:locale:alternate" content="es_ES">
+<meta property="og:locale:alternate" content="fr_FR">
+<meta property="og:locale:alternate" content="de_DE">
+<meta property="og:locale:alternate" content="ja_JP">
+<meta property="og:locale:alternate" content="pt_BR">
+<meta property="og:locale:alternate" content="ru_RU">
+<meta property="og:locale:alternate" content="it_IT">
+<meta property="og:locale:alternate" content="ko_KR">
+<meta property="og:title" content="Mousetroke：按住右键，画一笔">
+<meta property="og:description" content="免费开源的 Windows 鼠标手势工具。画一笔后退、关标签页；推到屏幕边角调音量。常驻约 19 MB。">
+<meta property="og:url" content="https://mousetroke.example/">
+<meta property="og:image" content="https://mousetroke.example/og.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Schibsted+Grotesk:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/site.css">
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@graph": [
+    {
+      "@type": "SoftwareApplication",
+      "@id": "https://mousetroke.example/#app",
+      "name": "Mousetroke",
+      "alternateName": "Mousetroke 鼠标手势",
+      "description": "Windows 全局鼠标手势工具：按住右键（或中键、侧键）画手势执行操作，鼠标推到屏幕边角触发动作，可按程序分别设置或禁用。",
+      "applicationCategory": "UtilitiesApplication",
+      "applicationSubCategory": "鼠标手势",
+      "operatingSystem": "Windows 10 1809+, Windows 11 (x64)",
+      "softwareVersion": "0.1.0",
+      "fileSize": "12.8 MB",
+      "memoryRequirements": "约 19 MB 常驻内存",
+      "softwareRequirements": "Microsoft Edge WebView2（仅设置界面需要，Windows 11 自带）",
+      "license": "https://opensource.org/licenses/MIT",
+      "isAccessibleForFree": true,
+      "inLanguage": ["zh-CN", "en", "es", "fr", "de", "ja", "pt-BR", "ru", "it", "ko"],
+      "downloadUrl": "https://mousetroke.example/download/mousetroke.exe",
+      "url": "https://mousetroke.example/",
+      "image": "https://mousetroke.example/og.png",
+      "offers": { "@type": "Offer", "price": "0", "priceCurrency": "CNY" },
+      "featureList": [
+        "按住右键、中键或侧键画手势，边画边显示手势名",
+        "默认自带五十多个手势：后退、前进、关闭标签页、复制粘贴、最小化、置顶等",
+        "屏幕四角与四边触发：开始菜单、显示桌面、滚轮调音量、调屏幕亮度（支持外接显示器 DDC/CI）",
+        "八种动作：发送按键、窗口操作、打开程序、打开网址、运行命令、媒体与系统、弹出菜单、Lua 脚本",
+        "按程序分别设置手势，或在某个程序里整体禁用手势",
+        "全屏游戏、视频、演示时自动暂停；Win+Esc 随时暂停",
+        "常驻内存约 19 MB，单个 exe 免安装",
+        "界面支持十种语言"
+      ]
+    },
+    {
+      "@type": "WebSite",
+      "@id": "https://mousetroke.example/#site",
+      "name": "Mousetroke",
+      "url": "https://mousetroke.example/",
+      "inLanguage": "zh-CN"
+    },
+    {
+      "@type": "FAQPage",
+      "mainEntity": [
+        { "@type": "Question", "name": "装了 Mousetroke 以后右键菜单还能用吗？", "acceptedAnswer": { "@type": "Answer", "text": "能。只按右键、不拖动时，Mousetroke 会把这次点击原样交还给系统，右键菜单照常弹出。按住不动超过设定时间（默认 0.5 秒，可调）也会当作普通的右键拖拽。" } },
+        { "@type": "Question", "name": "玩游戏或用远程桌面时会误触吗？", "acceptedAnswer": { "@type": "Answer", "text": "全屏的游戏、视频和演示会自动暂停手势。远程桌面、ToDesk、Blender、AutoCAD 等自己要用右键或中键拖动的程序，首次启动时可以一键禁用；也可以随时按 Win+Esc 暂停。" } },
+        { "@type": "Question", "name": "支持哪些 Windows 版本？", "acceptedAnswer": { "@type": "Answer", "text": "Windows 10 1809 及以上和 Windows 11，64 位。手势引擎不依赖任何运行库；设置界面使用 Microsoft Edge WebView2，Windows 11 自带，Windows 10 多数已随 Edge 安装。" } },
+        { "@type": "Question", "name": "Mousetroke 免费吗？", "acceptedAnswer": { "@type": "Answer", "text": "免费，以 MIT 许可证开源，没有广告、账号或联网功能。" } },
+        { "@type": "Question", "name": "占用多少内存和 CPU？", "acceptedAnswer": { "@type": "Answer", "text": "常驻的手势引擎约 19 MB 工作集（私有内存约 10 MB），空闲时不占 CPU。设置界面是单独的进程，打开时才启动，关掉就退出。" } },
+        { "@type": "Question", "name": "能自己定义手势吗？", "acceptedAnswer": { "@type": "Answer", "text": "能。在设置里新建一个手势，用鼠标在编辑面板的画板上画一遍轨迹就记下来了；也可以组合鼠标键、滚轮、键盘键和屏幕边角，并给每个程序单独设置。" } },
+        { "@type": "Question", "name": "配置保存在哪里？怎么备份？", "acceptedAnswer": { "@type": "Answer", "text": "配置在 %APPDATA%\\mousetroke\\config.json，设置里可以导入和导出。改动保存后约 1 秒内生效，不用重启。" } },
+        { "@type": "Question", "name": "怎么卸载？", "acceptedAnswer": { "@type": "Answer", "text": "在偏好设置里关掉开机自启，右键托盘图标选「退出」，再删除 mousetroke.exe 和 %APPDATA%\\mousetroke 文件夹即可，不会留下其他文件。" } }
+      ]
+    }
+  ]
+}
+</script>
+</head>
+<body>
+<a class="skip" href="#main">跳到正文</a>
+
+<header class="top">
+  <div class="wrap">
+    <a class="brand" href="index.html" aria-label="Mousetroke 首页">
+      <svg width="28" height="28" viewBox="0 0 32 32" aria-hidden="true"><rect width="32" height="32" rx="8" fill="#0098d9"/><polyline points="7,11 13.5,21 19,13 25,21" fill="none" stroke="#fff" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      Mousetroke
+    </a>
+    <nav class="nav" aria-label="页面导航">
+      <a href="#gestures">手势</a>
+      <a href="#edges">屏幕边角</a>
+      <a href="#actions">动作</a>
+      <a href="#quiet">不打扰</a>
+      <a href="#faq">常见问题</a>
+    </nav>
+    <details class="langmenu">
+      <summary aria-label="语言">简体中文 ▾</summary>
+      <div class="langdrop">
+        <a class="cur" href="index.html" hreflang="zh-CN" lang="zh-CN">简体中文</a>
+        <a href="en/index.html" hreflang="en" lang="en">English</a>
+        <a href="es/index.html" hreflang="es" lang="es">español</a>
+        <a href="fr/index.html" hreflang="fr" lang="fr">Français</a>
+        <a href="de/index.html" hreflang="de" lang="de">Deutsch</a>
+        <a href="ja/index.html" hreflang="ja" lang="ja">日本語</a>
+        <a href="pt/index.html" hreflang="pt-BR" lang="pt-BR">Português (Brasil)</a>
+        <a href="ru/index.html" hreflang="ru" lang="ru">Русский</a>
+        <a href="it/index.html" hreflang="it" lang="it">Italiano</a>
+        <a href="ko/index.html" hreflang="ko" lang="ko">한국어</a>
+      </div>
+    </details>
+    <a class="btn small primary" href="#download">下载</a>
+  </div>
+</header>
+
+<main id="main">
+  <section class="hero" aria-labelledby="h-hero">
+    <div class="wrap hero-grid">
+      <div>
+        <h1 id="h-hero">按住右键，<br>画一笔。</h1>
+        <p class="lede">Mousetroke 是 Windows 上的鼠标手势工具。在任何窗口里按住右键拖一下：<b>←</b> 后退，<b>↓→</b> 关标签页，<b>↙</b> 最小化窗口。只是单击右键时，菜单照常弹出。</p>
+        <div class="cta">
+          <a class="btn primary" href="#download">下载 Windows 版 <small>12.8 MB</small></a>
+          <a class="btn" href="#gestures">看看能画什么</a>
+        </div>
+        <ul class="meta">
+          <li>免费开源（MIT）</li>
+          <li>Windows 10 / 11</li>
+          <li>常驻内存约 19 MB</li>
+        </ul>
+      </div>
+
+      <div>
+        <div class="stage" id="stage" role="application" aria-label="手势演示：在这块区域按住鼠标右键或左键拖动，模拟浏览器会执行对应操作" aria-describedby="stage-desc">
+          <p class="vh" id="stage-desc">在演示区域里画 ← 后退，→ 前进，→↓ 新建标签页，↓→ 关闭标签页，←↑→ 刷新，↙ 最小化，↗ 最大化。下方的按钮可以直接播放每个手势。</p>
+          <div class="hint">在这里按住右键拖动试试（触屏用手指）</div>
+          <div class="browser" id="browser" aria-hidden="true">
+            <div class="tabs"></div>
+            <div class="addr"><span class="nb"><i data-n="back">‹</i><i data-n="fwd">›</i><i data-n="reload">↻</i></span><span class="url"></span></div>
+            <div class="view"></div>
+          </div>
+          <div class="taskbar" aria-hidden="true"><i></i><i class="app"></i><i></i><i></i></div>
+          <div class="toast" aria-hidden="true"></div>
+          <div class="gpill" aria-live="polite"><span class="arrows"></span><span class="name"></span></div>
+          <canvas></canvas>
+        </div>
+        <ul class="try" aria-label="点一下播放手势">
+          <li><button type="button" data-play="50,0,0,0"><b>←</b>后退</button></li>
+          <li><button type="button" data-play="0,0,50,0"><b>→</b>前进</button></li>
+          <li><button type="button" data-play="0,0,50,0,50,50"><b>→↓</b>新标签页</button></li>
+          <li><button type="button" data-play="0,0,0,50,50,50"><b>↓→</b>关标签页</button></li>
+          <li><button type="button" data-play="50,50,0,50,0,0,50,0"><b>←↑→</b>刷新</button></li>
+          <li><button type="button" data-play="50,0,0,50"><b>↙</b>最小化</button></li>
+          <li><button type="button" data-play="0,50,50,0"><b>↗</b>最大化</button></li>
+        </ul>
+      </div>
+    </div>
+    <a class="cue" href="#gestures"><span class="cue-ico"><svg width="22" height="34" viewBox="0 0 22 34" aria-hidden="true"><rect x="1" y="1" width="20" height="32" rx="10" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M11 1v12M1 13h20" stroke="currentColor" stroke-width="1.6"/><path class="rb" d="M11.8 1.8h0a8.6 8.6 0 0 1 8.4 8.4V12.2H11.8Z"/></svg><svg class="cue-trail" width="14" height="40" viewBox="0 0 14 40" aria-hidden="true"><path pathLength="1" d="M7 2V36M2 31l5 5 5-5"/></svg></span><span>向下滚动，或按住右键往下画</span></a>
+  </section>
+
+  <section class="sec" id="gestures" aria-labelledby="h-gestures">
+    <div class="wrap">
+      <div class="sec-head">
+        <h2 id="h-gestures">画什么，做什么</h2>
+        <p>默认自带五十多个手势，覆盖浏览、编辑和窗口管理。每一个都能改、停用或删掉，也可以在设置里画一遍轨迹，录一个自己的。</p>
+      </div>
+      <div class="sheet">
+        <div>
+          <h3>浏览</h3>
+          <ul>
+            <li data-p="50,0,0,0" data-act="back"><span class="glyph"></span><span class="nm">后退<small>浏览器、资源管理器回到上一页</small></span><span class="ar">←</span></li>
+            <li data-p="0,0,50,0" data-act="forward"><span class="glyph"></span><span class="nm">前进</span><span class="ar">→</span></li>
+            <li data-p="0,0,50,0,50,50" data-act="newtab"><span class="glyph"></span><span class="nm">新建标签页</span><span class="ar">→↓</span></li>
+            <li data-p="0,0,0,50,50,50" data-act="closetab"><span class="glyph"></span><span class="nm">关闭标签页</span><span class="ar">↓→</span></li>
+            <li data-p="0,0,50,0,50,50" data-mod="left"><span class="glyph"></span><span class="nm">恢复关闭的标签页<small>画完再点一下左键</small></span><span class="ar">→↓ + <kbd>左键</kbd></span></li>
+            <li data-p="50,50,0,50,0,0,50,0" data-act="refresh"><span class="glyph"></span><span class="nm">刷新</span><span class="ar">←↑→</span></li>
+            <li data-p="50,50,50,0,0,0" data-act="prevtab"><span class="glyph"></span><span class="nm">上一个标签页<small>也可以按住右键滚滚轮</small></span><span class="ar">↑←</span></li>
+            <li data-p="0,50,0,0,50,0" data-act="nexttab"><span class="glyph"></span><span class="nm">下一个标签页</span><span class="ar">↑→</span></li>
+            <li data-p="50,50,0,50,0,0" data-act="top"><span class="glyph"></span><span class="nm">回到顶部</span><span class="ar">←↑</span></li>
+            <li data-p="50,0,0,0,0,50" data-act="bottom"><span class="glyph"></span><span class="nm">跳到底部</span><span class="ar">←↓</span></li>
+          </ul>
+        </div>
+        <div>
+          <h3>编辑</h3>
+          <ul>
+            <li data-p="0,50,0,0" data-act="copy"><span class="glyph"></span><span class="nm">复制</span><span class="ar">↑</span></li>
+            <li data-p="0,0,0,50" data-act="paste"><span class="glyph"></span><span class="nm">粘贴</span><span class="ar">↓</span></li>
+            <li data-p="0,50,0,0" data-mod="left"><span class="glyph"></span><span class="nm">剪切</span><span class="ar">↑ + <kbd>左键</kbd></span></li>
+            <li data-p="0,0,0,50" data-mod="left"><span class="glyph"></span><span class="nm">粘贴并回车</span><span class="ar">↓ + <kbd>左键</kbd></span></li>
+            <li data-p="0,50,0,0,0,50" data-act="search"><span class="glyph"></span><span class="nm">搜索选中文字<small>用默认浏览器搜索</small></span><span class="ar">↑↓</span></li>
+            <li data-p="0,0,0,50,50,50,50,100" data-act="enter"><span class="glyph"></span><span class="nm">回车</span><span class="ar">↓→↓</span></li>
+            <li data-p="50,0,0,0,50,0" data-act="backspace"><span class="glyph"></span><span class="nm">退格</span><span class="ar">←→</span></li>
+            <li data-p="0,0,50,0,0,0" data-act="delete"><span class="glyph"></span><span class="nm">删除</span><span class="ar">→←</span></li>
+            <li data-p="0,50,50,50,50,0,0,0" data-act="esc"><span class="glyph"></span><span class="nm">取消（Esc）</span><span class="ar">→↑←</span></li>
+            <li data-p="0,50,0,0,50,0,50,50,0,50" data-act="snip"><span class="glyph"></span><span class="nm">截图<small>画一个方框</small></span><span class="ar">↑→↓←</span></li>
+          </ul>
+        </div>
+        <div>
+          <h3>窗口与媒体</h3>
+          <ul>
+            <li data-p="50,0,0,50" data-act="minimize"><span class="glyph"></span><span class="nm">最小化</span><span class="ar">↙</span></li>
+            <li data-p="0,50,50,0" data-act="maximize"><span class="glyph"></span><span class="nm">最大化 / 还原</span><span class="ar">↗</span></li>
+            <li data-p="0,50,50,0" data-mod="left"><span class="glyph"></span><span class="nm">全屏</span><span class="ar">↗ + <kbd>左键</kbd></span></li>
+            <li data-p="50,0,50,50,0,50" data-act="closewin"><span class="glyph"></span><span class="nm">关闭窗口</span><span class="ar">↓←</span></li>
+            <li data-p="50,0,50,50,0,50" data-mod="left"><span class="glyph"></span><span class="nm">强制结束程序<small>程序卡死时用</small></span><span class="ar">↓← + <kbd>左键</kbd></span></li>
+            <li data-p="0,100,0,50,50,50,50,0" data-act="topmost"><span class="glyph"></span><span class="nm">窗口置顶</span><span class="ar">↑→↑</span></li>
+            <li data-p="0,50,0,0" data-mod="wheel"><span class="glyph"></span><span class="nm">放大 / 缩小</span><span class="ar">↑ + <kbd>滚轮</kbd></span></li>
+            <li data-p="0,0,50,0" data-btn="middle"><span class="glyph"></span><span class="nm">下一曲<small>按住中键画</small></span><span class="ar"><kbd>中键</kbd> →</span></li>
+            <li data-p="50,0,0,0" data-btn="middle"><span class="glyph"></span><span class="nm">上一曲</span><span class="ar"><kbd>中键</kbd> ←</span></li>
+            <li data-p="0,0,50,0" data-btn="x1"><span class="glyph"></span><span class="nm">下一个虚拟桌面<small>按住侧键画</small></span><span class="ar"><kbd>侧键</kbd> →</span></li>
+          </ul>
+        </div>
+      </div>
+      <p class="note">画的时候屏幕中下方会显示手势名，认不出来就什么都不做。同一个手势在资源管理器、命令行、桌面里可以做不同的事。</p>
+    </div>
+  </section>
+
+  <section class="sec" id="edges" aria-labelledby="h-edges">
+    <div class="wrap">
+      <div class="sec-head">
+        <h2 id="h-edges">推到屏幕边角</h2>
+        <p>不用按任何键：把鼠标推到角落，或者贴着屏幕边缘滚滚轮、点中键、上下来回蹭。离开边角再回来才会再次触发，不会连着误触。</p>
+      </div>
+      <div class="edges">
+        <div class="monitor">
+          <div class="screen" id="screen" aria-label="模拟屏幕：把鼠标移到这块屏幕的角落或边缘" role="img">
+            <div class="win w1"></div><div class="win w2"></div>
+            <div class="start"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div>
+            <div class="tm"><b>任务管理器</b><div class="bar" style="width:80%"></div><div class="bar" style="width:46%"></div><div class="bar" style="width:62%"></div></div>
+            <div class="osd" data-osd="vol"><span>🔊</span><span class="lvl"><b style="width:50%"></b></span><span class="v">50</span></div>
+            <div class="osd bottom" data-osd="bri"><span>☀</span><span class="lvl"><b style="width:70%"></b></span><span class="v">70</span></div>
+            <div class="dim"></div>
+            <div class="tbar"><i></i><i></i><i></i><i></i></div>
+            <i class="glow e1"></i><i class="glow e2"></i><i class="glow e4"></i><i class="glow e8"></i>
+            <i class="glow c c3"></i><i class="glow c c6"></i><i class="glow c c9"></i><i class="glow c c12"></i>
+            <div class="label"></div>
+          </div>
+        </div>
+        <ul class="rules" aria-label="默认的边角规则，点一下演示">
+          <li><button type="button" data-edge="12"><span class="where">左下角</span><span class="what">开始菜单</span></button></li>
+          <li><button type="button" data-edge="6"><span class="where">右下角</span><span class="what">显示桌面</span></button></li>
+          <li><button type="button" data-edge="9"><span class="where">左上角</span><span class="what">切换到上一个程序</span></button></li>
+          <li><button type="button" data-edge="3"><span class="where">右上角</span><span class="what">任务切换器</span></button></li>
+          <li><button type="button" data-edge="1" data-with="wheel"><span class="where">上边</span><span class="what">滚轮调音量<small>点中键静音，点右键播放 / 暂停</small></span></button></li>
+          <li><button type="button" data-edge="4" data-with="wheel"><span class="where">下边</span><span class="what">滚轮调屏幕亮度<small>外接显示器走 DDC/CI，笔记本内屏也支持</small></span></button></li>
+          <li><button type="button" data-edge="2" data-with="rub"><span class="where">右边</span><span class="what">上下蹭几下，打开任务管理器</span></button></li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <section class="sec" id="actions" aria-labelledby="h-actions">
+    <div class="wrap">
+      <div class="sec-head">
+        <h2 id="h-actions">不止发快捷键</h2>
+        <p>每个手势可以绑定八种动作中的一种。动作里能用变量，比如 <code>%MS_SELECTED_TEXT%</code> 是当前选中的文字，<code>%MS_PID%</code> 是鼠标下那个程序的进程号。</p>
+      </div>
+      <dl class="acts">
+        <div><span class="ico" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="2.5" y="6" width="19" height="12" rx="2.5"/><path d="M6.5 10h.01M10 10h.01M13.5 10h.01M17 10h.01M7.5 14h9"/></svg></span><dt>发送按键</dt><dd>任意组合键或一串按键，比如 <code>Ctrl+Shift+T</code>。</dd></div>
+        <div><span class="ico" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="16" rx="2.5"/><path d="M3 9h18"/></svg></span><dt>窗口操作</dt><dd>最小化、最大化、置顶、关闭、结束进程，作用于鼠标下的窗口或当前窗口。</dd></div>
+        <div><span class="ico" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M5 19 19 5M9 5h10v10"/></svg></span><dt>打开程序</dt><dd>带参数启动任意程序或文件，比如 <code>notepad.exe</code>。</dd></div>
+        <div><span class="ico" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c2.8 3 2.8 15 0 18M12 3c-2.8 3-2.8 15 0 18"/></svg></span><dt>打开网址</dt><dd>用默认浏览器打开，可以拼上选中的文字：<code>https://www.bing.com/search?q=%MS_SELECTED_TEXT%</code></dd></div>
+        <div><span class="ico" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="m5 8 4 4-4 4M12 17h7"/></svg></span><dt>运行命令</dt><dd>执行一条命令行，比如 <code>taskkill /F /PID %MS_PID%</code>。</dd></div>
+        <div><span class="ico" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 10v4h4l5 4V6L8 10H4ZM16.5 9a4 4 0 0 1 0 6"/></svg></span><dt>媒体与系统</dt><dd>音量、静音、播放 / 暂停、上一曲 / 下一曲、屏幕亮度。</dd></div>
+        <div><span class="ico" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="4" width="16" height="16" rx="2.5"/><path d="M8 9h8M8 12h8M8 15h5"/></svg></span><dt>弹出菜单</dt><dd>一个手势弹出一组动作，在鼠标旁点选执行。</dd></div>
+        <div><span class="ico" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="m8 7-5 5 5 5M16 7l5 5-5 5M14 4l-4 16"/></svg></span><dt>Lua 脚本</dt><dd>需要判断条件或连续做好几步时，写几行 Lua。</dd></div>
+      </dl>
+    </div>
+  </section>
+
+  <section class="sec" id="quiet" aria-labelledby="h-quiet">
+    <div class="wrap">
+      <div class="sec-head">
+        <h2 id="h-quiet">该安静的时候安静</h2>
+        <p>远程桌面、3D 和设计软件自己要用右键或中键拖动。第一次启动时，Mousetroke 会找出电脑上装了的这类程序，勾一下就在它们里面禁用手势。</p>
+      </div>
+      <div class="quiet">
+        <div class="apps" id="apps">
+          <div class="row off"><span class="ai" style="background:#2b6cb0">R</span><span class="an"><b>远程桌面连接</b><small>mstsc.exe</small></span><span class="state" data-on="手势开启" data-off="已禁用手势">已禁用手势</span><input class="sw" type="checkbox" aria-label="远程桌面连接里使用手势"></div>
+          <div class="row off"><span class="ai" style="background:#1f8fff">T</span><span class="an"><b>ToDesk</b><small>ToDesk.exe</small></span><span class="state" data-on="手势开启" data-off="已禁用手势">已禁用手势</span><input class="sw" type="checkbox" aria-label="ToDesk 里使用手势"></div>
+          <div class="row off"><span class="ai" style="background:#e87d0d">B</span><span class="an"><b>Blender</b><small>blender.exe</small></span><span class="state" data-on="手势开启" data-off="已禁用手势">已禁用手势</span><input class="sw" type="checkbox" aria-label="Blender 里使用手势"></div>
+          <div class="row off"><span class="ai" style="background:#c62828">A</span><span class="an"><b>AutoCAD</b><small>acad.exe</small></span><span class="state" data-on="手势开启" data-off="已禁用手势">已禁用手势</span><input class="sw" type="checkbox" aria-label="AutoCAD 里使用手势"></div>
+          <div class="row"><span class="ai" style="background:#0098d9">C</span><span class="an"><b>Google Chrome</b><small>chrome.exe</small></span><span class="state" data-on="手势开启" data-off="已禁用手势">手势开启</span><input class="sw" type="checkbox" checked aria-label="Google Chrome 里使用手势"></div>
+        </div>
+        <ul class="points">
+          <li><b>单击右键不受影响</b><span>只按不画，右键菜单照常弹出；按住不动超过一小会儿，就当作普通的右键拖拽。</span></li>
+          <li><b>全屏时自动暂停</b><span>全屏玩游戏、看视频、做演示时，手势和边角都不会触发。</span></li>
+          <li><b>随时暂停</b><span>按 <kbd>Win</kbd> + <kbd>Esc</kbd> 暂停或恢复，托盘图标会变灰。</span></li>
+          <li><b>添加程序很直接</b><span>把 exe 或快捷方式拖进设置窗口，或者点「点选窗口」后点一下那个程序的窗口。</span></li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <section class="sec" id="light" aria-labelledby="h-light">
+    <div class="wrap light">
+      <div>
+        <div class="sec-head">
+          <h2 id="h-light">几乎不占资源</h2>
+          <p>手势引擎用 Rust 写成，直接调用 Windows 接口，没有浏览器内核，也没有运行库。设置界面是单独的进程，用的时候才打开。</p>
+        </div>
+        <dl class="figs">
+          <div><dt>常驻内存</dt><dd>19<small>MB</small></dd><p>实测工作集，私有内存约 10 MB；空闲时不占 CPU。</p></div>
+          <div><dt>下载大小</dt><dd>12.8<small>MB</small></dd><p>一个 exe，放哪都能运行，不写注册表（开机自启除外）。</p></div>
+        </dl>
+      </div>
+      <div class="proc" id="proc" aria-label="进程内存示意">
+        <div class="ph"><span>进程</span><span>内存</span></div>
+        <div class="pr"><span>Mousetroke 手势引擎</span><span class="m" data-mb="19.3">19.3 MB</span><span class="meter"><b data-w="10"></b></span></div>
+        <div class="pr webview"><span>Mousetroke 设置（WebView2）</span><span class="m" data-mb="185">—</span><span class="meter"><b data-w="96"></b></span></div>
+        <div class="pt"><input class="sw" type="checkbox" id="proc-toggle"><label for="proc-toggle">打开设置界面</label></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="sec" id="faq" aria-labelledby="h-faq">
+    <div class="wrap">
+      <div class="sec-head"><h2 id="h-faq">常见问题</h2></div>
+      <div class="faq">
+        <details open><summary>装了 Mousetroke 以后右键菜单还能用吗？</summary><div class="ans"><p>能。只按右键、不拖动时，Mousetroke 会把这次点击原样交还给系统，右键菜单照常弹出。按住不动超过设定时间（默认 0.5 秒，可调）也会当作普通的右键拖拽。</p></div></details>
+        <details><summary>玩游戏或用远程桌面时会误触吗？</summary><div class="ans"><p>全屏的游戏、视频和演示会自动暂停手势。远程桌面、ToDesk、Blender、AutoCAD 等自己要用右键或中键拖动的程序，首次启动时可以一键禁用；也可以随时按 Win+Esc 暂停。</p></div></details>
+        <details><summary>支持哪些 Windows 版本？</summary><div class="ans"><p>Windows 10 1809 及以上和 Windows 11，64 位。手势引擎不依赖任何运行库；设置界面使用 Microsoft Edge WebView2，Windows 11 自带，Windows 10 多数已随 Edge 安装。</p></div></details>
+        <details><summary>Mousetroke 免费吗？</summary><div class="ans"><p>免费，以 MIT 许可证开源，没有广告、账号或联网功能。</p></div></details>
+        <details><summary>占用多少内存和 CPU？</summary><div class="ans"><p>常驻的手势引擎约 19 MB 工作集（私有内存约 10 MB），空闲时不占 CPU。设置界面是单独的进程，打开时才启动，关掉就退出。</p></div></details>
+        <details><summary>能自己定义手势吗？</summary><div class="ans"><p>能。在设置里新建一个手势，用鼠标在编辑面板的画板上画一遍轨迹就记下来了；也可以组合鼠标键、滚轮、键盘键和屏幕边角，并给每个程序单独设置。</p></div></details>
+        <details><summary>配置保存在哪里？怎么备份？</summary><div class="ans"><p>配置在 <code>%APPDATA%\mousetroke\config.json</code>，设置里可以导入和导出。改动保存后约 1 秒内生效，不用重启。</p></div></details>
+        <details><summary>怎么卸载？</summary><div class="ans"><p>在偏好设置里关掉开机自启，右键托盘图标选「退出」，再删除 mousetroke.exe 和 <code>%APPDATA%\mousetroke</code> 文件夹即可，不会留下其他文件。</p></div></details>
+      </div>
+    </div>
+  </section>
+
+  <section class="get" id="download" aria-labelledby="h-get">
+    <canvas aria-hidden="true"></canvas>
+    <div class="wrap">
+      <div>
+        <h2 id="h-get">下载后双击就能用</h2>
+        <p>不用安装。运行后任务栏右下角出现图标，左键打开设置，右键暂停或退出。第一次打开会有一段四步的使用引导。</p>
+      </div>
+      <div>
+        <a class="btn primary" href="download/mousetroke.exe" download>下载 mousetroke.exe <small>12.8 MB · v0.1.0</small></a>
+        <div class="sys">Windows 10 1809+ / 11，64 位</div>
+      </div>
+    </div>
+  </section>
+</main>
+
+<footer>
+  <div class="wrap">
+    <span>Mousetroke · MIT 许可证</span>
+    <nav aria-label="页脚">
+      <a class="cur" href="index.html" hreflang="zh-CN" lang="zh-CN">简体中文</a>
+      <a href="en/index.html" hreflang="en" lang="en">English</a>
+      <a href="es/index.html" hreflang="es" lang="es">español</a>
+      <a href="fr/index.html" hreflang="fr" lang="fr">Français</a>
+      <a href="de/index.html" hreflang="de" lang="de">Deutsch</a>
+      <a href="ja/index.html" hreflang="ja" lang="ja">日本語</a>
+      <a href="pt/index.html" hreflang="pt-BR" lang="pt-BR">Português (Brasil)</a>
+      <a href="ru/index.html" hreflang="ru" lang="ru">Русский</a>
+      <a href="it/index.html" hreflang="it" lang="it">Italiano</a>
+      <a href="ko/index.html" hreflang="ko" lang="ko">한국어</a>
+      <a href="llms.txt">llms.txt</a>
+      <a href="#faq">常见问题</a>
+    </nav>
+  </div>
+</footer>
+
+<script type="application/json" id="demo-text">
+{
+  "pages": [["新闻首页", "news.example/"], ["今日要闻", "news.example/today"], ["深度报道", "news.example/long-read"]],
+  "newTab": ["新标签页", "about:newtab"],
+  "tabs": [["文档", "docs.example/guide"], ["邮件", "mail.example/inbox"]],
+  "miss": "未识别",
+  "copied": "已复制", "pasted": "已粘贴", "searched": "正在搜索选中文字…", "entered": "已按回车", "backspace": "已退格", "deleted": "已删除",
+  "esc": "已取消", "snip": "截图工具已打开", "topmost": "窗口已置顶", "untop": "已取消置顶", "reopen": "窗口已关闭，1 秒后恢复演示",
+  "noBack": "已经是第一页", "noFwd": "没有下一页", "edgeWheel": "贴着边缘滚动滚轮", "edgeRub": "贴着右边上下蹭", "muted": "已静音",
+  "volume": "音量", "brightness": "亮度", "taskmgr": "任务管理器", "start": "开始菜单", "desktop": "显示桌面", "switch": "切换到上一个程序", "tasks": "任务切换器",
+  "pageNext": "下一屏", "pagePrev": "上一屏", "pageTop": "回到顶部", "pageBottom": "跳到底部",
+  "pageHint": "在页面任意位置按住右键画：<b>↓</b> 下一屏，<b>↑</b> 上一屏，<b>←↑</b> 回到顶部",
+  "hintClose": "关闭提示", "dots": "章节导航", "heroDot": "开始"
+}
+</script>
+<script src="assets/site.js" defer></script>
+</body>
+</html>

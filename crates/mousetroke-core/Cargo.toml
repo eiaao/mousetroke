@@ -1,0 +1,13 @@
+[package]
+name = "mousetroke-core"
+description = "Mousetroke 核心：原生配置 schema / 旧格式导入器 / 按键序列语法 / 手势识别"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+
+[dependencies]
+serde = { workspace = true }
+serde_json = { workspace = true }
+
+[build-dependencies]
+serde_json = { workspace = true }

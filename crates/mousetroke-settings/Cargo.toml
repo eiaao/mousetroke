@@ -1,0 +1,32 @@
+[package]
+name = "mousetroke-settings"
+description = "Mousetroke 设置程序（按需打开、关掉即退；读写 config.json，引擎热加载）"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+
+[lib]
+path = "src/lib.rs"
+
+# 开发调试用的独立入口；发布版通过 `mousetroke settings` 启动同一个界面
+[[bin]]
+name = "mousetroke-settings"
+path = "src/main.rs"
+
+[build-dependencies]
+tauri-build = { version = "2.7.3", features = [] }
+
+[dependencies]
+mousetroke-core = { path = "../mousetroke-core" }
+mousetroke-win = { path = "../mousetroke-win" }
+tauri = { version = "2.12.4", features = [] }
+rfd = "0.17.2"
+png = "0.17"
+serde = { workspace = true }
+serde_json = { workspace = true }
+windows = { workspace = true }
+
+[features]
+# 默认内嵌前端产物（ui/dist）。用 Vite 开发服务器调试时以 --no-default-features 构建。
+default = ["custom-protocol"]
+custom-protocol = ["tauri/custom-protocol"]

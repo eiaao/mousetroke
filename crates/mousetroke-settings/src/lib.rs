@@ -1,0 +1,422 @@
+//! Mousetroke 设置程序。
+//!
+//! 独立进程、按需打开、关掉即退（常驻引擎不含 WebView，保持低占用）。
+//! 只读写原生 `config.json`（原子写入），引擎轮询 mtime 热加载——两个进程之间
+//! 没有其他通道。所有配置语义（解析/导入/录制/校验）都复用 mousetroke-core。
+//!
+//! 以库的形式编进 `mousetroke.exe`（`mousetroke settings [配置路径]` 启动本界面进程）：
+//! 只发布一个 exe，但界面仍是独立进程——常驻的引擎进程里没有 WebView。
+
+mod icons;
+mod picker;
+
+use std::collections::BTreeMap;
+use std::path::{Path, PathBuf};
+
+use mousetroke_core::i18n::{keys, t};
+use mousetroke_core::schema::{default_config_path, Config};
+use serde::Serialize;
+use tauri::{Manager, State, WebviewWindow};
+
+/// 后端返回给界面的错误：词条键 + 参数，由前端 `t(key, params)` 翻译。
+/// 切换语言不需要后端参与（docs/I18N-DESIGN.md §3.4）。
+#[derive(Serialize, Clone, Debug)]
+pub struct Msg {
+    pub key: &'static str,
+    pub params: BTreeMap<&'static str, String>,
+}
+
+impl Msg {
+    fn new(key: &'static str, params: &[(&'static str, String)]) -> Self {
+        Self { key, params: params.iter().cloned().collect() }
+    }
+}
+
+type MsgResult<T> = Result<T, Msg>;
+
+/// 当前编辑的配置文件路径（命令行第一个参数，否则默认路径）。
+struct AppPaths {
+    config: PathBuf,
+}
+
+#[derive(Serialize)]
+#[serde(rename_all = "camelCase")]
+struct InitState {
+    config_path: String,
+    /// 文件不存在时为默认配置，`config_exists = false`。
+    config: Config,
+    config_exists: bool,
+    /// 配置文件存在但解析失败时的错误（界面提示并允许重新导入/重置）。
+    load_error: Option<String>,
+    engine: EngineStatus,
+    /// 系统首选界面语言列表（前端在 language = auto 时用；不用 navigator.language，
+    /// WebView2 报告的语言与 Windows 界面语言不一定一致）。
+    system_langs: Vec<String>,
+    /// 后端按配置 + 系统语言解析出的语言标签。
+    resolved_lang: String,
+}
+
+#[derive(Serialize)]
+#[serde(rename_all = "camelCase")]
+struct EngineStatus {
+    running: bool,
+    autostart: bool,
+    /// 同目录下是否有 mousetroke.exe（可从界面启动/设置自启）。
+    exe_found: bool,
+}
+
+
+#[derive(Serialize)]
+struct RunningApp {
+    exe: String,
+    title: String,
+}
+
+/// 引擎 exe：合并版就是自己（`mousetroke.exe`）；开发时单独的设置程序则找同目录的 mousetroke.exe。
+fn engine_exe() -> Option<PathBuf> {
+    let me = std::env::current_exe().ok()?;
+    if !mousetroke_core::matcher::file_name(&me.to_string_lossy()).eq_ignore_ascii_case("mousetroke-settings.exe") {
+        return Some(me);
+    }
+    let p = me.parent()?.join("mousetroke.exe");
+    p.exists().then_some(p)
+}
+
+fn engine_status() -> EngineStatus {
+    EngineStatus {
+        running: mousetroke_win::engine_running(),
+        autostart: mousetroke_win::autostart::is_enabled(),
+        exe_found: engine_exe().is_some(),
+    }
+}
+
+
+fn read_text(path: &Path) -> Result<String, Msg> {
+    std::fs::read_to_string(path).map_err(|e| Msg::new(keys::ERROR_READ_FILE, &[("path", path.display().to_string()), ("err", e.to_string())]))
+}
+
+// ---------------------------------------------------------------- 命令
+
+#[tauri::command]
+fn init_state(paths: State<AppPaths>) -> InitState {
+    use mousetroke_core::i18n;
+    let path = &paths.config;
+    let exists = path.exists();
+    let (config, load_error) = if exists {
+        match Config::load(path) {
+            Ok(c) => (c, None),
+            Err(e) => (Config::default(), Some(e)),
+        }
+    } else {
+        // 首次运行（引擎还没生成配置文件）：展示内置默认手势，保存时写盘
+        (Config::builtin(), None)
+    };
+    let system_langs = mousetroke_win::system_langs();
+    let resolved = i18n::resolve(&config.settings.language, &system_langs);
+    // 后端自己需要的少量文字（窗口标题、点选提示条）也用这个语言
+    i18n::set_lang(resolved);
+    InitState {
+        config_path: path.to_string_lossy().into_owned(),
+        config,
+        config_exists: exists,
+        load_error,
+        engine: engine_status(),
+        system_langs,
+        resolved_lang: resolved.tag().into(),
+    }
+}
+
+/// 界面切换语言后调用：后端 set_lang 并更新窗口标题。
+#[tauri::command]
+fn set_ui_lang(tag: String, window: WebviewWindow) {
+    use mousetroke_core::i18n;
+    if let Some(l) = i18n::Lang::from_tag(&tag) {
+        i18n::set_lang(l);
+    }
+    let _ = window.set_title(i18n::t(i18n::keys::UI_WINDOW_TITLE));
+}
+
+#[tauri::command]
+fn save_config(paths: State<AppPaths>, config: Config) -> MsgResult<()> {
+    config.save(&paths.config).map_err(|e| Msg::new(keys::ERROR_SAVE, &[("path", paths.config.display().to_string()), ("err", e)]))
+}
+
+#[tauri::command]
+fn get_engine_status() -> EngineStatus {
+    engine_status()
+}
+
+/// 校验按键序列语法；返回错误词条（含位置），合法返回 None。
+/// `reason` 参数本身也是一个词条键，由前端翻译。
+#[tauri::command]
+fn validate_keys(keys: String) -> Option<Msg> {
+    mousetroke_core::keyseq::parse(&keys, false).err().map(|e| {
+        let mut params: Vec<(&'static str, String)> = vec![("pos", (e.pos + 1).to_string()), ("reason", e.key.to_string())];
+        params.extend(e.params);
+        Msg::new(mousetroke_core::i18n::keys::KEYSEQ_ERROR_NEAR, &params)
+    })
+}
+
+/// 录制器：画布上的原始点 → trace 点编码。`grid` 为画布上的一格像素数。
+#[tauri::command]
+fn record_trace(points: Vec<(f64, f64)>, grid: f64) -> Vec<i32> {
+    mousetroke_core::recognizer::record_points(&points, grid)
+}
+
+#[tauri::command]
+fn import_legacy(gestures: String, prefs: Option<String>) -> MsgResult<Config> {
+    let g = read_text(Path::new(&gestures))?;
+    // prefs.json 可选：不存在时只导入手势
+    let p = match prefs.filter(|p| !p.is_empty() && Path::new(p).exists()) {
+        Some(p) => Some(read_text(Path::new(&p))?),
+        None => None,
+    };
+    mousetroke_core::legacy::import(&g, p.as_deref())
+        .map_err(|e| Msg::new(keys::ERROR_PARSE, &[("err", e)]))
+}
+
+#[tauri::command]
+fn load_config_file(path: String) -> MsgResult<Config> {
+    Config::load(Path::new(&path))
+        .map_err(|e| Msg::new(keys::ERROR_PARSE, &[("err", e)]))
+}
+
+#[tauri::command]
+fn export_config(path: String, config: Config) -> MsgResult<()> {
+    config.save(Path::new(&path)).map_err(|e| Msg::new(keys::ERROR_SAVE, &[("path", path), ("err", e)]))
+}
+
+/// 文件选择。`kind`：json | exe | any；`save` 为 true 时是保存对话框。
+#[tauri::command]
+async fn pick_file(window: WebviewWindow, kind: String, save: bool, title: String) -> Option<String> {
+    let mut d = rfd::FileDialog::new().set_title(&title).set_parent(&window);
+    d = match kind.as_str() {
+        "json" => d.add_filter(t(keys::UI_PICKER_FILTER_JSON), &["json"]),
+        "exe" => d.add_filter(t(keys::UI_PICKER_FILTER_PROGRAM), &["exe", "lnk", "bat", "cmd"]),
+        _ => d,
+    };
+    let picked = if save { d.set_file_name("mousetroke-config.json").save_file() } else { d.pick_file() };
+    picked.map(|p| p.to_string_lossy().into_owned())
+}
+
+#[tauri::command]
+fn running_apps() -> Vec<RunningApp> {
+    let mut apps: Vec<RunningApp> = mousetroke_win::targeting::running_apps()
+        .into_iter()
+        .map(|(exe, title)| RunningApp { exe, title })
+        .collect();
+    apps.sort_by_key(|a| mousetroke_core::matcher::file_name(&a.exe).to_lowercase());
+    apps
+}
+
+/// 一批程序的图标（data URL；取不到为 null）。在线程池里跑，不卡界面。
+#[tauri::command(async)]
+fn app_icons(exes: Vec<String>) -> std::collections::HashMap<String, Option<String>> {
+    exes.into_iter().map(|e| {
+        let icon = icons::icon_data_url(&e);
+        (e, icon)
+    }).collect()
+}
+
+/// 字段保持 snake_case（与 types.ts 的 PresetApp、作用域的 name_key 一致）。
+#[derive(Serialize)]
+struct PresetApp {
+    exe: String,
+    /// 后端当前语言的显示名（回落用；界面按 name_key 自己翻译）。
+    name: String,
+    /// 显示名词条键（preset.app.*）：添加程序时写入作用域的 name_key。
+    name_key: String,
+    /// 后端当前语言的类别名（回落用）。
+    category: String,
+    /// 类别词条键（preset.category.*）。
+    category_key: String,
+    /// 在这台电脑上找到的完整路径（没找到为 null）。
+    path: Option<String>,
+}
+
+/// 内置的"建议禁用手势"程序，并标出本机已安装的。
+#[tauri::command(async)]
+fn preset_apps() -> Vec<PresetApp> {
+    use mousetroke_core::i18n::t;
+    mousetroke_core::presets::DISABLE_SUGGESTIONS
+        .iter()
+        .map(|(exe, name_key, category)| PresetApp {
+            exe: exe.to_string(),
+            name: t(name_key).to_string(),
+            name_key: name_key.to_string(),
+            category: t(category.key()).to_string(),
+            category_key: category.key().to_string(),
+            path: icons::resolve_exe(exe).map(|p| p.to_string_lossy().into_owned()),
+        })
+        .collect()
+}
+
+#[derive(Serialize)]
+#[serde(rename_all = "camelCase")]
+struct AppInfo {
+    version: String,
+    exe_path: String,
+    config_path: String,
+    log_path: String,
+}
+
+/// 关于页：版本与文件位置。
+#[tauri::command]
+fn app_info(paths: State<AppPaths>) -> AppInfo {
+    AppInfo {
+        version: env!("CARGO_PKG_VERSION").into(),
+        exe_path: engine_exe().map(|p| p.to_string_lossy().into_owned()).unwrap_or_default(),
+        config_path: paths.config.to_string_lossy().into_owned(),
+        log_path: mousetroke_win::log::path().to_string_lossy().into_owned(),
+    }
+}
+
+/// 用默认程序打开日志（`log`）或在资源管理器中打开配置所在文件夹（`config_dir`）。
+#[tauri::command]
+fn open_path(what: String, paths: State<AppPaths>) -> MsgResult<()> {
+    match what.as_str() {
+        "log" => {
+            let log = mousetroke_win::log::path();
+            if !log.exists() {
+                return Err(Msg::new(keys::ERROR_NO_LOG_YET, &[]));
+            }
+            mousetroke_win::input::shell_execute("open", &log.to_string_lossy(), "");
+        }
+        "config_dir" => {
+            let dir = paths.config.parent().map(Path::to_path_buf).unwrap_or_default();
+            let _ = std::process::Command::new(mousetroke_win::input::system_exe("explorer.exe")).arg(dir).spawn();
+        }
+        _ => return Err(Msg::new(keys::ERROR_UNKNOWN_LOCATION, &[("what", what)])),
+    }
+    Ok(())
+}
+
+/// 拖入的文件 → 程序完整路径（.exe / 指向 exe 的 .lnk）。
+#[tauri::command]
+fn resolve_app(path: String) -> MsgResult<String> {
+    picker::resolve_app(&path)
+}
+
+/// 在屏幕上点选一个窗口，返回它的程序。点选期间设置窗口先最小化让开，结束后还原。
+#[tauri::command(async)]
+fn pick_window(window: WebviewWindow) -> MsgResult<Option<picker::PickedApp>> {
+    let _ = window.minimize();
+    std::thread::sleep(std::time::Duration::from_millis(250)); // 等最小化动画让开
+    let picked = picker::pick_window();
+    let _ = window.unminimize();
+    let _ = window.set_focus();
+    picked
+}
+
+#[tauri::command]
+fn set_autostart(on: bool) -> MsgResult<EngineStatus> {
+    let exe = engine_exe().ok_or_else(|| Msg::new(keys::ERROR_ENGINE_NOT_FOUND, &[]))?;
+    mousetroke_win::autostart::set_for(on, &exe.to_string_lossy())
+        .map_err(|e| Msg::new(keys::ERROR_AUTOSTART, &[("err", e)]))?;
+    Ok(engine_status())
+}
+
+#[tauri::command]
+fn start_engine(paths: State<AppPaths>) -> MsgResult<EngineStatus> {
+    let exe = engine_exe().ok_or_else(|| Msg::new(keys::ERROR_ENGINE_NOT_FOUND, &[]))?;
+    std::process::Command::new(exe)
+        .arg("run")
+        .arg("--config")
+        .arg(&paths.config)
+        .spawn()
+        .map_err(|e| Msg::new(keys::ERROR_START_ENGINE, &[("err", e.to_string())]))?;
+    // 给引擎一点时间创建单实例互斥体
+    for _ in 0..20 {
+        std::thread::sleep(std::time::Duration::from_millis(50));
+        if mousetroke_win::engine_running() {
+            break;
+        }
+    }
+    Ok(engine_status())
+}
+
+/// 在资源管理器中显示配置文件。
+#[tauri::command]
+fn reveal_config(paths: State<AppPaths>) {
+    let arg = format!("/select,\"{}\"", paths.config.display());
+    mousetroke_win::input::shell_execute("open", &mousetroke_win::input::system_exe("explorer.exe").to_string_lossy(), &arg);
+}
+
+// ---------------------------------------------------------------- 单实例
+
+/// 设置窗口已开着 → 把它带到前台并退出本进程。
+/// 标题可能已被切换成其他语言，把已知的都找一遍。
+fn focus_existing() -> bool {
+    use windows::core::PCWSTR;
+    use windows::Win32::System::Threading::CreateMutexW;
+    use windows::Win32::UI::WindowsAndMessaging::{FindWindowW, IsIconic, SetForegroundWindow, ShowWindow, SW_RESTORE};
+    let name: Vec<u16> = "Mousetroke::settings".encode_utf16().chain([0]).collect();
+    unsafe {
+        let _ = CreateMutexW(None, false, PCWSTR(name.as_ptr()));
+        if windows::Win32::Foundation::GetLastError() != windows::Win32::Foundation::ERROR_ALREADY_EXISTS {
+            return false;
+        }
+        for title in ["Mousetroke 设置", "Mousetroke Settings", t(keys::UI_WINDOW_TITLE)] { /* i18n:allow 已知语言的窗口标题兜底匹配 */
+            let wide: Vec<u16> = title.encode_utf16().chain([0]).collect();
+            if let Ok(h) = FindWindowW(PCWSTR::null(), PCWSTR(wide.as_ptr())) {
+                if IsIconic(h).as_bool() {
+                    let _ = ShowWindow(h, SW_RESTORE);
+                }
+                let _ = SetForegroundWindow(h);
+                break;
+            }
+        }
+    }
+    true
+}
+
+/// 运行设置界面（阻塞到窗口关闭）。`config` 缺省为默认配置路径。已有设置窗口时把它带到前台后返回。
+pub fn run(config: Option<PathBuf>) {
+    // 启动时按配置确定语言：focus_existing 找窗口、托盘/气泡等少量原生文字都依赖它
+    let config = config.unwrap_or_else(default_config_path);
+    let langs = mousetroke_win::system_langs();
+    let lang = Config::load(&config)
+        .map(|c| mousetroke_core::i18n::resolve(&c.settings.language, &langs))
+        .unwrap_or_else(|_| mousetroke_core::i18n::resolve("auto", &langs));
+    mousetroke_core::i18n::set_lang(lang);
+    if focus_existing() {
+        return;
+    }
+    tauri::Builder::default()
+        .manage(AppPaths { config })
+        .invoke_handler(tauri::generate_handler![
+            init_state,
+            save_config,
+            get_engine_status,
+            set_ui_lang,
+            validate_keys,
+            record_trace,
+            import_legacy,
+            load_config_file,
+            export_config,
+            pick_file,
+            running_apps,
+            app_icons,
+            resolve_app,
+            preset_apps,
+            app_info,
+            open_path,
+            pick_window,
+            set_autostart,
+            start_engine,
+            reveal_config,
+        ])
+        .setup(|app| {
+            // 窗口标题在显示前就按当前语言设好（tauri.conf.json 里是中文占位，
+            // 前端 init 后的 set_ui_lang 才来不及闪）；兜底：1.5s 后仍未显示则强制显示，避免"打不开"
+            let w = app.get_webview_window("main").expect("main 窗口"); // i18n:allow 内部断言
+            let _ = w.set_title(t(keys::UI_WINDOW_TITLE));
+            std::thread::spawn(move || {
+                std::thread::sleep(std::time::Duration::from_millis(1500));
+                let _ = w.show();
+            });
+            Ok(())
+        })
+        .run(tauri::generate_context!())
+        .expect("设置程序启动失败"); // i18n:allow 内部断言
+}

@@ -1,0 +1,410 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<script>document.documentElement.classList.add("js")</script>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Mousetroke: gestos de ratón gratis para Windows</title>
+<meta name="description" content="Gestos de ratón gratuitos y de código abierto para Windows 10 y 11. Mantén el botón derecho y dibuja para ir atrás o cerrar una pestaña; empuja hacia una esquina de la pantalla para el volumen. Unos 19 MB en memoria.">
+<meta name="keywords" content="gestos de ratón,gestos de ratón Windows,software de gestos de ratón,esquinas activas,bordes de pantalla,gestos de clic derecho,productividad,Mousetroke">
+<link rel="canonical" href="https://mousetroke.example/es/">
+<link rel="alternate" hreflang="zh-CN" href="https://mousetroke.example/">
+<link rel="alternate" hreflang="en" href="https://mousetroke.example/en/">
+<link rel="alternate" hreflang="es" href="https://mousetroke.example/es/">
+<link rel="alternate" hreflang="fr" href="https://mousetroke.example/fr/">
+<link rel="alternate" hreflang="de" href="https://mousetroke.example/de/">
+<link rel="alternate" hreflang="ja" href="https://mousetroke.example/ja/">
+<link rel="alternate" hreflang="pt-BR" href="https://mousetroke.example/pt/">
+<link rel="alternate" hreflang="ru" href="https://mousetroke.example/ru/">
+<link rel="alternate" hreflang="it" href="https://mousetroke.example/it/">
+<link rel="alternate" hreflang="ko" href="https://mousetroke.example/ko/">
+<link rel="alternate" hreflang="x-default" href="https://mousetroke.example/en/">
+<link rel="alternate" type="text/markdown" title="LLM summary" href="../llms.txt">
+<link rel="icon" href="../assets/icon.svg" type="image/svg+xml">
+<meta name="theme-color" content="#e9edf2" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#0f141c" media="(prefers-color-scheme: dark)">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Mousetroke">
+<meta property="og:locale" content="es_ES">
+<meta property="og:locale:alternate" content="zh_CN">
+<meta property="og:locale:alternate" content="es_ES">
+<meta property="og:locale:alternate" content="fr_FR">
+<meta property="og:locale:alternate" content="de_DE">
+<meta property="og:locale:alternate" content="ja_JP">
+<meta property="og:locale:alternate" content="pt_BR">
+<meta property="og:locale:alternate" content="ru_RU">
+<meta property="og:locale:alternate" content="it_IT">
+<meta property="og:locale:alternate" content="ko_KR">
+<meta property="og:title" content="Mousetroke: mantén el clic derecho, dibuja una línea">
+<meta property="og:description" content="Gestos de ratón gratuitos y de código abierto para Windows. Dibuja para ir atrás o cerrar una pestaña; empuja hacia una esquina para cambiar el volumen. Unos 19 MB en memoria.">
+<meta property="og:url" content="https://mousetroke.example/es/">
+<meta property="og:image" content="https://mousetroke.example/og-en.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Schibsted+Grotesk:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../assets/site.css">
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@graph": [
+    {
+      "@type": "SoftwareApplication",
+      "@id": "https://mousetroke.example/#app",
+      "name": "Mousetroke",
+      "description": "Gestos de ratón globales para Windows: mantén pulsado el botón derecho, central o lateral y dibuja para ejecutar una acción; empuja el cursor hacia una esquina o borde de la pantalla para disparar acciones; define gestos por aplicación o desactívalos por completo en aplicaciones concretas.",
+      "applicationCategory": "UtilitiesApplication",
+      "applicationSubCategory": "Gestos de ratón",
+      "operatingSystem": "Windows 10 1809+, Windows 11 (x64)",
+      "softwareVersion": "0.1.0",
+      "fileSize": "12.8 MB",
+      "memoryRequirements": "Unos 19 MB de memoria residente",
+      "softwareRequirements": "Microsoft Edge WebView2 (solo la ventana de ajustes; incluido en Windows 11)",
+      "license": "https://opensource.org/licenses/MIT",
+      "isAccessibleForFree": true,
+      "inLanguage": ["en", "zh-CN", "es", "fr", "de", "ja", "pt-BR", "ru", "it", "ko"],
+      "downloadUrl": "https://mousetroke.example/download/mousetroke.exe",
+      "url": "https://mousetroke.example/es/",
+      "image": "https://mousetroke.example/og-en.png",
+      "offers": { "@type": "Offer", "price": "0", "priceCurrency": "USD" },
+      "featureList": [
+        "Gestos con el botón derecho, central o lateral, con el nombre del gesto visible mientras dibujas",
+        "Unos 50 gestos integrados: atrás, adelante, cerrar pestaña, copiar y pegar, minimizar, siempre encima y más",
+        "Esquinas y bordes de pantalla: menú Inicio, mostrar escritorio, rueda para el volumen, rueda para el brillo (DDC/CI en monitores externos)",
+        "Ocho tipos de acción: enviar teclas, acciones de ventana, abrir una aplicación, abrir una URL, ejecutar un comando, medios y sistema, mostrar un menú, script de Lua",
+        "Gestos por aplicación, o desactivados por completo en las aplicaciones que elijas",
+        "Se pausa solo en juegos, vídeos y presentaciones a pantalla completa; Win+Esc pausa en cualquier momento",
+        "Unos 19 MB de memoria residente; un exe portable único",
+        "Interfaz en diez idiomas"
+      ]
+    },
+    {
+      "@type": "WebSite",
+      "@id": "https://mousetroke.example/es/#site",
+      "name": "Mousetroke",
+      "url": "https://mousetroke.example/es/",
+      "inLanguage": "es"
+    },
+    {
+      "@type": "FAQPage",
+      "mainEntity": [
+        { "@type": "Question", "name": "Does the right-click menu still work with Mousetroke?", "acceptedAnswer": { "@type": "Answer", "text": "Yes. A right-click without dragging is passed back to Windows unchanged, so the context menu opens as usual. Holding still past the drag timeout (0.5 seconds by default, adjustable) also becomes a normal right-drag." } },
+        { "@type": "Question", "name": "Will it misfire in games or remote desktop?", "acceptedAnswer": { "@type": "Answer", "text": "Fullscreen games, video and presentations pause gestures automatically. Programs that need right- or middle-drag themselves, such as Remote Desktop, AnyDesk, Blender or AutoCAD, can be excluded in one click on first run. Win+Esc pauses at any time." } },
+        { "@type": "Question", "name": "Which versions of Windows are supported?", "acceptedAnswer": { "@type": "Answer", "text": "Windows 10 1809 or later and Windows 11, 64-bit. The gesture engine has no runtime dependencies; the settings window uses Microsoft Edge WebView2, which ships with Windows 11 and comes with Edge on most Windows 10 PCs." } },
+        { "@type": "Question", "name": "Is Mousetroke free?", "acceptedAnswer": { "@type": "Answer", "text": "Yes. It is open source under the MIT license, with no ads, no account and no network access." } },
+        { "@type": "Question", "name": "How much memory and CPU does it use?", "acceptedAnswer": { "@type": "Answer", "text": "The resident gesture engine uses about 19 MB working set (about 10 MB private) and no CPU when idle. The settings window is a separate process that only runs while it is open." } },
+        { "@type": "Question", "name": "Can I make my own gestures?", "acceptedAnswer": { "@type": "Answer", "text": "Yes. Create a gesture in settings and draw it once on the pad in the editor. You can also combine mouse buttons, the wheel, keyboard keys and screen edges, and set gestures separately for each app." } },
+        { "@type": "Question", "name": "Where are the settings stored, and how do I back them up?", "acceptedAnswer": { "@type": "Answer", "text": "In %APPDATA%\\mousetroke\\config.json. Settings has import and export. Saved changes take effect within about a second, without a restart." } },
+        { "@type": "Question", "name": "How do I uninstall it?", "acceptedAnswer": { "@type": "Answer", "text": "Turn off start with Windows in preferences, choose Quit from the tray icon menu, then delete mousetroke.exe and the %APPDATA%\\mousetroke folder. Nothing else is left behind." } }
+      ]
+    }
+  ]
+}
+</script>
+</head>
+<body>
+<a class="skip" href="#main">Saltar al contenido</a>
+
+<header class="top">
+  <div class="wrap">
+    <a class="brand" href="index.html" aria-label="Mousetroke home">
+      <svg width="28" height="28" viewBox="0 0 32 32" aria-hidden="true"><rect width="32" height="32" rx="8" fill="#0098d9"/><polyline points="7,11 13.5,21 19,13 25,21" fill="none" stroke="#fff" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      Mousetroke
+    </a>
+    <nav class="nav" aria-label="Secciones">
+      <a href="#gestures">Gestos</a>
+      <a href="#edges">Esquinas</a>
+      <a href="#actions">Acciones</a>
+      <a href="#quiet">No molesta</a>
+      <a href="#faq">Preguntas</a>
+    </nav>
+    <details class="langmenu">
+      <summary aria-label="Idioma">español ▾</summary>
+      <div class="langdrop">
+        <a href="../index.html" hreflang="zh-CN" lang="zh-CN">简体中文</a>
+        <a href="../en/index.html" hreflang="en" lang="en">English</a>
+        <a class="cur" href="index.html" hreflang="es" lang="es">español</a>
+        <a href="../fr/index.html" hreflang="fr" lang="fr">Français</a>
+        <a href="../de/index.html" hreflang="de" lang="de">Deutsch</a>
+        <a href="../ja/index.html" hreflang="ja" lang="ja">日本語</a>
+        <a href="../pt/index.html" hreflang="pt-BR" lang="pt-BR">Português (Brasil)</a>
+        <a href="../ru/index.html" hreflang="ru" lang="ru">Русский</a>
+        <a href="../it/index.html" hreflang="it" lang="it">Italiano</a>
+        <a href="../ko/index.html" hreflang="ko" lang="ko">한국어</a>
+      </div>
+    </details>
+    <a class="btn small primary" href="#download">Descargar</a>
+  </div>
+</header>
+
+<main id="main">
+  <section class="hero" aria-labelledby="h-hero">
+    <div class="wrap hero-grid">
+      <div>
+        <h1 id="h-hero">Mantén el clic derecho.<br>Dibuja una línea.</h1>
+        <p class="lede">Mousetroke añade gestos de ratón a todas las ventanas de Windows. Mantén pulsado el botón derecho y arrastra: <b>←</b> va atrás, <b>↓→</b> cierra la pestaña, <b>↙</b> minimiza la ventana. Un clic derecho normal sigue abriendo el menú.</p>
+        <div class="cta">
+          <a class="btn primary" href="#download">Descargar para Windows <small>12.8 MB</small></a>
+          <a class="btn" href="#gestures">Ver los gestos</a>
+        </div>
+        <ul class="meta">
+          <li>Gratis y de código abierto (MIT)</li>
+          <li>Windows 10 / 11</li>
+          <li>Unos 19 MB en memoria</li>
+        </ul>
+      </div>
+
+      <div>
+        <div class="stage" id="stage" role="application" aria-label="Demo de gestos: mantén el botón derecho o izquierdo y arrastra en esta zona; el navegador simulado responde" aria-describedby="stage-desc">
+          <p class="vh" id="stage-desc">En la zona de demo, dibuja ← para atrás, → para adelante, →↓ para una pestaña nueva, ↓→ para cerrar la pestaña, ←↑→ para actualizar, ↙ para minimizar, ↗ para maximizar. Los botones de abajo reproducen cada gesto.</p>
+          <div class="hint">Mantén el botón derecho y arrastra aquí (o usa un dedo)</div>
+          <div class="browser" id="browser" aria-hidden="true">
+            <div class="tabs"></div>
+            <div class="addr"><span class="nb"><i data-n="back">‹</i><i data-n="fwd">›</i><i data-n="reload">↻</i></span><span class="url"></span></div>
+            <div class="view"></div>
+          </div>
+          <div class="taskbar" aria-hidden="true"><i></i><i class="app"></i><i></i><i></i></div>
+          <div class="toast" aria-hidden="true"></div>
+          <div class="gpill" aria-live="polite"><span class="arrows"></span><span class="name"></span></div>
+          <canvas></canvas>
+        </div>
+        <ul class="try" aria-label="Haz clic para reproducir un gesto">
+          <li><button type="button" data-play="50,0,0,0"><b>←</b>Atrás</button></li>
+          <li><button type="button" data-play="0,0,50,0"><b>→</b>Adelante</button></li>
+          <li><button type="button" data-play="0,0,50,0,50,50"><b>→↓</b>Pestaña nueva</button></li>
+          <li><button type="button" data-play="0,0,0,50,50,50"><b>↓→</b>Cerrar pestaña</button></li>
+          <li><button type="button" data-play="50,50,0,50,0,0,50,0"><b>←↑→</b>Actualizar</button></li>
+          <li><button type="button" data-play="50,0,0,50"><b>↙</b>Minimizar</button></li>
+          <li><button type="button" data-play="0,50,50,0"><b>↗</b>Maximizar</button></li>
+        </ul>
+      </div>
+    </div>
+    <a class="cue" href="#gestures"><span class="cue-ico"><svg width="22" height="34" viewBox="0 0 22 34" aria-hidden="true"><rect x="1" y="1" width="20" height="32" rx="10" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M11 1v12M1 13h20" stroke="currentColor" stroke-width="1.6"/><path class="rb" d="M11.8 1.8h0a8.6 8.6 0 0 1 8.4 8.4V12.2H11.8Z"/></svg><svg class="cue-trail" width="14" height="40" viewBox="0 0 14 40" aria-hidden="true"><path pathLength="1" d="M7 2V36M2 31l5 5 5-5"/></svg></span><span>Baja, o mantén el clic derecho y dibuja hacia abajo</span></a>
+  </section>
+
+  <section class="sec" id="gestures" aria-labelledby="h-gestures">
+    <div class="wrap">
+      <div class="sec-head">
+        <h2 id="h-gestures">Dibuja esto, consigue aquello</h2>
+        <p>Viene con unos cincuenta gestos que cubren navegación, edición y gestión de ventanas. Cámbialos, desactívalos o elimina cualquiera, o dibuja uno nuevo una sola vez en los ajustes para registrarlo.</p>
+      </div>
+      <div class="sheet">
+        <div>
+          <h3>Navegación</h3>
+          <ul>
+            <li data-p="50,0,0,0" data-act="back"><span class="glyph"></span><span class="nm">Atrás<small>En navegadores y el Explorador de archivos</small></span><span class="ar">←</span></li>
+            <li data-p="0,0,50,0" data-act="forward"><span class="glyph"></span><span class="nm">Adelante</span><span class="ar">→</span></li>
+            <li data-p="0,0,50,0,50,50" data-act="newtab"><span class="glyph"></span><span class="nm">Pestaña nueva</span><span class="ar">→↓</span></li>
+            <li data-p="0,0,0,50,50,50" data-act="closetab"><span class="glyph"></span><span class="nm">Cerrar pestaña</span><span class="ar">↓→</span></li>
+            <li data-p="0,0,50,0,50,50" data-mod="left"><span class="glyph"></span><span class="nm">Reabrir pestaña cerrada<small>Clic izquierdo al final</small></span><span class="ar">→↓ + <kbd>Left</kbd></span></li>
+            <li data-p="50,50,0,50,0,0,50,0" data-act="refresh"><span class="glyph"></span><span class="nm">Actualizar</span><span class="ar">←↑→</span></li>
+            <li data-p="50,50,50,0,0,0" data-act="prevtab"><span class="glyph"></span><span class="nm">Pestaña anterior<small>O mantiene derecho y rueda</small></span><span class="ar">↑←</span></li>
+            <li data-p="0,50,0,0,50,0" data-act="nexttab"><span class="glyph"></span><span class="nm">Pestaña siguiente</span><span class="ar">↑→</span></li>
+            <li data-p="50,50,0,50,0,0" data-act="top"><span class="glyph"></span><span class="nm">Ir arriba</span><span class="ar">←↑</span></li>
+            <li data-p="50,0,0,0,0,50" data-act="bottom"><span class="glyph"></span><span class="nm">Ir abajo</span><span class="ar">←↓</span></li>
+          </ul>
+        </div>
+        <div>
+          <h3>Edición</h3>
+          <ul>
+            <li data-p="0,50,0,0" data-act="copy"><span class="glyph"></span><span class="nm">Copiar</span><span class="ar">↑</span></li>
+            <li data-p="0,0,0,50" data-act="paste"><span class="glyph"></span><span class="nm">Pegar</span><span class="ar">↓</span></li>
+            <li data-p="0,50,0,0" data-mod="left"><span class="glyph"></span><span class="nm">Cortar</span><span class="ar">↑ + <kbd>Left</kbd></span></li>
+            <li data-p="0,0,0,50" data-mod="left"><span class="glyph"></span><span class="nm">Pegar e Intro</span><span class="ar">↓ + <kbd>Left</kbd></span></li>
+            <li data-p="0,50,0,0,0,50" data-act="search"><span class="glyph"></span><span class="nm">Búsqueda web<small>Busca el texto seleccionado</small></span><span class="ar">↑↓</span></li>
+            <li data-p="0,0,0,50,50,50,50,100" data-act="enter"><span class="glyph"></span><span class="nm">Intro</span><span class="ar">↓→↓</span></li>
+            <li data-p="50,0,0,0,50,0" data-act="backspace"><span class="glyph"></span><span class="nm">Retroceso</span><span class="ar">←→</span></li>
+            <li data-p="0,0,50,0,0,0" data-act="delete"><span class="glyph"></span><span class="nm">Suprimir</span><span class="ar">→←</span></li>
+            <li data-p="0,50,50,50,50,0,0,0" data-act="esc"><span class="glyph"></span><span class="nm">Cancelar (Esc)</span><span class="ar">→↑←</span></li>
+            <li data-p="0,50,0,0,50,0,50,50,0,50" data-act="snip"><span class="glyph"></span><span class="nm">Recorte<small>Dibuja un cuadrado</small></span><span class="ar">↑→↓←</span></li>
+          </ul>
+        </div>
+        <div>
+          <h3>Ventanas y multimedia</h3>
+          <ul>
+            <li data-p="50,0,0,50" data-act="minimize"><span class="glyph"></span><span class="nm">Minimizar</span><span class="ar">↙</span></li>
+            <li data-p="0,50,50,0" data-act="maximize"><span class="glyph"></span><span class="nm">Maximizar / restaurar</span><span class="ar">↗</span></li>
+            <li data-p="0,50,50,0" data-mod="left"><span class="glyph"></span><span class="nm">Pantalla completa</span><span class="ar">↗ + <kbd>Left</kbd></span></li>
+            <li data-p="50,0,50,50,0,50" data-act="closewin"><span class="glyph"></span><span class="nm">Cerrar ventana</span><span class="ar">↓←</span></li>
+            <li data-p="50,0,50,50,0,50" data-mod="left"><span class="glyph"></span><span class="nm">Terminar proceso<small>Para un programa colgado</small></span><span class="ar">↓← + <kbd>Left</kbd></span></li>
+            <li data-p="0,100,0,50,50,50,50,0" data-act="topmost"><span class="glyph"></span><span class="nm">Siempre encima</span><span class="ar">↑→↑</span></li>
+            <li data-p="0,50,0,0" data-mod="wheel"><span class="glyph"></span><span class="nm">Acercar / alejar</span><span class="ar">↑ + <kbd>Wheel</kbd></span></li>
+            <li data-p="0,0,50,0" data-btn="middle"><span class="glyph"></span><span class="nm">Pista siguiente<small>Botón central pulsado</small></span><span class="ar"><kbd>Middle</kbd> →</span></li>
+            <li data-p="50,0,0,0" data-btn="middle"><span class="glyph"></span><span class="nm">Pista anterior</span><span class="ar"><kbd>Middle</kbd> ←</span></li>
+            <li data-p="0,0,50,0" data-btn="x1"><span class="glyph"></span><span class="nm">Escritorio siguiente<small>Botón lateral pulsado</small></span><span class="ar"><kbd>Side</kbd> →</span></li>
+          </ul>
+        </div>
+      </div>
+      <p class="note">Mientras dibujas, el nombre del gesto aparece en la parte baja de la pantalla; lo que no reconoce no hace nada. El mismo gesto puede hacer cosas distintas en el Explorador de archivos, el terminal y el escritorio.</p>
+    </div>
+  </section>
+
+  <section class="sec" id="edges" aria-labelledby="h-edges">
+    <div class="wrap">
+      <div class="sec-head">
+        <h2 id="h-edges">Empuja hacia una esquina</h2>
+        <p>Sin botones: empuja el cursor hacia una esquina, o a lo largo de un borde y luego rueda, clic central o frota arriba y abajo. Una esquina vuelve a dispararse solo cuando la abandonas, para no repetirse por accidente.</p>
+      </div>
+      <div class="edges">
+        <div class="monitor">
+          <div class="screen" id="screen" aria-label="Pantalla simulada: mueve el cursor a sus esquinas o bordes" role="img">
+            <div class="win w1"></div><div class="win w2"></div>
+            <div class="start"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div>
+            <div class="tm"><b>Administrador de tareas</b><div class="bar" style="width:80%"></div><div class="bar" style="width:46%"></div><div class="bar" style="width:62%"></div></div>
+            <div class="osd" data-osd="vol"><span>🔊</span><span class="lvl"><b style="width:50%"></b></span><span class="v">50</span></div>
+            <div class="osd bottom" data-osd="bri"><span>☀</span><span class="lvl"><b style="width:70%"></b></span><span class="v">70</span></div>
+            <div class="dim"></div>
+            <div class="tbar"><i></i><i></i><i></i><i></i></div>
+            <i class="glow e1"></i><i class="glow e2"></i><i class="glow e4"></i><i class="glow e8"></i>
+            <i class="glow c c3"></i><i class="glow c c6"></i><i class="glow c c9"></i><i class="glow c c12"></i>
+            <div class="label"></div>
+          </div>
+        </div>
+        <ul class="rules" aria-label="Reglas predeterminadas de esquinas y bordes; haz clic en una para verla">
+          <li><button type="button" data-edge="12"><span class="where">Abajo a la izquierda</span><span class="what">Menú Inicio</span></button></li>
+          <li><button type="button" data-edge="6"><span class="where">Abajo a la derecha</span><span class="what">Mostrar escritorio</span></button></li>
+          <li><button type="button" data-edge="9"><span class="where">Arriba a la izquierda</span><span class="what">Cambiar a la aplicación anterior</span></button></li>
+          <li><button type="button" data-edge="3"><span class="where">Arriba a la derecha</span><span class="what">Selector de tareas</span></button></li>
+          <li><button type="button" data-edge="1" data-with="wheel"><span class="where">Borde superior</span><span class="what">Rueda para el volumen<small>El clic central silencia; el derecho reproduce / pausa</small></span></button></li>
+          <li><button type="button" data-edge="4" data-with="wheel"><span class="where">Borde inferior</span><span class="what">Rueda para el brillo<small>DDC/CI en monitores externos y también en portátiles</small></span></button></li>
+          <li><button type="button" data-edge="2" data-with="rub"><span class="where">Borde derecho</span><span class="what">Frota arriba y abajo para el Administrador de tareas</span></button></li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <section class="sec" id="actions" aria-labelledby="h-actions">
+    <div class="wrap">
+      <div class="sec-head">
+        <h2 id="h-actions">Más que atajos</h2>
+        <p>Cada gesto ejecuta uno de ocho tipos de acción. Las acciones admiten variables: <code>%MS_SELECTED_TEXT%</code> es el texto seleccionado y <code>%MS_PID%</code> es el proceso bajo el cursor.</p>
+      </div>
+      <dl class="acts">
+        <div><span class="ico" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="2.5" y="6" width="19" height="12" rx="2.5"/><path d="M6.5 10h.01M10 10h.01M13.5 10h.01M17 10h.01M7.5 14h9"/></svg></span><dt>Enviar teclas</dt><dd>Cualquier atajo o secuencia de teclas, como <code>Ctrl+Shift+T</code>.</dd></div>
+        <div><span class="ico" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="16" rx="2.5"/><path d="M3 9h18"/></svg></span><dt>Acciones de ventana</dt><dd>Minimizar, maximizar, mantener encima, cerrar o terminar la ventana bajo el cursor o la activa.</dd></div>
+        <div><span class="ico" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M5 19 19 5M9 5h10v10"/></svg></span><dt>Abrir una aplicación</dt><dd>Lanza cualquier programa o archivo con argumentos, como <code>notepad.exe</code>.</dd></div>
+        <div><span class="ico" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c2.8 3 2.8 15 0 18M12 3c-2.8 3-2.8 15 0 18"/></svg></span><dt>Abrir una URL</dt><dd>En el navegador predeterminado, opcionalmente con el texto seleccionado: <code>https://www.bing.com/search?q=%MS_SELECTED_TEXT%</code></dd></div>
+        <div><span class="ico" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="m5 8 4 4-4 4M12 17h7"/></svg></span><dt>Ejecutar un comando</dt><dd>Cualquier línea de comandos, como <code>taskkill /F /PID %MS_PID%</code>.</dd></div>
+        <div><span class="ico" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 10v4h4l5 4V6L8 10H4ZM16.5 9a4 4 0 0 1 0 6"/></svg></span><dt>Medios y sistema</dt><dd>Volumen, silencio, reproducción / pausa, pista anterior / siguiente, brillo de pantalla.</dd></div>
+        <div><span class="ico" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="4" width="16" height="16" rx="2.5"/><path d="M8 9h8M8 12h8M8 15h5"/></svg></span><dt>Mostrar un menú</dt><dd>Un gesto abre un menú de acciones junto al cursor; haz clic en una para ejecutarla.</dd></div>
+        <div><span class="ico" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="m8 7-5 5 5 5M16 7l5 5-5 5M14 4l-4 16"/></svg></span><dt>Script de Lua</dt><dd>Unas líneas de Lua cuando necesitas condiciones o varios pasos seguidos.</dd></div>
+      </dl>
+    </div>
+  </section>
+
+  <section class="sec" id="quiet" aria-labelledby="h-quiet">
+    <div class="wrap">
+      <div class="sec-head">
+        <h2 id="h-quiet">Fuera de en medio cuando toca</h2>
+        <p>El escritorio remoto y las aplicaciones 3D y de diseño usan el arrastre derecho y central para sí mismas. En el primer arranque, Mousetroke detecta las que tienes instaladas; márcalas para desactivar los gestos dentro de ellas.</p>
+      </div>
+      <div class="quiet">
+        <div class="apps" id="apps">
+          <div class="row off"><span class="ai" style="background:#2b6cb0">R</span><span class="an"><b>Conexión a Escritorio remoto</b><small>mstsc.exe</small></span><span class="state" data-on="Gestos activados" data-off="Gestos desactivados">Gestos desactivados</span><input class="sw" type="checkbox" aria-label="Usar gestos en Conexión a Escritorio remoto"></div>
+          <div class="row off"><span class="ai" style="background:#d42c2c">A</span><span class="an"><b>AnyDesk</b><small>AnyDesk.exe</small></span><span class="state" data-on="Gestos activados" data-off="Gestos desactivados">Gestos desactivados</span><input class="sw" type="checkbox" aria-label="Usar gestos en AnyDesk"></div>
+          <div class="row off"><span class="ai" style="background:#e87d0d">B</span><span class="an"><b>Blender</b><small>blender.exe</small></span><span class="state" data-on="Gestos activados" data-off="Gestos desactivados">Gestos desactivados</span><input class="sw" type="checkbox" aria-label="Usar gestos en Blender"></div>
+          <div class="row off"><span class="ai" style="background:#c62828">A</span><span class="an"><b>AutoCAD</b><small>acad.exe</small></span><span class="state" data-on="Gestos activados" data-off="Gestos desactivados">Gestos desactivados</span><input class="sw" type="checkbox" aria-label="Usar gestos en AutoCAD"></div>
+          <div class="row"><span class="ai" style="background:#0098d9">C</span><span class="an"><b>Google Chrome</b><small>chrome.exe</small></span><span class="state" data-on="Gestos activados" data-off="Gestos desactivados">Gestos activados</span><input class="sw" type="checkbox" checked aria-label="Usar gestos en Google Chrome"></div>
+        </div>
+        <ul class="points">
+          <li><b>El clic derecho sigue funcionando</b><span>Pulsa sin dibujar y el menú contextual se abre como siempre; quédate quieto un momento y se convierte en un arrastre normal.</span></li>
+          <li><b>Pausa en pantalla completa</b><span>Juegos, vídeo y presentaciones a pantalla completa no disparan gestos ni esquinas.</span></li>
+          <li><b>Pausa en cualquier momento</b><span>Pulsa <kbd>Win</kbd> + <kbd>Esc</kbd> para pausar o reanudar; el icono de la bandeja se vuelve gris.</span></li>
+          <li><b>Añadir una aplicación es rápido</b><span>Arrastra su exe o acceso directo a la ventana de ajustes, o pulsa «Elegir una ventana» y haz clic en la ventana de esa aplicación.</span></li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <section class="sec" id="light" aria-labelledby="h-light">
+    <div class="wrap light">
+      <div>
+        <div class="sec-head">
+          <h2 id="h-light">Apenas se nota</h2>
+          <p>El motor de gestos está escrito en Rust y habla con Windows directamente, sin motor de navegador ni runtime. La ventana de ajustes es un proceso aparte que se abre solo cuando la necesitas.</p>
+        </div>
+        <dl class="figs">
+          <div><dt>Memoria residente</dt><dd>19<small>MB</small></dd><p>Conjunto de trabajo medido, unos 10 MB privados; sin CPU en reposo.</p></div>
+          <div><dt>Descarga</dt><dd>12.8<small>MB</small></dd><p>Un exe que corre desde cualquier sitio. No toca el registro salvo que actives el inicio con Windows.</p></div>
+        </dl>
+      </div>
+      <div class="proc" id="proc" aria-label="Ilustración de la memoria del proceso">
+        <div class="ph"><span>Proceso</span><span>Memoria</span></div>
+        <div class="pr"><span>Motor de gestos de Mousetroke</span><span class="m" data-mb="19.3">19.3 MB</span><span class="meter"><b data-w="10"></b></span></div>
+        <div class="pr webview"><span>Ajustes de Mousetroke (WebView2)</span><span class="m" data-mb="185">—</span><span class="meter"><b data-w="96"></b></span></div>
+        <div class="pt"><input class="sw" type="checkbox" id="proc-toggle"><label for="proc-toggle">Abrir la ventana de ajustes</label></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="sec" id="faq" aria-labelledby="h-faq">
+    <div class="wrap">
+      <div class="sec-head"><h2 id="h-faq">Preguntas</h2></div>
+      <div class="faq">
+        <details open><summary>¿Sigue funcionando el menú del clic derecho con Mousetroke?</summary><div class="ans"><p>Sí. Un clic derecho sin arrastrar se devuelve a Windows sin cambios, así que el menú contextual se abre como siempre. Mantener pulsado sin moverse más allá del tiempo de espera (0,5 s por defecto, ajustable) también se convierte en un arrastre derecho normal.</p></div></details>
+        <details><summary>¿Se dispara por error en juegos o escritorio remoto?</summary><div class="ans"><p>Los juegos, vídeos y presentaciones a pantalla completa pausan los gestos automáticamente. Los programas que necesitan el arrastre derecho o central para sí mismos, como Escritorio remoto, AnyDesk, Blender o AutoCAD, se pueden excluir con un clic en el primer arranque. Win+Esc pausa en cualquier momento.</p></div></details>
+        <details><summary>¿Qué versiones de Windows son compatibles?</summary><div class="ans"><p>Windows 10 1809 o posterior y Windows 11, de 64 bits. El motor de gestos no tiene dependencias en tiempo de ejecución; la ventana de ajustes usa Microsoft Edge WebView2, incluido en Windows 11 y presente con Edge en la mayoría de equipos con Windows 10.</p></div></details>
+        <details><summary>¿Mousetroke es gratis?</summary><div class="ans"><p>Sí. Es de código abierto bajo la licencia MIT, sin anuncios, sin cuenta y sin acceso a la red.</p></div></details>
+        <details><summary>¿Cuánta memoria y CPU usa?</summary><div class="ans"><p>El motor residente usa unos 19 MB de conjunto de trabajo (unos 10 MB privados) y nada de CPU en reposo. La ventana de ajustes es un proceso aparte que solo corre mientras está abierta.</p></div></details>
+        <details><summary>¿Puedo crear mis propios gestos?</summary><div class="ans"><p>Sí. Crea un gesto en los ajustes y dibújalo una vez en el panel del editor. También puedes combinar botones del ratón, la rueda, teclas y bordes de la pantalla, y definir gestos por separado para cada aplicación.</p></div></details>
+        <details><summary>¿Dónde se guardan los ajustes y cómo los copio?</summary><div class="ans"><p>En <code>%APPDATA%\mousetroke\config.json</code>. Los ajustes tienen importación y exportación. Los cambios guardados surten efecto en about un segundo, sin reiniciar.</p></div></details>
+        <details><summary>¿Cómo se desinstala?</summary><div class="ans"><p>Desactiva el inicio con Windows en preferencias, elige Salir en el menú del icono de la bandeja y borra mousetroke.exe y la carpeta <code>%APPDATA%\mousetroke</code>. No queda nada más.</p></div></details>
+      </div>
+    </div>
+  </section>
+
+  <section class="get" id="download" aria-labelledby="h-get">
+    <canvas aria-hidden="true"></canvas>
+    <div class="wrap">
+      <div>
+        <h2 id="h-get">Descarga, doble clic, listo</h2>
+        <p>Sin instalador. Aparece un icono en el área de notificación: clic izquierdo abre los ajustes, clic derecho pausa o sale. Una guía de cuatro pasos te acompaña en el primer arranque.</p>
+      </div>
+      <div>
+        <a class="btn primary" href="../download/mousetroke.exe" download>Descargar mousetroke.exe <small>12.8 MB · v0.1.0</small></a>
+        <div class="sys">Windows 10 1809+ / 11, 64 bits</div>
+      </div>
+    </div>
+  </section>
+</main>
+
+<footer>
+  <div class="wrap">
+    <span>Mousetroke · Licencia MIT</span>
+    <nav aria-label="Pie de página">
+      <a href="../index.html" hreflang="zh-CN" lang="zh-CN">简体中文</a>
+      <a href="../en/index.html" hreflang="en" lang="en">English</a>
+      <a class="cur" href="index.html" hreflang="es" lang="es">español</a>
+      <a href="../fr/index.html" hreflang="fr" lang="fr">Français</a>
+      <a href="../de/index.html" hreflang="de" lang="de">Deutsch</a>
+      <a href="../ja/index.html" hreflang="ja" lang="ja">日本語</a>
+      <a href="../pt/index.html" hreflang="pt-BR" lang="pt-BR">Português (Brasil)</a>
+      <a href="../ru/index.html" hreflang="ru" lang="ru">Русский</a>
+      <a href="../it/index.html" hreflang="it" lang="it">Italiano</a>
+      <a href="../ko/index.html" hreflang="ko" lang="ko">한국어</a>
+      <a href="../llms.txt">llms.txt</a>
+      <a href="#faq">Preguntas</a>
+    </nav>
+  </div>
+</footer>
+
+<script type="application/json" id="demo-text">
+{
+  "pages": [["Portada", "news.example/"], ["Hoy", "news.example/hoy"], ["Reportaje", "news.example/reportaje"]],
+  "newTab": ["Pestaña nueva", "about:newtab"],
+  "tabs": [["Documentos", "docs.example/guia"], ["Correo", "mail.example/buzon"]],
+  "miss": "No reconocido",
+  "copied": "Copiado", "pasted": "Pegado", "searched": "Buscando el texto seleccionado…", "entered": "Intro pulsada", "backspace": "Retroceso", "deleted": "Suprimido",
+  "esc": "Cancelado", "snip": "Herramienta de recorte abierta", "topmost": "Ventana siempre encima", "untop": "Ya no está encima", "reopen": "Ventana cerrada; la demo vuelve en un segundo",
+  "noBack": "Ya estás en la primera página", "noFwd": "No hay página siguiente", "edgeWheel": "Rueda mientras estás en el borde", "edgeRub": "Frota arriba y abajo por el borde", "muted": "Silenciado",
+  "volume": "Volumen", "brightness": "Brillo", "taskmgr": "Administrador de tareas", "start": "Menú Inicio", "desktop": "Mostrar escritorio", "switch": "Aplicación anterior", "tasks": "Selector de tareas",
+  "pageNext": "Sección siguiente", "pagePrev": "Sección anterior", "pageTop": "Volver arriba", "pageBottom": "Ir abajo",
+  "pageHint": "Mantén el botón derecho donde sea y dibuja: <b>↓</b> sección siguiente, <b>↑</b> anterior, <b>←↑</b> volver arriba",
+  "hintClose": "Descartar", "dots": "Secciones", "heroDot": "Inicio"
+}
+</script>
+<script src="../assets/site.js" defer></script>
+</body>
+</html>

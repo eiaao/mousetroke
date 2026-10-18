@@ -1,0 +1,13 @@
+import puppeteer from "puppeteer-core";
+const browser = await puppeteer.launch({ executablePath: "C:\\Program Files (x86)\\Microsoft\\Edge\\Application\\msedge.exe", headless: true });
+const page = await browser.newPage();
+await page.setViewport({ width: 1180, height: 760 });
+await page.evaluateOnNewDocument(() => { try { localStorage.setItem("mousetroke.guide.seen", "1"); } catch {} });
+await page.goto("http://localhost:8765/?lang=en-US", { waitUntil: "networkidle0" });
+await new Promise((r) => setTimeout(r, 500));
+const first = await page.$eval(".row .row-name", (e) => e.textContent);
+await page.type(".search", "copy");
+await new Promise((r) => setTimeout(r, 300));
+const rows = await page.$$eval(".row .row-name", (els) => els.map((e) => e.textContent));
+console.log(JSON.stringify({ first, searchCopy: rows }));
+await browser.close();

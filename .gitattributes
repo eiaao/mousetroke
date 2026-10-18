@@ -1,0 +1,8 @@
+# 统一用 LF 存储；Windows 脚本保留 CRLF
+* text=auto eol=lf
+*.cmd text eol=crlf
+*.bat text eol=crlf
+*.ps1 text eol=crlf
+*.png binary
+*.ico binary
+*.exe binary

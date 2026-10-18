@@ -1,0 +1,410 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<script>document.documentElement.classList.add("js")</script>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Mousetroke：Windows 用無料マウスジェスチャ</title>
+<meta name="description" content="Windows 10 / 11 用の無料・オープンソースなマウスジェスチャ。右ボタンを押して一筆描けば戻る・タブを閉じる。画面の隅に押し付けると音量調節。常駐メモリ約 19 MB、インストール不要の単一 exe。">
+<meta name="keywords" content="マウスジェスチャ,Windows マウスジェスチャ,ジェスチャソフト,ホットコーナー,画面の端,右クリックジェスチャ,作業効率化,Mousetroke">
+<link rel="canonical" href="https://mousetroke.example/ja/">
+<link rel="alternate" hreflang="zh-CN" href="https://mousetroke.example/">
+<link rel="alternate" hreflang="en" href="https://mousetroke.example/en/">
+<link rel="alternate" hreflang="es" href="https://mousetroke.example/es/">
+<link rel="alternate" hreflang="fr" href="https://mousetroke.example/fr/">
+<link rel="alternate" hreflang="de" href="https://mousetroke.example/de/">
+<link rel="alternate" hreflang="ja" href="https://mousetroke.example/ja/">
+<link rel="alternate" hreflang="pt-BR" href="https://mousetroke.example/pt/">
+<link rel="alternate" hreflang="ru" href="https://mousetroke.example/ru/">
+<link rel="alternate" hreflang="it" href="https://mousetroke.example/it/">
+<link rel="alternate" hreflang="ko" href="https://mousetroke.example/ko/">
+<link rel="alternate" hreflang="x-default" href="https://mousetroke.example/en/">
+<link rel="alternate" type="text/markdown" title="LLM summary" href="../llms.txt">
+<link rel="icon" href="../assets/icon.svg" type="image/svg+xml">
+<meta name="theme-color" content="#e9edf2" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#0f141c" media="(prefers-color-scheme: dark)">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Mousetroke">
+<meta property="og:locale" content="ja_JP">
+<meta property="og:locale:alternate" content="zh_CN">
+<meta property="og:locale:alternate" content="es_ES">
+<meta property="og:locale:alternate" content="fr_FR">
+<meta property="og:locale:alternate" content="de_DE">
+<meta property="og:locale:alternate" content="ja_JP">
+<meta property="og:locale:alternate" content="pt_BR">
+<meta property="og:locale:alternate" content="ru_RU">
+<meta property="og:locale:alternate" content="it_IT">
+<meta property="og:locale:alternate" content="ko_KR">
+<meta property="og:title" content="Mousetroke：右ボタンを押して、一筆描く">
+<meta property="og:description" content="Windows 用の無料・オープンソースなマウスジェスチャ。描いて戻る・タブを閉じる。隅に押し付けて音量調節。常駐約 19 MB。">
+<meta property="og:url" content="https://mousetroke.example/ja/">
+<meta property="og:image" content="https://mousetroke.example/og-en.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Schibsted+Grotesk:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../assets/site.css">
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@graph": [
+    {
+      "@type": "SoftwareApplication",
+      "@id": "https://mousetroke.example/#app",
+      "name": "Mousetroke",
+      "description": "Windows 用グローバルマウスジェスチャ：右・中・サイドボタンを押しながら描いて操作を実行。カーソルを画面の隅や端に押し付けて発動。アプリごとのジェスチャ設定や、特定アプリでの完全オフも可能。",
+      "applicationCategory": "UtilitiesApplication",
+      "applicationSubCategory": "マウスジェスチャ",
+      "operatingSystem": "Windows 10 1809+, Windows 11 (x64)",
+      "softwareVersion": "0.1.0",
+      "fileSize": "12.8 MB",
+      "memoryRequirements": "常駐メモリ約 19 MB",
+      "softwareRequirements": "Microsoft Edge WebView2（設定画面のみ。Windows 11 には標準搭載）",
+      "license": "https://opensource.org/licenses/MIT",
+      "isAccessibleForFree": true,
+      "inLanguage": ["en", "zh-CN", "es", "fr", "de", "ja", "pt-BR", "ru", "it", "ko"],
+      "downloadUrl": "https://mousetroke.example/download/mousetroke.exe",
+      "url": "https://mousetroke.example/ja/",
+      "image": "https://mousetroke.example/og-en.png",
+      "offers": { "@type": "Offer", "price": "0", "priceCurrency": "USD" },
+      "featureList": [
+        "右・中・サイドボタンでのジェスチャ。描いている間はジェスチャ名を表示",
+        "約 50 種類の内蔵ジェスチャ：戻る・進む・タブを閉じる・コピー＆貼り付け・最小化・常に手前など",
+        "画面の隅と端：スタートメニュー、デスクトップ表示、ホイールで音量・輝度（外部モニターは DDC/CI）",
+        "8 種類の動作：キー送信、ウィンドウ操作、アプリを開く、URL を開く、コマンド実行、メディアとシステム、メニュー表示、Lua スクリプト",
+        "アプリごとのジェスチャ、選んだアプリでは完全にオフにも",
+        "全画面ゲーム・動画・プレゼンでは自動的に一時停止。Win+Esc でいつでも停止",
+        "常駐メモリ約 19 MB、ポータブルな単一 exe",
+        "10 言語のインターフェイス"
+      ]
+    },
+    {
+      "@type": "WebSite",
+      "@id": "https://mousetroke.example/ja/#site",
+      "name": "Mousetroke",
+      "url": "https://mousetroke.example/ja/",
+      "inLanguage": "ja"
+    },
+    {
+      "@type": "FAQPage",
+      "mainEntity": [
+        { "@type": "Question", "name": "Does the right-click menu still work with Mousetroke?", "acceptedAnswer": { "@type": "Answer", "text": "Yes. A right-click without dragging is passed back to Windows unchanged, so the context menu opens as usual. Holding still past the drag timeout (0.5 seconds by default, adjustable) also becomes a normal right-drag." } },
+        { "@type": "Question", "name": "Will it misfire in games or remote desktop?", "acceptedAnswer": { "@type": "Answer", "text": "Fullscreen games, video and presentations pause gestures automatically. Programs that need right- or middle-drag themselves, such as Remote Desktop, AnyDesk, Blender or AutoCAD, can be excluded in one click on first run. Win+Esc pauses at any time." } },
+        { "@type": "Question", "name": "Which versions of Windows are supported?", "acceptedAnswer": { "@type": "Answer", "text": "Windows 10 1809 or later and Windows 11, 64-bit. The gesture engine has no runtime dependencies; the settings window uses Microsoft Edge WebView2, which ships with Windows 11 and comes with Edge on most Windows 10 PCs." } },
+        { "@type": "Question", "name": "Is Mousetroke free?", "acceptedAnswer": { "@type": "Answer", "text": "Yes. It is open source under the MIT license, with no ads, no account and no network access." } },
+        { "@type": "Question", "name": "How much memory and CPU does it use?", "acceptedAnswer": { "@type": "Answer", "text": "The resident gesture engine uses about 19 MB working set (about 10 MB private) and no CPU when idle. The settings window is a separate process that only runs while it is open." } },
+        { "@type": "Question", "name": "Can I make my own gestures?", "acceptedAnswer": { "@type": "Answer", "text": "Yes. Create a gesture in settings and draw it once on the pad in the editor. You can also combine mouse buttons, the wheel, keyboard keys and screen edges, and set gestures separately for each app." } },
+        { "@type": "Question", "name": "Where are the settings stored, and how do I back them up?", "acceptedAnswer": { "@type": "Answer", "text": "In %APPDATA%\\mousetroke\\config.json. Settings has import and export. Saved changes take effect within about a second, without a restart." } },
+        { "@type": "Question", "name": "How do I uninstall it?", "acceptedAnswer": { "@type": "Answer", "text": "Turn off start with Windows in preferences, choose Quit from the tray icon menu, then delete mousetroke.exe and the %APPDATA%\\mousetroke folder. Nothing else is left behind." } }
+      ]
+    }
+  ]
+}
+</script>
+</head>
+<body>
+<a class="skip" href="#main">本文へスキップ</a>
+
+<header class="top">
+  <div class="wrap">
+    <a class="brand" href="index.html" aria-label="Mousetroke home">
+      <svg width="28" height="28" viewBox="0 0 32 32" aria-hidden="true"><rect width="32" height="32" rx="8" fill="#0098d9"/><polyline points="7,11 13.5,21 19,13 25,21" fill="none" stroke="#fff" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      Mousetroke
+    </a>
+    <nav class="nav" aria-label="Sections">
+      <a href="#gestures">ジェスチャ</a>
+      <a href="#edges">画面の端</a>
+      <a href="#actions">動作</a>
+      <a href="#quiet">邪魔しない</a>
+      <a href="#faq">よくある質問</a>
+    </nav>
+    <details class="langmenu">
+      <summary aria-label="言語">日本語 ▾</summary>
+      <div class="langdrop">
+        <a href="../index.html" hreflang="zh-CN" lang="zh-CN">简体中文</a>
+        <a href="../en/index.html" hreflang="en" lang="en">English</a>
+        <a href="../es/index.html" hreflang="es" lang="es">español</a>
+        <a href="../fr/index.html" hreflang="fr" lang="fr">Français</a>
+        <a href="../de/index.html" hreflang="de" lang="de">Deutsch</a>
+        <a class="cur" href="index.html" hreflang="ja" lang="ja">日本語</a>
+        <a href="../pt/index.html" hreflang="pt-BR" lang="pt-BR">Português (Brasil)</a>
+        <a href="../ru/index.html" hreflang="ru" lang="ru">Русский</a>
+        <a href="../it/index.html" hreflang="it" lang="it">Italiano</a>
+        <a href="../ko/index.html" hreflang="ko" lang="ko">한국어</a>
+      </div>
+    </details>
+    <a class="btn small primary" href="#download">ダウンロード</a>
+  </div>
+</header>
+
+<main id="main">
+  <section class="hero" aria-labelledby="h-hero">
+    <div class="wrap hero-grid">
+      <div>
+        <h1 id="h-hero">右ボタンを押して。<br>一筆描く。</h1>
+        <p class="lede">Mousetroke は Windows のすべてのウィンドウにマウスジェスチャを加えます。右ボタンを押したまま動かす：<b>←</b> で戻る、<b>↓→</b> でタブを閉じる、<b>↙</b> で最小化。ただの右クリックなら、これまでどおりメニューが出ます。</p>
+        <div class="cta">
+          <a class="btn primary" href="#download">Windows 版をダウンロード <small>12.8 MB</small></a>
+          <a class="btn" href="#gestures">ジェスチャを見る</a>
+        </div>
+        <ul class="meta">
+          <li>無料・オープンソース（MIT）</li>
+          <li>Windows 10 / 11</li>
+          <li>メモリ約 19 MB</li>
+        </ul>
+      </div>
+
+      <div>
+        <div class="stage" id="stage" role="application" aria-label="ジェスチャのデモ：右または左ボタンを押したままこのエリアで動かすと、模擬ブラウザが反応します" aria-describedby="stage-desc">
+          <p class="vh" id="stage-desc">デモエリアでは ← で戻る、→ で進む、→↓ で新しいタブ、↓→ でタブを閉じる、←↑→ で更新、↙ で最小化、↗ で最大化。下のボタンで各ジェスチャを再生できます。</p>
+          <div class="hint">右ボタンを押したままここで描く（指でも可）</div>
+          <div class="browser" id="browser" aria-hidden="true">
+            <div class="tabs"></div>
+            <div class="addr"><span class="nb"><i data-n="back">‹</i><i data-n="fwd">›</i><i data-n="reload">↻</i></span><span class="url"></span></div>
+            <div class="view"></div>
+          </div>
+          <div class="taskbar" aria-hidden="true"><i></i><i class="app"></i><i></i><i></i></div>
+          <div class="toast" aria-hidden="true"></div>
+          <div class="gpill" aria-live="polite"><span class="arrows"></span><span class="name"></span></div>
+          <canvas></canvas>
+        </div>
+        <ul class="try" aria-label="クリックでジェスチャを再生">
+          <li><button type="button" data-play="50,0,0,0"><b>←</b>戻る</button></li>
+          <li><button type="button" data-play="0,0,50,0"><b>→</b>進む</button></li>
+          <li><button type="button" data-play="0,0,50,0,50,50"><b>→↓</b>新しいタブ</button></li>
+          <li><button type="button" data-play="0,0,0,50,50,50"><b>↓→</b>タブを閉じる</button></li>
+          <li><button type="button" data-play="50,50,0,50,0,0,50,0"><b>←↑→</b>更新</button></li>
+          <li><button type="button" data-play="50,0,0,50"><b>↙</b>最小化</button></li>
+          <li><button type="button" data-play="0,50,50,0"><b>↗</b>最大化</button></li>
+        </ul>
+      </div>
+    </div>
+    <a class="cue" href="#gestures"><span class="cue-ico"><svg width="22" height="34" viewBox="0 0 22 34" aria-hidden="true"><rect x="1" y="1" width="20" height="32" rx="10" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M11 1v12M1 13h20" stroke="currentColor" stroke-width="1.6"/><path class="rb" d="M11.8 1.8h0a8.6 8.6 0 0 1 8.4 8.4V12.2H11.8Z"/></svg><svg class="cue-trail" width="14" height="40" viewBox="0 0 14 40" aria-hidden="true"><path pathLength="1" d="M7 2V36M2 31l5 5 5-5"/></svg></span><span>スクロール、または右ボタンを押したまま下へ描く</span></a>
+  </section>
+
+  <section class="sec" id="gestures" aria-labelledby="h-gestures">
+    <div class="wrap">
+      <div class="sec-head">
+        <h2 id="h-gestures">これを描けば、それが起こる</h2>
+        <p>閲覧・編集・ウィンドウ操作をカバーする約 50 種類のジェスチャを内蔵。どれでも変更・オフ・削除でき、設定で一度描けば新しいジェスチャを登録できます。</p>
+      </div>
+      <div class="sheet">
+        <div>
+          <h3>ブラウジング</h3>
+          <ul>
+            <li data-p="50,0,0,0" data-act="back"><span class="glyph"></span><span class="nm">戻る<small>ブラウザとエクスプローラーで</small></span><span class="ar">←</span></li>
+            <li data-p="0,0,50,0" data-act="forward"><span class="glyph"></span><span class="nm">進む</span><span class="ar">→</span></li>
+            <li data-p="0,0,50,0,50,50" data-act="newtab"><span class="glyph"></span><span class="nm">新しいタブ</span><span class="ar">→↓</span></li>
+            <li data-p="0,0,0,50,50,50" data-act="closetab"><span class="glyph"></span><span class="nm">タブを閉じる</span><span class="ar">↓→</span></li>
+            <li data-p="0,0,50,0,50,50" data-mod="left"><span class="glyph"></span><span class="nm">閉じたタブを開き直す<small>最後に左クリック</small></span><span class="ar">→↓ + <kbd>Left</kbd></span></li>
+            <li data-p="50,50,0,50,0,0,50,0" data-act="refresh"><span class="glyph"></span><span class="nm">更新</span><span class="ar">←↑→</span></li>
+            <li data-p="50,50,50,0,0,0" data-act="prevtab"><span class="glyph"></span><span class="nm">前のタブ<small>右ボタン＋ホイールでも</small></span><span class="ar">↑←</span></li>
+            <li data-p="0,50,0,0,50,0" data-act="nexttab"><span class="glyph"></span><span class="nm">次のタブ</span><span class="ar">↑→</span></li>
+            <li data-p="50,50,0,50,0,0" data-act="top"><span class="glyph"></span><span class="nm">先頭へ</span><span class="ar">←↑</span></li>
+            <li data-p="50,0,0,0,0,50" data-act="bottom"><span class="glyph"></span><span class="nm">末尾へ</span><span class="ar">←↓</span></li>
+          </ul>
+        </div>
+        <div>
+          <h3>編集</h3>
+          <ul>
+            <li data-p="0,50,0,0" data-act="copy"><span class="glyph"></span><span class="nm">コピー</span><span class="ar">↑</span></li>
+            <li data-p="0,0,0,50" data-act="paste"><span class="glyph"></span><span class="nm">貼り付け</span><span class="ar">↓</span></li>
+            <li data-p="0,50,0,0" data-mod="left"><span class="glyph"></span><span class="nm">切り取り</span><span class="ar">↑ + <kbd>Left</kbd></span></li>
+            <li data-p="0,0,0,50" data-mod="left"><span class="glyph"></span><span class="nm">貼り付けて Enter</span><span class="ar">↓ + <kbd>Left</kbd></span></li>
+            <li data-p="0,50,0,0,0,50" data-act="search"><span class="glyph"></span><span class="nm">ウェブ検索<small>選択したテキストを検索</small></span><span class="ar">↑↓</span></li>
+            <li data-p="0,0,0,50,50,50,50,100" data-act="enter"><span class="glyph"></span><span class="nm">Enter</span><span class="ar">↓→↓</span></li>
+            <li data-p="50,0,0,0,50,0" data-act="backspace"><span class="glyph"></span><span class="nm">Backspace</span><span class="ar">←→</span></li>
+            <li data-p="0,0,50,0,0,0" data-act="delete"><span class="glyph"></span><span class="nm">Delete</span><span class="ar">→←</span></li>
+            <li data-p="0,50,50,50,50,0,0,0" data-act="esc"><span class="glyph"></span><span class="nm">キャンセル（Esc）</span><span class="ar">→↑←</span></li>
+            <li data-p="0,50,0,0,50,0,50,50,0,50" data-act="snip"><span class="glyph"></span><span class="nm">スクリーンショット<small>四角を描く</small></span><span class="ar">↑→↓←</span></li>
+          </ul>
+        </div>
+        <div>
+          <h3>ウィンドウとメディア</h3>
+          <ul>
+            <li data-p="50,0,0,50" data-act="minimize"><span class="glyph"></span><span class="nm">最小化</span><span class="ar">↙</span></li>
+            <li data-p="0,50,50,0" data-act="maximize"><span class="glyph"></span><span class="nm">最大化 / 元に戻す</span><span class="ar">↗</span></li>
+            <li data-p="0,50,50,0" data-mod="left"><span class="glyph"></span><span class="nm">全画面</span><span class="ar">↗ + <kbd>Left</kbd></span></li>
+            <li data-p="50,0,50,50,0,50" data-act="closewin"><span class="glyph"></span><span class="nm">ウィンドウを閉じる</span><span class="ar">↓←</span></li>
+            <li data-p="50,0,50,50,0,50" data-mod="left"><span class="glyph"></span><span class="nm">プロセス強制終了<small>固まったプログラムに</small></span><span class="ar">↓← + <kbd>Left</kbd></span></li>
+            <li data-p="0,100,0,50,50,50,50,0" data-act="topmost"><span class="glyph"></span><span class="nm">常に手前</span><span class="ar">↑→↑</span></li>
+            <li data-p="0,50,0,0" data-mod="wheel"><span class="glyph"></span><span class="nm">拡大 / 縮小</span><span class="ar">↑ + <kbd>Wheel</kbd></span></li>
+            <li data-p="0,0,50,0" data-btn="middle"><span class="glyph"></span><span class="nm">次のトラック<small>中ボタンを押しながら</small></span><span class="ar"><kbd>Middle</kbd> →</span></li>
+            <li data-p="50,0,0,0" data-btn="middle"><span class="glyph"></span><span class="nm">前のトラック</span><span class="ar"><kbd>Middle</kbd> ←</span></li>
+            <li data-p="0,0,50,0" data-btn="x1"><span class="glyph"></span><span class="nm">次の仮想デスクトップ<small>サイドボタンを押しながら</small></span><span class="ar"><kbd>Side</kbd> →</span></li>
+          </ul>
+        </div>
+      </div>
+      <p class="note">描いている間、画面の下の方にジェスチャ名が表示されます。認識しないものは何も起こりません。同じジェスチャでも、エクスプローラー・ターミナル・デスクトップで違う動作にできます。</p>
+    </div>
+  </section>
+
+  <section class="sec" id="edges" aria-labelledby="h-edges">
+    <div class="wrap">
+      <div class="sec-head">
+        <h2 id="h-edges">隅へ押し付ける</h2>
+        <p>ボタンは不要：カーソルを隅に押し付ける、または端に沿わせてホイール・中クリック・上下にこする。隅は離れるまで再発動しないので、うっかり連発しません。</p>
+      </div>
+      <div class="edges">
+        <div class="monitor">
+          <div class="screen" id="screen" aria-label="模擬画面：カーソルを隅や端へ動かしてください" role="img">
+            <div class="win w1"></div><div class="win w2"></div>
+            <div class="start"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div>
+            <div class="tm"><b>タスク マネージャー</b><div class="bar" style="width:80%"></div><div class="bar" style="width:46%"></div><div class="bar" style="width:62%"></div></div>
+            <div class="osd" data-osd="vol"><span>🔊</span><span class="lvl"><b style="width:50%"></b></span><span class="v">50</span></div>
+            <div class="osd bottom" data-osd="bri"><span>☀</span><span class="lvl"><b style="width:70%"></b></span><span class="v">70</span></div>
+            <div class="dim"></div>
+            <div class="tbar"><i></i><i></i><i></i><i></i></div>
+            <i class="glow e1"></i><i class="glow e2"></i><i class="glow e4"></i><i class="glow e8"></i>
+            <i class="glow c c3"></i><i class="glow c c6"></i><i class="glow c c9"></i><i class="glow c c12"></i>
+            <div class="label"></div>
+          </div>
+        </div>
+        <ul class="rules" aria-label="隅と端の初期設定。クリックで確認できます">
+          <li><button type="button" data-edge="12"><span class="where">左下</span><span class="what">スタートメニュー</span></button></li>
+          <li><button type="button" data-edge="6"><span class="where">右下</span><span class="what">デスクトップの表示</span></button></li>
+          <li><button type="button" data-edge="9"><span class="where">左上</span><span class="what">前のアプリへ切替</span></button></li>
+          <li><button type="button" data-edge="3"><span class="where">右上</span><span class="what">タスクスイッチャー</span></button></li>
+          <li><button type="button" data-edge="1" data-with="wheel"><span class="where">上端</span><span class="what">ホイールで音量<small>中クリックでミュート、右クリックで再生 / 一時停止</small></span></button></li>
+          <li><button type="button" data-edge="4" data-with="wheel"><span class="where">下端</span><span class="what">ホイールで輝度<small>外部モニターは DDC/CI、ノート PC 内蔵画面にも</small></span></button></li>
+          <li><button type="button" data-edge="2" data-with="rub"><span class="where">右端</span><span class="what">上下にこするとタスク マネージャー</span></button></li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <section class="sec" id="actions" aria-labelledby="h-actions">
+    <div class="wrap">
+      <div class="sec-head">
+        <h2 id="h-actions">ショートカット以上</h2>
+        <p>各ジェスチャは 8 種類の動作のいずれかを実行します。動作には変数が使えます：<code>%MS_SELECTED_TEXT%</code> は選択テキスト、<code>%MS_PID%</code> はカーソル下のプロセス。</p>
+      </div>
+      <dl class="acts">
+        <div><span class="ico" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="2.5" y="6" width="19" height="12" rx="2.5"/><path d="M6.5 10h.01M10 10h.01M13.5 10h.01M17 10h.01M7.5 14h9"/></svg></span><dt>キーを送る</dt><dd><code>Ctrl+Shift+T</code> など、任意のショートカットやキー列。</dd></div>
+        <div><span class="ico" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="16" rx="2.5"/><path d="M3 9h18"/></svg></span><dt>ウィンドウ操作</dt><dd>カーソル下またはアクティブなウィンドウの最小化・最大化・常に手前・閉じる・強制終了。</dd></div>
+        <div><span class="ico" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M5 19 19 5M9 5h10v10"/></svg></span><dt>アプリを開く</dt><dd><code>notepad.exe</code> のように、引数付きで任意のプログラムやファイルを起動。</dd></div>
+        <div><span class="ico" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c2.8 3 2.8 15 0 18M12 3c-2.8 3-2.8 15 0 18"/></svg></span><dt>URL を開く</dt><dd>既定のブラウザで。選択テキストを付けられます：<code>https://www.bing.com/search?q=%MS_SELECTED_TEXT%</code></dd></div>
+        <div><span class="ico" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="m5 8 4 4-4 4M12 17h7"/></svg></span><dt>コマンド実行</dt><dd><code>taskkill /F /PID %MS_PID%</code> など、任意のコマンドライン。</dd></div>
+        <div><span class="ico" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 10v4h4l5 4V6L8 10H4ZM16.5 9a4 4 0 0 1 0 6"/></svg></span><dt>メディアとシステム</dt><dd>音量、ミュート、再生 / 一時停止、前後トラック、画面の輝度。</dd></div>
+        <div><span class="ico" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="4" width="16" height="16" rx="2.5"/><path d="M8 9h8M8 12h8M8 15h5"/></svg></span><dt>メニュー表示</dt><dd>一つのジェスチャでカーソル横に動作メニューを出し、クリックで実行。</dd></div>
+        <div><span class="ico" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="m8 7-5 5 5 5M16 7l5 5-5 5M14 4l-4 16"/></svg></span><dt>Lua スクリプト</dt><dd>条件分岐や連続した手順が必要なときは、数行の Lua で。</dd></div>
+      </dl>
+    </div>
+  </section>
+
+  <section class="sec" id="quiet" aria-labelledby="h-quiet">
+    <div class="wrap">
+      <div class="sec-head">
+        <h2 id="h-quiet">必要なときだけ引っ込む</h2>
+        <p>リモートデスクトップや 3D・デザイン系アプリは、右・中ボタンのドラッグを自分で使います。初回起動時にインストール済みのものを検出するので、チェックすればその中ではジェスチャがオフになります。</p>
+      </div>
+      <div class="quiet">
+        <div class="apps" id="apps">
+          <div class="row off"><span class="ai" style="background:#2b6cb0">R</span><span class="an"><b>リモートデスクトップ接続</b><small>mstsc.exe</small></span><span class="state" data-on="ジェスチャ有効" data-off="ジェスチャ無効">ジェスチャ無効</span><input class="sw" type="checkbox" aria-label="リモートデスクトップ接続でジェスチャを使う"></div>
+          <div class="row off"><span class="ai" style="background:#d42c2c">A</span><span class="an"><b>AnyDesk</b><small>AnyDesk.exe</small></span><span class="state" data-on="ジェスチャ有効" data-off="ジェスチャ無効">ジェスチャ無効</span><input class="sw" type="checkbox" aria-label="AnyDesk でジェスチャを使う"></div>
+          <div class="row off"><span class="ai" style="background:#e87d0d">B</span><span class="an"><b>Blender</b><small>blender.exe</small></span><span class="state" data-on="ジェスチャ有効" data-off="ジェスチャ無効">ジェスチャ無効</span><input class="sw" type="checkbox" aria-label="Blender でジェスチャを使う"></div>
+          <div class="row off"><span class="ai" style="background:#c62828">A</span><span class="an"><b>AutoCAD</b><small>acad.exe</small></span><span class="state" data-on="ジェスチャ有効" data-off="ジェスチャ無効">ジェスチャ無効</span><input class="sw" type="checkbox" aria-label="AutoCAD でジェスチャを使う"></div>
+          <div class="row"><span class="ai" style="background:#0098d9">C</span><span class="an"><b>Google Chrome</b><small>chrome.exe</small></span><span class="state" data-on="ジェスチャ有効" data-off="ジェスチャ無効">ジェスチャ有効</span><input class="sw" type="checkbox" checked aria-label="Google Chrome でジェスチャを使う"></div>
+        </div>
+        <ul class="points">
+          <li><b>右クリックはそのまま</b><span>描かずに押せば普段どおりメニューが出ます。少し止まれば通常の右ドラッグになります。</span></li>
+          <li><b>全画面では一時停止</b><span>全画面のゲーム・動画・プレゼンではジェスチャも隅も発動しません。</span></li>
+          <li><b>いつでも一時停止</b><span><kbd>Win</kbd> + <kbd>Esc</kbd> で停止 / 再開。トレイアイコンが灰色になります。</span></li>
+          <li><b>アプリの追加は簡単</b><span>exe やショートカットを設定ウィンドウにドロップ、または「ウィンドウを指定」してその窓をクリック。</span></li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <section class="sec" id="light" aria-labelledby="h-light">
+    <div class="wrap light">
+      <div>
+        <div class="sec-head">
+          <h2 id="h-light">ほとんど存在しない</h2>
+          <p>ジェスチャエンジンは Rust で書かれ、Windows と直接やり取りします。ブラウザエンジンもランタイムも不要。設定画面は必要なときだけ開く別プロセスです。</p>
+        </div>
+        <dl class="figs">
+          <div><dt>常駐メモリ</dt><dd>19<small>MB</small></dd><p>実測ワーキングセット。プライベート約 10 MB、アイドル時の CPU はゼロ。</p></div>
+          <div><dt>ダウンロード</dt><dd>12.8<small>MB</small></dd><p>どこからでも動く単一 exe。Windows 起動時の実行を有効にしない限り、レジストリには何も書きません。</p></div>
+        </dl>
+      </div>
+      <div class="proc" id="proc" aria-label="プロセスメモリの図">
+        <div class="ph"><span>プロセス</span><span>メモリ</span></div>
+        <div class="pr"><span>Mousetroke ジェスチャエンジン</span><span class="m" data-mb="19.3">19.3 MB</span><span class="meter"><b data-w="10"></b></span></div>
+        <div class="pr webview"><span>Mousetroke 設定（WebView2）</span><span class="m" data-mb="185">—</span><span class="meter"><b data-w="96"></b></span></div>
+        <div class="pt"><input class="sw" type="checkbox" id="proc-toggle"><label for="proc-toggle">設定ウィンドウを開く</label></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="sec" id="faq" aria-labelledby="h-faq">
+    <div class="wrap">
+      <div class="sec-head"><h2 id="h-faq">よくある質問</h2></div>
+      <div class="faq">
+        <details open><summary>右クリックのメニューは今までどおり使えますか？</summary><div class="ans"><p>はい。ドラッグしない右クリックはそのまま Windows に返されるので、コンテキストメニューは普通に出ます。しばらく動かずに押し続けても（初期値 0.5 秒、調整可）、通常の右ドラッグになります。</p></div></details>
+        <details><summary>ゲームやリモートデスクトップで誤発動しませんか？</summary><div class="ans"><p>全画面のゲーム・動画・プレゼンではジェスチャが自動で一時停止します。リモートデスクトップ、AnyDesk、Blender、AutoCAD など右・中ドラッグを自分で使うプログラムは、初回起動にワンクリックで除外できます。Win+Esc でいつでも停止できます。</p></div></details>
+        <details><summary>対応する Windows のバージョンは？</summary><div class="ans"><p>Windows 10 1809 以降と Windows 11 の 64 ビットです。ジェスチャエンジンにランタイム依存はありません。設定画面は Microsoft Edge WebView2 を使います（Windows 11 に標準搭載、ほとんどの Windows 10 には Edge と共にあります）。</p></div></details>
+        <details><summary>Mousetroke は無料ですか？</summary><div class="ans"><p>はい。MIT ライセンスのオープンソースで、広告もアカウントもネットワークアクセスもありません。</p></div></details>
+        <details><summary>メモリと CPU の使用量は？</summary><div class="ans"><p>常駐エンジンはワーキングセット約 19 MB（プライベート約 10 MB）、アイドル時の CPU はゼロです。設定画面は開いている間だけ動く別プロセスです。</p></div></details>
+        <details><summary>自分でジェスチャを作れますか？</summary><div class="ans"><p>はい。設定で新規ジェスチャを作り、エディタのパッドに一度描くだけ。マウスボタン・ホイール・キー・画面の端を組み合わせたり、アプリごとに別々のジェスチャを設定したりもできます。</p></div></details>
+        <details><summary>設定はどこに保存されますか？バックアップは？</summary><div class="ans"><p><code>%APPDATA%\mousetroke\config.json</code> です。設定画面にインポート・エクスポートがあります。保存した変更は再起動なしに約 1 秒で反映されます。</p></div></details>
+        <details><summary>アンインストールの方法は？</summary><div class="ans"><p>設定で Windows 起動時の実行をオフにし、トレイアイコンのメニューから終了を選び、mousetroke.exe と <code>%APPDATA%\mousetroke</code> フォルダーを削除するだけです。他には何も残りません。</p></div></details>
+      </div>
+    </div>
+  </section>
+
+  <section class="get" id="download" aria-labelledby="h-get">
+    <canvas aria-hidden="true"></canvas>
+    <div class="wrap">
+      <div>
+        <h2 id="h-get">ダウンロードして、ダブルクリック、以上</h2>
+        <p>インストーラー不要。通知領域にアイコンが現れます：左クリックで設定、右クリックで一時停止や終了。初回は 4 ステップのガイドが付いてきます。</p>
+      </div>
+      <div>
+        <a class="btn primary" href="../download/mousetroke.exe" download>mousetroke.exe をダウンロード <small>12.8 MB · v0.1.0</small></a>
+        <div class="sys">Windows 10 1809+ / 11、64 ビット</div>
+      </div>
+    </div>
+  </section>
+</main>
+
+<footer>
+  <div class="wrap">
+    <span>Mousetroke · MIT ライセンス</span>
+    <nav aria-label="フッター">
+      <a href="../index.html" hreflang="zh-CN" lang="zh-CN">简体中文</a>
+      <a href="../en/index.html" hreflang="en" lang="en">English</a>
+      <a href="../es/index.html" hreflang="es" lang="es">español</a>
+      <a href="../fr/index.html" hreflang="fr" lang="fr">Français</a>
+      <a href="../de/index.html" hreflang="de" lang="de">Deutsch</a>
+      <a class="cur" href="index.html" hreflang="ja" lang="ja">日本語</a>
+      <a href="../pt/index.html" hreflang="pt-BR" lang="pt-BR">Português (Brasil)</a>
+      <a href="../ru/index.html" hreflang="ru" lang="ru">Русский</a>
+      <a href="../it/index.html" hreflang="it" lang="it">Italiano</a>
+      <a href="../ko/index.html" hreflang="ko" lang="ko">한국어</a>
+      <a href="../llms.txt">llms.txt</a>
+      <a href="#faq">よくある質問</a>
+    </nav>
+  </div>
+</footer>
+
+<script type="application/json" id="demo-text">
+{
+  "pages": [["トップ", "news.example/"], ["今日", "news.example/today"], ["特集", "news.example/feature"]],
+  "newTab": ["新しいタブ", "about:newtab"],
+  "tabs": [["資料", "docs.example/guide"], ["メール", "mail.example/inbox"]],
+  "miss": "認識できません",
+  "copied": "コピーしました", "pasted": "貼り付けました", "searched": "選択テキストを検索中…", "entered": "Enter を押しました", "backspace": "Backspace", "deleted": "削除しました",
+  "esc": "キャンセル", "snip": "切り取りツールを開きました", "topmost": "ウィンドウを常に手前に", "untop": "手前を解除", "reopen": "ウィンドウを閉じました。1 秒でデモに戻ります",
+  "noBack": "最初のページです", "noFwd": "進むページはありません", "edgeWheel": "端に寄せてスクロール", "edgeRub": "端に沿って上下にこする", "muted": "ミュート",
+  "volume": "音量", "brightness": "輝度", "taskmgr": "タスク マネージャー", "start": "スタートメニュー", "desktop": "デスクトップの表示", "switch": "前のアプリ", "tasks": "タスクスイッチャー",
+  "pageNext": "次のセクション", "pagePrev": "前のセクション", "pageTop": "先頭へ戻る", "pageBottom": "末尾へ",
+  "pageHint": "どこでも右ボタンを押して描く：<b>↓</b> 次のセクション、<b>↑</b> 前、<b>←↑</b> 先頭へ",
+  "hintClose": "閉じる", "dots": "セクション", "heroDot": "開始"
+}
+</script>
+<script src="../assets/site.js" defer></script>
+</body>
+</html>

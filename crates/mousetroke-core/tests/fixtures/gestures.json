@@ -1,0 +1,700 @@
+﻿{
+  "General": {
+    "Id": "test-general",
+    "Name": "General",
+    "Intents": [
+      {
+        "Name": "Copy",
+        "ExecuteOnRecognize": false,
+        "Gesture": [
+          {
+            "$type": "KeyDown",
+            "Key": "MOUSE:1"
+          },
+          {
+            "$type": "Stroke",
+            "P": [
+              0,
+              50,
+              0,
+              0
+            ]
+          }
+        ],
+        "Command": {
+          "$type": "SendKeys",
+          "Keys": "^(c)"
+        }
+      },
+      {
+        "Name": "Paste",
+        "ExecuteOnRecognize": false,
+        "Gesture": [
+          {
+            "$type": "KeyDown",
+            "Key": "MOUSE:1"
+          },
+          {
+            "$type": "Stroke",
+            "P": [
+              0,
+              0,
+              0,
+              50
+            ]
+          }
+        ],
+        "Command": {
+          "$type": "SendKeys",
+          "Keys": "^(v)"
+        }
+      },
+      {
+        "Name": "Back",
+        "ExecuteOnRecognize": false,
+        "Gesture": [
+          {
+            "$type": "KeyDown",
+            "Key": "MOUSE:1"
+          },
+          {
+            "$type": "Stroke",
+            "P": [
+              50,
+              0,
+              0,
+              0
+            ]
+          }
+        ],
+        "Command": {
+          "$type": "SendKeys",
+          "Keys": "%({LEFT})"
+        }
+      },
+      {
+        "Name": "New",
+        "ExecuteOnRecognize": false,
+        "Gesture": [
+          {
+            "$type": "KeyDown",
+            "Key": "MOUSE:1"
+          },
+          {
+            "$type": "Stroke",
+            "P": [
+              0,
+              0,
+              50,
+              0,
+              50,
+              50
+            ]
+          }
+        ],
+        "Command": {
+          "$type": "SendKeys",
+          "Keys": "^(t)"
+        }
+      },
+      {
+        "Name": "Close",
+        "ExecuteOnRecognize": false,
+        "Gesture": [
+          {
+            "$type": "KeyDown",
+            "Key": "MOUSE:1"
+          },
+          {
+            "$type": "Stroke",
+            "P": [
+              0,
+              0,
+              0,
+              50,
+              50,
+              50
+            ]
+          }
+        ],
+        "Command": {
+          "$type": "SendKeys",
+          "Keys": "^(w)"
+        }
+      },
+      {
+        "Name": "Kill",
+        "ExecuteOnRecognize": false,
+        "Gesture": [
+          {
+            "$type": "KeyDown",
+            "Key": "MOUSE:1"
+          },
+          {
+            "$type": "Stroke",
+            "P": [
+              50,
+              0,
+              50,
+              50,
+              0,
+              50
+            ]
+          },
+          {
+            "$type": "KeyDown",
+            "Key": "MOUSE:0"
+          }
+        ],
+        "Command": {
+          "$type": "Cmd",
+          "Code": "taskkill /F /PID %WG_TARGET_PID%"
+        }
+      },
+      {
+        "Name": "WG Settings",
+        "ExecuteOnRecognize": false,
+        "Gesture": [
+          {
+            "$type": "KeyDown",
+            "Key": "MOUSE:1"
+          },
+          {
+            "$type": "KeyDown",
+            "Key": "KEYBOARD:83"
+          }
+        ],
+        "Command": {
+          "$type": "Menu",
+          "Columns": 2,
+          "Commands": [
+            {
+              "Name": "Open",
+              "Command": {
+                "$type": "SendKeys",
+                "Keys": "^(,)"
+              }
+            },
+            {
+              "Name": "Script",
+              "Command": {
+                "$type": "Script",
+                "Code": "function ms_action() end"
+              }
+            }
+          ]
+        }
+      },
+      {
+        "Name": "Web Search",
+        "ExecuteOnRecognize": false,
+        "Gesture": [
+          {
+            "$type": "KeyDown",
+            "Key": "MOUSE:1"
+          },
+          {
+            "$type": "Stroke",
+            "P": [
+              0,
+              50,
+              0,
+              0,
+              0,
+              50
+            ]
+          }
+        ],
+        "Command": {
+          "$type": "WebSearch",
+          "Browser": "",
+          "Engine": "https://www.bing.com/search?q={WG_SELECTED_TEXT}"
+        }
+      },
+      {
+        "Name": "Minimize",
+        "ExecuteOnRecognize": false,
+        "Gesture": [
+          {
+            "$type": "KeyDown",
+            "Key": "MOUSE:1"
+          },
+          {
+            "$type": "Stroke",
+            "P": [
+              50,
+              0,
+              0,
+              50
+            ]
+          }
+        ],
+        "Command": {
+          "$type": "WindowControl",
+          "Command": "WINDOW_MINIMIZE"
+        }
+      },
+      {
+        "Name": "Snip & Sketch",
+        "ExecuteOnRecognize": false,
+        "Gesture": [
+          {
+            "$type": "KeyDown",
+            "Key": "MOUSE:1"
+          },
+          {
+            "$type": "Stroke",
+            "P": [
+              0,
+              50,
+              0,
+              0,
+              50,
+              0,
+              50,
+              50,
+              0,
+              50
+            ]
+          }
+        ],
+        "Command": {
+          "$type": "SendKeys",
+          "Keys": "#+(s)"
+        }
+      },
+      {
+        "Name": "Prev Tab",
+        "ExecuteOnRecognize": false,
+        "Gesture": [
+          {
+            "$type": "KeyDown",
+            "Key": "MOUSE:1"
+          },
+          {
+            "$type": "Stroke",
+            "P": [
+              50,
+              50,
+              50,
+              0,
+              0,
+              0
+            ]
+          }
+        ],
+        "Command": {
+          "$type": "SendKeys",
+          "Keys": "^+({TAB})"
+        }
+      },
+      {
+        "Name": "Prev Tab",
+        "ExecuteOnRecognize": false,
+        "Gesture": [
+          {
+            "$type": "KeyDown",
+            "Key": "MOUSE:4"
+          }
+        ],
+        "Command": {
+          "$type": "SendKeys",
+          "Keys": "^+({TAB})"
+        }
+      },
+      {
+        "Name": "Next Tab",
+        "ExecuteOnRecognize": false,
+        "Gesture": [
+          {
+            "$type": "KeyDown",
+            "Key": "MOUSE:3"
+          }
+        ],
+        "Command": {
+          "$type": "SendKeys",
+          "Keys": "^({TAB})"
+        }
+      },
+      {
+        "Name": "打开记事本",
+        "ExecuteOnRecognize": false,
+        "Gesture": [
+          {
+            "$type": "KeyDown",
+            "Key": "MOUSE:1"
+          },
+          {
+            "$type": "Stroke",
+            "P": [
+              0,
+              0,
+              50,
+              50
+            ]
+          }
+        ],
+        "Command": {
+          "$type": "RunApp",
+          "Path": "notepad.exe",
+          "Args": null,
+          "RunAsAdmin": false
+        }
+      },
+      {
+        "Name": "Start",
+        "ExecuteOnRecognize": false,
+        "Gesture": [
+          {
+            "$type": "MoveToEdgeCorner",
+            "EdgeCorner": {
+              "Value": 12
+            }
+          }
+        ],
+        "Command": {
+          "$type": "SendKeys",
+          "Keys": "^({ESC})"
+        }
+      },
+      {
+        "Name": "Show Desktop",
+        "ExecuteOnRecognize": false,
+        "Gesture": [
+          {
+            "$type": "MoveToEdgeCorner",
+            "EdgeCorner": {
+              "Value": 6
+            }
+          }
+        ],
+        "Command": {
+          "$type": "SendKeys",
+          "Keys": "#(d)"
+        }
+      },
+      {
+        "Name": "Switch App",
+        "ExecuteOnRecognize": false,
+        "Gesture": [
+          {
+            "$type": "MoveToEdgeCorner",
+            "EdgeCorner": {
+              "Value": 9
+            }
+          }
+        ],
+        "Command": {
+          "$type": "SendKeys",
+          "Keys": "%({TAB})"
+        }
+      },
+      {
+        "Name": "Task Switcher",
+        "ExecuteOnRecognize": false,
+        "Gesture": [
+          {
+            "$type": "MoveToEdgeCorner",
+            "EdgeCorner": {
+              "Value": 3
+            }
+          }
+        ],
+        "Command": {
+          "$type": "SendKeys",
+          "Keys": "#({TAB})"
+        }
+      },
+      {
+        "Name": "Volume +",
+        "ExecuteOnRecognize": false,
+        "Gesture": [
+          {
+            "$type": "MoveToEdgeCorner",
+            "EdgeCorner": {
+              "Value": 1
+            }
+          },
+          {
+            "$type": "KeyDown",
+            "Key": "VSCROLL:-120"
+          }
+        ],
+        "Command": {
+          "$type": "SystemFunctionKey",
+          "Key": "VOLUME_UP"
+        }
+      },
+      {
+        "Name": "Volume -",
+        "ExecuteOnRecognize": false,
+        "Gesture": [
+          {
+            "$type": "MoveToEdgeCorner",
+            "EdgeCorner": {
+              "Value": 1
+            }
+          },
+          {
+            "$type": "KeyDown",
+            "Key": "VSCROLL:120"
+          }
+        ],
+        "Command": {
+          "$type": "SystemFunctionKey",
+          "Key": "VOLUME_DOWN"
+        }
+      },
+      {
+        "Name": "Play/Pause",
+        "ExecuteOnRecognize": false,
+        "Gesture": [
+          {
+            "$type": "MoveToEdgeCorner",
+            "EdgeCorner": {
+              "Value": 1
+            }
+          },
+          {
+            "$type": "KeyDown",
+            "Key": "MOUSE:1"
+          }
+        ],
+        "Command": {
+          "$type": "SystemFunctionKey",
+          "Key": "PLAY_PAUSE"
+        }
+      },
+      {
+        "Name": "Task Manager",
+        "ExecuteOnRecognize": true,
+        "Gesture": [
+          {
+            "$type": "MoveToEdgeCorner",
+            "EdgeCorner": {
+              "Value": 2
+            }
+          },
+          {
+            "$type": "Stroke",
+            "P": [
+              50,
+              50,
+              50,
+              0,
+              50,
+              50,
+              50,
+              0,
+              50,
+              50
+            ]
+          }
+        ],
+        "Command": {
+          "$type": "SendKeys",
+          "Keys": "^+({ESC})"
+        }
+      },
+      {
+        "Name": "System Settings",
+        "ExecuteOnRecognize": false,
+        "Gesture": [
+          {
+            "$type": "MoveToEdgeCorner",
+            "EdgeCorner": {
+              "Value": 1
+            }
+          },
+          {
+            "$type": "KeyDown",
+            "Key": "MOUSE:1"
+          },
+          {
+            "$type": "Stroke",
+            "P": [
+              0,
+              0,
+              0,
+              50
+            ]
+          },
+          {
+            "$type": "KeyDown",
+            "Key": "MOUSE:0"
+          }
+        ],
+        "Command": {
+          "$type": "SendKeys",
+          "Keys": "#(i)"
+        }
+      }
+    ]
+  },
+  "Groups": [],
+  "Apps": [
+    {
+      "Path": "C:\\Windows\\explorer.exe",
+      "Id": "test-explorer",
+      "Name": "Windows Explorer",
+      "Intents": [
+        {
+          "Name": "New",
+          "ExecuteOnRecognize": false,
+          "Gesture": [
+            {
+              "$type": "KeyDown",
+              "Key": "MOUSE:1"
+            },
+            {
+              "$type": "Stroke",
+              "P": [
+                0,
+                0,
+                50,
+                0,
+                50,
+                50
+              ]
+            }
+          ],
+          "Command": {
+            "$type": "SendKeys",
+            "Keys": "^(n)"
+          }
+        },
+        {
+          "Name": "Rename",
+          "ExecuteOnRecognize": false,
+          "Gesture": [
+            {
+              "$type": "KeyDown",
+              "Key": "MOUSE:1"
+            },
+            {
+              "$type": "KeyDown",
+              "Key": "KEYBOARD:82"
+            }
+          ],
+          "Command": {
+            "$type": "SendKeys",
+            "Keys": "{F2}"
+          }
+        },
+        {
+          "Name": "Open In New Win",
+          "ExecuteOnRecognize": false,
+          "Gesture": [
+            {
+              "$type": "KeyDown",
+              "Key": "MOUSE:1"
+            },
+            {
+              "$type": "KeyDown",
+              "Key": "KEYBOARD:32"
+            }
+          ],
+          "Command": {
+            "$type": "SendKeys",
+            "Keys": "^({ENTER})"
+          }
+        },
+        {
+          "Name": "Ctrl Drag",
+          "ExecuteOnRecognize": false,
+          "Gesture": [
+            {
+              "$type": "KeyDown",
+              "Key": "MOUSE:1"
+            },
+            {
+              "$type": "KeyDown",
+              "Key": "MOUSE:0"
+            },
+            {
+              "$type": "Stroke",
+              "P": [
+                0,
+                0,
+                50,
+                0
+              ]
+            }
+          ],
+          "Command": {
+            "$type": "SendKeys",
+            "Keys": "^(c)"
+          }
+        }
+      ]
+    },
+    {
+      "Path": "C:\\Windows\\System32\\cmd.exe",
+      "Id": "test-cmd",
+      "Name": "Cmd",
+      "Intents": [
+        {
+          "Name": "New",
+          "ExecuteOnRecognize": false,
+          "Gesture": [
+            {
+              "$type": "KeyDown",
+              "Key": "MOUSE:1"
+            },
+            {
+              "$type": "Stroke",
+              "P": [
+                0,
+                0,
+                50,
+                0,
+                50,
+                50
+              ]
+            }
+          ],
+          "Command": {
+            "$type": "Cmd",
+            "Code": "start cmd"
+          }
+        }
+      ]
+    }
+  ],
+  "Specials": [
+    {
+      "$type": "WinDesktopTarget",
+      "Id": "test-desktop",
+      "Name": "Desktop",
+      "Intents": [
+        {
+          "Name": "Refresh",
+          "ExecuteOnRecognize": false,
+          "Gesture": [
+            {
+              "$type": "KeyDown",
+              "Key": "MOUSE:1"
+            },
+            {
+              "$type": "Stroke",
+              "P": [
+                50,
+                50,
+                0,
+                50,
+                0,
+                0,
+                50,
+                0
+              ]
+            }
+          ],
+          "Command": {
+            "$type": "SendKeys",
+            "Keys": "{F5}"
+          }
+        }
+      ]
+    }
+  ]
+}

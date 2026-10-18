@@ -1,0 +1,542 @@
+{
+  "version": 1,
+  "scopes": [
+    {
+      "id": "general",
+      "name": "所有程序",
+      "kind": "global",
+      "bindings": [
+        {
+          "name": "复制",
+          "pattern": [
+            {
+              "type": "press",
+              "key": "mouse:right"
+            },
+            {
+              "type": "trace",
+              "points": [
+                0,
+                0,
+                0,
+                -50,
+                50,
+                -50
+              ]
+            }
+          ],
+          "action": {
+            "type": "key_sequence",
+            "keys": "^c"
+          },
+          "execute_on_match": false,
+          "hide_label": false,
+          "secured": false,
+          "name_key": "builtin.gesture.copy"
+        },
+        {
+          "name": "粘贴",
+          "pattern": [
+            {
+              "type": "press",
+              "key": "mouse:right"
+            },
+            {
+              "type": "trace",
+              "points": [
+                0,
+                0,
+                0,
+                50,
+                50,
+                50
+              ]
+            }
+          ],
+          "action": {
+            "type": "key_sequence",
+            "keys": "^v"
+          },
+          "execute_on_match": false,
+          "hide_label": false,
+          "secured": false,
+          "name_key": "builtin.gesture.paste"
+        },
+        {
+          "name": "搜索选中文字",
+          "pattern": [
+            {
+              "type": "press",
+              "key": "mouse:right"
+            },
+            {
+              "type": "trace",
+              "points": [
+                0,
+                0,
+                50,
+                0,
+                50,
+                50
+              ]
+            }
+          ],
+          "action": {
+            "type": "open_url",
+            "url_template": "https://www.bing.com/search?q=%MS_SELECTED_TEXT%",
+            "browser": null
+          },
+          "execute_on_match": false,
+          "hide_label": false,
+          "secured": false,
+          "name_key": "builtin.gesture.web_search"
+        },
+        {
+          "name": "前进",
+          "pattern": [
+            {
+              "type": "press",
+              "key": "mouse:right"
+            },
+            {
+              "type": "trace",
+              "points": [
+                0,
+                0,
+                50,
+                0
+              ]
+            }
+          ],
+          "action": {
+            "type": "key_sequence",
+            "keys": "%{RIGHT}"
+          },
+          "execute_on_match": false,
+          "hide_label": false,
+          "secured": false,
+          "name_key": "builtin.gesture.forward"
+        },
+        {
+          "name": "后退",
+          "pattern": [
+            {
+              "type": "press",
+              "key": "mouse:right"
+            },
+            {
+              "type": "trace",
+              "points": [
+                0,
+                0,
+                -50,
+                0
+              ]
+            }
+          ],
+          "action": {
+            "type": "key_sequence",
+            "keys": "%{LEFT}"
+          },
+          "execute_on_match": false,
+          "hide_label": false,
+          "secured": false,
+          "name_key": "builtin.gesture.back"
+        },
+        {
+          "name": "刷新",
+          "pattern": [
+            {
+              "type": "press",
+              "key": "mouse:right"
+            },
+            {
+              "type": "trace",
+              "points": [
+                0,
+                0,
+                0,
+                -50
+              ]
+            }
+          ],
+          "action": {
+            "type": "key_sequence",
+            "keys": "{F5}"
+          },
+          "execute_on_match": false,
+          "hide_label": false,
+          "secured": false,
+          "name_key": "builtin.gesture.refresh"
+        },
+        {
+          "name": "关闭标签页",
+          "pattern": [
+            {
+              "type": "press",
+              "key": "mouse:right"
+            },
+            {
+              "type": "trace",
+              "points": [
+                0,
+                0,
+                0,
+                50,
+                50,
+                50,
+                0,
+                0
+              ]
+            }
+          ],
+          "action": {
+            "type": "key_sequence",
+            "keys": "^w"
+          },
+          "execute_on_match": false,
+          "hide_label": false,
+          "secured": false,
+          "name_key": "builtin.gesture.close_tab"
+        },
+        {
+          "name": "最小化",
+          "pattern": [
+            {
+              "type": "press",
+              "key": "mouse:right"
+            },
+            {
+              "type": "trace",
+              "points": [
+                0,
+                0,
+                0,
+                50
+              ]
+            }
+          ],
+          "action": {
+            "type": "window_op",
+            "op": "minimize",
+            "allow_child": false
+          },
+          "execute_on_match": false,
+          "hide_label": false,
+          "secured": false,
+          "name_key": "builtin.gesture.minimize"
+        },
+        {
+          "name": "音量加",
+          "pattern": [
+            {
+              "type": "edge",
+              "edge": 1
+            },
+            {
+              "type": "wheel",
+              "horizontal": false
+            }
+          ],
+          "action": {
+            "type": "system_key",
+            "key": "VOLUME_UP"
+          },
+          "execute_on_match": true,
+          "hide_label": false,
+          "secured": false,
+          "name_key": "builtin.gesture.volume_up"
+        },
+        {
+          "name": "开始菜单",
+          "pattern": [
+            {
+              "type": "edge",
+              "edge": 12
+            }
+          ],
+          "action": {
+            "type": "shell",
+            "script": "start ms-actioncenter:"
+          },
+          "execute_on_match": false,
+          "hide_label": false,
+          "secured": false,
+          "name_key": "builtin.gesture.start"
+        },
+        {
+          "name": "显示桌面",
+          "pattern": [
+            {
+              "type": "edge",
+              "edge": 6
+            }
+          ],
+          "action": {
+            "type": "key_sequence",
+            "keys": "#d"
+          },
+          "execute_on_match": false,
+          "hide_label": false,
+          "secured": false,
+          "name_key": "builtin.gesture.show_desktop"
+        },
+        {
+          "name": "任务管理器",
+          "pattern": [
+            {
+              "type": "edge",
+              "edge": 2
+            },
+            {
+              "type": "press",
+              "key": "wheel:1"
+            },
+            {
+              "type": "press",
+              "key": "wheel:-1"
+            },
+            {
+              "type": "press",
+              "key": "wheel:1"
+            }
+          ],
+          "action": {
+            "type": "shell",
+            "script": "start taskmgr"
+          },
+          "execute_on_match": true,
+          "hide_label": false,
+          "secured": false,
+          "name_key": "builtin.gesture.task_manager"
+        },
+        {
+          "name": "Custom lua test",
+          "pattern": [
+            {
+              "type": "press",
+              "key": "mouse:middle"
+            },
+            {
+              "type": "trace",
+              "points": [
+                0,
+                0,
+                50,
+                50
+              ]
+            }
+          ],
+          "action": {
+            "type": "lua",
+            "code": "function ms_action()\n  ms.show_toast(\"hello\", 1000)\nend\n"
+          },
+          "execute_on_match": false,
+          "hide_label": false,
+          "secured": false
+        }
+      ],
+      "name_key": "builtin.scope.global"
+    },
+    {
+      "id": "desktop",
+      "name": "桌面",
+      "kind": "special",
+      "special": "desktop",
+      "bindings": [
+        {
+          "name": "截图",
+          "pattern": [
+            {
+              "type": "press",
+              "key": "mouse:right"
+            },
+            {
+              "type": "trace",
+              "points": [
+                0,
+                0,
+                50,
+                -50,
+                0,
+                -100,
+                -50,
+                -50,
+                0,
+                0
+              ]
+            }
+          ],
+          "action": {
+            "type": "key_sequence",
+            "keys": "#s"
+          },
+          "execute_on_match": false,
+          "hide_label": false,
+          "secured": false,
+          "name_key": "builtin.gesture.snip"
+        }
+      ],
+      "name_key": "builtin.scope.desktop"
+    },
+    {
+      "id": "app-chrome",
+      "name": "Google Chrome",
+      "kind": "app",
+      "app": {
+        "exe": "chrome.exe",
+        "win_class": null,
+        "win_title": null,
+        "regex": false
+      },
+      "bindings": [
+        {
+          "name": "新建标签页",
+          "pattern": [
+            {
+              "type": "press",
+              "key": "mouse:right"
+            },
+            {
+              "type": "trace",
+              "points": [
+                0,
+                0,
+                0,
+                -50,
+                50,
+                -50
+              ]
+            }
+          ],
+          "action": {
+            "type": "key_sequence",
+            "keys": "^t"
+          },
+          "execute_on_match": false,
+          "hide_label": false,
+          "secured": false,
+          "name_key": "builtin.gesture.new_tab"
+        },
+        {
+          "name": "恢复关闭的标签页",
+          "pattern": [
+            {
+              "type": "press",
+              "key": "mouse:right"
+            },
+            {
+              "type": "trace",
+              "points": [
+                0,
+                0,
+                -50,
+                0,
+                50,
+                0
+              ]
+            }
+          ],
+          "action": {
+            "type": "key_sequence",
+            "keys": "^+t"
+          },
+          "execute_on_match": false,
+          "hide_label": false,
+          "secured": false,
+          "name_key": "builtin.gesture.reopen_tab"
+        }
+      ]
+    },
+    {
+      "id": "app-explorer",
+      "name": "资源管理器",
+      "name_key": "builtin.scope.explorer",
+      "kind": "app",
+      "app": {
+        "exe": "explorer.exe",
+        "win_class": null,
+        "win_title": null,
+        "regex": false
+      },
+      "bindings": [
+        {
+          "name": "新建文件夹",
+          "pattern": [
+            {
+              "type": "press",
+              "key": "mouse:right"
+            },
+            {
+              "type": "trace",
+              "points": [
+                0,
+                0,
+                50,
+                -50
+              ]
+            }
+          ],
+          "action": {
+            "type": "key_sequence",
+            "keys": "^+n"
+          },
+          "execute_on_match": false,
+          "hide_label": false,
+          "secured": false
+        },
+        {
+          "name": "复制",
+          "name_key": "builtin.gesture.copy",
+          "pattern": [
+            {
+              "type": "press",
+              "key": "mouse:right"
+            },
+            {
+              "type": "trace",
+              "points": [
+                0,
+                0,
+                0,
+                -50,
+                50,
+                -50
+              ]
+            }
+          ],
+          "action": {
+            "type": "key_sequence",
+            "keys": "^c"
+          },
+          "execute_on_match": false,
+          "hide_label": false,
+          "secured": false
+        }
+      ]
+    }
+  ],
+  "settings": {
+    "drag_timeout_ms": 500,
+    "drag_timeout_hint": true,
+    "min_stroke_px": 30,
+    "target_mode": "under_cursor",
+    "pause_hotkey": "#({ESC})",
+    "show_tray": true,
+    "trail": {
+      "show": true,
+      "width": 2,
+      "border": 1,
+      "fade_out": true,
+      "color_normal": "#00C2FFE0",
+      "color_matched": "#FF7A00F2"
+    },
+    "label": {
+      "show": true,
+      "pos": 0.25,
+      "border": 1,
+      "color_normal": "#FFFFFFE6",
+      "color_matched": "#FF7A00F2"
+    }
+  }
+}

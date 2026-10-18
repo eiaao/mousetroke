@@ -1,0 +1,23 @@
+# Rust 构建产物（整个 target 忽略，但保留其中的 UI 冒烟测试脚本）
+target/*
+!target/uitest/
+target/uitest/node_modules/
+target/uitest/*.png
+
+# 前端
+crates/mousetroke-settings/ui/node_modules/
+crates/mousetroke-settings/ui/dist/
+
+# 发布产物
+dist/
+
+# 本地运行的日志与临时文件
+*.log
+*.log.old
+*.tmp
+
+# Claude Code 运行时文件
+.claude/
+
+# 内部工作文档（需求分析、交接记录），不进公开仓库
+docs/internal/

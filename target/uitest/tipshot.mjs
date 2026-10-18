@@ -1,0 +1,11 @@
+import puppeteer from "puppeteer-core";
+import { readFileSync } from "node:fs";
+const browser = await puppeteer.launch({ executablePath: "C:\\Program Files (x86)\\Microsoft\\Edge\\Application\\msedge.exe", headless: true });
+const page = await browser.newPage();
+await page.setViewport({ width: 1180, height: 760 });
+await page.goto(process.argv[2], { waitUntil: "networkidle0" });
+await new Promise((r) => setTimeout(r, 300));
+await page.evaluate(readFileSync(process.argv[3], "utf8"));
+await new Promise((r) => setTimeout(r, 1200));
+await page.screenshot({ path: process.argv[4], clip: { x: 700, y: 160, width: 480, height: 200 } });
+await browser.close();

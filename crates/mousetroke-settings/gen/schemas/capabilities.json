@@ -1,0 +1,1 @@
+{"default":{"identifier":"default","description":"设置窗口的权限：仅核心事件与窗口显示/标题控制、关闭前保存","local":true,"windows":["main"],"permissions":["core:default","core:window:allow-show","core:window:allow-set-focus","core:window:allow-set-title","core:window:allow-destroy"]}}
