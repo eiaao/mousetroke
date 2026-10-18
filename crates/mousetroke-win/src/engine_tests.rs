@@ -15,6 +15,7 @@ struct Log {
     executed: Vec<String>,
     lines: usize,
     labels: Vec<String>,
+    samples: Vec<Vec<i32>>,
 }
 
 type Shared = Rc<RefCell<Log>>;
@@ -69,6 +70,9 @@ impl Host for FakeHost {
     }
     fn new_canvas(&self, _: &str, _: f64) -> Option<Box<dyn Canvas>> {
         Some(Box::new(FakeCanvas(self.log.clone())))
+    }
+    fn shape_sample(&self, encoded: Vec<i32>) {
+        self.log.borrow_mut().samples.push(encoded);
     }
 }
 
@@ -150,12 +154,16 @@ impl T {
     }
 
     fn with_config(cfg: Config) -> Self {
+        Self::with_samples(cfg, false)
+    }
+
+    fn with_samples(cfg: Config, shape_samples: bool) -> Self {
         // 某个测试失败导致锁中毒时照样拿锁，别把后面的测试连带弄红
         let lang = LANG_LOCK.lock().unwrap_or_else(|e| e.into_inner());
         let log = Shared::default();
         let under: Under = Rc::new(RefCell::new(("Chrome_WidgetWin_1".into(), Some(r"C:\app\chrome.exe".into()))));
         let host = FakeHost { log: log.clone(), under: under.clone() };
-        let e = Engine::with_parts(cfg, None, Box::new(FakeCanvas(log.clone())), Box::new(host));
+        let e = Engine::with_parts(cfg, None, Box::new(FakeCanvas(log.clone())), Box::new(host), shape_samples);
         Self { e, log, under, pos: (960, 540), _lang: lang }
     }
     fn under(&self, class: &str, exe: Option<&str>) {
@@ -198,6 +206,339 @@ impl T {
     }
     fn lines(&self) -> usize {
         self.log.borrow().lines
+    }
+    fn draw_path(&mut self, path: &[(i32, i32)]) {
+        self.to(path[0].0, path[0].1);
+        assert_eq!(self.down(B::Right), Verdict::Swallow);
+        for &(x, y) in &path[1..] {
+            self.to(x, y);
+        }
+    }
+}
+
+/// 与 core 的 G 样本相同：逆时针 C 弧线，向上回钩，再向左收笔。
+fn g_path(count: usize, noise: bool) -> Vec<(i32, i32)> {
+    use std::f64::consts::PI;
+    let arc = |t: f64| {
+        let a = PI / 4.0 + 1.5 * PI * t;
+        (a.cos(), -a.sin())
+    };
+    let lerp = |a: (f64, f64), b: (f64, f64), t: f64| (a.0 + (b.0 - a.0) * t, a.1 + (b.1 - a.1) * t);
+    (0..=count).map(|i| {
+        let t = i as f64 / count as f64;
+        let (x, y) = if t < 0.78 { arc(t / 0.78) }
+            else if t < 0.89 { lerp(arc(1.0), (0.82, 0.0), (t - 0.78) / 0.11) }
+            else { lerp((0.82, 0.0), (0.05, 0.0), (t - 0.89) / 0.11) };
+        let (jx, jy) = if noise { ((i as f64 * 1.73).sin() * 3.0, (i as f64 * 2.91).sin() * 3.0) } else { (0.0, 0.0) };
+        ((960.0 + x * 160.0 + jx).round() as i32, (540.0 + y * 160.0 + jy).round() as i32)
+    }).collect()
+}
+
+fn shape_step(path: &[(i32, i32)]) -> Step {
+    let raw = path.iter().map(|&(x, y)| (x as f64, y as f64)).collect::<Vec<_>>();
+    Step::shape_from_samples(&[raw]).unwrap()
+}
+
+fn shape_config() -> Config {
+    let mut cfg = config(false);
+    cfg.scopes[0].bindings.extend([
+        bind("G", vec![RIGHT, shape_step(&g_path(160, false))]),
+        bind("close", vec![RIGHT, trace(&DOWN_RIGHT)]),
+    ]);
+    cfg
+}
+
+#[test]
+fn shape_g_straight_scribble_and_plain_click() {
+    let mut t = T::with_config(shape_config());
+    t.draw_path(&g_path(80, true));
+    assert!(t.executed().is_empty());
+    t.up(B::Right);
+    assert_eq!(t.executed(), ["G"]);
+    assert_eq!(t.log.borrow().labels.last().map(String::as_str), Some("G"));
+
+    t.to(960, 540);
+    t.down(B::Right);
+    t.drag(960, 740);
+    t.drag(1160, 740);
+    t.up(B::Right);
+    assert_eq!(t.executed(), ["G", "close"]);
+
+    let scribble: Vec<_> = (0..150).map(|i| {
+        ((960.0 + (i as f64 * 1.73).sin() * 150.0) as i32, (540.0 + (i as f64 * 2.91).sin() * 150.0) as i32)
+    }).collect();
+    t.draw_path(&scribble);
+    t.up(B::Right);
+    assert_eq!(t.executed(), ["G", "close"]);
+    assert!(t.log.borrow().labels.last().unwrap().starts_with("未识别"));
+    assert!(t.replays().is_empty());
+
+    t.down(B::Right);
+    t.to(t.pos.0 + 1, t.pos.1 + 1);
+    t.up(B::Right);
+    assert_eq!(t.replays(), [(B::Right, true)]);
+    assert_eq!(echo_back(&mut t, true), 1);
+    assert_eq!(t.executed(), ["G", "close"]);
+}
+
+#[test]
+fn shape_execute_on_match_waits_for_release() {
+    let mut cfg = shape_config();
+    cfg.scopes[0].bindings.iter_mut().find(|b| b.name == "G").unwrap().execute_on_match = true;
+    let mut t = T::with_config(cfg);
+    t.draw_path(&g_path(160, false));
+    t.e.after_input();
+    assert!(t.executed().is_empty());
+    assert_eq!(t.e.capture.as_ref().unwrap().state, CaptureState::Active);
+    assert_eq!(t.log.borrow().labels.last().map(String::as_str), Some("G"));
+    t.up(B::Right);
+    assert_eq!(t.executed(), ["G"]);
+    assert!(t.replays().is_empty());
+}
+
+#[test]
+fn partial_g_does_not_execute_a_c_shape() {
+    let g = g_path(200, false);
+    let mut cfg = shape_config();
+    let mut c = bind("C", vec![RIGHT, shape_step(&g[..=156])]);
+    c.execute_on_match = true;
+    cfg.scopes[0].bindings.push(c);
+    let mut t = T::with_config(cfg);
+    t.draw_path(&g[..=156]);
+    t.e.after_input();
+    assert_eq!(t.log.borrow().labels.last().map(String::as_str), Some("C"));
+    assert!(t.executed().is_empty());
+    for &(x, y) in &g[157..] { t.to(x, y); }
+    t.up(B::Right);
+    assert_eq!(t.executed(), ["G"]);
+}
+
+#[test]
+fn shape_with_wheel_waits_for_release() {
+    let mut cfg = shape_config();
+    cfg.scopes[0].bindings.retain(|b| b.name != "G");
+    let mut b = bind("G-wheel", vec![RIGHT, shape_step(&g_path(160, false)), press(PatternKey::Wheel(1))]);
+    b.execute_on_match = true;
+    cfg.scopes[0].bindings.push(b);
+    let mut t = T::with_config(cfg);
+    t.draw_path(&g_path(80, true));
+    assert_eq!(t.wheel(1), Verdict::Swallow);
+    assert!(t.executed().is_empty(), "滚轮不能让形状在笔画结束前执行");
+    t.up(B::Right);
+    assert_eq!(t.executed(), ["G-wheel"]);
+}
+
+#[test]
+fn app_shape_wheel_precedes_global_straight_wheel() {
+    let mut cfg = shape_config();
+    cfg.scopes[0].bindings.push(bind("global-wheel", vec![RIGHT, trace(&DOWN_RIGHT), press(PatternKey::Wheel(1))]));
+    let mut app = cfg.scopes[0].clone();
+    app.kind = ScopeKind::App;
+    app.app = Some(mousetroke_core::schema::AppMatch { exe: "chrome.exe".into(), win_class: None, win_title: None, regex: false });
+    app.bindings = vec![bind("app-wheel", vec![RIGHT, shape_step(&[(960, 540), (960, 740), (1160, 740)]), press(PatternKey::Wheel(1))])];
+    cfg.scopes.push(app);
+    let mut t = T::with_config(cfg);
+    t.down(B::Right);
+    t.drag(960, 740);
+    t.drag(1160, 740);
+    assert_eq!(t.wheel(1), Verdict::Swallow);
+    assert!(t.executed().is_empty());
+    t.up(B::Right);
+    assert_eq!(t.executed(), ["app-wheel"]);
+}
+
+#[test]
+fn shape_capture_still_allows_drag_timeout_and_escape() {
+    let mut t = T::with_samples(shape_config(), true);
+    t.down(B::Right);
+    t.e.capture.as_mut().unwrap().started = Instant::now() - Duration::from_millis(100);
+    assert_eq!(t.to(961, 540), Verdict::Pass);
+    assert_eq!(t.replays(), [(B::Right, false)]);
+    assert_eq!(t.up(B::Right), Verdict::Pass);
+    assert!(t.log.borrow().samples.is_empty());
+    t.draw_path(&g_path(160, false));
+    assert_eq!(t.e.handle(InputEvent::KeyDown(0x1B)), Verdict::Swallow);
+    t.up(B::Right);
+    assert!(t.executed().is_empty());
+    assert_eq!(t.replays(), [(B::Right, false)]);
+}
+
+#[test]
+fn app_shape_precedes_global_straight_and_allows_fallback() {
+    let mut cfg = shape_config();
+    let down_right = [(960, 540), (960, 740), (1160, 740)];
+    let mut app = cfg.scopes[0].clone();
+    app.kind = ScopeKind::App;
+    app.app = Some(mousetroke_core::schema::AppMatch { exe: "chrome.exe".into(), win_class: None, win_title: None, regex: false });
+    app.bindings = vec![bind("app-shape", vec![RIGHT, shape_step(&down_right)])];
+    cfg.scopes.push(app);
+    let mut t = T::with_config(cfg);
+    t.to(960, 540);
+    t.down(B::Right);
+    t.drag(960, 740);
+    t.drag(1160, 740);
+    t.up(B::Right);
+    assert_eq!(t.executed(), ["app-shape"], "应用形状优先于全局精确折线");
+
+    t.e.cfg.scopes[1].bindings[0].pattern[1] = shape_step(&g_path(160, false));
+    t.to(960, 540);
+    t.down(B::Right);
+    t.drag(960, 740);
+    t.drag(1160, 740);
+    t.up(B::Right);
+    assert_eq!(t.executed(), ["app-shape", "close"]);
+    t.draw_path(&g_path(80, true));
+    t.up(B::Right);
+    assert_eq!(t.executed(), ["app-shape", "close", "app-shape"]);
+}
+
+#[test]
+fn disabled_shape_and_app_gestures_off_are_respected() {
+    let mut cfg = shape_config();
+    cfg.scopes[0].bindings.iter_mut().find(|b| b.name == "G").unwrap().disabled = true;
+    let mut app = cfg.scopes[0].clone();
+    app.kind = ScopeKind::App;
+    app.app = Some(mousetroke_core::schema::AppMatch { exe: "game.exe".into(), win_class: None, win_title: None, regex: false });
+    app.disabled = true;
+    cfg.scopes.push(app);
+    let mut t = T::with_config(cfg);
+    t.draw_path(&g_path(160, false));
+    t.up(B::Right);
+    assert!(t.executed().is_empty());
+    assert!(t.log.borrow().labels.last().unwrap().starts_with("未识别"));
+    t.under("Game", Some(r"C:\game.exe"));
+    assert_eq!(t.down(B::Right), Verdict::Pass);
+    for (x, y) in g_path(80, true) { t.to(x, y); }
+    assert_eq!(t.up(B::Right), Verdict::Pass);
+    assert!(t.executed().is_empty());
+    assert!(t.replays().is_empty());
+}
+
+#[test]
+fn shape_edge_button_reset_and_plain_click_fallback() {
+    let mut cfg = shape_config();
+    cfg.scopes[0].bindings.push(bind("edge-G", vec![Step::Edge { edge: TOP }, RIGHT, shape_step(&g_path(160, false))]));
+    let mut t = T::with_config(cfg);
+    t.dwell(960, 0);
+    // 首次按键之前的边缘轨迹不能混入按下后的形状。
+    t.to(961, 0);
+    t.down(B::Right);
+    assert_eq!(t.e.path, [(961.0, 0.0)]);
+    t.up(B::Right);
+    assert_eq!(t.replays(), [(B::Right, true)]);
+
+    let g = g_path(160, false);
+    t.to(900, 300);
+    t.dwell(g[0].0, 0);
+    t.down(B::Right);
+    let y0 = g[0].1;
+    for &(x, y) in &g[1..] { t.to(x, y - y0); }
+    assert!(t.executed().is_empty());
+    t.up(B::Right);
+    assert_eq!(t.executed(), ["edge-G"]);
+}
+
+#[test]
+fn raw_path_skips_nearby_points_decimates_and_resets() {
+    let mut t = T::with_config(shape_config());
+    t.down(B::Right);
+    let storage = t.e.path.as_ptr();
+    t.to(961, 541);
+    assert_eq!(t.e.path.len(), 1);
+    t.to(962, 540);
+    assert_eq!(t.e.path.len(), 2);
+    for i in 2..SHAPE_PATH_CAP { t.to(960 + i as i32 * 2, 540); }
+    assert_eq!(t.e.path.len(), SHAPE_PATH_CAP);
+    let before = t.e.path.clone();
+    t.to(960 + SHAPE_PATH_CAP as i32 * 2, 540);
+    assert_eq!(t.e.path.len(), SHAPE_PATH_CAP / 2 + 1);
+    for (kept, original) in t.e.path.iter().zip(before.iter().step_by(2)) { assert_eq!(kept, original); }
+    assert_eq!(t.e.path.as_ptr(), storage);
+    t.up(B::Right);
+    t.draw_path(&g_path(160, false));
+    assert_eq!(t.e.path.first(), Some(&(g_path(160, false)[0].0 as f64, g_path(160, false)[0].1 as f64)));
+    assert_eq!(t.e.path.as_ptr(), storage);
+    t.up(B::Right);
+    assert_eq!(t.executed(), ["G"]);
+}
+
+#[test]
+fn raw_path_stays_bounded_for_50000_moves_and_finishes() {
+    let mut t = T::with_config(shape_config());
+    t.down(B::Right);
+    let storage = t.e.path.as_ptr();
+    for i in 1..=50_000 {
+        t.to(960 + i * 3, 540);
+        assert!(t.e.path.len() <= SHAPE_PATH_CAP);
+        assert_eq!(t.e.path.capacity(), SHAPE_PATH_CAP);
+        assert_eq!(t.e.path.as_ptr(), storage);
+    }
+    for (x, y) in g_path(160, false) { t.to(x + 150_000, y); }
+    assert!(t.e.path.len() <= SHAPE_PATH_CAP);
+    let start = Instant::now();
+    t.up(B::Right);
+    assert!(start.elapsed() < Duration::from_millis(100));
+    assert!(t.e.capture.is_none());
+    assert!(t.replays().is_empty());
+}
+
+#[test]
+fn shape_samples_switch_logs_once_only_for_strokes() {
+    for enabled in [false, true] {
+        let mut t = T::with_samples(shape_config(), enabled);
+        t.down(B::Right);
+        t.to(962, 541);
+        t.up(B::Right);
+        assert!(t.log.borrow().samples.is_empty());
+        t.draw_path(&g_path(160, false));
+        assert!(t.log.borrow().samples.is_empty());
+        let expected = shape::encode(&shape::normalize(&t.e.path).unwrap());
+        t.up(B::Right);
+        assert_eq!(t.log.borrow().samples, if enabled { vec![expected] } else { vec![] });
+        t.up(B::Right);
+        assert_eq!(t.log.borrow().samples.len(), enabled as usize);
+        // 未识别的笔画也用于校准，不只记录命中的 G。
+        t.to(960, 540);
+        t.down(B::Right);
+        t.drag(1200, 540);
+        t.up(B::Right);
+        assert_eq!(t.log.borrow().samples.len(), 2 * enabled as usize);
+    }
+}
+
+#[test]
+#[ignore = "本地 release 校准：满路径与 100 个形状模板的完整释放处理"]
+fn shape_finish_timing_100_templates() {
+    let mut cfg = shape_config();
+    let g = g_path(160, false);
+    cfg.scopes[0].bindings = (0..100).map(|i| bind(&format!("shape-{i}"), vec![RIGHT, shape_step(&g)])).collect();
+    let mut t = T::with_config(cfg);
+    let full_path: Vec<_> = (0..SHAPE_PATH_CAP).map(|i| {
+        let position = i as f64 * (g.len() - 1) as f64 / (SHAPE_PATH_CAP - 1) as f64;
+        let index = (position as usize).min(g.len() - 2);
+        let (a, b, fraction) = (g[index], g[index + 1], position - index as f64);
+        (((a.0 as f64 + (b.0 - a.0) as f64 * fraction) * 10.0).round(),
+            ((a.1 as f64 + (b.1 - a.1) as f64 * fraction) * 10.0).round())
+    }).collect();
+    for accepted in [false, true] {
+        if accepted {
+            let mut b = bind("100-samples", vec![RIGHT, shape_step(&g)]);
+            if let Step::Shape { templates } = &mut b.pattern[1] { templates.resize(100, templates[0].clone()); }
+            t.e.cfg.scopes[0].bindings = vec![b];
+        }
+        let mut times = Vec::new();
+        for _ in 0..101 {
+            // 计时包含完整释放回调；满路径无重复点，100 个模板均参与评分。
+            t.draw_path(&g);
+            t.e.path.clone_from(&full_path);
+            let start = Instant::now();
+            std::hint::black_box(t.up(B::Right));
+            times.push(start.elapsed());
+        }
+        times.sort();
+        println!("full-cap path + 100 shape templates (accepted={accepted}): median {:.3} us, maximum {:.3} us (101 releases)", times[50].as_secs_f64() * 1e6, times[100].as_secs_f64() * 1e6);
+        assert!(times[100] < Duration::from_millis(1), "释放回调应远低于 1ms: {:?}", times[100]);
+        assert_eq!(t.executed().len(), if accepted { 101 } else { 0 });
     }
 }
 
