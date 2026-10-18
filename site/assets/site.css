@@ -97,6 +97,8 @@ code { font-family: "Cascadia Code", "JetBrains Mono", Consolas, monospace; font
 .nav a:hover { background: var(--trail-soft); color: var(--ink); }
 .lang { font-size: 14px; color: var(--muted); text-decoration: none; padding: 6px 8px; white-space: nowrap; }
 .lang:hover { color: var(--ink); }
+.gh { display: flex; align-items: center; gap: 6px; font-size: 14px; color: var(--muted); text-decoration: none; padding: 6px 8px; border-radius: 8px; transition: color 0.2s, background 0.2s; }
+.gh:hover { color: var(--ink); background: var(--trail-soft); }
 .btn {
   display: inline-flex; align-items: center; gap: 10px;
   font: 600 16px/1 var(--font);
@@ -110,7 +112,16 @@ code { font-family: "Cascadia Code", "JetBrains Mono", Consolas, monospace; font
 .btn.primary:hover { box-shadow: 0 10px 24px -10px color-mix(in srgb, var(--ink) 70%, transparent); }
 .btn.small { padding: 9px 14px; font-size: 14px; border-radius: 10px; }
 .btn small { font-weight: 400; opacity: 0.7; font-size: 13px; }
-@media (max-width: 860px) { .nav { display: none; } .top .lang { margin-left: auto; } }
+@media (max-width: 860px) { .nav { display: none; } .top .lang, .gh { margin-left: auto; } }
+@media (max-width: 720px) { .gh span { display: none; } }
+@media (max-width: 520px) {
+  .top .gh { display: none; }
+  .top .wrap { gap: 8px; }
+  .top .btn { white-space: nowrap; flex-shrink: 0; padding: 8px 12px; }
+  .top .langmenu summary { padding: 6px 4px; }
+}
+/* 极窄屏只留图标（链接本身带 aria-label） */
+@media (max-width: 380px) { .brand { font-size: 0; gap: 0; } }
 
 /* ---------- 首屏 ---------- */
 .hero { padding: clamp(32px, 6vw, 72px) 0 110px; position: relative; min-height: calc(100svh - 60px); display: flex; flex-direction: column; justify-content: center; }
@@ -414,7 +425,9 @@ section.sec { padding: clamp(64px, 9vw, 120px) 0 0; }
 .get p { margin: 0; color: color-mix(in srgb, var(--bg) 72%, transparent); max-width: 36em; }
 .get .btn.primary { background: var(--trail); border-color: var(--trail); color: #fff; }
 .get .sys { font-size: 14px; margin-top: 10px; color: color-mix(in srgb, var(--bg) 60%, transparent); text-align: right; }
-@media (max-width: 760px) { .get .wrap { grid-template-columns: 1fr; } .get .sys { text-align: left; } }
+.get .src { display: block; margin-top: 6px; font-size: 14px; text-align: right; color: color-mix(in srgb, var(--bg) 78%, transparent); text-underline-offset: 3px; }
+.get .src:hover { color: var(--bg); }
+@media (max-width: 760px) { .get .wrap { grid-template-columns: 1fr; } .get .sys, .get .src { text-align: left; } }
 footer { padding: 32px 0 48px; color: var(--muted); font-size: 14px; }
 footer .wrap { display: flex; flex-wrap: wrap; gap: 12px 28px; justify-content: space-between; }
 footer nav { display: flex; gap: 20px; flex-wrap: wrap; }
