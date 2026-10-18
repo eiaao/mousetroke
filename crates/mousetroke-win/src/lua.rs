@@ -26,9 +26,13 @@ pub struct LuaCtx {
 /// 运行一段 Lua 手势脚本（阻塞，在工作线程调用）。
 pub fn run_lua(code: &str, ctx: &LuaCtx) {
     let lua = Lua::new();
+    run_lua_in(&lua, code, ctx);
+}
+
+fn run_lua_in(lua: &Lua, code: &str, ctx: &LuaCtx) {
     let _ = lua.set_memory_limit(8 * 1024 * 1024);
 
-    if let Err(e) = install_ms_table(&lua, ctx) {
+    if let Err(e) = install_ms_table(lua, ctx) {
         crate::log!("MS API 注册失败: {e}");
         return;
     }
@@ -53,7 +57,7 @@ pub fn run_lua(code: &str, ctx: &LuaCtx) {
         },
     };
 
-    if let Err(e) = call_entry(&lua, &func, ctx) {
+    if let Err(e) = call_entry(lua, &func, ctx) {
         crate::log!("脚本执行错误: {e}");
     }
 }
@@ -63,6 +67,23 @@ fn call_entry(lua: &Lua, func: &Function, ctx: &LuaCtx) -> mlua::Result<()> {
     pos.set("x", ctx.pos.0)?;
     pos.set("y", ctx.pos.1)?;
     func.call::<()>((pos, ctx.wid as i64, ctx.pid, ctx.exe.clone(), ctx.title.clone(), ctx.mode.clone()))
+}
+
+// mlua 0.12.2 拒绝小数转整数；旧脚本仍按 0.10 的约定截断，并保留范围检查。
+struct LuaInt<T>(T);
+
+impl<T: mlua::FromLua> mlua::FromLua for LuaInt<T> {
+    fn from_lua(value: Value, lua: &Lua) -> mlua::Result<Self> {
+        match T::from_lua(value.clone(), lua) {
+            Ok(n) => Ok(Self(n)),
+            Err(error) => match lua.coerce_number(value)? {
+                Some(n) if n.is_finite() && n.fract() != 0.0 => {
+                    T::from_lua(Value::Number(n.trunc()), lua).map(Self).map_err(|_| error)
+                }
+                _ => Err(error),
+            },
+        }
+    }
 }
 
 // ---------------------------------------------------------------- MS API
@@ -82,7 +103,7 @@ fn install_ms_table(lua: &Lua, ctx: &LuaCtx) -> mlua::Result<()> {
     )?;
     ms.set(
         "sleep",
-        lua.create_function(|_l, ms: u64| {
+        lua.create_function(|_l, LuaInt(ms): LuaInt<u64>| {
             std::thread::sleep(std::time::Duration::from_millis(ms));
             Ok(())
         })?,
@@ -109,8 +130,8 @@ fn install_ms_table(lua: &Lua, ctx: &LuaCtx) -> mlua::Result<()> {
     )?;
     ms.set(
         "show_toast",
-        lua.create_function(|_l, (msg, duration): (String, Option<u64>)| {
-            crate::engine::push_toast(msg, duration.unwrap_or(1200));
+        lua.create_function(|_l, (msg, duration): (String, Option<LuaInt<u64>>)| {
+            crate::engine::push_toast(msg, duration.map(|v| v.0).unwrap_or(1200));
             Ok(())
         })?,
     )?;
@@ -168,21 +189,21 @@ fn install_ms_table(lua: &Lua, ctx: &LuaCtx) -> mlua::Result<()> {
     )?;
     ms.set(
         "focus_win",
-        lua.create_function(|_l, wid: i64| {
+        lua.create_function(|_l, LuaInt(wid): LuaInt<i64>| {
             input::focus_window(HWND(wid as *mut core::ffi::c_void));
             Ok(())
         })?,
     )?;
     ms.set(
         "set_win_state",
-        lua.create_function(|_l, (wid, state): (i64, String)| {
+        lua.create_function(|_l, (LuaInt(wid), state): (LuaInt<i64>, String)| {
             input::set_window_state(HWND(wid as *mut core::ffi::c_void), &state);
             Ok(())
         })?,
     )?;
     ms.set(
         "set_win_top",
-        lua.create_function(|_l, (wid, top): (i64, bool)| {
+        lua.create_function(|_l, (LuaInt(wid), top): (LuaInt<i64>, bool)| {
             input::set_topmost(HWND(wid as *mut core::ffi::c_void), top);
             Ok(())
         })?,
@@ -201,14 +222,14 @@ fn install_ms_table(lua: &Lua, ctx: &LuaCtx) -> mlua::Result<()> {
     )?;
     ms.set(
         "set_mouse_pos",
-        lua.create_function(|_l, (x, y): (i32, i32)| {
+        lua.create_function(|_l, (LuaInt(x), LuaInt(y)): (LuaInt<i32>, LuaInt<i32>)| {
             input::set_cursor_pos(x, y);
             Ok(())
         })?,
     )?;
     ms.set(
         "get_screen",
-        lua.create_function(|l, (x, y): (i32, i32)| {
+        lua.create_function(|l, (LuaInt(x), LuaInt(y)): (LuaInt<i32>, LuaInt<i32>)| {
             let (left, top, right, bottom) = input::screen_of(x, y);
             let t = l.create_table()?;
             t.set("left", left)?;
@@ -256,14 +277,14 @@ fn install_ms_table(lua: &Lua, ctx: &LuaCtx) -> mlua::Result<()> {
     )?;
     ms.set(
         "set_brightness",
-        lua.create_function(|_l, (pos, delta): (Option<Table>, i32)| {
+        lua.create_function(|_l, (pos, LuaInt(delta)): (Option<Table>, LuaInt<i32>)| {
             let (x, y) = table_pos(pos);
             Ok(crate::brightness::adjust(x, y, delta).map_or(-1, |v| v as i64))
         })?,
     )?;
     ms.set(
         "get_win_state",
-        lua.create_function(|_l, wid: i64| {
+        lua.create_function(|_l, LuaInt(wid): LuaInt<i64>| {
             use windows::Win32::UI::WindowsAndMessaging::{IsIconic, IsZoomed};
             let h = HWND(wid as *mut core::ffi::c_void);
             Ok(unsafe {
@@ -423,7 +444,7 @@ fn format_lua(vals: &[Value]) -> String {
 
 /// 旧格式 pos 参数是 {x=, y=} 表；缺省用当前鼠标位置。
 fn table_pos(pos: Option<Table>) -> (i32, i32) {
-    pos.and_then(|t| Some((t.get::<i32>("x").ok()?, t.get::<i32>("y").ok()?)))
+    pos.and_then(|t| Some((t.get::<LuaInt<i32>>("x").ok()?.0, t.get::<LuaInt<i32>>("y").ok()?.0)))
         .unwrap_or_else(input::get_cursor_pos)
 }
 
@@ -442,4 +463,231 @@ fn wins_to_table(lua: &Lua, wins: Vec<(String, isize)>) -> mlua::Result<Table> {
 #[allow(dead_code)]
 fn _wp_lp_check(w: WPARAM, l: LPARAM) -> (WPARAM, LPARAM) {
     (w, l)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn context() -> LuaCtx {
+        LuaCtx {
+            pos: (-120, 345),
+            wid: 0x1234,
+            pid: 42,
+            exe: "test.exe".into(),
+            title: "测试窗口".into(),
+            mode: "gesture".into(),
+        }
+    }
+
+    fn run_script(code: &str) -> Lua {
+        let lua = Lua::new();
+        run_lua_in(&lua, code, &context());
+        lua
+    }
+
+    #[test]
+    fn entries_receive_context_and_run_once() {
+        for entry in ["ms_action", "wgAction"] {
+            let lua = run_script(&format!(r#"
+                calls = 0
+                function {entry}(...)
+                    calls = calls + 1
+                    argc = select('#', ...)
+                    args = {{...}}
+                    return "ignored", 123
+                end
+            "#));
+            let globals = lua.globals();
+            assert_eq!(globals.get::<i32>("calls").unwrap(), 1);
+            assert_eq!(globals.get::<i32>("argc").unwrap(), 6);
+            let args: Table = globals.get("args").unwrap();
+            let pos: Table = args.get(1).unwrap();
+            let ctx = context();
+            assert_eq!(table_pos(Some(pos)), ctx.pos);
+            assert_eq!(args.get::<i64>(2).unwrap(), ctx.wid as i64);
+            assert_eq!(args.get::<u32>(3).unwrap(), ctx.pid);
+            assert_eq!(args.get::<String>(4).unwrap(), ctx.exe);
+            assert_eq!(args.get::<String>(5).unwrap(), ctx.title);
+            assert_eq!(args.get::<String>(6).unwrap(), ctx.mode);
+        }
+    }
+
+    #[test]
+    fn primary_entry_takes_precedence() {
+        let lua = run_script(r#"
+            function ms_action() selected = "ms" end
+            function wgAction() selected = "WG" end
+        "#);
+        assert_eq!(lua.globals().get::<String>("selected").unwrap(), "ms");
+    }
+
+    #[test]
+    fn non_function_primary_entry_uses_legacy_fallback() {
+        let lua = run_script(r#"
+            ms_action = false
+            function wgAction() called = true end
+        "#);
+        assert!(lua.globals().get::<bool>("called").unwrap());
+    }
+
+    #[test]
+    fn utf8_bom_is_ignored() {
+        let lua = run_script("\u{feff}function ms_action() called = true end");
+        assert!(lua.globals().get::<bool>("called").unwrap());
+    }
+
+    #[test]
+    fn legacy_aliases_share_functions_without_calling_them() {
+        let lua = Lua::new();
+        install_ms_table(&lua, &context()).unwrap();
+        lua.load(r#"
+            local names = {
+                Log = 'log', Sleep = 'sleep', IsPaused = 'is_paused',
+                SetPaused = 'set_paused', ShowSettings = 'show_settings',
+                ShowToast = 'show_toast', SetWinTop = 'set_win_top',
+                ReadText = 'read_text', Keys = 'keys', IsKeysPressed = 'is_keys_pressed',
+                FindWinByClass = 'find_win_by_class', FindWinByTitle = 'find_win_by_title',
+                FocusWin = 'focus_win', SetWinState = 'set_win_state', GetScreen = 'get_screen',
+                GetMousePos = 'get_mouse_pos', SetMousePos = 'set_mouse_pos',
+                GetClipboardText = 'get_clipboard_text', SetClipboardText = 'set_clipboard_text',
+                Open = 'open', Run = 'run', Cmd = 'cmd', GetBrightness = 'get_brightness',
+                SetBrightness = 'set_brightness', GetWinState = 'get_win_state',
+                KeysDown = 'keys_down', KeysUp = 'keys_up',
+            }
+            assert(type(ms) == 'table' and type(WG) == 'table')
+            for old, name in pairs(names) do
+                assert(type(ms[name]) == 'function', name)
+                assert(rawequal(WG[old], ms[name]), old)
+            end
+            assert(ms.is_win_top == nil and WG.IsWinTop == nil)
+            for _, name in ipairs({
+                'GetTriggerState', 'SetTriggerState', 'GetExplorerPath',
+                'ToggleKeys', 'GetClipboardData', 'SetClipboardData',
+            }) do
+                assert(type(WG[name]) == 'function', name)
+            end
+        "#).exec().unwrap();
+    }
+
+    #[test]
+    fn syntax_error_is_ignored_without_running_script() {
+        let code = "loaded = true; function ms_action(";
+        run_lua(code, &context());
+        let lua = run_script(code);
+        assert!(matches!(lua.globals().get::<Value>("loaded").unwrap(), Value::Nil));
+    }
+
+    #[test]
+    fn load_runtime_error_prevents_entry_call() {
+        let lua = run_script(r#"
+            loaded = true
+            function ms_action() called = true end
+            error('expected load failure')
+        "#);
+        assert!(lua.globals().get::<bool>("loaded").unwrap());
+        assert!(matches!(lua.globals().get::<Value>("called").unwrap(), Value::Nil));
+    }
+
+    #[test]
+    fn entry_runtime_errors_are_ignored() {
+        for entry in ["ms_action", "wgAction"] {
+            let code = format!(r#"
+                function {entry}()
+                    started = true
+                    error('expected entry failure')
+                    finished = true
+                end
+            "#);
+            run_lua(&code, &context());
+            let lua = run_script(&code);
+            assert!(lua.globals().get::<bool>("started").unwrap());
+            assert!(matches!(lua.globals().get::<Value>("finished").unwrap(), Value::Nil));
+        }
+    }
+
+    #[test]
+    fn missing_entry_is_ignored() {
+        let lua = run_script("loaded = true");
+        assert!(lua.globals().get::<bool>("loaded").unwrap());
+    }
+
+    #[test]
+    fn read_only_ms_helpers_return_expected_values() {
+        let lua = Lua::new();
+        install_ms_table(&lua, &context()).unwrap();
+        let paused: bool = lua.load("return ms.is_paused()").eval().unwrap();
+        assert_eq!(paused, crate::engine::PAUSED.load(std::sync::atomic::Ordering::Relaxed));
+
+        let read: Function = lua.globals().get::<Table>("ms").unwrap().get("read_text").unwrap();
+        let path = concat!(env!("CARGO_MANIFEST_DIR"), "/Cargo.toml");
+        assert_eq!(read.call::<String>(path).unwrap(), include_str!("../Cargo.toml"));
+        let missing = concat!(env!("CARGO_MANIFEST_DIR"), "/Cargo.toml/missing");
+        assert!(matches!(read.call::<Value>(missing).unwrap(), Value::Nil));
+    }
+
+    #[test]
+    fn explicit_positions_preserve_numeric_conversions() {
+        let lua = Lua::new();
+        for (code, expected) in [
+            ("{x = -120, y = 345}", (-120, 345)),
+            ("{x = 12.75, y = -3.25}", (12, -3)),
+            ("{x = '12.75', y = '-3.25'}", (12, -3)),
+            ("{x = -2147483648, y = 2147483647}", (i32::MIN, i32::MAX)),
+        ] {
+            let pos: Table = lua.load(code).eval().unwrap();
+            assert_eq!(table_pos(Some(pos)), expected);
+        }
+    }
+
+    #[test]
+    fn integer_callback_arguments_preserve_coercion_and_bounds() {
+        let lua = Lua::new();
+        // 用无副作用的回调固定坐标、窗口句柄和可选时长的转换约定。
+        let echo = lua.create_function(|_l, (LuaInt(x), LuaInt(wid), duration): (LuaInt<i32>, LuaInt<i64>, Option<LuaInt<u64>>)| {
+            Ok((x, wid, duration.map(|v| v.0)))
+        }).unwrap();
+        lua.globals().set("echo", echo).unwrap();
+        for (code, expected) in [
+            ("return echo(12.75, -3.25, 4.75)", (12, -3, Some(4))),
+            ("return echo('12.75', '-3.25', '4.75')", (12, -3, Some(4))),
+            ("return echo(-2147483648, math.maxinteger)", (i32::MIN, i64::MAX, None)),
+            ("return echo(2147483647, math.mininteger, -0.5)", (i32::MAX, i64::MIN, Some(0))),
+            ("return echo(0, 9007199254740993, 18446744073709549568.0)", (0, 9007199254740993, Some(18446744073709549568))),
+        ] {
+            assert_eq!(lua.load(code).eval::<(i32, i64, Option<u64>)>().unwrap(), expected);
+        }
+        for args in [
+            "2147483648, 0", "-2147483649, 0", "0, 9223372036854775808.0",
+            "0, 0, -1", "0, 0, 18446744073709551616.0", "0/0, 0", "math.huge, 0",
+            "false, 0", "'invalid', 0", "nil, 0",
+        ] {
+            assert!(lua.load(format!("return echo({args})")).eval::<Value>().is_err(), "{args}");
+        }
+    }
+
+    #[test]
+    fn window_results_are_one_based_tables() {
+        let lua = Lua::new();
+        let wins = wins_to_table(&lua, vec![("first".into(), 123), ("second".into(), -456)]).unwrap();
+        assert_eq!(wins.raw_len(), 2);
+        assert!(matches!(wins.get::<Value>(0).unwrap(), Value::Nil));
+        let first: Table = wins.get(1).unwrap();
+        assert_eq!(first.get::<String>("text").unwrap(), "first");
+        assert_eq!(first.get::<isize>("hwnd").unwrap(), 123);
+        let second: Table = wins.get(2).unwrap();
+        assert_eq!(second.get::<String>("text").unwrap(), "second");
+        assert_eq!(second.get::<isize>("hwnd").unwrap(), -456);
+        assert_eq!(wins_to_table(&lua, Vec::new()).unwrap().raw_len(), 0);
+    }
+
+    #[test]
+    fn log_formatting_preserves_multi_value_order_without_logging() {
+        let lua = Lua::new();
+        let vals: mlua::MultiValue = lua.load(r#"return '%s %d %f %q %%', 'sample', 7, 1.25, 'quoted'"#).eval().unwrap();
+        assert_eq!(format_lua(&vals.into_iter().collect::<Vec<_>>()), "sample 7 1.250000 quoted %");
+        let vals: mlua::MultiValue = lua.load("return 7, true, nil, 'last'").eval().unwrap();
+        assert_eq!(format_lua(&vals.into_iter().collect::<Vec<_>>()), "7 true nil last");
+        assert_eq!(format_lua(&[]), "");
+    }
 }
