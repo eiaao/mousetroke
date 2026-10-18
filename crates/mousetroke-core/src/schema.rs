@@ -156,10 +156,21 @@ pub enum Step {
         #[serde(alias = "dirs")]
         points: Vec<i32>,
     },
+    /// 曲线笔画：多个已归一化的 64 点样本，x/y 交替排列，坐标乘 1000 后取整。
+    /// 与 Trace 占用相同的会话步骤位置，详见 [`crate::shape`]。
+    Shape { templates: Vec<Vec<i32>> },
     /// 鼠标移至屏幕边缘/角落（位标志编码，见 [`crate::edge`]）。
     Edge { edge: u8 },
     /// 滚动滚轮。
     Wheel { horizontal: bool },
+}
+
+impl Step {
+    /// 从原始路径录制形状。忽略无效样本；没有有效样本时返回 `None`。
+    pub fn shape_from_samples(samples: &[Vec<(f64, f64)>]) -> Option<Self> {
+        let templates: Vec<_> = samples.iter().filter_map(|raw| crate::shape::normalize(raw)).map(|p| crate::shape::encode(&p)).collect();
+        (!templates.is_empty()).then_some(Self::Shape { templates })
+    }
 }
 
 /// 模式中可按下的键。序列化为短字符串标签：

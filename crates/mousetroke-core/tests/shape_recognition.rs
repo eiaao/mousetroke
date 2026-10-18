@@ -1,0 +1,486 @@
+use mousetroke_core::matcher::{self, Trigger};
+use mousetroke_core::recognizer::{best_score, PathTracker, Segment, ACCEPT_MAX, EXACT_EPS};
+use mousetroke_core::schema::{Action, Binding, Config, MouseButton, PatternKey, Scope, ScopeKind, Step, WindowOpKind};
+use mousetroke_core::shape::{self, ACCEPT, MARGIN, SAMPLE_POINTS};
+use std::f64::consts::PI;
+
+type Point = (f64, f64);
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+enum Drawing {
+    G, C, S, O, Check, Z,
+    Left, Right, DownRight, RightDown, DownLeft, LeftUpRight, Square, Southwest, Northeast,
+}
+
+const SHAPES: [Drawing; 6] = [Drawing::G, Drawing::C, Drawing::S, Drawing::O, Drawing::Check, Drawing::Z];
+const STRAIGHTS: [Drawing; 9] = [
+    Drawing::Left, Drawing::Right, Drawing::DownRight, Drawing::RightDown, Drawing::DownLeft,
+    Drawing::LeftUpRight, Drawing::Square, Drawing::Southwest, Drawing::Northeast,
+];
+
+struct Xorshift(u64);
+
+impl Xorshift {
+    fn unit(&mut self) -> f64 {
+        self.0 ^= self.0 << 13;
+        self.0 ^= self.0 >> 7;
+        self.0 ^= self.0 << 17;
+        (self.0 >> 11) as f64 / (1u64 << 53) as f64
+    }
+
+    fn range(&mut self, low: f64, high: f64) -> f64 {
+        low + (high - low) * self.unit()
+    }
+}
+
+fn lerp(a: Point, b: Point, t: f64) -> Point {
+    (a.0 + (b.0 - a.0) * t, a.1 + (b.1 - a.1) * t)
+}
+
+fn polyline(points: &[Point], t: f64) -> Point {
+    let position = t.clamp(0.0, 1.0) * (points.len() - 1) as f64;
+    let i = (position as usize).min(points.len() - 2);
+    lerp(points[i], points[i + 1], position - i as f64)
+}
+
+fn bezier(points: [Point; 4], t: f64) -> Point {
+    let u = 1.0 - t;
+    let weights = [u * u * u, 3.0 * u * u * t, 3.0 * u * t * t, t * t * t];
+    points.iter().zip(weights).fold((0.0, 0.0), |(x, y), (p, w)| (x + p.0 * w, y + p.1 * w))
+}
+
+fn point(drawing: Drawing, t: f64, variant: f64) -> Point {
+    let arc = |t: f64| {
+        let angle = PI / 4.0 + 1.5 * PI * t;
+        (angle.cos(), -angle.sin())
+    };
+    let (x, y) = match drawing {
+        Drawing::C => arc(t),
+        Drawing::G if t < 0.78 => arc(t / 0.78),
+        Drawing::G if t < 0.89 => lerp(arc(1.0), (0.82, 0.0), (t - 0.78) / 0.11),
+        Drawing::G => lerp((0.82, 0.0), (0.05, 0.0), (t - 0.89) / 0.11),
+        Drawing::O => {
+            // 屏幕坐标 y 向下：从顶端向左行进，逆时针闭合。
+            let angle = PI / 2.0 + 2.0 * PI * t;
+            (angle.cos(), -angle.sin())
+        }
+        Drawing::S if t < 0.5 => bezier([(0.85, -0.85), (-0.95, -1.4), (-1.1, -0.15), (0.0, 0.0)], t * 2.0),
+        Drawing::S => bezier([(0.0, 0.0), (1.1, 0.15), (0.95, 1.4), (-0.85, 0.85)], (t - 0.5) * 2.0),
+        Drawing::Check => polyline(&[(-0.9, 0.0), (-0.3, 0.65), (1.0, -0.9)], t),
+        Drawing::Z => polyline(&[(-1.0, -1.0), (1.0, -1.0), (-1.0, 1.0), (1.0, 1.0)], t),
+        Drawing::Left => polyline(&[(1.0, 0.0), (-1.0, 0.0)], t),
+        Drawing::Right => polyline(&[(-1.0, 0.0), (1.0, 0.0)], t),
+        Drawing::DownRight => polyline(&[(-1.0, -1.0), (-1.0, 1.0), (1.0, 1.0)], t),
+        Drawing::RightDown => polyline(&[(-1.0, -1.0), (1.0, -1.0), (1.0, 1.0)], t),
+        Drawing::DownLeft => polyline(&[(1.0, -1.0), (1.0, 1.0), (-1.0, 1.0)], t),
+        Drawing::LeftUpRight => polyline(&[(1.0, 1.0), (-1.0, 1.0), (-1.0, -1.0), (1.0, -1.0)], t),
+        Drawing::Square => polyline(&[(-1.0, 1.0), (-1.0, -1.0), (1.0, -1.0), (1.0, 1.0), (-1.0, 1.0)], t),
+        Drawing::Southwest => polyline(&[(1.0, -1.0), (-1.0, 1.0)], t),
+        Drawing::Northeast => polyline(&[(-1.0, 1.0), (1.0, -1.0)], t),
+    };
+    (x * (1.0 + 0.04 * variant), y * (1.0 - 0.03 * variant))
+}
+
+fn clean(drawing: Drawing, variant: f64) -> Vec<Point> {
+    (0..=160).map(|i| {
+        let (x, y) = point(drawing, i as f64 / 160.0, variant);
+        (x * 160.0, y * 160.0)
+    }).collect()
+}
+
+fn rotate(path: &[Point], angle: f64) -> Vec<Point> {
+    let (sin, cos) = angle.sin_cos();
+    path.iter().map(|&(x, y)| (x * cos - y * sin, x * sin + y * cos)).collect()
+}
+
+fn noisy(drawing: Drawing, rng: &mut Xorshift) -> Vec<Point> {
+    let scale = 160.0 * rng.range(0.4, 2.5);
+    let angle = rng.range(-15.0, 15.0).to_radians();
+    let (sin, cos) = angle.sin_cos();
+    let offset = (rng.range(-1200.0, 1200.0), rng.range(-800.0, 800.0));
+    let jitter = 2.0 * rng.range(0.02, 0.04);
+    let variant = rng.range(-1.0, 1.0);
+    // 每次改变点密度与速度；每个点独立加入相对尺寸 2%~4% 的二维扰动。
+    let count = rng.range(35.0, 75.0) as usize;
+    let weights: Vec<_> = (0..count).map(|_| rng.range(0.15, 2.5)).collect();
+    let total: f64 = weights.iter().sum();
+    let power = rng.range(0.85, 1.2);
+    // 起笔位置允许小偏移；圆允许小幅相位偏移，不循环对齐起点。
+    let start = rng.range(0.0, 0.012);
+    let end = 1.0 - rng.range(0.0, 0.012);
+    let phase = if drawing == Drawing::O { rng.range(-0.012, 0.012) } else { 0.0 };
+    let mut times = vec![0.0];
+    let mut sum = 0.0;
+    for weight in weights {
+        sum += weight;
+        times.push((sum / total).powf(power));
+    }
+    let mut result: Vec<_> = times.iter().map(|t| {
+        let t = start + t * (end - start) + phase;
+        let (x, y) = point(drawing, t, variant);
+        let (x, y) = (x + rng.range(-jitter, jitter), y + rng.range(-jitter, jitter));
+        (offset.0 + scale * (x * cos - y * sin), offset.1 + scale * (x * sin + y * cos))
+    }).collect();
+    if rng.unit() < 0.25 {
+        let first = result[0];
+        result.insert(0, (first.0 + scale * rng.range(-0.08, 0.08), first.1 + scale * rng.range(-0.08, 0.08)));
+    }
+    if rng.unit() < 0.25 {
+        let last = *result.last().unwrap();
+        result.push((last.0 + scale * rng.range(-0.08, 0.08), last.1 + scale * rng.range(-0.08, 0.08)));
+    }
+    result
+}
+
+fn templates() -> Vec<Vec<Vec<i32>>> {
+    SHAPES.iter().map(|&drawing| [-1.0, 1.0].iter().map(|&v| {
+        shape::encode(&shape::normalize(&clean(drawing, v)).unwrap())
+    }).collect()).collect()
+}
+
+#[test]
+fn noisy_shape_accuracy() {
+    let samples = templates();
+    let candidates: Vec<_> = samples.iter().enumerate().map(|(id, s)| (id, s.as_slice())).collect();
+    let mut rng = Xorshift(0xd1b54a32d192ed03);
+    let mut results = Vec::new();
+    for (expected, drawing) in SHAPES.iter().enumerate() {
+        let (mut correct, mut wrong) = (0, 0);
+        let (mut below_threshold, mut ambiguous) = (0, 0);
+        for _ in 0..300 {
+            let path = shape::normalize(&noisy(*drawing, &mut rng)).unwrap();
+            match shape::best_match(&path, &candidates) {
+                Some((id, _)) if id == expected => correct += 1,
+                Some(_) => wrong += 1,
+                None => {
+                    let scores: Vec<_> = samples.iter().map(|s| s.iter().map(|p| {
+                        shape::similarity(&path, &shape::decode(p).unwrap())
+                    }).fold(0.0f64, f64::max)).collect();
+                    if scores.iter().copied().fold(0.0f64, f64::max) < ACCEPT { below_threshold += 1; }
+                    else { ambiguous += 1; }
+                }
+            }
+        }
+        println!("{drawing:?}: correct {correct}/300 ({:.2}%), wrong {wrong}/300 ({:.2}%)", correct as f64 / 3.0, wrong as f64 / 3.0);
+        println!("{drawing:?}: below threshold {below_threshold}, ambiguous {ambiguous}");
+        results.push((*drawing, correct, wrong));
+    }
+    for (drawing, correct, wrong) in results {
+        assert!(correct >= 285, "{drawing:?}: {correct} correct");
+        assert!(wrong <= 3, "{drawing:?}: {wrong} wrong");
+    }
+}
+
+#[test]
+fn straight_gestures_do_not_match_shapes() {
+    let samples = templates();
+    let candidates: Vec<_> = samples.iter().enumerate().map(|(id, s)| (id, s.as_slice())).collect();
+    let mut rng = Xorshift(0x94d049bb133111eb);
+    let mut total = 0;
+    for drawing in STRAIGHTS {
+        let mut accepted = 0;
+        for _ in 0..300 {
+            let path = shape::normalize(&noisy(drawing, &mut rng)).unwrap();
+            if shape::best_match(&path, &candidates).is_some() {
+                accepted += 1;
+            }
+        }
+        println!("{drawing:?}: false positives {accepted}/300 ({:.2}%)", accepted as f64 / 3.0);
+        total += accepted;
+    }
+    println!("straight total: false positives {total}/2700 ({:.3}%)", total as f64 / 27.0);
+    assert!(total <= 27);
+}
+
+#[test]
+fn normalization_preserves_geometry_and_handles_bad_paths() {
+    for raw in [vec![], vec![(0.0, 0.0)], vec![(3.0, 4.0); 100], vec![(0.0, 0.0), (0.1, 0.1)],
+        vec![(f64::NAN, 0.0), (1.0, 1.0)], vec![(0.0, 0.0), (f64::INFINITY, 1.0)],
+        vec![(-f64::MAX, 0.0), (f64::MAX, 1.0)]] {
+        assert!(shape::normalize(&raw).is_none());
+    }
+    let path = shape::normalize(&[(10.0, 5.0), (10.0, 5.0), (110.0, 5.0)]).unwrap();
+    assert_eq!(path.len(), SAMPLE_POINTS);
+    for (i, &(x, y)) in path.iter().enumerate() {
+        assert!((x - (i as f64 / 63.0 - 0.5)).abs() < 1e-12);
+        assert_eq!(y, 0.0);
+    }
+    let thin = shape::normalize(&[(0.0, 0.0), (50.0, 0.1), (100.0, 0.0)]).unwrap();
+    assert!(thin.iter().all(|p| p.1.abs() < 0.002));
+    let g = clean(Drawing::G, 0.0);
+    let norm = shape::normalize(&g).unwrap();
+    let moved: Vec<_> = g.iter().map(|&(x, y)| (x * 2.3 + 800.0, y * 2.3 - 400.0)).collect();
+    assert_eq!(shape::similarity(&norm, &shape::normalize(&moved).unwrap()), 1.0);
+    let centroid = norm.iter().fold((0.0, 0.0), |(x, y), p| (x + p.0, y + p.1));
+    assert!(centroid.0.abs() < 1e-12 && centroid.1.abs() < 1e-12);
+    let mut duplicated = Vec::new();
+    for p in &g { duplicated.extend([*p; 4]); }
+    assert_eq!(shape::normalize(&duplicated), Some(norm));
+}
+
+#[test]
+fn encoding_and_invalid_templates() {
+    let path = shape::normalize(&clean(Drawing::G, 0.0)).unwrap();
+    let encoded = shape::encode(&path);
+    assert_eq!(encoded.len(), 128);
+    let decoded = shape::decode(&encoded).unwrap();
+    for (a, b) in path.iter().zip(&decoded) {
+        assert!((a.0 - b.0).abs() <= 0.0005 && (a.1 - b.1).abs() <= 0.0005);
+    }
+    for bad in [vec![], vec![0; 127], vec![0; 129], vec![i32::MAX; 128]] {
+        assert!(shape::decode(&bad).is_none());
+        assert!(shape::best_match(&path, &[(0, &[bad][..])]).is_none());
+    }
+    assert!(shape::best_match(&path, &[(0, &[vec![0; 128]][..])]).is_none());
+    assert!(shape::best_match::<usize>(&path, &[]).is_none());
+    assert!(shape::best_match(&path, &[(0, &[][..])]).is_none());
+    assert!(shape::best_match(&vec![(f64::NAN, 0.0); 64], &[(0, &[encoded][..])]).is_none());
+    assert_eq!(shape::similarity(&[], &path), 0.0);
+    assert_eq!(shape::similarity(&vec![(0.0, 0.0); 64], &path), 0.0);
+    assert_eq!(shape::similarity(&vec![(f64::MAX, 0.0); 64], &path), 0.0);
+}
+
+#[test]
+fn bounded_rotation_start_point_and_direction() {
+    let raw = clean(Drawing::G, 0.0);
+    let path = shape::normalize(&raw).unwrap();
+    let samples = vec![shape::encode(&path)];
+    for degrees in [-20.0f64, -15.0, 0.0, 15.0, 20.0] {
+        let rotated = shape::normalize(&rotate(&raw, degrees.to_radians())).unwrap();
+        assert!(shape::similarity(&path, &rotated) > 0.999999);
+        assert!(shape::best_match(&rotated, &[("g", &samples)]).is_some());
+    }
+    for degrees in [90.0f64, 180.0, -90.0] {
+        let rotated = shape::normalize(&rotate(&raw, degrees.to_radians())).unwrap();
+        assert!(shape::best_match(&rotated, &[("g", &samples)]).is_none());
+    }
+    // 超限部分不再对齐：21° 比 20° 多留下约 1° 的向量夹角。
+    let rotated = shape::normalize(&rotate(&raw, 21.0f64.to_radians())).unwrap();
+    assert!((shape::similarity(&path, &rotated) - (1.0 - 1.0 / 90.0)).abs() < 1e-10);
+    let reversed: Vec<_> = raw.iter().rev().copied().collect();
+    assert!(shape::best_match(&shape::normalize(&reversed).unwrap(), &[("g", &samples)]).is_none());
+    let circle = clean(Drawing::O, 0.0);
+    let samples = vec![shape::encode(&shape::normalize(&circle).unwrap())];
+    let shifted = rotate(&circle, PI / 2.0);
+    assert!(shape::best_match(&shape::normalize(&shifted).unwrap(), &[("o", &samples)]).is_none());
+}
+
+#[test]
+fn samples_compete_only_across_bindings() {
+    let path = shape::normalize(&clean(Drawing::G, 0.0)).unwrap();
+    let samples = vec![shape::encode(&path); 2];
+    let c = vec![shape::encode(&shape::normalize(&clean(Drawing::C, 0.0)).unwrap())];
+    assert_eq!(shape::best_match(&path, &[(1, &samples), (2, &c)]).unwrap().0, 1);
+    assert_eq!(shape::best_match(&path, &[(1, &samples), (1, &samples)]).unwrap().0, 1);
+    assert!(shape::best_match(&path, &[(1, &samples), (2, &samples)]).is_none());
+    let rotated = shape::normalize(&rotate(&clean(Drawing::G, 0.0), 22.0f64.to_radians())).unwrap();
+    let close = vec![shape::encode(&rotated)];
+    assert!(shape::best_match(&path, &[(1, &samples), (2, &close)]).is_none());
+    let reversed: Vec<_> = path.iter().rev().copied().collect();
+    let mixed = vec![shape::encode(&reversed), shape::encode(&path)];
+    assert_eq!(shape::best_match(&path, &[(1, &mixed)]).unwrap().0, 1);
+    assert!(ACCEPT > 0.0 && ACCEPT <= 1.0 && MARGIN > 0.0);
+}
+
+fn binding(name: &str, pattern: Vec<Step>) -> Binding {
+    Binding { name: name.into(), name_key: None, pattern,
+        action: Action::WindowOp { op: WindowOpKind::Close, allow_child: false },
+        execute_on_match: false, hide_label: false, secured: false, disabled: false }
+}
+
+fn scope(bindings: Vec<Binding>) -> Scope {
+    Scope { id: "test".into(), name: "test".into(), name_key: None, kind: ScopeKind::Global,
+        app: None, special: None, inherit_global: true, disabled: false, bindings }
+}
+
+const RIGHT: Step = Step::Press { key: PatternKey::Mouse(MouseButton::Right) };
+
+fn segments(path: &[Point]) -> Vec<Segment> {
+    let mut tracker = PathTracker::new(25.0);
+    tracker.start(path[0].0, path[0].1);
+    for &(x, y) in &path[1..] { tracker.add_point(x, y); }
+    tracker.strokes()
+}
+
+#[test]
+fn matcher_prefers_trace_then_shape_and_rejects_scribbles() {
+    let g = clean(Drawing::G, 0.0);
+    let down_right = clean(Drawing::DownRight, 0.0);
+    let scope = scope(vec![
+        binding("g", vec![RIGHT, Step::shape_from_samples(&[g.clone()]).unwrap()]),
+        binding("corner-shape", vec![RIGHT, Step::shape_from_samples(&[down_right.clone()]).unwrap()]),
+        binding("trace", vec![RIGHT, Step::Trace { points: vec![0, 0, 0, 50, 50, 50] }]),
+    ]);
+    let built = matcher::build_steps(Trigger::Button(MouseButton::Right), &[], Some(0));
+    assert_eq!(matcher::match_binding_path(&scope, &built, &segments(&down_right), Some(&down_right)).unwrap().name, "trace");
+    assert_eq!(matcher::match_binding_path(&scope, &built, &segments(&g), Some(&g)).unwrap().name, "g");
+    assert_eq!(matcher::match_binding_path(&scope, &built, &[], Some(&g)).unwrap().name, "g");
+    assert!(matcher::match_binding(&scope, &built, &segments(&g)).is_none());
+    assert!(matcher::match_binding_path(&scope, &built, &segments(&g), None).is_none());
+    let scribble: Vec<_> = (0..150).map(|i| ((i as f64 * 1.73).sin() * 150.0, (i as f64 * 2.91).sin() * 150.0)).collect();
+    assert!(matcher::match_binding_path(&scope, &built, &segments(&scribble), Some(&scribble)).is_none());
+    assert!(matcher::is_feasible_prefix(&scope, &built));
+}
+
+#[test]
+fn shape_steps_obey_position_presses_wheels_and_disabled_bindings() {
+    let g = clean(Drawing::G, 0.0);
+    let step = Step::shape_from_samples(&[g.clone()]).unwrap();
+    let edge = Step::Edge { edge: mousetroke_core::edge::TOP };
+    let wheel = Step::Press { key: PatternKey::Wheel(-1) };
+    let scope = scope(vec![binding("shape", vec![edge.clone(), RIGHT, step.clone(), Step::Wheel { horizontal: false }])]);
+    let built = vec![edge.clone(), RIGHT, Step::Trace { points: vec![] }, wheel.clone()];
+    assert!(matcher::is_feasible_prefix(&scope, &built[..3]));
+    assert_eq!(matcher::match_binding_path(&scope, &built, &[], Some(&g)).unwrap().name, "shape");
+    for bad in [
+        vec![edge.clone(), Step::Trace { points: vec![] }, RIGHT, wheel],
+        vec![edge.clone(), RIGHT, Step::Trace { points: vec![] }],
+        vec![edge.clone(), RIGHT, Step::Trace { points: vec![] }, RIGHT],
+    ] { assert!(matcher::match_binding_path(&scope, &bad, &[], Some(&g)).is_none()); }
+    let mut disabled = scope.clone();
+    disabled.bindings[0].disabled = true;
+    assert!(!matcher::is_feasible_prefix(&disabled, &built));
+    assert!(matcher::match_binding_path(&disabled, &built, &[], Some(&g)).is_none());
+    for pattern in [vec![edge.clone(), RIGHT, step.clone(), step], vec![edge, RIGHT, Step::Trace { points: vec![] },
+        Step::shape_from_samples(&[g.clone()]).unwrap()]] {
+        let invalid = self::scope(vec![binding("two-strokes", pattern)]);
+        let built = vec![built[0].clone(), RIGHT, Step::Trace { points: vec![] }, Step::Trace { points: vec![] }];
+        assert!(matcher::match_binding_path(&invalid, &built, &[], Some(&g)).is_none());
+    }
+}
+
+#[test]
+fn chain_prefers_specific_scope_before_trace_priority() {
+    let g = clean(Drawing::G, 0.0);
+    let down_right = clean(Drawing::DownRight, 0.0);
+    let mut app = scope(vec![binding("app-shape", vec![RIGHT, Step::shape_from_samples(&[g.clone(), down_right.clone()]).unwrap()])]);
+    app.kind = ScopeKind::App;
+    let global = scope(vec![
+        binding("global-trace", vec![RIGHT, Step::Trace { points: vec![0, 0, 0, 50, 50, 50] }]),
+        binding("global-shape", vec![RIGHT, Step::shape_from_samples(&[g.clone()]).unwrap()]),
+    ]);
+    let built = matcher::build_steps(Trigger::Button(MouseButton::Right), &[], Some(0));
+    let chain = [&app, &global];
+    assert_eq!(matcher::match_chain_path(&chain, &built, &segments(&down_right), Some(&down_right)).unwrap().0.name, "app-shape");
+    assert_eq!(matcher::match_chain(&chain, &built, &segments(&down_right)).unwrap().0.name, "global-trace");
+    let (binding, matched_scope) = matcher::match_chain_path(&chain, &built, &segments(&g), Some(&g)).unwrap();
+    assert_eq!(binding.name, "app-shape");
+    assert!(std::ptr::eq(matched_scope, &app));
+    assert!(matcher::match_chain(&chain, &built, &segments(&g)).is_none());
+    assert_eq!(matcher::match_chain_path(&[&global], &built, &[], Some(&g)).unwrap().0.name, "global-shape");
+    assert!(matcher::match_chain_path(&chain, &built, &[], None).is_none());
+}
+
+#[test]
+fn app_shape_allows_global_straight_fallback() {
+    let g = clean(Drawing::G, 0.0);
+    let straight = clean(Drawing::Right, 0.0);
+    let mut app = scope(vec![binding("app-g", vec![RIGHT, Step::shape_from_samples(&[g.clone()]).unwrap()])]);
+    app.kind = ScopeKind::App;
+    let global = scope(vec![binding("global-straight", vec![RIGHT, Step::Trace { points: vec![0, 0, 50, 0] }])]);
+    let built = matcher::build_steps(Trigger::Button(MouseButton::Right), &[], Some(0));
+    let chain = [&app, &global];
+    let (hit, matched_scope) = matcher::match_chain_path(&chain, &built, &segments(&g), Some(&g)).unwrap();
+    assert_eq!(hit.name, "app-g");
+    assert!(std::ptr::eq(matched_scope, &app));
+    assert!(matcher::match_binding_path(&app, &built, &segments(&straight), Some(&straight)).is_none());
+    let (hit, matched_scope) = matcher::match_chain_path(&chain, &built, &segments(&straight), Some(&straight)).unwrap();
+    assert_eq!(hit.name, "global-straight");
+    assert!(std::ptr::eq(matched_scope, &global));
+}
+
+#[test]
+fn path_matching_prefers_exact_trace_then_shape_then_fuzzy_trace() {
+    let path = vec![(0.0, 0.0), (0.0, 200.0), (200.0, 200.0)];
+    let segs = segments(&path);
+    let fuzzy = vec![0, 0, 50, 50, 100, 50];
+    let exact = vec![0, 0, 0, 50, 50, 50];
+    let fuzzy_score = best_score(&[(&fuzzy, &segs)]).unwrap().1;
+    assert!((EXACT_EPS..=ACCEPT_MAX).contains(&fuzzy_score));
+    assert!(best_score(&[(&exact, &segs)]).unwrap().1 < EXACT_EPS);
+    let mut scope = scope(vec![
+        binding("fuzzy", vec![RIGHT, Step::Trace { points: fuzzy }]),
+        binding("shape", vec![RIGHT, Step::shape_from_samples(&[path.clone()]).unwrap()]),
+    ]);
+    let built = matcher::build_steps(Trigger::Button(MouseButton::Right), &[], Some(0));
+    assert_eq!(matcher::match_binding(&scope, &built, &segs).unwrap().name, "fuzzy");
+    assert_eq!(matcher::match_chain(&[&scope], &built, &segs).unwrap().0.name, "fuzzy");
+    assert_eq!(matcher::match_binding_path(&scope, &built, &segs, Some(&path)).unwrap().name, "shape");
+    assert_eq!(matcher::match_chain_path(&[&scope], &built, &segs, Some(&path)).unwrap().0.name, "shape");
+    // Missing, degenerate, and rejected raw paths still allow the fuzzy fallback.
+    let straight = clean(Drawing::Right, 0.0);
+    for raw in [None, Some(&[][..]), Some(straight.as_slice())] {
+        assert_eq!(matcher::match_binding_path(&scope, &built, &segs, raw).unwrap().name, "fuzzy");
+    }
+    scope.bindings.push(binding("exact", vec![RIGHT, Step::Trace { points: exact }]));
+    assert_eq!(matcher::match_binding_path(&scope, &built, &segs, Some(&path)).unwrap().name, "exact");
+    assert_eq!(matcher::match_chain_path(&[&scope], &built, &segs, Some(&path)).unwrap().0.name, "exact");
+}
+
+#[test]
+fn chain_keeps_fuzzy_match_ahead_of_less_specific_exact_trace() {
+    let path = vec![(0.0, 0.0), (0.0, 200.0), (200.0, 200.0)];
+    let g = clean(Drawing::G, 0.0);
+    let mut app = scope(vec![binding("app-g", vec![RIGHT, Step::shape_from_samples(&[g]).unwrap()])]);
+    app.kind = ScopeKind::App;
+    let mut special = scope(vec![binding("special-fuzzy", vec![RIGHT, Step::Trace { points: vec![0, 0, 50, 50, 100, 50] }])]);
+    special.kind = ScopeKind::Special;
+    let global = scope(vec![binding("global-exact", vec![RIGHT, Step::Trace { points: vec![0, 0, 0, 50, 50, 50] }])]);
+    let built = matcher::build_steps(Trigger::Button(MouseButton::Right), &[], Some(0));
+    let (hit, matched_scope) = matcher::match_chain_path(&[&app, &special, &global], &built, &segments(&path), Some(&path)).unwrap();
+    assert_eq!(hit.name, "special-fuzzy");
+    assert!(std::ptr::eq(matched_scope, &special));
+}
+
+#[test]
+fn shape_step_round_trips_and_helper_filters_degenerate_samples() {
+    let g = clean(Drawing::G, 0.0);
+    let step = Step::shape_from_samples(&[vec![], vec![(1.0, 1.0); 10], g.clone(), g]).unwrap();
+    let json = serde_json::to_string(&step).unwrap();
+    assert!(json.starts_with("{\"type\":\"shape\",\"templates\":[["));
+    assert_eq!(serde_json::from_str::<Step>(&json).unwrap(), step);
+    let Step::Shape { templates } = step.clone() else { unreachable!() };
+    assert_eq!(templates.len(), 2);
+    assert_eq!(templates[0].len(), 128);
+    let mut cfg = Config::default();
+    cfg.scopes.push(scope(vec![binding("shape", vec![RIGHT, step])]));
+    assert_eq!(Config::from_json(&cfg.to_json()).unwrap(), cfg);
+    assert!(Step::shape_from_samples(&[]).is_none());
+    assert!(Step::shape_from_samples(&[vec![(0.0, 0.0); 3]]).is_none());
+}
+
+#[test]
+fn existing_config_serialization_is_unchanged() {
+    let fixture = include_str!("../assets/default-config.json");
+    let cfg = Config::from_json(fixture).unwrap();
+    let json = cfg.to_json();
+    let fingerprint = json.bytes().fold(0xcbf29ce484222325u64, |hash, byte| {
+        (hash ^ byte as u64).wrapping_mul(0x100000001b3)
+    });
+    println!("existing config: {} bytes, FNV-1a {fingerprint:016x}", json.len());
+    // 在增加 Shape 之前用相同 fixture 和旧 Config::to_json 实测并冻结的字节基线。
+    assert_eq!(json.len(), 36_389);
+    assert_eq!(fingerprint, 0xf16db884db08d2ac);
+    assert_eq!(Config::from_json(&json).unwrap().to_json(), json);
+}
+
+#[test]
+#[ignore = "release timing: cargo test -p mousetroke-core --release -- --include-ignored --nocapture"]
+fn timing_100_templates() {
+    use std::hint::black_box;
+    use std::time::Instant;
+    let samples = templates();
+    let candidates: Vec<_> = (0..50).map(|id| (id, samples[id % samples.len()].as_slice())).collect();
+    assert_eq!(candidates.iter().map(|(_, s)| s.len()).sum::<usize>(), 100);
+    let path = shape::normalize(&clean(Drawing::G, 0.0)).unwrap();
+    for _ in 0..100 { black_box(shape::best_match(black_box(&path), black_box(&candidates))); }
+    let mut times = Vec::new();
+    for _ in 0..21 {
+        let start = Instant::now();
+        for _ in 0..200 { black_box(shape::best_match(black_box(&path), black_box(&candidates))); }
+        times.push(start.elapsed().as_nanos() as f64 / 200.0 / 1000.0);
+    }
+    times.sort_by(f64::total_cmp);
+    println!("100 templates: median {:.3} us, batch maximum {:.3} us (21 x 200 matches)", times[10], times[20]);
+    assert!(times[10] < 1000.0, "100 templates must take less than 1 ms");
+}

@@ -3,7 +3,7 @@
 //! 命名约定：
 //! - **Scope**：手势的作用域（global / app / special）
 //! - **Binding**：一条手势绑定 = `Pattern + Action`
-//! - **Pattern**：手势模式，由若干 `Step` 组成（press / trace / edge / wheel）
+//! - **Pattern**：手势模式，由若干 `Step` 组成（press / trace / shape / edge / wheel）
 //! - **Action**：识别成功后执行的动作（8 种）
 //!
 //! 模块：
@@ -13,6 +13,7 @@
 //! - [`keyseq`]：按键序列语法解析（AutoIt/SendKeys 风格语法）
 //! - [`matcher`]：捕获会话 → 步骤序列 → 作用域选择与绑定匹配
 //! - [`recognizer`]：轨迹量化与折线匹配
+//! - [`shape`]：曲线轨迹归一化与形状模板匹配
 //! - [`vars`]：`%MS_*%` 变量系统（含旧格式占位符转换）
 
 pub mod edge;
@@ -24,4 +25,5 @@ pub mod names;
 pub mod presets;
 pub mod recognizer;
 pub mod schema;
+pub mod shape;
 pub mod vars;
