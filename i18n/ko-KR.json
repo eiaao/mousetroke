@@ -450,6 +450,7 @@
   "toast.config_updated": "Mousetroke 설정이 업데이트되었습니다",
   "overlay.unrecognized": "인식 안 됨",
   "overlay.unrecognized_arrows": "인식 안 됨  {arrows}",
+  "overlay.gesture_too_long": "낙서 삼매경? 이번 건 패스!",
   "overlay.brightness": "밝기 {value}%",
   "overlay.brightness_unsupported": "이 디스플레이는 밝기 조절을 지원하지 않습니다",
   "ui.picker.live_hint": "설정할 앱 창을 클릭하세요 · Esc나 오른쪽 클릭으로 취소",

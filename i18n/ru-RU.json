@@ -468,6 +468,7 @@
   "toast.config_updated": "Настройки Mousetroke обновлены",
   "overlay.unrecognized": "Не распознано",
   "overlay.unrecognized_arrows": "Не распознано  {arrows}",
+  "overlay.gesture_too_long": "Вот это каракули! Не считается.",
   "overlay.brightness": "Яркость {value}%",
   "overlay.brightness_unsupported": "Этот монитор не поддерживает регулировку яркости",
   "ui.picker.live_hint": "Щёлкните по окну настраиваемой программы · Esc или правый щелчок — отмена",

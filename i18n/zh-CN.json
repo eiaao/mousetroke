@@ -456,6 +456,7 @@
   "toast.config_updated": "Mousetroke 配置已更新",
   "overlay.unrecognized": "未识别",
   "overlay.unrecognized_arrows": "未识别  {arrows}",
+  "overlay.gesture_too_long": "画嗨了吧？这一笔不算～",
   "overlay.brightness": "亮度 {value}%",
   "overlay.brightness_unsupported": "这台显示器不支持调节亮度",
   "ui.picker.live_hint": "点击要单独设置的程序窗口 · Esc 或右键取消",
