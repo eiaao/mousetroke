@@ -1,7 +1,7 @@
 import * as React from "react";
 import { useEffect, useRef, useState } from "react";
 import type { MouseButton, Step } from "../types";
-import { EDGE, arrows, buttonName, codeToVk, compose, decompose, keyTagName, type PatternItem, type PatternModel } from "../gesture";
+import { EDGE, arrows, buttonName, buttonPhrase, codeToVk, compose, decompose, keyTagName, type PatternItem, type PatternModel } from "../gesture";
 import { t } from "../i18n";
 import { EdgePicker } from "./EdgePicker";
 import { Recorder } from "./Recorder";
@@ -53,7 +53,7 @@ export function PatternEditor({ pattern, onChange, conflictHint }: { pattern: St
         <div className="segmented" role="radiogroup">
           {TRIGGERS.map((tr) => (
             <button key={tr.id} type="button" role="radio" aria-checked={triggerId === tr.id} className={triggerId === tr.id ? "on" : ""} onClick={() => setTrigger(tr.id)}>
-              {tr.id === "edge" ? t("ui.pattern.edge_trigger") : t("ui.pattern.hold", { button: buttonName(tr.id as MouseButton) })}
+              {tr.id === "edge" ? t("ui.pattern.edge_trigger") : buttonPhrase(tr.id as MouseButton, "hold")}
             </button>
           ))}
         </div>
@@ -99,7 +99,7 @@ function Chip({ item, onRemove }: { item: PatternItem; onRemove: () => void }) {
           {t("ui.pattern.draw", { arrows: arrows(item.points) })}
         </>
       ) : item.key.startsWith("mouse:") ? (
-        t("ui.pattern.click", { key: keyTagName(item.key) })
+        buttonPhrase(item.key.slice(6) as MouseButton, "click")
       ) : (
         keyTagName(item.key)
       )}

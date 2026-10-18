@@ -59,14 +59,14 @@ export function Sidebar({
             type="button"
             className={`nav-item ${view.kind === "scope" && view.index === i ? "on" : ""} ${s.disabled ? "off" : ""}`}
             onClick={() => onView({ kind: "scope", index: i })}
-            data-tip={s.app?.exe}
+            data-tip={[scopeTitle(s), s.app?.exe].filter(Boolean).join("\n")}
           >
             {s.kind === "app" ? <AppIcon exe={s.app?.exe} /> : <NavIcon kind={s.kind === "global" ? "global" : "desktop"} />}
             <span className="nav-label">{scopeTitle(s)}</span>
-            {s.disabled ? <span className="nav-count nav-off">{t("ui.sidebar.disabled_badge")}</span> : <span className="nav-count">{s.bindings.length}</span>}
+            {s.disabled ? <span className="nav-count nav-off" data-tip={t("ui.sidebar.disabled_badge")}>{t("ui.sidebar.disabled_badge")}</span> : <span className="nav-count">{s.bindings.length}</span>}
           </button>
         ))}
-        <button type="button" className="nav-item nav-add" onClick={onAddApp}>
+        <button type="button" className="nav-item nav-add" onClick={onAddApp} data-tip={t("ui.sidebar.add_app")}>
           <NavIcon kind="add" />
           <span className="nav-label">{t("ui.sidebar.add_app")}</span>
         </button>

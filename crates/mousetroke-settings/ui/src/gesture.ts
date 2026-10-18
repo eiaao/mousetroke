@@ -22,6 +22,11 @@ export function buttonName(b: MouseButton): string {
   return t(`button.${b}` as MsgKey);
 }
 
+/** 动词短语单独翻译，避免把独立按钮名直接塞进需要变格或冠词的句子。 */
+export function buttonPhrase(b: MouseButton, action: "hold" | "click"): string {
+  return t(`ui.pattern.${action}_btn.${b}`);
+}
+
 /** VK → 显示名。通用符号（Ctrl、F5、←…）不进词条；描述性的（空格、小键盘）要进。 */
 export function vkName(vk: number): string {
   const named: Partial<Record<number, MsgKey>> = {
@@ -203,10 +208,10 @@ export function arrows(points: number[]): string {
   return dirs.join("");
 }
 
-/** 模式的文字描述（列表次要信息、冲突提示用）。句子用模板组合，不拼接。 */
+/** 模式的文字描述（列表次要信息、冲突提示用）。按钮和边角使用完整短语。 */
 export function describePattern(pattern: Step[]): string {
   const m = decompose(pattern);
-  const head = m.trigger.kind === "edge" ? t("ui.pattern.move_to", { edge: edgeName(m.trigger.edge) }) : t("ui.pattern.hold", { button: buttonName(m.trigger.button) });
+  const head = m.trigger.kind === "edge" ? t(`ui.pattern.move_to_edge.${m.trigger.edge}` as MsgKey) : buttonPhrase(m.trigger.button, "hold");
   const parts = m.items.map((it) => (it.kind === "trace" ? t("ui.pattern.draw", { arrows: arrows(it.points) || t("ui.pattern.stroke") }) : keyTagName(it.key)));
   return [head, ...parts].join(t("ui.pattern.join"));
 }
