@@ -257,8 +257,9 @@ h3 {
   align-items: center;
   gap: 10px;
   width: 100%;
-  height: 36px;
-  padding: 0 12px;
+  min-height: 36px;
+  padding: 4px 12px;
+  flex-shrink: 0;
   border: 0;
   border-radius: var(--radius-m);
   background: none;
@@ -307,6 +308,8 @@ h3 {
 
 .nav-count {
   min-width: 22px;
+  max-width: 45%;
+  flex-shrink: 0;
   padding: 0 6px;
   border-radius: 9px;
   background: color-mix(in srgb, var(--ink) 6%, transparent);
@@ -315,6 +318,9 @@ h3 {
   line-height: 18px;
   text-align: center;
   font-variant-numeric: tabular-nums;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .nav-add,
@@ -440,11 +446,6 @@ input.title-input:focus {
   padding: 0 28px 12px;
 }
 
-/* 标签文字不换行；空间不够时整个"新建"按钮折到下一行（英文比中文长 30%~80%） */
-.list-toolbar .tab {
-  white-space: nowrap;
-}
-
 .toolbar-add {
   margin-left: auto;
 }
@@ -461,7 +462,7 @@ input.title-input:focus {
 /* 分类标签（鼠标手势 / 触发角） */
 .tabs {
   display: inline-flex;
-  flex-shrink: 0;
+  max-width: 100%;
   gap: 2px;
   padding: 3px;
   border: 1px solid var(--line-soft);
@@ -473,8 +474,9 @@ input.title-input:focus {
   display: inline-flex;
   align-items: center;
   gap: 7px;
-  height: 30px;
-  padding: 0 12px;
+  min-width: 0;
+  min-height: 30px;
+  padding: 4px 12px;
   border: 0;
   border-radius: 7px;
   background: none;
@@ -554,14 +556,15 @@ input.title-input:focus {
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  height: 28px;
-  padding: 0 11px;
+  max-width: 100%;
+  min-height: 28px;
+  padding: 3px 11px;
   border: 1px solid var(--line-soft);
   border-radius: 999px;
   background: var(--panel);
   color: var(--ink);
   font-size: 12.5px;
-  white-space: nowrap;
+  white-space: normal;
   box-shadow: var(--shadow-card);
   transition: border-color 0.12s, background 0.12s;
 }
@@ -945,6 +948,16 @@ select.lang-select {
   gap: 6px;
 }
 
+.input-row > input,
+.keys-row > input {
+  min-width: 0;
+}
+
+.input-row > .btn,
+.keys-row > .btn {
+  flex-shrink: 0;
+}
+
 .keys-row.invalid .mono-input {
   border-color: var(--danger);
 }
@@ -1026,23 +1039,34 @@ select.lang-select {
 /* 动作类型 */
 .action-types {
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 9rem), 1fr));
   gap: 4px;
   margin-bottom: 12px;
 }
 
 .action-types.compact {
-  grid-template-columns: repeat(4, 1fr);
   font-size: 12px;
 }
 
+/* 短标签保留原四列布局；其余语言及伪语言给完整单词留足空间。 */
+.action-types:lang(zh-CN),
+.action-types:lang(en-US),
+.action-types:lang(ja-JP),
+.action-types:lang(ko-KR) {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
 .action-types button {
+  min-width: 0;
+  height: auto;
   padding: 7px 4px;
   border: 1px solid var(--line-soft);
   border-radius: var(--radius-m);
   background: var(--panel-2);
   font-size: 13px;
-  /* 英文按钮文字普遍比中文长 30%~80%：允许两行，垂直居中 */
+  /* 优先按词或语言断字规则换行，网格随可用宽度减少列数。 */
+  overflow-wrap: break-word;
+  hyphens: auto;
   white-space: normal;
   line-height: 1.25;
   min-height: 34px;
@@ -1060,13 +1084,13 @@ select.lang-select {
 
 /* 按钮 */
 .btn {
-  height: 34px;
-  padding: 0 15px;
+  min-height: 34px;
+  padding: 5px 15px;
   border: 1px solid var(--line);
   border-radius: var(--radius-m);
   background: var(--panel);
   box-shadow: var(--shadow-card);
-  white-space: nowrap;
+  white-space: normal;
   transition: background 0.12s, box-shadow 0.12s;
 }
 
@@ -1079,8 +1103,8 @@ select.lang-select {
 }
 
 .btn.small {
-  height: 28px;
-  padding: 0 10px;
+  min-height: 28px;
+  padding: 3px 10px;
   font-size: 13px;
 }
 
@@ -1174,13 +1198,14 @@ select.lang-select {
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  height: 28px;
-  padding: 0 4px 0 10px;
+  max-width: 100%;
+  min-height: 28px;
+  padding: 3px 4px 3px 10px;
   border: 1px solid var(--line);
   border-radius: 14px;
   background: var(--panel);
   font-size: 13px;
-  white-space: nowrap;
+  white-space: normal;
 }
 
 .chip-trace {
@@ -1189,6 +1214,7 @@ select.lang-select {
 }
 
 .chip-x {
+  flex-shrink: 0;
   display: grid;
   place-items: center;
   width: 20px;
@@ -1205,15 +1231,15 @@ select.lang-select {
 }
 
 .chip-add {
-  padding: 0 12px;
+  padding: 3px 12px;
   border-style: dashed;
   color: var(--trail);
   background: none;
 }
 
 .chip-var {
-  height: 24px;
-  padding: 0 9px;
+  min-height: 24px;
+  padding: 1px 9px;
   font-size: 12px;
 }
 
@@ -1650,7 +1676,7 @@ select.lang-select {
 
 .path {
   font: 12.5px var(--font-code);
-  word-break: break-all;
+  overflow-wrap: break-word;
 }
 
 /* ------------------------------------------------------------ 模态与提示 */
@@ -1756,9 +1782,9 @@ select.lang-select {
 .app-list .muted {
   font-size: 12.5px;
   max-width: 100%;
-  overflow: hidden;
-  white-space: nowrap;
-  text-overflow: ellipsis;
+  white-space: normal;
+  overflow-wrap: break-word;
+  hyphens: auto;
 }
 
 .app-list li.muted {
@@ -1792,17 +1818,19 @@ select.lang-select {
   flex: 1;
   min-width: 0;
   font-size: 13.5px;
+  overflow-wrap: break-word;
+  hyphens: auto;
 }
 
 .toast-action {
-  height: 30px;
-  padding: 0 14px;
+  min-height: 30px;
+  padding: 4px 14px;
   border: 0;
   border-radius: 8px;
   background: color-mix(in srgb, var(--trail) 30%, transparent);
   color: color-mix(in srgb, var(--trail) 45%, #fff);
   font-weight: 600;
-  white-space: nowrap;
+  white-space: normal;
   transition: background 0.12s;
 }
 
@@ -1997,6 +2025,9 @@ select.lang-select {
   z-index: 90;
   width: max-content; /* 否则靠近右边缘时会被挤成窄条 */
   max-width: 300px;
+  white-space: pre-line;
+  overflow-wrap: break-word;
+  hyphens: auto;
   padding: 6px 10px;
   border-radius: 8px;
   background: color-mix(in srgb, var(--ink) 92%, var(--trail));
@@ -2259,8 +2290,9 @@ select.lang-select {
   display: inline-flex;
   align-items: center;
   gap: 7px;
-  height: 32px;
-  padding: 0 12px 0 8px;
+  max-width: 100%;
+  min-height: 32px;
+  padding: 4px 12px 4px 8px;
   border: 1px solid var(--line-soft);
   border-radius: 999px;
   background: var(--panel-2);
@@ -2274,6 +2306,7 @@ select.lang-select {
 
 .guide-foot {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
   gap: 8px;
   padding: 14px 20px 18px 28px;
@@ -2660,7 +2693,7 @@ select.lang-select {
 .pref-label small.path {
   font-family: var(--font-code);
   font-size: 12px;
-  word-break: break-all;
+  overflow-wrap: break-word;
   user-select: text;
 }
 
