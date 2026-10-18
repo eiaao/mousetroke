@@ -7,6 +7,7 @@ Mousetroke（中文）：免费开源的 Windows 鼠标手势工具。按住右�
 ## Key facts
 
 - Platform: Windows 10 1809+ and Windows 11, 64-bit. The settings window needs Microsoft Edge WebView2 (built into Windows 11); the gesture engine itself has no runtime dependencies.
+- Source code: https://github.com/eiaao/mousetroke (issues and releases there).
 - Price and license: free, MIT. No ads, no account, no network access.
 - Version: 0.1.0. Download: https://github.com/eiaao/mousetroke/releases/latest/download/mousetroke.exe (12.6 MB, portable, no installer).
 - Resource use: gesture engine ≈ 19 MB working set (≈ 10 MB private), no CPU when idle. The settings window is a separate process that only runs while it is open.
