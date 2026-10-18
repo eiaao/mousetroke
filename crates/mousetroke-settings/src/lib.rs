@@ -14,7 +14,8 @@ use std::collections::BTreeMap;
 use std::path::{Path, PathBuf};
 
 use mousetroke_core::i18n::{keys, t};
-use mousetroke_core::schema::{default_config_path, Config};
+use mousetroke_core::schema::{default_config_path, Config, Step};
+use mousetroke_core::shape;
 use serde::Serialize;
 use tauri::{Manager, State, WebviewWindow};
 
@@ -138,6 +139,7 @@ fn set_ui_lang(tag: String, window: WebviewWindow) {
 
 #[tauri::command]
 fn save_config(paths: State<AppPaths>, config: Config) -> MsgResult<()> {
+    validate_strokes(&config)?;
     config.save(&paths.config).map_err(|e| Msg::new(keys::ERROR_SAVE, &[("path", paths.config.display().to_string()), ("err", e)]))
 }
 
@@ -163,6 +165,49 @@ fn record_trace(points: Vec<(f64, f64)>, grid: f64) -> Vec<i32> {
     mousetroke_core::recognizer::record_points(&points, grid)
 }
 
+/// 形状录制与比较始终复用核心算法，前端只负责采点与展示。
+#[tauri::command]
+fn shape_sample(points: Vec<(f64, f64)>) -> MsgResult<Vec<i32>> {
+    shape::normalize(&points).map(|p| shape::encode(&p)).ok_or_else(|| Msg::new(keys::UI_SHAPE_TOO_SHORT, &[]))
+}
+
+#[tauri::command]
+fn shape_compare(a: Vec<i32>, b: Vec<i32>) -> f64 {
+    match (shape::decode(&a), shape::decode(&b)) {
+        (Some(a), Some(b)) => shape::similarity(&a, &b),
+        _ => 0.0,
+    }
+}
+
+#[derive(Serialize)]
+struct ShapeLimits {
+    accept: f64,
+    margin: f64,
+}
+
+#[tauri::command]
+fn shape_limits() -> ShapeLimits {
+    ShapeLimits { accept: shape::ACCEPT, margin: shape::MARGIN }
+}
+
+/// 空笔画是尚未录完的编辑状态，不能覆盖磁盘上的有效配置。
+fn validate_strokes(config: &Config) -> MsgResult<()> {
+    for binding in config.scopes.iter().flat_map(|s| &s.bindings) {
+        for step in &binding.pattern {
+            if matches!(step, Step::Trace { points } if points.len() < 4) {
+                return Err(Msg::new(keys::UI_RECORDER_TOO_SHORT, &[]));
+            }
+            if let Step::Shape { templates } = step {
+                let valid = templates.iter().any(|s| shape::decode(s).is_some_and(|p| shape::similarity(&p, &p) > 0.0));
+                if !valid {
+                    return Err(Msg::new(keys::UI_SHAPE_NEEDS_SAMPLE, &[]));
+                }
+            }
+        }
+    }
+    Ok(())
+}
+
 #[tauri::command]
 fn import_legacy(gestures: String, prefs: Option<String>) -> MsgResult<Config> {
     let g = read_text(Path::new(&gestures))?;
@@ -183,6 +228,7 @@ fn load_config_file(path: String) -> MsgResult<Config> {
 
 #[tauri::command]
 fn export_config(path: String, config: Config) -> MsgResult<()> {
+    validate_strokes(&config)?;
     config.save(Path::new(&path)).map_err(|e| Msg::new(keys::ERROR_SAVE, &[("path", path), ("err", e)]))
 }
 
@@ -391,6 +437,9 @@ pub fn run(config: Option<PathBuf>) {
             set_ui_lang,
             validate_keys,
             record_trace,
+            shape_sample,
+            shape_compare,
+            shape_limits,
             import_legacy,
             load_config_file,
             export_config,
@@ -419,4 +468,56 @@ pub fn run(config: Option<PathBuf>) {
         })
         .run(tauri::generate_context!())
         .expect("设置程序启动失败"); // i18n:allow 内部断言
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn shape_commands_use_core_and_reject_degenerate_drawings() {
+        let raw = vec![(10.0, 20.0), (50.0, 10.0), (70.0, 70.0)];
+        let sample = shape_sample(raw.clone()).unwrap();
+        assert_eq!(sample, shape::encode(&shape::normalize(&raw).unwrap()));
+        assert_eq!(shape_compare(sample.clone(), sample.clone()), 1.0);
+        assert_eq!(shape_compare(vec![], sample.clone()), 0.0);
+        assert_eq!(shape_compare(vec![0; shape::SAMPLE_POINTS * 2], sample), 0.0);
+        for raw in [vec![], vec![(0.0, 0.0)], vec![(1.0, 1.0); 3], vec![(0.0, 0.0), (0.1, 0.1)], vec![(0.0, 0.0), (f64::NAN, 1.0)]] {
+            assert_eq!(shape_sample(raw).unwrap_err().key, keys::UI_SHAPE_TOO_SHORT);
+        }
+        let limits = shape_limits();
+        assert_eq!(limits.accept, shape::ACCEPT);
+        assert_eq!(limits.margin, shape::MARGIN);
+    }
+
+    #[test]
+    fn shape_fixtures_are_core_encoded_and_empty_shapes_cannot_save() {
+        // 与核心识别测试的 G 相同：先画圆弧，再向上、向左收笔。
+        let arc = |t: f64| {
+            let angle = std::f64::consts::PI / 4.0 + 1.5 * std::f64::consts::PI * t;
+            (angle.cos() * 160.0, -angle.sin() * 160.0)
+        };
+        let raw: Vec<_> = (0..=160).map(|i| {
+            let t = i as f64 / 160.0;
+            if t < 0.78 {
+                arc(t / 0.78)
+            } else {
+                let (a, b, f) = if t < 0.89 { (arc(1.0), (131.2, 0.0), (t - 0.78) / 0.11) }
+                    else { ((131.2, 0.0), (8.0, 0.0), (t - 0.89) / 0.11) };
+                (a.0 + (b.0 - a.0) * f, a.1 + (b.1 - a.1) * f)
+            }
+        }).collect();
+        let expected = shape_sample(raw).unwrap();
+        for text in [include_str!("../../../target/uitest/config.json"), include_str!("../../../target/uitest/config-en.json")] {
+            let mut config: Config = serde_json::from_str(text).unwrap();
+            assert!(validate_strokes(&config).is_ok());
+            let step = config.scopes[0].bindings.iter_mut().flat_map(|b| &mut b.pattern).find(|s| matches!(s, Step::Shape { .. })).unwrap();
+            let Step::Shape { templates } = step else { unreachable!() };
+            assert_eq!(templates, &vec![expected.clone()]);
+            templates.clear();
+            assert_eq!(validate_strokes(&config).unwrap_err().key, keys::UI_SHAPE_NEEDS_SAMPLE);
+            config.scopes[0].bindings.last_mut().unwrap().pattern = vec![Step::Trace { points: vec![] }];
+            assert_eq!(validate_strokes(&config).unwrap_err().key, keys::UI_RECORDER_TOO_SHORT);
+        }
+    }
 }

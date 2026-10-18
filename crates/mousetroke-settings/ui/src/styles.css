@@ -1406,6 +1406,51 @@ select.lang-select {
   text-align: right;
 }
 
+/* 形状样本沿用画布、轨迹颜色与步骤芯片的视觉语言。 */
+.shape-instruction {
+  margin: 0 0 10px;
+}
+
+.recorder-pad.disabled {
+  cursor: default;
+}
+
+.shape-samples-head {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 12px;
+  margin: 10px 0 6px;
+  font-size: 12.5px;
+}
+
+.shape-samples {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.shape-sample {
+  display: flex;
+  align-items: flex-start;
+  padding: 4px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-m);
+  background: var(--panel);
+}
+
+.shape-sample .glyph {
+  flex-shrink: 0;
+}
+
+.shape-feedback p {
+  margin: 8px 0 0;
+}
+
+.shape-advice {
+  display: block;
+  margin-top: 4px;
+}
+
 /* ------------------------------------------------------------ 边角选择 */
 
 .edge-picker {

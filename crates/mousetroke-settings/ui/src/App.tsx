@@ -40,7 +40,13 @@ export function App() {
   return <Main init={init} />;
 }
 
-type SaveState = "idle" | "saving" | "saved" | "error";
+type SaveState = "idle" | "saving" | "saved" | "error" | "incomplete";
+
+/** 尚未录完的笔画留在编辑状态，不能触发自动保存或关闭时写盘。 */
+function hasIncompleteStroke(config: Config): boolean {
+  return config.scopes.some((s) => s.bindings.some((b) => b.pattern.some((s) => (s.type === "shape" && s.templates.length === 0) || (s.type === "trace" && s.points.length < 4))));
+}
+
 interface ToastMsg {
   id: number;
   text: string;
@@ -77,6 +83,10 @@ function Main({ init }: { init: InitState }) {
   const lastSaved = useRef(store.revision);
   useEffect(() => {
     if (store.revision === lastSaved.current) return;
+    if (hasIncompleteStroke(config)) {
+      setSaveState("incomplete");
+      return;
+    }
     setSaveState("saving");
     const t0 = setTimeout(async () => {
       try {
@@ -97,7 +107,7 @@ function Main({ init }: { init: InitState }) {
   pending.current = { config, revision: store.revision };
   useEffect(() => {
     const off = getCurrentWindow().onCloseRequested(async () => {
-      if (pending.current.revision !== lastSaved.current) {
+      if (pending.current.revision !== lastSaved.current && !hasIncompleteStroke(pending.current.config)) {
         await api.saveConfig(pending.current.config).catch(() => {});
       }
     });
@@ -250,6 +260,7 @@ function Main({ init }: { init: InitState }) {
   };
 
   const binding = scope && sel != null ? scope.bindings[sel] : null;
+  const otherBindings = useMemo(() => scope?.bindings.filter((_, i) => i !== sel) ?? [], [scope, sel]);
 
   // 编辑中把触发方式改成边角（或反过来）→ 列表分类跟过去，选中项不会"消失"
   const bindingTab: ListTab | null = binding ? (decompose(binding.pattern).trigger.kind === "edge" ? "edge" : "gesture") : null;
@@ -321,6 +332,7 @@ function Main({ init }: { init: InitState }) {
           binding={binding}
           bindingKey={`${scope!.id}-${sel}`}
           conflictWith={conflictNames}
+          otherBindings={otherBindings}
           onChange={(f, k) => edit((c) => updateBinding(c, scopeIdx, sel, f), k && `b-${scopeIdx}-${sel}-${k}`)}
           onDuplicate={() => duplicateBinding(sel)}
           onDelete={() => deleteBinding(sel)}

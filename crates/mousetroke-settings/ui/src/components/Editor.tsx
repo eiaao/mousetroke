@@ -8,6 +8,7 @@ export interface EditorProps {
   /** 用于在切换绑定时重置内部状态。 */
   bindingKey: string;
   conflictWith: string[];
+  otherBindings: Binding[];
   onChange: (f: (b: Binding) => Binding, coalesce?: string) => void;
   onDuplicate: () => void;
   onDelete: () => void;
@@ -19,7 +20,7 @@ function quoteJoin(names: string[]): string {
   return names.map((n) => `${t("ui.editor.q_open")}${n}${t("ui.editor.q_close")}`).join(t("ui.editor.q_sep"));
 }
 
-export function Editor({ binding, bindingKey, conflictWith, onChange, onDuplicate, onDelete, onClose }: EditorProps) {
+export function Editor({ binding, bindingKey, conflictWith, otherBindings, onChange, onDuplicate, onDelete, onClose }: EditorProps) {
   const conflict = conflictWith.length ? (
     <span className="warn">{t("ui.editor.conflict", { names: quoteJoin(conflictWith.map((n) => n)) })}</span>
   ) : null;
@@ -52,6 +53,7 @@ export function Editor({ binding, bindingKey, conflictWith, onChange, onDuplicat
         <PatternEditor
           key={`p-${bindingKey}`}
           pattern={binding.pattern}
+          others={otherBindings}
           onChange={(pattern: Step[]) => onChange((b) => ({ ...b, pattern }))}
         />
         {conflict && <p className="field-warn">{conflict}</p>}
@@ -61,13 +63,17 @@ export function Editor({ binding, bindingKey, conflictWith, onChange, onDuplicat
 
         <h3 className="editor-section">{t("ui.editor.section_options")}</h3>
         <div className="fields">
-          <label className="check">
-            <input type="checkbox" checked={binding.execute_on_match} onChange={(e) => onChange((b) => ({ ...b, execute_on_match: e.target.checked }))} />
-            <span>
-              {t("ui.editor.execute_now")}
-              <small>{t("ui.editor.execute_now_help")}</small>
-            </span>
-          </label>
+          {binding.pattern.some((s) => s.type === "shape") ? (
+            <p className="field-help">{t("ui.shape.release")}</p>
+          ) : (
+            <label className="check">
+              <input type="checkbox" checked={binding.execute_on_match} onChange={(e) => onChange((b) => ({ ...b, execute_on_match: e.target.checked }))} />
+              <span>
+                {t("ui.editor.execute_now")}
+                <small>{t("ui.editor.execute_now_help")}</small>
+              </span>
+            </label>
+          )}
           <label className="check">
             <input type="checkbox" checked={binding.hide_label} onChange={(e) => onChange((b) => ({ ...b, hide_label: e.target.checked }))} />
             <span>{t("ui.editor.hide_label")}</span>

@@ -35,7 +35,7 @@ export function Sidebar({
   onAddApp: () => void;
   engine: EngineStatus;
   onStartEngine: () => void;
-  saveState: "idle" | "saving" | "saved" | "error";
+  saveState: "idle" | "saving" | "saved" | "error" | "incomplete";
 }) {
   // 通用在最前，其次特殊区域，再按名称排列应用（排序跟随当前语言）
   const order = scopes
@@ -98,7 +98,7 @@ export function Sidebar({
           )}
         </div>
         <div className="status-save" aria-live="polite">
-          {saveState === "saving" ? t("ui.sidebar.saving") : saveState === "saved" ? t("ui.sidebar.saved") : saveState === "error" ? t("ui.sidebar.save_failed") : ""}
+          {saveState === "saving" ? t("ui.sidebar.saving") : saveState === "saved" ? t("ui.sidebar.saved") : saveState === "error" ? t("ui.sidebar.save_failed") : saveState === "incomplete" ? t("ui.pattern.unsaved") : ""}
         </div>
       </div>
     </nav>

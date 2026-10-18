@@ -2,7 +2,7 @@ import type { Step } from "../types";
 import { decompose, traceOf } from "../gesture";
 
 /** 轨迹点 → SVG 路径坐标（等比缩放进 size×size，留边距）。 */
-export function tracePath(points: number[], size: number, pad: number): [number, number][] {
+export function tracePath(points: number[], size: number, pad: number, shape = false): [number, number][] {
   const xs = points.filter((_, i) => i % 2 === 0);
   const ys = points.filter((_, i) => i % 2 === 1);
   const minX = Math.min(...xs), maxX = Math.max(...xs), minY = Math.min(...ys), maxY = Math.max(...ys);
@@ -12,6 +12,8 @@ export function tracePath(points: number[], size: number, pad: number): [number,
   const oy = pad + ((size - pad * 2) - (maxY - minY) * k) / 2;
   const out: [number, number][] = [];
   for (let i = 0; i + 1 < points.length; i += 2) out.push([ox + (points[i] - minX) * k, oy + (points[i + 1] - minY) * k]);
+  // 形状直接使用核心重采样后的曲线点，不做折线的折返错位。
+  if (shape || out.length === 0) return out;
   // 折返（↑↓、→← 等）会与上一段重叠成一条线：在拐点处做一个小 U 形错位
   const gap = Math.max(2.5, size * 0.09);
   const res: [number, number][] = [out[0]];
@@ -47,8 +49,9 @@ export function Arrow({ pts, w }: { pts: [number, number][]; w: number }) {
 }
 
 /** 笔画字形：起点实心圆 + 折线 + 终点箭头。 */
-export function TraceGlyph({ points, size = 40, stroke = 2.4, className }: { points: number[]; size?: number; stroke?: number; className?: string }) {
-  const pts = tracePath(points, size, size * 0.18);
+export function TraceGlyph({ points, size = 40, stroke = 2.4, className, shape = false }: { points: number[]; size?: number; stroke?: number; className?: string; shape?: boolean }) {
+  const pts = tracePath(points, size, size * 0.18, shape);
+  if (pts.length < 2) return null;
   return (
     <svg className={`glyph ${className ?? ""}`} width={size} height={size} viewBox={`0 0 ${size} ${size}`} aria-hidden>
       <polyline className="glyph-line" points={pts.map((p) => p.join(",")).join(" ")} strokeWidth={stroke} />
@@ -56,6 +59,11 @@ export function TraceGlyph({ points, size = 40, stroke = 2.4, className }: { poi
       <Arrow pts={pts} w={stroke} />
     </svg>
   );
+}
+
+/** 形状沿用轨迹的起点、箭头和圆角线条，缩放不改变长宽比。 */
+export function ShapeGlyph({ template, size = 40, stroke = 2.4 }: { template: number[]; size?: number; stroke?: number }) {
+  return <TraceGlyph points={template} size={size} stroke={stroke} className="shape-glyph" shape />;
 }
 
 /** 屏幕缩略图，高亮某个边/角。 */
@@ -98,6 +106,8 @@ export function MouseGlyph({ size = 40, wheel }: { size?: number; wheel?: boolea
 
 /** 列表里的手势图标：优先轨迹，其次边角，最后鼠标。 */
 export function PatternGlyph({ pattern, size = 40 }: { pattern: Step[]; size?: number }) {
+  const shape = pattern.find((s) => s.type === "shape");
+  if (shape?.type === "shape" && shape.templates[0]) return <ShapeGlyph template={shape.templates[0]} size={size} />;
   const trace = traceOf(pattern);
   if (trace && trace.length >= 4) return <TraceGlyph points={trace} size={size} />;
   const m = decompose(pattern);

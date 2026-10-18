@@ -27,6 +27,7 @@ export type KeyTag = string;
 export type Step =
   | { type: "press"; key: KeyTag }
   | { type: "trace"; points: number[] }
+  | { type: "shape"; templates: number[][] }
   | { type: "edge"; edge: number }
   | { type: "wheel"; horizontal: boolean };
 

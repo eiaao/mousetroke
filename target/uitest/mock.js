@@ -27,6 +27,16 @@
     const mx = Math.min(...pts.map((p) => p[0])), my = Math.min(...pts.map((p) => p[1]));
     return pts.flatMap(([x, y]) => [x - mx, y - my]);
   }
+  // 形状命令的简易替身，仅供浏览器冒烟；产品中的采样与比较均由 Rust 核心完成。
+  function shapeSample(raw) {
+    const length = raw.slice(1).reduce((n, p, i) => n + Math.hypot(p[0] - raw[i][0], p[1] - raw[i][1]), 0);
+    if (raw.length < 2 || length < 1) throw { key: "ui.shape.too_short", params: {} };
+    const pts = Array.from({ length: 64 }, (_, i) => raw[Math.round(i * (raw.length - 1) / 63)]);
+    const xs = pts.map((p) => p[0]), ys = pts.map((p) => p[1]);
+    const span = Math.max(Math.max(...xs) - Math.min(...xs), Math.max(...ys) - Math.min(...ys));
+    const cx = xs.reduce((a, b) => a + b, 0) / 64, cy = ys.reduce((a, b) => a + b, 0) / 64;
+    return pts.flatMap(([x, y]) => [Math.round((x - cx) * 1000 / span), Math.round((y - cy) * 1000 / span)]);
+  }
   window.__listeners = {};
   // 测试用：触发 Tauri 事件（拖放等）
   window.__emit = (event, payload) => (window.__listeners[event] ?? []).forEach((h) => h({ event, payload, id: 1 }));
@@ -49,6 +59,9 @@
         case "get_engine_status": return { running: true, autostart: false, exeFound: true };
         case "validate_keys": return /\{[^}]*$/.test(args.keys) ? { key: "keyseq.error.near", params: { pos: String(args.keys.length), reason: "keyseq.error.missing_brace" } } : null;
         case "record_trace": return record(args.points, args.grid);
+        case "shape_sample": return shapeSample(args.points);
+        case "shape_compare": return args.a.length === 128 && args.b.length === 128 ? Math.max(0, 1 - Math.sqrt(args.a.reduce((sum, x, i) => sum + (x - args.b[i]) ** 2, 0) / 128) / 500) : 0;
+        case "shape_limits": return { accept: 0.81, margin: 0.04 };
         case "app_icons": return Object.fromEntries(args.exes.map((e) => [e, /chrome/i.test(e) ? "data:image/svg+xml," + encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32"><circle cx="16" cy="16" r="15" fill="#db4437"/><circle cx="16" cy="16" r="7" fill="#4285f4" stroke="#fff" stroke-width="2"/></svg>') : null]));
         case "running_apps": return [{ exe: "C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe", title: "新标签页 - Google Chrome" }, { exe: "C:\\Windows\\explorer.exe", title: "下载" }, { exe: "C:\\Users\\me\\AppData\\Local\\Programs\\Microsoft VS Code\\Code.exe", title: "main.rs - mousetroke" }];
         case "save_config": window.__saved = args.config; return null;
