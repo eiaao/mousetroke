@@ -4,6 +4,8 @@ description = "Mousetroke 设置程序（按需打开、关掉即退；读写 co
 version.workspace = true
 edition.workspace = true
 license.workspace = true
+repository.workspace = true
+homepage.workspace = true
 
 [lib]
 path = "src/lib.rs"

@@ -4,6 +4,8 @@ description = "Mousetroke 核心：原生配置 schema / 旧格式导入器 / �
 version.workspace = true
 edition.workspace = true
 license.workspace = true
+repository.workspace = true
+homepage.workspace = true
 
 [dependencies]
 serde = { workspace = true }

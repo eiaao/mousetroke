@@ -1,9 +1,13 @@
 # Mousetroke
 
+[![CI](https://github.com/eiaao/mousetroke/actions/workflows/ci.yml/badge.svg)](https://github.com/eiaao/mousetroke/actions/workflows/ci.yml) [![Release](https://img.shields.io/github/v/release/eiaao/mousetroke?include_prereleases)](https://github.com/eiaao/mousetroke/releases/latest) [![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE) ![Windows 10/11](https://img.shields.io/badge/platform-Windows%2010%20%7C%2011-0098d9)
+
 **免费开源的 Windows 鼠标手势工具。** 按住右键画一笔：`←` 后退，`↓→` 关闭标签页，`↙` 最小化窗口。
 鼠标推到屏幕左下角打开开始菜单，贴着上边滚动滚轮调音量。只是单击右键时，菜单照常弹出。
 
-[English](README.md)
+**[产品主页](https://eiaao.github.io/mousetroke/) · [下载](https://github.com/eiaao/mousetroke/releases/latest) · [English](README.md)**
+
+![Mousetroke 设置界面](docs/images/settings-zh.png)
 
 - 内置五十多个手势，全部可改；在设置里画一遍就能录一个自己的
 - 屏幕边角：开始菜单、显示桌面、音量、亮度（外接显示器走 DDC/CI）
@@ -14,7 +18,7 @@
 
 ## 安装
 
-1. 从 [最新版本](../../releases/latest) 下载 `mousetroke.exe`，并用同页的 `SHA256SUMS.txt` 核对校验值。
+1. 从 [最新版本](https://github.com/eiaao/mousetroke/releases/latest) 下载 `mousetroke.exe`，并用同页的 `SHA256SUMS.txt` 核对校验值。
 2. 双击运行。任务栏右下角出现图标：左键打开设置，右键暂停或退出。第一次运行有简短的使用引导。
 
 系统要求：Windows 10 1809 及以上或 Windows 11，64 位。设置界面使用 Microsoft Edge WebView2（Windows 11 自带）。
@@ -36,6 +40,10 @@ cargo test --workspace       :: 引擎、导入器、多语言与设置界面的
 ## 安全
 
 "运行命令"和 Lua 脚本拥有你的用户权限，只导入可信来源的配置。程序做了什么、怎么报告漏洞，见 [SECURITY.md](SECURITY.md)。
+
+## 参与贡献
+
+欢迎提问题、补翻译、提 PR，见 [CONTRIBUTING.md](CONTRIBUTING.md)。
 
 ## 许可证
 

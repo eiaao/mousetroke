@@ -4,6 +4,8 @@ description = "Mousetroke Windows 平台层：LL 钩子 / 分层轨迹窗口 / S
 version.workspace = true
 edition.workspace = true
 license.workspace = true
+repository.workspace = true
+homepage.workspace = true
 
 [dependencies]
 mousetroke-core = { path = "../mousetroke-core" }

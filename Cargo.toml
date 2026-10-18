@@ -9,6 +9,8 @@ default-members = ["crates/mousetroke-core", "crates/mousetroke-win", "crates/mo
 version = "0.1.0"
 edition = "2021"
 license = "MIT"
+repository = "https://github.com/eiaao/mousetroke"
+homepage = "https://eiaao.github.io/mousetroke/"
 
 [workspace.dependencies]
 serde = { version = "1", features = ["derive"] }

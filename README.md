@@ -1,11 +1,15 @@
 # Mousetroke
 
+[![CI](https://github.com/eiaao/mousetroke/actions/workflows/ci.yml/badge.svg)](https://github.com/eiaao/mousetroke/actions/workflows/ci.yml) [![Release](https://img.shields.io/github/v/release/eiaao/mousetroke?include_prereleases)](https://github.com/eiaao/mousetroke/releases/latest) [![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE) ![Windows 10/11](https://img.shields.io/badge/platform-Windows%2010%20%7C%2011-0098d9)
+
 **Free, open-source mouse gestures for Windows.** Hold the right button and draw — `←` goes
 back, `↓→` closes the tab, `↙` minimizes the window. Push the cursor into a screen corner for
 the Start menu, or scroll along the top edge to change the volume. A plain right-click still
 opens the context menu.
 
-[简体中文](README.zh-CN.md)
+**[Website](https://eiaao.github.io/mousetroke/) · [Download](https://github.com/eiaao/mousetroke/releases/latest) · [简体中文](README.zh-CN.md)**
+
+![Mousetroke settings](docs/images/settings-en.png)
 
 - About 50 built-in gestures, all editable; record your own by drawing it once
 - Screen corners and edges: Start menu, show desktop, volume, brightness (DDC/CI for external monitors)
@@ -17,7 +21,7 @@ opens the context menu.
 
 ## Install
 
-1. Download `mousetroke.exe` from the [latest release](../../releases/latest) and check its
+1. Download `mousetroke.exe` from the [latest release](https://github.com/eiaao/mousetroke/releases/latest) and check its
    SHA-256 against `SHA256SUMS.txt` on the same page.
 2. Double-click it. An icon appears in the notification area: left-click for settings,
    right-click to pause or quit. A short guide runs the first time.
@@ -51,6 +55,10 @@ cargo test --workspace       :: engine, importer, i18n and settings tests
 
 Shell and Lua actions run with your user rights — only import configurations you trust.
 See [SECURITY.md](SECURITY.md) for what the program does and how to report a vulnerability.
+
+## Contributing
+
+Issues, translations and pull requests are welcome — see [CONTRIBUTING.md](CONTRIBUTING.md).
 
 ## License
 

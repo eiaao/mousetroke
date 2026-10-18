@@ -19,4 +19,4 @@ Allow: /
 User-agent: Bytespider
 Allow: /
 
-Sitemap: https://mousetroke.example/sitemap.xml
+Sitemap: https://eiaao.github.io/mousetroke/sitemap.xml

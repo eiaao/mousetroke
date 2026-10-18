@@ -1,0 +1,37 @@
+name: Bug report / 问题反馈
+description: Something doesn't work as expected / 程序行为不对
+labels: [bug]
+body:
+  - type: textarea
+    id: what
+    attributes:
+      label: What happened / 发生了什么
+      description: What you did, what you expected, what happened instead. / 做了什么、期望什么、实际怎样。
+    validations: { required: true }
+  - type: input
+    id: version
+    attributes:
+      label: Mousetroke version / 版本
+      description: Settings → About / 设置 → 关于
+      placeholder: "0.1.0"
+    validations: { required: true }
+  - type: input
+    id: windows
+    attributes:
+      label: Windows version / 系统版本
+      placeholder: Windows 11 24H2
+    validations: { required: true }
+  - type: input
+    id: app
+    attributes:
+      label: Which program were you using? / 在哪个程序里出的问题
+      placeholder: chrome.exe
+  - type: textarea
+    id: log
+    attributes:
+      label: Log excerpt / 日志片段
+      description: >-
+        Settings → About → Open log. Paste the lines around the problem. The log never contains
+        typed keys, but it does contain program names — remove anything you don't want to share.
+        设置 → 关于 → 打开日志，贴出出问题前后的几行。日志不含按键内容，但有程序名，不想公开的请删掉。
+      render: text

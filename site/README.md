@@ -14,15 +14,18 @@ assets/icon.svg     站点图标
 og.png / og-en.png  社交分享图（target/uitest/og.mjs 生成）
 llms.txt            给 AI 搜索 / Agent 读的纯文本摘要
 robots.txt sitemap.xml
-download/           发布时把 dist/mousetroke.exe 放进来
 ```
 
-## 上线前要改的
+## 部署
 
-1. **域名**：所有绝对地址都写的是占位域名 `https://mousetroke.example`，替换成真实域名：
-   `grep -rl mousetroke.example . | xargs sed -i 's#https://mousetroke.example#https://你的域名#g'`
-2. **下载文件**：把 `dist/mousetroke.exe` 复制到 `download/mousetroke.exe`。版本号、大小（12.8 MB）写在两页的 CTA、JSON-LD 和 `llms.txt` 里，发版时一起改。
-3. 页面内链接都是相对路径，部署在根目录或子目录、或直接双击打开 HTML 都能正常显示；但 canonical / hreflang / og 等元信息用的是绝对地址，部署地址变了要一起改。
+- 推送到 `main` 且改动了 `site/` 时，`.github/workflows/pages.yml` 自动把本目录发布到 GitHub Pages：
+  <https://eiaao.github.io/mousetroke/>。不需要构建步骤。
+- 下载按钮指向 `https://github.com/eiaao/mousetroke/releases/latest/download/mousetroke.exe`，
+  永远是最新版本，发版时不用改页面。版本号、大小写在各页的下载按钮、JSON-LD 和 `llms.txt` 里，大版本时顺手更新。
+- 换域名（比如改用 Cloudflare Pages 或自有域名）：canonical / hreflang / og / sitemap 用的是绝对地址，
+  全部替换：`grep -rl eiaao.github.io/mousetroke . | xargs sed -i 's#https://eiaao.github.io/mousetroke#https://新域名#g'`，
+  再跑 `python gen.py && python check.py`。
+- 页面内链接都是相对路径，部署在根目录或子目录、或直接双击打开 HTML 都能正常显示。
 
 ## 改内容时注意
 
