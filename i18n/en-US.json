@@ -456,6 +456,7 @@
   "toast.config_updated": "Mousetroke config updated",
   "overlay.unrecognized": "Unrecognized",
   "overlay.unrecognized_arrows": "Unrecognized  {arrows}",
+  "overlay.gesture_too_long": "Nice doodle! Let’s skip this one.",
   "overlay.brightness": "Brightness {value}%",
   "overlay.brightness_unsupported": "This display doesn’t support brightness control",
   "ui.picker.live_hint": "Click an app window to set up · Esc or right-click cancels",

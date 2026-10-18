@@ -456,6 +456,7 @@
   "toast.config_updated": "Configuration Mousetroke mise à jour",
   "overlay.unrecognized": "Non reconnu",
   "overlay.unrecognized_arrows": "Non reconnu  {arrows}",
+  "overlay.gesture_too_long": "Joli gribouillis ! On passe.",
   "overlay.brightness": "Luminosité {value}%",
   "overlay.brightness_unsupported": "Cet écran ne prend pas en charge le réglage de la luminosité",
   "ui.picker.live_hint": "Cliquez sur la fenêtre d’une application à configurer · Échap ou clic droit annule",

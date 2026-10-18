@@ -456,6 +456,7 @@
   "toast.config_updated": "Mousetroke-Konfiguration aktualisiert",
   "overlay.unrecognized": "Nicht erkannt",
   "overlay.unrecognized_arrows": "Nicht erkannt  {arrows}",
+  "overlay.gesture_too_long": "Kritzelkunst? Die zählt nicht!",
   "overlay.brightness": "Helligkeit {value} %",
   "overlay.brightness_unsupported": "Dieser Bildschirm unterstützt keine Helligkeitseinstellung",
   "ui.picker.live_hint": "Auf das einzurichtende App-Fenster klicken · Esc oder Rechtsklick bricht ab",

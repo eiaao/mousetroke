@@ -456,6 +456,7 @@
   "toast.config_updated": "Configuração do Mousetroke atualizada",
   "overlay.unrecognized": "Não reconhecido",
   "overlay.unrecognized_arrows": "Não reconhecido  {arrows}",
+  "overlay.gesture_too_long": "Virou rabisco! Essa não vale.",
   "overlay.brightness": "Brilho {value}%",
   "overlay.brightness_unsupported": "Este monitor não permite ajuste de brilho",
   "ui.picker.live_hint": "Clique na janela do aplicativo a configurar · Esc ou clique direito cancela",

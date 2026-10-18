@@ -14,6 +14,9 @@ struct Log {
     replays: Vec<(B, bool)>,
     executed: Vec<String>,
     lines: usize,
+    finishes: usize,
+    fades: usize,
+    label_clears: usize,
     labels: Vec<String>,
     samples: Vec<Vec<i32>>,
 }
@@ -29,13 +32,19 @@ impl Canvas for FakeCanvas {
     fn line_to(&mut self, _: i32, _: i32) {
         self.0.borrow_mut().lines += 1;
     }
-    fn finish(&mut self) {}
-    fn fade_out(&mut self) {}
+    fn finish(&mut self) {
+        self.0.borrow_mut().finishes += 1;
+    }
+    fn fade_out(&mut self) {
+        self.0.borrow_mut().fades += 1;
+    }
     fn tick_fade(&mut self) {}
     fn draw_label(&mut self, text: &str, _: i32, _: i32, _: &str) {
         self.0.borrow_mut().labels.push(text.into());
     }
-    fn clear_label(&mut self) {}
+    fn clear_label(&mut self) {
+        self.0.borrow_mut().label_clears += 1;
+    }
     fn virtual_rect(&self) -> (i32, i32, i32, i32) {
         (0, 0, 1920, 1080)
     }
@@ -207,6 +216,13 @@ impl T {
     fn lines(&self) -> usize {
         self.log.borrow().lines
     }
+    /// 每次反向移动形成一段，按键和沿边摩擦共用。
+    fn zigzag(&mut self, segments: usize) {
+        let (x, y) = self.pos;
+        for i in 0..segments {
+            self.to(if i % 2 == 0 { x + 120 } else { x }, y);
+        }
+    }
     fn draw_path(&mut self, path: &[(i32, i32)]) {
         self.to(path[0].0, path[0].1);
         assert_eq!(self.down(B::Right), Verdict::Swallow);
@@ -270,7 +286,7 @@ fn shape_g_straight_scribble_and_plain_click() {
     t.draw_path(&scribble);
     t.up(B::Right);
     assert_eq!(t.executed(), ["G", "close"]);
-    assert!(t.log.borrow().labels.last().unwrap().starts_with("未识别"));
+    assert_eq!(t.log.borrow().labels.last().map(String::as_str), Some("画嗨了吧？这一笔不算～"));
     assert!(t.replays().is_empty());
 
     t.down(B::Right);
@@ -551,6 +567,172 @@ fn right_gesture_executes_and_swallows() {
     assert_eq!(t.executed(), ["down"]);
     assert!(t.replays().is_empty());
     assert!(t.lines() > 0);
+}
+
+#[test]
+fn overlong_stroke_cancels_without_replay_and_next_gesture_works() {
+    let mut cfg = config(false);
+    cfg.scopes[0].bindings.push(bind("close_tab", vec![RIGHT, trace(&DOWN_RIGHT)]));
+    let mut t = T::with_samples(cfg, true);
+    assert_eq!(t.down(B::Right), Verdict::Swallow);
+    t.zigzag(101);
+    assert_eq!(t.e.live_label.as_deref(), Some("画嗨了吧？这一笔不算～"));
+    let deadline = t.e.label_deadline.unwrap();
+    assert!(deadline > Instant::now() + Duration::from_secs(1));
+    assert!(deadline <= Instant::now() + Duration::from_millis(1500));
+    assert_eq!(t.log.borrow().finishes, 1, "取消应立即清除轨迹");
+    assert_eq!(t.log.borrow().fades, 0);
+    assert!(t.executed().is_empty());
+    let labels = t.log.borrow().labels.clone();
+    assert_eq!(t.up(B::Right), Verdict::Swallow);
+    assert!(t.e.capture.is_none());
+    assert!(t.e.target.is_none());
+    assert!(t.executed().is_empty());
+    assert!(t.replays().is_empty());
+    assert!(t.log.borrow().samples.is_empty(), "取消的笔画不用于校准");
+    assert_eq!(t.log.borrow().labels, labels, "释放不应显示未识别");
+    assert_eq!(t.e.label_deadline, Some(deadline));
+    assert_eq!(t.log.borrow().finishes, 1, "释放不再操作绘制面");
+    assert_eq!(t.log.borrow().fades, 0);
+
+    t.to(960, 540);
+    assert_eq!(t.down(B::Right), Verdict::Swallow);
+    t.drag(960, 700);
+    t.drag(1160, 700);
+    assert_eq!(t.up(B::Right), Verdict::Swallow);
+    assert_eq!(t.executed(), ["close_tab"]);
+    assert!(t.replays().is_empty());
+}
+
+#[test]
+fn overlong_stroke_stops_tracking_drawing_and_live_labels_until_release() {
+    let mut t = T::new(false);
+    t.down(B::Right);
+    t.zigzag(100);
+    // 第 101 段是去噪会删掉的短收笔：必须按原始段数取消。
+    t.to(t.pos.0, t.pos.1 + t.e.cfg.settings.min_stroke_px as i32);
+    assert_eq!(t.e.tracker.segments().len(), 101);
+    assert_eq!(t.e.tracker.strokes().len(), 100);
+    let segments = t.e.tracker.segments().to_vec();
+    let path = t.e.path.clone();
+    let lines = t.lines();
+    let labels = t.log.borrow().labels.clone();
+    let finishes = t.log.borrow().finishes;
+    for i in 0..10_000 {
+        assert_eq!(t.to(960 + i % 200, 540 + i % 160), Verdict::Pass);
+    }
+    assert_eq!(t.wheel(1), Verdict::Swallow);
+    assert_eq!(t.e.handle(InputEvent::KeyDown(0x41)), Verdict::Pass);
+    assert_eq!(t.e.tracker.segments(), segments);
+    assert_eq!(t.e.path, path);
+    assert_eq!(t.lines(), lines);
+    assert_eq!(t.log.borrow().labels, labels);
+    assert_eq!(t.log.borrow().finishes, finishes);
+    assert!(t.executed().is_empty());
+    assert!(t.replays().is_empty());
+
+    // 不必等松键，提示也应按时消失；后续移动不能把它重新画出来。
+    let clears = t.log.borrow().label_clears;
+    t.e.label_deadline = Some(Instant::now() - Duration::from_millis(1));
+    t.e.toast_tick();
+    assert_eq!(t.log.borrow().label_clears, clears + 1);
+    assert!(t.e.live_label.is_none());
+    assert!(t.e.label_deadline.is_none());
+    t.to(1200, 800);
+    assert_eq!(t.log.borrow().labels, labels);
+    assert_eq!(t.up(B::Right), Verdict::Swallow);
+    assert!(t.e.capture.is_none());
+    assert!(t.replays().is_empty());
+}
+
+#[test]
+fn overlong_stroke_label_follows_language_and_visibility() {
+    for show in [true, false] {
+        let mut cfg = config(false);
+        cfg.settings.language = "en-US".into();
+        cfg.settings.label.show = show;
+        let mut t = T::with_config(cfg);
+        t.down(B::Right);
+        t.zigzag(101);
+        assert_eq!(t.e.live_label.as_deref(), show.then_some("Nice doodle! Let’s skip this one."));
+        assert_eq!(t.e.label_deadline.is_some(), show);
+        assert_eq!(t.up(B::Right), Verdict::Swallow);
+        assert!(t.e.capture.is_none());
+        assert!(t.executed().is_empty());
+        assert!(t.replays().is_empty());
+    }
+}
+
+#[test]
+fn stroke_at_segment_limit_still_matches_on_release() {
+    let mut points = vec![0, 0];
+    for i in 0..100 {
+        points.extend([if i % 2 == 0 { 50 } else { 0 }, 0]);
+    }
+    let mut cfg = config(false);
+    cfg.scopes[0].bindings.push(bind("hundred_segments", vec![RIGHT, trace(&points)]));
+    let mut t = T::with_config(cfg);
+    t.down(B::Right);
+    t.zigzag(100);
+    assert_eq!(t.e.tracker.segments().len(), 100);
+    assert_eq!(t.e.capture.as_ref().unwrap().state, CaptureState::Active);
+    assert_eq!(t.log.borrow().finishes, 0);
+    assert_eq!(t.e.live_label.as_deref(), Some("hundred_segments"));
+    assert_eq!(t.up(B::Right), Verdict::Swallow);
+    assert_eq!(t.executed(), ["hundred_segments"]);
+    assert!(t.replays().is_empty());
+}
+
+#[test]
+fn overlong_edge_rubbing_ends_and_stays_disarmed_until_leaving() {
+    let mut cfg = config(false);
+    cfg.scopes[0].bindings.push(bind("rub", vec![Step::Edge { edge: TOP }, trace(&[0, 0, 50, 0, 0, 0])]));
+    let mut t = T::with_config(cfg);
+    t.dwell(960, 0);
+    assert!(t.e.capture.is_some());
+    t.zigzag(101);
+    assert!(t.e.capture.is_none());
+    assert!(t.e.edge_disarmed);
+    assert!(t.e.edge_pending.is_none());
+    assert_eq!(t.e.live_label.as_deref(), Some("画嗨了吧？这一笔不算～"));
+    assert_eq!(t.log.borrow().finishes, 1);
+    assert_eq!(t.lines(), 0);
+    assert!(t.executed().is_empty());
+    assert!(t.replays().is_empty());
+    let segments = t.e.tracker.segments().to_vec();
+    let path = t.e.path.clone();
+    t.zigzag(4);
+    t.dwell(960, 0);
+    assert!(t.e.capture.is_none());
+    assert_eq!(t.e.tracker.segments(), segments);
+    assert_eq!(t.e.path, path);
+    t.to(960, 100);
+    assert!(!t.e.edge_disarmed);
+    t.dwell(960, 0);
+    assert!(t.e.capture.is_some());
+    assert!(t.e.tracker.is_empty());
+    t.zigzag(2);
+    assert_eq!(t.e.live_label.as_deref(), Some("rub"));
+}
+
+#[test]
+fn overlong_edge_stroke_with_button_waits_for_swallowed_release() {
+    let mut t = T::new(true);
+    t.dwell(960, 0);
+    assert_eq!(t.down(B::Right), Verdict::Swallow);
+    t.zigzag(101);
+    assert!(t.e.capture.is_some());
+    assert_eq!(t.e.live_label.as_deref(), Some("画嗨了吧？这一笔不算～"));
+    let lines = t.lines();
+    t.to(960, 500);
+    assert_eq!(t.lines(), lines);
+    assert_eq!(t.up(B::Right), Verdict::Swallow);
+    assert!(t.e.capture.is_none());
+    assert!(t.e.edge_disarmed);
+    assert!(t.executed().is_empty());
+    assert!(t.replays().is_empty());
+    assert_eq!(t.log.borrow().finishes, 1);
+    assert_eq!(t.log.borrow().fades, 0);
 }
 
 #[test]

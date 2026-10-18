@@ -182,11 +182,15 @@ const TRIM_AFTER: Duration = Duration::from_secs(3);
 const ECHO_WINDOW: Duration = Duration::from_millis(500);
 /// 命中标签停留时间。
 const HIT_LABEL: Duration = Duration::from_millis(600);
+/// 超长取消提示停留时间，松键不打断。
+const TOO_LONG_LABEL: Duration = Duration::from_millis(1500);
 /// 点击容差下限(px)：位移不超过 max(此值, 最小识别距离/3) 不算开始移动（仍可回落为原生拖拽）；
 /// 轨迹要到最小识别距离的一半才开始画，点击时手滑不会闪出一小段线。
 const CLICK_SLOP_MIN: i32 = 6;
 /// 原始路径复用固定容量；满时原地隔点抽稀，钩子内不扩容。
 const SHAPE_PATH_CAP: usize = 2048;
+/// 内置手势最长仅 4 段；放宽到 100 段容纳复杂笔画，仍能及时截断无休止的涂画。
+const MAX_STROKE_SEGMENTS: usize = 100;
 
 /// 钩子回调送入的输入事件（坐标为屏幕坐标）。
 #[derive(Debug, Clone, Copy)]
@@ -214,6 +218,8 @@ enum CaptureState {
     Passthrough,
     /// 已执行（识别即执行）或已取消（Esc），等待按键释放，释放被吞且不补发。
     Done,
+    /// 笔画过长，等待按键释放；停止追踪与绘制，释放被吞且不补发。
+    Cancelled,
 }
 
 struct Capture {
@@ -466,7 +472,7 @@ impl Engine {
             self.overlay.draw_label(&msg, lx, ly, &self.cfg.settings.label.color_normal);
         } else if self.label_deadline.is_some_and(|d| now >= d) {
             self.label_deadline = None;
-            if self.capture.is_none() || self.live_label.is_none() {
+            if self.capture.as_ref().is_none_or(|c| c.state == CaptureState::Cancelled) || self.live_label.is_none() {
                 self.overlay.clear_label();
                 self.live_label = None;
             }
@@ -541,11 +547,11 @@ impl Engine {
         }
         match (cap.state, cap.trigger) {
             (CaptureState::Passthrough, _) => Verdict::Pass,
-            (CaptureState::Done, Trigger::Button(_)) => {
+            (CaptureState::Done | CaptureState::Cancelled, Trigger::Button(_)) => {
                 cap.held.push(btn);
                 Verdict::Swallow
             }
-            (CaptureState::Done, Trigger::Edge(_)) => {
+            (CaptureState::Done | CaptureState::Cancelled, Trigger::Edge(_)) => {
                 if cap.held.is_empty() {
                     self.end_edge_capture();
                     self.try_start_button(btn, x, y)
@@ -614,11 +620,11 @@ impl Engine {
                     };
                 }
                 let cap = self.capture.take().unwrap();
-                if cap.state == CaptureState::Done {
+                if cap.state == CaptureState::Active {
+                    self.finish_gesture(cap);
+                } else if cap.state == CaptureState::Done {
                     self.log_shape_sample(&cap);
                     self.end_visuals(true);
-                } else {
-                    self.finish_gesture(cap);
                 }
                 Verdict::Swallow
             }
@@ -631,7 +637,7 @@ impl Engine {
                     let cap = self.capture.take().unwrap();
                     if cap.state == CaptureState::Active {
                         self.finish_gesture(cap);
-                    } else {
+                    } else if cap.state == CaptureState::Done {
                         self.log_shape_sample(&cap);
                         self.end_visuals(true);
                     }
@@ -643,6 +649,9 @@ impl Engine {
     }
 
     fn on_mouse_move(&mut self, x: i32, y: i32) -> Verdict {
+        if self.capture.as_ref().is_some_and(|c| c.state == CaptureState::Cancelled) {
+            return Verdict::Pass;
+        }
         self.last_pos = (x, y);
         let slop = self.click_slop();
         let trail_slop = (self.cfg.settings.min_stroke_px as i32 / 2).max(slop);
@@ -652,7 +661,7 @@ impl Engine {
             return Verdict::Pass;
         };
         match cap.state {
-            CaptureState::Passthrough => return Verdict::Pass,
+            CaptureState::Passthrough | CaptureState::Cancelled => return Verdict::Pass,
             CaptureState::Done => {
                 // 已执行：轨迹继续画（视觉连贯），不再识别
                 if self.cfg.settings.trail.show && cap.trace_at.is_some() {
@@ -705,7 +714,7 @@ impl Engine {
         };
         match cap.state {
             CaptureState::Passthrough => return Verdict::Pass,
-            CaptureState::Done => return Verdict::Swallow,
+            CaptureState::Done | CaptureState::Cancelled => return Verdict::Swallow,
             CaptureState::Active => {}
         }
         // 边缘手势的第一步是滚轮：须贴边（离开一点就是普通滚动）
@@ -866,6 +875,27 @@ impl Engine {
         self.target = None;
     }
 
+    /// 超长笔画立即清除；已吞下的按键仍等到释放，避免把孤立的抬起交给应用。
+    fn cancel_long_stroke(&mut self) {
+        let Some(cap) = &mut self.capture else { return };
+        cap.state = CaptureState::Cancelled;
+        if matches!(cap.trigger, Trigger::Edge(_)) && cap.held.is_empty() {
+            self.end_edge_capture();
+        } else {
+            self.overlay.finish();
+            self.target = None;
+        }
+        self.overlay.clear_label();
+        self.live_label = None;
+        self.label_deadline = None;
+        if self.cfg.settings.label.show {
+            let text = mousetroke_core::i18n::t(mousetroke_core::i18n::keys::OVERLAY_GESTURE_TOO_LONG);
+            let color = self.cfg.settings.label.color_normal.clone();
+            self.show_text(text, &color, Some(TOO_LONG_LABEL));
+        }
+        crate::log!("手势过长（超过 {MAX_STROKE_SEGMENTS} 段），已取消");
+    }
+
     /// 与量化追踪器同时起笔，包括边缘捕获首次按键时的重置。
     fn start_path(&mut self, x: i32, y: i32) {
         self.tracker.start(x as f64, y as f64);
@@ -889,15 +919,19 @@ impl Engine {
 
     /// 轨迹追踪；分段变化时重新匹配。
     fn track(&mut self, x: i32, y: i32, draw: bool) {
-        self.record_point(x, y);
         let before = self.tracker.segments().len();
         self.tracker.add_point(x as f64, y as f64);
+        let after = self.tracker.segments().len();
+        if after > MAX_STROKE_SEGMENTS {
+            self.cancel_long_stroke();
+            return;
+        }
+        self.record_point(x, y);
         // 手抖不画轨迹：超过点击容差后才开始画（第一笔从按下点连过来）
         let shown = self.capture.as_ref().is_some_and(|c| c.show_trail);
         if draw && shown && self.cfg.settings.trail.show {
             self.overlay.line_to(x, y);
         }
-        let after = self.tracker.segments().len();
         if after != before {
             if let Some(cap) = &mut self.capture {
                 cap.trace_at.get_or_insert(cap.presses.len());

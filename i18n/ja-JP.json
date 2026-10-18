@@ -450,6 +450,7 @@
   "toast.config_updated": "Mousetroke の設定を更新しました",
   "overlay.unrecognized": "認識できません",
   "overlay.unrecognized_arrows": "認識できません  {arrows}",
+  "overlay.gesture_too_long": "お絵描きタイム? 今のはノーカン!",
   "overlay.brightness": "明るさ {value}%",
   "overlay.brightness_unsupported": "このディスプレイは明るさ調節に対応していません",
   "ui.picker.live_hint": "設定したいアプリのウィンドウをクリック · Esc か右クリックでキャンセル",
