@@ -1923,7 +1923,7 @@ version = "0.1.0"
 dependencies = [
  "mousetroke-core",
  "mousetroke-win",
- "png 0.17.16",
+ "png 0.18.1",
  "rfd",
  "serde",
  "serde_json",
