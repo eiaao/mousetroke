@@ -6,6 +6,7 @@
 index.html          中文页（默认）
 en/index.html       英文页（其余 8 种语言页面的模板）
 es fr de ja pt ru it ko/index.html   由 gen.py 从英文页生成，不要手改
+404.html            中英双语错误页，兼容主站与镜像的路径
 gen.py langs/*.py   生成器与各语言替换表（原文行 → 译文行）
 check.py            校验 10 个页面：结构与英文页一致、JSON 合法、canonical/hreflang/语言菜单自指
 assets/site.css     两页共用的样式
@@ -18,14 +19,28 @@ robots.txt sitemap.xml
 
 ## 部署
 
-- 推送到 `main` 且改动了 `site/` 时，`.github/workflows/pages.yml` 自动把本目录发布到 GitHub Pages：
-  <https://eiaao.github.io/mousetroke/>。不需要构建步骤。
+- **Cloudflare Pages 是主站**：<https://mousetroke.pages.dev/>。推送到 `main` 且改动了 `site/` 时，
+  `.github/workflows/cloudflare.yml` 自动发布；修改工作流本身也会触发，也可手动运行。不需要构建步骤。
+  在仓库 Settings → Secrets and variables → Actions 中设置 `CLOUDFLARE_API_TOKEN`
+  （权限 Account → Cloudflare Pages → Edit）和 `CLOUDFLARE_ACCOUNT_ID`。
+- **GitHub Pages 是镜像**：<https://eiaao.github.io/mousetroke/>。`.github/workflows/pages.yml`
+  继续在 `main` 的 `site/` 或该工作流有改动时自动发布；镜像的 canonical 等绝对地址统一指向 Cloudflare 主站。
 - 下载按钮指向 `https://github.com/eiaao/mousetroke/releases/latest/download/mousetroke.exe`，
   永远是最新版本，发版时不用改页面。版本号、大小写在各页的下载按钮、JSON-LD 和 `llms.txt` 里，大版本时顺手更新。
-- 换域名（比如改用 Cloudflare Pages 或自有域名）：canonical / hreflang / og / sitemap 用的是绝对地址，
-  全部替换：`grep -rl eiaao.github.io/mousetroke . | xargs sed -i 's#https://eiaao.github.io/mousetroke#https://新域名#g'`，
-  再跑 `python gen.py && python check.py`。
-- 页面内链接都是相对路径，部署在根目录或子目录、或直接双击打开 HTML 都能正常显示。
+- 换主站域名时，在仓库根目录用 Bash（如 Git Bash）执行一次递归替换，覆盖 `site/` 下的
+  canonical / hreflang / og / JSON-LD / sitemap / robots / llms，以及 `site/gen.py`、
+  `site/langs/*.py` 替换表的两侧和 `site/check.py`；同时同步根目录的产品主页链接：
+
+  ```bash
+  grep -rlZF 'https://mousetroke.pages.dev' site/ README.md README.zh-CN.md Cargo.toml | xargs -0 sed -i 's#https://mousetroke.pages.dev#https://新域名#g'
+  python site/gen.py
+  python site/check.py
+  ```
+
+  替换时域名末尾不带 `/`，保留原有路径；每种语言必须显示 `0 missed`，校验必须通过。
+  新域名需先在托管平台配置好，GitHub Pages 镜像地址保留不变。
+- 产品页面内链接都是相对路径，部署在根目录或子目录、或直接双击打开 HTML 都能正常显示。
+  `404.html` 使用内联最小样式，并按请求路径是否以 `/mousetroke/` 开头设置首页和图标的基准路径，兼容两个站点。
 
 ## 改内容时注意
 

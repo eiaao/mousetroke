@@ -28,7 +28,7 @@ for lang, rel in PAGES.items():
         except Exception as e:
             errors.append(f"{lang}: {name} invalid JSON: {e}")
     # 自指元数据
-    want = "https://eiaao.github.io/mousetroke/" + (DIRS[lang] + "/" if DIRS[lang] else "")
+    want = "https://mousetroke.pages.dev/" + (DIRS[lang] + "/" if DIRS[lang] else "")
     if f'<link rel="canonical" href="{want}">' not in s:
         errors.append(f"{lang}: canonical != {want}")
     if s.count('rel="alternate" hreflang=') != 11:

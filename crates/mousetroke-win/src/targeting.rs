@@ -100,7 +100,7 @@ unsafe impl Send for Target {}
 
 /// 可见的顶层窗口：(句柄, exe, 标题)（诊断用）。
 pub fn visible_windows() -> Vec<(HWND, String)> {
-    unsafe extern "system" fn proc(hwnd: HWND, lparam: windows::Win32::Foundation::LPARAM) -> windows::Win32::Foundation::BOOL {
+    unsafe extern "system" fn proc(hwnd: HWND, lparam: windows::Win32::Foundation::LPARAM) -> windows::core::BOOL {
         let out = &mut *(lparam.0 as *mut Vec<(HWND, String)>);
         if windows::Win32::UI::WindowsAndMessaging::IsWindowVisible(hwnd).as_bool() {
             out.push((hwnd, window_title(hwnd)));
@@ -117,7 +117,7 @@ pub fn visible_windows() -> Vec<(HWND, String)> {
 /// 正在运行、有可见标题窗口的程序（按 exe 去重，设置界面"添加应用"用）。
 /// 返回 (exe 绝对路径, 窗口标题)。
 pub fn running_apps() -> Vec<(String, String)> {
-    unsafe extern "system" fn proc(hwnd: HWND, lparam: windows::Win32::Foundation::LPARAM) -> windows::Win32::Foundation::BOOL {
+    unsafe extern "system" fn proc(hwnd: HWND, lparam: windows::Win32::Foundation::LPARAM) -> windows::core::BOOL {
         let out = &mut *(lparam.0 as *mut Vec<(String, String)>);
         use windows::Win32::UI::WindowsAndMessaging::{GetWindow, IsWindowVisible, GW_OWNER, GetWindowLongPtrW, GWL_EXSTYLE, WS_EX_TOOLWINDOW};
         if !IsWindowVisible(hwnd).as_bool()
@@ -261,7 +261,7 @@ pub fn close_app_windows(exe_name: &str) -> usize {
 
 /// 全部顶层窗口（含隐藏）。
 fn all_top_windows() -> Vec<HWND> {
-    unsafe extern "system" fn proc(hwnd: HWND, lparam: windows::Win32::Foundation::LPARAM) -> windows::Win32::Foundation::BOOL {
+    unsafe extern "system" fn proc(hwnd: HWND, lparam: windows::Win32::Foundation::LPARAM) -> windows::core::BOOL {
         let out = &mut *(lparam.0 as *mut Vec<HWND>);
         out.push(hwnd);
         true.into()

@@ -10,12 +10,12 @@ version = "0.1.0"
 edition = "2021"
 license = "MIT"
 repository = "https://github.com/eiaao/mousetroke"
-homepage = "https://eiaao.github.io/mousetroke/"
+homepage = "https://mousetroke.pages.dev/"
 
 [workspace.dependencies]
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
-windows = { version = "0.59", features = [
+windows = { version = "0.62.2", features = [
     "Win32_Foundation",
     "Win32_UI_WindowsAndMessaging",
     "Win32_UI_Input_KeyboardAndMouse",
