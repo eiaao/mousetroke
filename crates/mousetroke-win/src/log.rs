@@ -4,11 +4,42 @@
 //! 从终端启动时同时输出到控制台。
 
 use std::io::Write;
-use std::sync::mpsc::{channel, Sender};
+use std::sync::mpsc::{channel, sync_channel, Sender, SyncSender};
 use std::sync::OnceLock;
 
 static TX: OnceLock<Sender<String>> = OnceLock::new();
+static SHAPE_TX: OnceLock<SyncSender<Vec<i32>>> = OnceLock::new();
 const MAX_BYTES: u64 = 1 << 20;
+
+/// 仅在启动时开启校准开关后调用；格式化和控制台输出均在后台进行。
+pub(crate) fn init_shape_samples() {
+    SHAPE_TX.get_or_init(|| {
+        let (tx, rx) = sync_channel::<Vec<i32>>(16);
+        std::thread::Builder::new().name("mousetroke-shape-samples".into()).spawn(move || {
+            use std::fmt::Write as _;
+            for sample in rx {
+                let mut json = String::with_capacity(768);
+                json.push('[');
+                for (i, value) in sample.iter().enumerate() {
+                    if i != 0 {
+                        json.push(',');
+                    }
+                    let _ = write!(json, "{value}");
+                }
+                json.push(']');
+                crate::log!("形状样本: {json}");
+            }
+        }).ok();
+        tx
+    });
+}
+
+/// 钩子只投递固定大小的样本；队列满或线程退出时丢弃，绝不等待写盘。
+pub(crate) fn shape_sample(encoded: Vec<i32>) {
+    if let Some(tx) = SHAPE_TX.get() {
+        let _ = tx.try_send(encoded);
+    }
+}
 
 /// 日志文件路径（与配置同目录）。
 pub fn path() -> std::path::PathBuf {

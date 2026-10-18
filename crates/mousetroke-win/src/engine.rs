@@ -27,7 +27,8 @@ use std::time::{Duration, Instant, SystemTime};
 use mousetroke_core::edge;
 use mousetroke_core::matcher::{self, Trigger};
 use mousetroke_core::recognizer::{self, PathTracker, Segment};
-use mousetroke_core::schema::{Action, Binding, Config, MouseButton, PatternKey, Scope};
+use mousetroke_core::schema::{Action, Binding, Config, MouseButton, PatternKey, Scope, Step};
+use mousetroke_core::shape;
 use mousetroke_core::vars::{self, Vars};
 
 use crate::input;
@@ -94,6 +95,8 @@ pub(crate) trait Host {
     fn label_anchor(&self, x: i32, y: i32) -> (i32, i32);
     /// 显示器布局变化后重建绘制面。
     fn new_canvas(&self, color: &str, width: f64) -> Option<Box<dyn Canvas>>;
+    /// 投递校准样本；不得在钩子回调里阻塞或写盘。
+    fn shape_sample(&self, encoded: Vec<i32>);
     /// 空闲时把工作集还给系统（覆盖层位图画过的页面会一直驻留）。
     fn trim_memory(&self) {}
 }
@@ -133,6 +136,9 @@ impl Host for SystemHost {
         unsafe {
             let _ = SetProcessWorkingSetSize(GetCurrentProcess(), usize::MAX, usize::MAX);
         }
+    }
+    fn shape_sample(&self, encoded: Vec<i32>) {
+        crate::log::shape_sample(encoded);
     }
 }
 
@@ -179,6 +185,8 @@ const HIT_LABEL: Duration = Duration::from_millis(600);
 /// 点击容差下限(px)：位移不超过 max(此值, 最小识别距离/3) 不算开始移动（仍可回落为原生拖拽）；
 /// 轨迹要到最小识别距离的一半才开始画，点击时手滑不会闪出一小段线。
 const CLICK_SLOP_MIN: i32 = 6;
+/// 原始路径复用固定容量；满时原地隔点抽稀，钩子内不扩容。
+const SHAPE_PATH_CAP: usize = 2048;
 
 /// 钩子回调送入的输入事件（坐标为屏幕坐标）。
 #[derive(Debug, Clone, Copy)]
@@ -300,6 +308,9 @@ pub struct Engine {
     overlay: Box<dyn Canvas>,
     host: Box<dyn Host>,
     tracker: PathTracker,
+    path: Vec<(f64, f64)>,
+    /// 启动时读取一次；测试直接注入，不修改进程环境。
+    shape_samples: bool,
     capture: Option<Capture>,
     target: Option<Target>,
     trigger_buttons: Vec<MouseButton>,
@@ -329,13 +340,19 @@ impl Engine {
     pub fn new(cfg: Config, cfg_path: Option<PathBuf>) -> Option<Self> {
         let host = Box::new(SystemHost);
         let overlay = host.new_canvas(&cfg.settings.trail.color_normal, cfg.settings.trail.width)?;
-        Some(Self::with_parts(cfg, cfg_path, overlay, host))
+        let shape_samples = std::env::var_os("MOUSETROKE_SHAPE_SAMPLES").as_deref() == Some(std::ffi::OsStr::new("1"));
+        if shape_samples {
+            crate::log::init_shape_samples();
+        }
+        Some(Self::with_parts(cfg, cfg_path, overlay, host, shape_samples))
     }
 
-    pub(crate) fn with_parts(cfg: Config, cfg_path: Option<PathBuf>, overlay: Box<dyn Canvas>, host: Box<dyn Host>) -> Self {
+    pub(crate) fn with_parts(cfg: Config, cfg_path: Option<PathBuf>, overlay: Box<dyn Canvas>, host: Box<dyn Host>, shape_samples: bool) -> Self {
         let mut engine = Self {
             host,
             tracker: PathTracker::new(cfg.settings.min_stroke_px as f64),
+            path: Vec::with_capacity(SHAPE_PATH_CAP),
+            shape_samples,
             overlay,
             cfg: Config::default(),
             capture: None,
@@ -561,7 +578,7 @@ impl Engine {
                     cap.show_trail = false;
                     cap.started = Instant::now();
                     cap.as_button = as_button;
-                    self.tracker.start(x as f64, y as f64);
+                    self.start_path(x, y);
                     self.overlay.start_session(x, y);
                 }
                 let cap = self.capture.as_mut().unwrap();
@@ -598,6 +615,7 @@ impl Engine {
                 }
                 let cap = self.capture.take().unwrap();
                 if cap.state == CaptureState::Done {
+                    self.log_shape_sample(&cap);
                     self.end_visuals(true);
                 } else {
                     self.finish_gesture(cap);
@@ -614,6 +632,7 @@ impl Engine {
                     if cap.state == CaptureState::Active {
                         self.finish_gesture(cap);
                     } else {
+                        self.log_shape_sample(&cap);
                         self.end_visuals(true);
                     }
                     self.edge_disarmed = true;
@@ -701,7 +720,10 @@ impl Engine {
         let key = PatternKey::Wheel(delta.signum());
         // 滚轮完成某个手势 → 立即执行且不记入序列，可连续滚动反复触发
         let steps = cap.candidates(Some(key), false);
-        if let Some(b) = self.match_steps(&steps, &self.tracker.strokes()) {
+        let path = cap.trace_at.is_some().then_some(self.path.as_slice());
+        // 含 Shape 的滚轮组合也必须等释放，避免绕过 after_input 的提前执行保护。
+        if let Some(b) = self.match_steps(&steps, &self.tracker.strokes(), path)
+            .filter(|b| !b.pattern.iter().any(|s| matches!(s, Step::Shape { .. }))) {
             if let Some(cap) = &mut self.capture {
                 cap.consumed = true;
             }
@@ -787,7 +809,7 @@ impl Engine {
     }
 
     fn start_capture_at(&mut self, trigger: Trigger, x: i32, y: i32, target: Target) {
-        self.tracker.start(x as f64, y as f64);
+        self.start_path(x, y);
         self.target = Some(target);
         self.vars = self.build_vars(x, y);
         self.last_pos = (x, y);
@@ -816,7 +838,7 @@ impl Engine {
     fn start_edge_capture(&mut self, e: u8, x: i32, y: i32) {
         self.start_capture(Trigger::Edge(e), x, y);
         let steps = vec![matcher::build_steps(Trigger::Edge(e), &[], None)];
-        if let Some(b) = self.match_steps(&steps, &[]) {
+        if let Some(b) = self.match_steps(&steps, &[], None) {
             crate::log!("手势命中: {}（{}）", b.name, edge::name(e));
             self.show_label(&b, true);
             self.run_action(b.action);
@@ -844,8 +866,30 @@ impl Engine {
         self.target = None;
     }
 
+    /// 与量化追踪器同时起笔，包括边缘捕获首次按键时的重置。
+    fn start_path(&mut self, x: i32, y: i32) {
+        self.tracker.start(x as f64, y as f64);
+        self.path.clear();
+        self.path.push((x as f64, y as f64));
+    }
+
+    fn record_point(&mut self, x: i32, y: i32) {
+        let point = (x as f64, y as f64);
+        if self.path.last().is_some_and(|&(px, py)| (point.0 - px).powi(2) + (point.1 - py).powi(2) < 4.0) {
+            return;
+        }
+        if self.path.len() == SHAPE_PATH_CAP {
+            for i in 0..SHAPE_PATH_CAP / 2 {
+                self.path[i] = self.path[i * 2];
+            }
+            self.path.truncate(SHAPE_PATH_CAP / 2);
+        }
+        self.path.push(point);
+    }
+
     /// 轨迹追踪；分段变化时重新匹配。
     fn track(&mut self, x: i32, y: i32, draw: bool) {
+        self.record_point(x, y);
         let before = self.tracker.segments().len();
         self.tracker.add_point(x as f64, y as f64);
         // 手抖不画轨迹：超过点击容差后才开始画（第一笔从按下点连过来）
@@ -867,9 +911,11 @@ impl Engine {
         let Some(cap) = &self.capture else { return };
         let steps = cap.candidates(None, false);
         let segs = self.tracker.strokes();
-        let hit = self.match_steps(&steps, &segs);
+        let path = cap.trace_at.is_some().then_some(self.path.as_slice());
+        let hit = self.match_steps(&steps, &segs, path);
         if let Some(b) = &hit {
-            if b.execute_on_match {
+            // Shape 必须等到释放：尚未画完的 G 可能像 C，忽略其「识别即执行」设置。
+            if b.execute_on_match && !b.pattern.iter().any(|s| matches!(s, Step::Shape { .. })) {
                 crate::log!("手势命中: {}（识别即执行）", b.name);
                 let cap = self.capture.as_mut().unwrap();
                 cap.state = CaptureState::Done;
@@ -879,6 +925,9 @@ impl Engine {
                 self.run_action(b.action.clone());
                 if edge_idle {
                     // 沿边摩擦类：没有按住的键，直接结束
+                    if let Some(cap) = &self.capture {
+                        self.log_shape_sample(cap);
+                    }
                     self.capture = None;
                     self.end_visuals(true);
                     self.edge_disarmed = true;
@@ -955,9 +1004,11 @@ impl Engine {
     }
 
     fn finish_gesture(&mut self, cap: Capture) {
+        self.log_shape_sample(&cap);
         let segs = self.tracker.strokes();
         let steps = cap.candidates(None, false);
-        match self.match_steps(&steps, &segs) {
+        let path = cap.trace_at.is_some().then_some(self.path.as_slice());
+        match self.match_steps(&steps, &segs, path) {
             // 连续滚轮执行过后松开：只剩触发本身，不再匹配一次
             Some(b) if !(cap.consumed && segs.is_empty() && cap.presses.len() <= cap.as_button.is_some() as usize) => {
                 crate::log!("手势命中: {}（作用域 {}）", b.name, self.scope_name());
@@ -994,10 +1045,18 @@ impl Engine {
 
     // ------------------------------------------------------------ 匹配辅助
 
+    fn log_shape_sample(&self, cap: &Capture) {
+        if self.shape_samples && cap.trace_at.is_some() {
+            if let Some(normalized) = shape::normalize(&self.path) {
+                self.host.shape_sample(shape::encode(&normalized));
+            }
+        }
+    }
+
     /// 按候选顺序匹配，返回第一个命中。
-    fn match_steps(&self, candidates: &[Steps], segs: &[Segment]) -> Option<Binding> {
+    fn match_steps(&self, candidates: &[Steps], segs: &[Segment], path: Option<&[(f64, f64)]>) -> Option<Binding> {
         let scopes = self.active_scopes();
-        candidates.iter().find_map(|steps| matcher::match_chain(&scopes, steps, segs).map(|(b, _)| b.clone()))
+        candidates.iter().find_map(|steps| matcher::match_chain_path(&scopes, steps, segs, path).map(|(b, _)| b.clone()))
     }
 
     /// 任一候选能延续某个手势。
