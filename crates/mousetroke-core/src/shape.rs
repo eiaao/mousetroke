@@ -7,14 +7,92 @@ use std::f64::consts::FRAC_PI_2;
 
 /// 每条笔画重采样后的点数。
 pub const SAMPLE_POINTS: usize = 64;
-/// 最低相似度。0.81 对应向量夹角约 17.1°，允许手抖与小钩子，同时拒绝普通折线。
-/// 提高此值可减少误触发，但需要用户录制更接近实际画法的样本。
-pub const ACCEPT: f64 = 0.81;
+/// 基于真实 G/C/O/Z/S/6 留一法、12 条实用 G、3 条实用直线及 2700 条合成折线调参。
+/// 零误接受要求高于合成最高误匹配 0.800959；按千分位取最低安全值 0.801。
+/// 仅降低全局阈值无法同时达到真实 G ≥10/12，详见候选阈值回归测试。
+pub const ACCEPT: f64 = 0.801;
 /// 最佳绑定必须领先其他绑定的分数。0.04 用于拒绝近似形状之间的歧义；
 /// 同一绑定的多个样本不互相竞争。减小此值会增加相似绑定之间的误识别。
 pub const MARGIN: f64 = 0.04;
 /// 允许补偿的最大旋转（弧度），不做起始角度对齐。
 pub const ROTATION_LIMIT: f64 = 20.0 * std::f64::consts::PI / 180.0;
+
+/// 录制时的建议类型；用户仍可把同一笔画切换为另一种类型。
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum StrokeKind {
+    Polyline,
+    Shape,
+}
+
+/// 同时检查几何折线与八方向量化结果，避免把圆角折线误当作曲线。
+/// 先等距采样，使判断不依赖绘制速度、尺寸和鼠标事件密度；退化输入交给录制器报错。
+pub fn classify_stroke(raw: &[(f64, f64)]) -> StrokeKind {
+    let Some(path) = normalize(raw) else { return StrokeKind::Polyline };
+    let mut bounds = (f64::INFINITY, f64::NEG_INFINITY, f64::INFINITY, f64::NEG_INFINITY);
+    for &(x, y) in &path {
+        bounds.0 = bounds.0.min(x);
+        bounds.1 = bounds.1.max(x);
+        bounds.2 = bounds.2.min(y);
+        bounds.3 = bounds.3.max(y);
+    }
+    let diagonal = (bounds.1 - bounds.0).hypot(bounds.3 - bounds.2);
+    // 固定 64 点，显式栈避免递归。
+    let tolerance = diagonal * 0.06;
+    let mut pending = vec![(0, path.len() - 1)];
+    let mut vertices = vec![0];
+    while let Some((start, end)) = pending.pop() {
+        let (a, b) = (path[start], path[end]);
+        let (dx, dy) = (b.0 - a.0, b.1 - a.1);
+        let length_sq = dx * dx + dy * dy;
+        let furthest = (start + 1..end).map(|i| {
+            let p = path[i];
+            let t = if length_sq > 0.0 { ((p.0 - a.0) * dx + (p.1 - a.1) * dy) / length_sq } else { 0.0 }.clamp(0.0, 1.0);
+            (i, (p.0 - a.0 - t * dx).hypot(p.1 - a.1 - t * dy))
+        }).max_by(|a, b| a.1.total_cmp(&b.1));
+        if let Some((i, _)) = furthest.filter(|(_, distance)| *distance > tolerance) {
+            pending.extend([(start, i), (i, end)]);
+        } else {
+            vertices.push(end);
+        }
+    }
+    vertices.sort_unstable();
+    if vertices.len() > 5 {
+        return StrokeKind::Shape;
+    }
+    // 折线的弯曲应集中在拐角；检查主干中部，识别被粗简化掩盖的缓慢转弯。
+    let direction = |i: usize| {
+        let (a, b) = (path[vertices[i]], path[vertices[i + 1]]);
+        (b.0 - a.0, b.1 - a.1)
+    };
+    for (i, v) in vertices.windows(2).enumerate() {
+        let u = direction(i);
+        let sharp_corner = i.checked_sub(1).into_iter().chain((i + 2 < vertices.len()).then_some(i + 1)).any(|j| {
+            let w = direction(j);
+            let product = u.0.hypot(u.1) * w.0.hypot(w.1);
+            product > 0.0 && (u.0 * w.0 + u.1 * w.1) / product < 75.0f64.to_radians().cos()
+        });
+        if sharp_corner { continue; }
+        let span = v[1] - v[0];
+        // 至少覆盖约六分之一笔长才检查主干方向，短圆角不参与。
+        if span < SAMPLE_POINTS / 6 + 1 { continue; }
+        let length: f64 = path[v[0]..=v[1]].windows(2).map(|p| (p[1].0 - p[0].0).hypot(p[1].1 - p[0].1)).sum();
+        let chord = (path[v[1]].0 - path[v[0]].0).hypot(path[v[1]].1 - path[v[0]].1);
+        if chord < length * 0.85 { continue; }
+        let (a, mid, b) = (path[v[0] + span / 5], path[v[0] + span / 2], path[v[1] - span / 5]);
+        let (u, w) = ((mid.0 - a.0, mid.1 - a.1), (b.0 - mid.0, b.1 - mid.1));
+        let product = u.0.hypot(u.1) * w.0.hypot(w.1);
+        if product > 0.0 && (u.0 * w.0 + u.1 * w.1).abs() / product < 10.0f64.to_radians().cos() {
+            return StrokeKind::Shape;
+        }
+    }
+    let pixels: Vec<_> = path.iter().map(|&(x, y)| (x * 1000.0, y * 1000.0)).collect();
+    // 邻近网格取最简结果，避免圆角恰好跨过量化边界而多出一格过渡。
+    if [80.0, 100.0, 120.0].iter().any(|grid| crate::recognizer::record_points(&pixels, diagonal * grid).len() / 2 <= 5) {
+        StrokeKind::Polyline
+    } else {
+        StrokeKind::Shape
+    }
+}
 
 /// 原始像素路径 → 64 个等距点 → 质心归零 → 按包围盒长边等比缩放。
 /// 少于两点、总长不足一像素、非有限坐标或退化路径返回 `None`。

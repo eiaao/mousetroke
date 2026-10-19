@@ -165,6 +165,15 @@ fn record_trace(points: Vec<(f64, f64)>, grid: f64) -> Vec<i32> {
     mousetroke_core::recognizer::record_points(&points, grid)
 }
 
+/// 自动建议录制类型；实际的样本或轨迹编码仍由对应命令生成。
+#[tauri::command]
+fn classify_stroke(points: Vec<(f64, f64)>) -> &'static str {
+    match shape::classify_stroke(&points) {
+        shape::StrokeKind::Polyline => "trace",
+        shape::StrokeKind::Shape => "shape",
+    }
+}
+
 /// 形状录制与比较始终复用核心算法，前端只负责采点与展示。
 #[tauri::command]
 fn shape_sample(points: Vec<(f64, f64)>) -> MsgResult<Vec<i32>> {
@@ -467,6 +476,7 @@ pub fn run(config: Option<PathBuf>) {
             set_ui_lang,
             validate_keys,
             record_trace,
+            classify_stroke,
             shape_sample,
             shape_compare,
             shape_limits,
@@ -528,6 +538,12 @@ mod tests {
         assert_eq!(shape_compare(sample.clone(), sample.clone()), 1.0);
         assert_eq!(shape_compare(vec![], sample.clone()), 0.0);
         assert_eq!(shape_compare(vec![0; shape::SAMPLE_POINTS * 2], sample), 0.0);
+        assert_eq!(classify_stroke(vec![(0.0, 0.0), (100.0, 0.0)]), "trace");
+        let circle = (0..=64).map(|i| {
+            let angle = std::f64::consts::TAU * i as f64 / 64.0;
+            (angle.cos() * 100.0, angle.sin() * 100.0)
+        }).collect();
+        assert_eq!(classify_stroke(circle), "shape");
         for raw in [vec![], vec![(0.0, 0.0)], vec![(1.0, 1.0); 3], vec![(0.0, 0.0), (0.1, 0.1)], vec![(0.0, 0.0), (f64::NAN, 1.0)]] {
             assert_eq!(shape_sample(raw).unwrap_err().key, keys::UI_SHAPE_TOO_SHORT);
         }

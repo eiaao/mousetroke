@@ -19,6 +19,7 @@ export const api = {
   validateKeys: (keys: string) =>
     invoke<Msg | null>("validate_keys", { keys }).then((m) => (m ? msgText(m) : null)),
   recordTrace: (points: [number, number][], grid: number) => invoke<number[]>("record_trace", { points, grid }),
+  classifyStroke: (points: [number, number][]) => invoke<"trace" | "shape">("classify_stroke", { points }),
   shapeSample: (points: [number, number][]) => invoke<number[]>("shape_sample", { points }),
   shapeCompare: (a: number[], b: number[]) => invoke<number>("shape_compare", { a, b }),
   shapeLimits: () => invoke<{ accept: number; margin: number }>("shape_limits"),

@@ -13,6 +13,7 @@ const catalog = lang === "qps-ploc" ? null : JSON.parse(await readFile(`../../i1
 const browser = await puppeteer.launch({
   executablePath: "C:/Program Files (x86)/Microsoft/Edge/Application/msedge.exe",
   headless: true,
+  userDataDir: `../uibrowsers/${lang}-${Date.now()}`,
   args: [`--lang=${lang}`],
 });
 const page = await browser.newPage();
@@ -29,7 +30,7 @@ const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 const shot = async (n) => {
   // 检查控件自身的内容尺寸；滚动容器中尚未滚到的控件不算文字裁剪。
   const clipped = await page.evaluate(() => {
-    const selectors = ".action-types button, .tab, .filter, .chip, .nav-item, .nav-label, .guide .btn, .guide-app, .toast-action, .toast-text, .segmented button, .app-list .muted, .keys-row .btn, .shape-instruction, .shape-samples-head, .shape-feedback p, .recorder-error, .about .btn, .about .pref-label, .about-star, .about-star p";
+    const selectors = ".action-types button, .tab, .filter, .chip, .nav-item, .nav-label, .guide .btn, .guide-app, .toast-action, .toast-text, .segmented button, .app-list .muted, .keys-row .btn, .shape-instruction, .shape-samples-head, .shape-feedback p, .recorder-error, .recorder-detection, .recorder-detection .btn, .recorder-complex, .recorder-complex .btn, .about .btn, .about .pref-label, .about-star, .about-star p";
     return [...document.querySelectorAll(selectors)].flatMap((el) => {
       if (!el.getClientRects().length) return [];
       const style = getComputedStyle(el);
@@ -93,6 +94,7 @@ const check = async (where) => {
       if (!x || hasCJK(x) || x.includes("[!!")) return false;
       if (NOT_I18N.some((n) => x === n || x.startsWith(n + " "))) return false;
       if (/^[A-Z][A-Za-z0-9]{0,5}$/.test(x)) return false; // 键帽 Ctrl / Win / ESC / F5
+      if (/^[←↑→↓↖↗↘↙\s]+$/.test(x)) return false; // 轨迹箭头是符号，不走翻译
       if (/[\\/]/.test(x) || /\.exe$/i.test(x) || /^[0-9 .,%×–—+:-]+$/.test(x) || x.length <= 2) return false; // 路径、纯数字
       if (/^[0-9.]+ ?(ms|px)$/.test(x)) return false; // 通用单位
       if (/^(Ctrl|Alt|Shift|Win)\+/.test(x)) return false; // 快捷键
@@ -158,9 +160,10 @@ if (JSON.stringify(roundTrip) !== JSON.stringify(beforeShapeEdits)) {
 }
 
 // 退化绘制必须显示本地化错误，不能追加或保存无效样本。
-const drawSample = async (reverse = false) => {
-  const rect = await page.$eval(".shape-recorder canvas", (el) => { const r = el.getBoundingClientRect(); return { x: r.x, y: r.y, w: r.width, h: r.height }; });
-  const pts = Array.from({ length: sample.length / 2 }, (_, i) => [rect.x + rect.w / 2 + sample[i * 2] * 0.14, rect.y + rect.h / 2 + sample[i * 2 + 1] * 0.14]);
+const drawSample = async (reverse = false, straight = false) => {
+  await page.$eval(".recorder canvas", (el) => el.scrollIntoView({ block: "center" }));
+  const rect = await page.$eval(".recorder canvas", (el) => { const r = el.getBoundingClientRect(); return { x: r.x, y: r.y, w: r.width, h: r.height }; });
+  const pts = straight ? Array.from({ length: 32 }, (_, i) => [rect.x + 20 + i * 4, rect.y + rect.h / 2]) : Array.from({ length: sample.length / 2 }, (_, i) => [rect.x + rect.w / 2 + sample[i * 2] * 0.14, rect.y + rect.h / 2 + sample[i * 2 + 1] * 0.14]);
   if (reverse) pts.reverse();
   await page.mouse.move(...pts[0]); await page.mouse.down();
   for (const p of pts.slice(1)) await page.mouse.move(...p);
@@ -226,6 +229,49 @@ await click(".row:has(.shape-glyph):not(.off)");
 await page.waitForSelector(".shape-recorder");
 await page.keyboard.press("Escape"); await sleep(150);
 
+// 默认录制器自动分型；转换必须复用同一笔原始点，多样本转换可完整撤销。
+const traceIndex = fixture.scopes[0].bindings.findIndex((b) => b.pattern.some((s) => s.type === "trace"));
+const traceName = fixture.scopes[0].bindings[traceIndex].name;
+await clickAll(".row", traceIndex);
+const savedStroke = () => page.evaluate((name) => window.__saved.scopes[0].bindings.find((b) => b.name === name).pattern.find((s) => s.type === "trace" || s.type === "shape"), traceName);
+const assertDetection = async (kind) => {
+  const text = await page.$eval(".recorder-detection > span", (el) => el.textContent);
+  if (catalog && text !== catalog[`ui.recorder.recognized_${kind}`]) errors.push(`incorrect detection label: ${kind}`);
+};
+await drawSample(); await sleep(400);
+if (!await page.$(".shape-recorder") || (await savedStroke()).templates?.length !== 1) errors.push("default recorder curve must become a shape with one sample");
+await assertDetection("shape");
+await check("auto-shape"); await shot("02-auto-shape");
+const rawCurve = await page.evaluate(() => window.__calls.filter(([cmd]) => cmd === "classify_stroke").at(-1)[1].points);
+await click(".recorder-detection button"); await sleep(400);
+if ((await savedStroke()).type !== "trace") errors.push("use as line must convert the shape to a trace");
+await assertDetection("line");
+const rawLine = await page.evaluate(() => window.__calls.filter(([cmd]) => cmd === "record_trace").at(-1)[1].points);
+if (JSON.stringify(rawLine) !== JSON.stringify(rawCurve)) errors.push("switch must reuse the exact drawing");
+if (!await page.$(".recorder-complex")) errors.push("complex trace must offer a shape hint");
+await check("complex-trace"); await shot("02-complex-trace");
+await click(".recorder-detection button"); await sleep(400);
+if ((await savedStroke()).type !== "shape" || (await savedStroke()).templates.length !== 1) errors.push("use as shape must convert back with one sample");
+const classifications = await page.evaluate(() => window.__calls.filter(([cmd]) => cmd === "classify_stroke").length);
+await drawSample(false, true); await sleep(400);
+if ((await savedStroke()).templates.length !== 2) errors.push("existing shape recorder must always append a shape sample");
+if (await page.evaluate(() => window.__calls.filter(([cmd]) => cmd === "classify_stroke").length) !== classifications) errors.push("existing shapes must not auto-classify new samples");
+const beforeDropping = await page.evaluate(() => window.__saved);
+if (catalog && await page.$eval(".recorder-detection button", (el) => el.textContent) !== catalog["ui.recorder.use_line_drop_samples"]) errors.push("multi-sample switch must explain sample removal");
+await click(".recorder-detection button"); await sleep(400);
+if ((await savedStroke()).type !== "trace") errors.push("multi-sample conversion must use the last straight drawing");
+await page.evaluate(() => document.activeElement?.blur());
+await page.keyboard.down("Control"); await page.keyboard.press("z"); await page.keyboard.up("Control"); await sleep(600);
+if (JSON.stringify(await page.evaluate(() => window.__saved)) !== JSON.stringify(beforeDropping)) errors.push("undo must restore every shape sample after conversion");
+await click(".recorder-detection button"); await sleep(400);
+await drawSample(false, true); await sleep(400);
+if ((await savedStroke()).type !== "trace") errors.push("straight drawing must stay a trace");
+await assertDetection("line"); await check("auto-line"); await shot("02-auto-line");
+await drawSample(); await click(".recorder-detection button"); await click(".recorder-complex button");
+if (!await page.$(".shape-recorder") || await page.$$(".shape-sample").then((els) => els.length) !== 0) errors.push("redraw as shape must open an empty shape recorder");
+await drawSample();
+await page.keyboard.press("Escape"); await sleep(150);
+
 // 触发角标签页
 await clickAll(".tab", 1); await sleep(200); await shot("03-edges");
 
@@ -287,11 +333,11 @@ await clickAll(".nav-group:not(.nav-bottom) .nav-item", 2); await sleep(150); aw
 // 搜索按显示名匹配：内置手势在配置里存的是导入时的语言（"复制"），en-US 下显示并能搜到 "Copy"
 await clickAll(".nav-group:not(.nav-bottom) .nav-item", 0);
 await clickAll(".tab", 0);
-const firstName = await page.$eval(".row .row-name", (e) => e.textContent.trim());
+const firstName = await page.$eval(".row .row-name", (e) => e.firstChild.textContent.trim());
 const term = firstName.replace(/^\[!! /, "").split(/\s+/)[0].slice(0, 4).toLowerCase();
 await page.type(".search", term);
 await sleep(250);
-const hits = await page.$$eval(".row .row-name", (els) => els.map((e) => e.textContent.trim()));
+const hits = await page.$$eval(".row .row-name", (els) => els.map((e) => e.firstChild.textContent.trim()));
 if (!hits.includes(firstName)) errors.push(`search "${term}" should find "${firstName}", got: ${hits.slice(0, 4).join(" | ")}`);
 await page.$eval(".search", (e) => { e.value = ""; e.dispatchEvent(new Event("input", { bubbles: true })); });
 await page.click(".search", { clickCount: 3 }); await page.keyboard.press("Backspace"); await sleep(150);

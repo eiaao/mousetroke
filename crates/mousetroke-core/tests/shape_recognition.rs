@@ -2,13 +2,128 @@ use mousetroke_core::matcher::{self, Trigger};
 use mousetroke_core::recognizer::{best_score, PathTracker, Segment, ACCEPT_MAX, EXACT_EPS};
 use mousetroke_core::schema::{Action, Binding, Config, MouseButton, PatternKey, Scope, ScopeKind, Step, WindowOpKind};
 use mousetroke_core::shape::{self, ACCEPT, MARGIN, SAMPLE_POINTS};
+use std::collections::BTreeMap;
 use std::f64::consts::PI;
+
+#[derive(serde::Deserialize)]
+struct RealShapes {
+    classes: BTreeMap<String, Vec<Vec<i32>>>,
+    engine_g: Vec<Vec<i32>>,
+    engine_straight: Vec<Vec<i32>>,
+}
+
+fn real_shapes() -> RealShapes {
+    serde_json::from_str(include_str!("fixtures/real-shapes.json")).unwrap()
+}
+
+fn ranked(path: &[Point], samples: &[Vec<Vec<i32>>]) -> (usize, f64, f64) {
+    let mut scores: Vec<_> = samples.iter().enumerate().map(|(id, samples)| {
+        (id, samples.iter().map(|s| shape::similarity(path, &shape::decode(s).unwrap())).fold(0.0f64, f64::max))
+    }).collect();
+    scores.sort_by(|a, b| b.1.total_cmp(&a.1));
+    (scores[0].0, scores[0].1, scores[1].1)
+}
+
+#[test]
+fn real_hand_drawn_acceptance() {
+    let data = real_shapes();
+    let samples: Vec<_> = data.classes.values().cloned().collect();
+    let candidates: Vec<_> = samples.iter().enumerate().map(|(id, s)| (id, s.as_slice())).collect();
+    let g = data.classes.keys().position(|k| k == "G").unwrap();
+    let (mut loo, mut engine, mut wrong) = (0, 0, 0);
+    for (expected, class) in samples.iter().enumerate() {
+        for (i, sample) in class.iter().enumerate() {
+            let mut training = samples.clone();
+            training[expected].remove(i);
+            let candidates: Vec<_> = training.iter().enumerate().map(|(id, s)| (id, s.as_slice())).collect();
+            match shape::best_match(&shape::decode(sample).unwrap(), &candidates) {
+                Some((id, _)) if id == expected => loo += 1,
+                Some(_) => wrong += 1,
+                None => {},
+            }
+        }
+    }
+    for sample in &data.engine_g {
+        match shape::best_match(&shape::decode(sample).unwrap(), &candidates) {
+            Some((id, _)) if id == g => engine += 1,
+            Some(_) => wrong += 1,
+            None => {},
+        }
+    }
+    let straight = data.engine_straight.iter().filter(|s| shape::best_match(&shape::decode(s).unwrap(), &candidates).is_some()).count();
+    println!("real: leave-one-out {loo}/30, engine G {engine}/12, wrong {wrong}, straight {straight}/3");
+    // 零误接受优先：本批数据无法同时满足留一法 29/30、实用 G 10/12。
+    // 候选表另行断言 0.70 可达 30/30、11/12，并量化其 624 条合成误接受。
+    assert!(loo >= 28, "leave-one-out {loo}/30");
+    assert!(engine >= 6, "engine G {engine}/12");
+    assert_eq!(wrong, 0);
+    assert_eq!(straight, 0);
+}
+
+#[test]
+fn acceptance_candidate_table() {
+    let data = real_shapes();
+    let real: Vec<_> = data.classes.values().cloned().collect();
+    let g = data.classes.keys().position(|k| k == "G").unwrap();
+    let mut loo = Vec::new();
+    for (expected, class) in real.iter().enumerate() {
+        for (i, sample) in class.iter().enumerate() {
+            let mut training = real.clone();
+            training[expected].remove(i);
+            loo.push((expected, ranked(&shape::decode(sample).unwrap(), &training)));
+        }
+    }
+    let engine: Vec<_> = data.engine_g.iter().map(|s| (g, ranked(&shape::decode(s).unwrap(), &real))).collect();
+    let straight_real: Vec<_> = data.engine_straight.iter().map(|s| ranked(&shape::decode(s).unwrap(), &real)).collect();
+    let samples = templates();
+    let mut synthetic = Vec::new();
+    let mut rng = Xorshift(0xd1b54a32d192ed03);
+    for (expected, drawing) in SHAPES.iter().enumerate() {
+        for _ in 0..300 {
+            synthetic.push((expected, ranked(&shape::normalize(&noisy(*drawing, &mut rng)).unwrap(), &samples)));
+        }
+    }
+    let mut straight = Vec::new();
+    let mut rng = Xorshift(0x94d049bb133111eb);
+    for drawing in STRAIGHTS {
+        for _ in 0..300 {
+            straight.push(ranked(&shape::normalize(&noisy(drawing, &mut rng)).unwrap(), &samples));
+        }
+    }
+    let mut lowest_safe = None;
+    for accept in (65..=80).map(|p| p as f64 / 100.0).chain([0.801, 0.802, 0.805, 0.81]) {
+        let accepted = |s: &(usize, f64, f64)| s.1 >= accept && s.1 - s.2 >= MARGIN;
+        let correct = |rows: &Vec<(usize, (usize, f64, f64))>| rows.iter().filter(|(id, s)| accepted(s) && *id == s.0).count();
+        let wrong = loo.iter().chain(&engine).chain(&synthetic).filter(|(id, s)| accepted(s) && *id != s.0).count();
+        let false_synthetic = straight.iter().filter(|s| accepted(s)).count();
+        let false_real = straight_real.iter().filter(|s| accepted(s)).count();
+        println!("{accept:.3}: LOO {}/30, G {}/12, synthetic {}/1800; false straight {false_synthetic}/2700 + {false_real}/3, wrong {wrong}", correct(&loo), correct(&engine), correct(&synthetic));
+        if accept == 0.70 {
+            assert_eq!((correct(&loo), correct(&engine), false_synthetic), (30, 11, 624));
+        }
+        if wrong + false_synthetic + false_real == 0 && lowest_safe.is_none_or(|lowest| accept < lowest) {
+            lowest_safe = Some(accept);
+        }
+    }
+    assert_eq!(Some(ACCEPT), lowest_safe, "选择候选表中零误接受的最低阈值");
+    // 所有可能改变实用 G 接受集合的阈值/分差边界都来自这 12 个样本。
+    // 穷举这些边界，证明接受至少 10 条 G 时始终仍有合成折线误接受。
+    for (_, (_, accept, _)) in &engine {
+        for (_, (_, score, runner)) in &engine {
+            let margin = score - runner;
+            let correct = engine.iter().filter(|(_, s)| s.1 >= *accept && s.1 - s.2 >= margin).count();
+            if correct >= 10 {
+                assert!(straight.iter().any(|s| s.1 >= *accept && s.1 - s.2 >= margin));
+            }
+        }
+    }
+}
 
 type Point = (f64, f64);
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 enum Drawing {
-    G, C, S, O, Check, Z,
+    G, C, S, O, Six, Check, Z,
     Left, Right, DownRight, RightDown, DownLeft, LeftUpRight, Square, Southwest, Northeast,
 }
 
@@ -66,6 +181,11 @@ fn point(drawing: Drawing, t: f64, variant: f64) -> Point {
         }
         Drawing::S if t < 0.5 => bezier([(0.85, -0.85), (-0.95, -1.4), (-1.1, -0.15), (0.0, 0.0)], t * 2.0),
         Drawing::S => bezier([(0.0, 0.0), (1.1, 0.15), (0.95, 1.4), (-0.85, 0.85)], (t - 0.5) * 2.0),
+        Drawing::Six if t < 0.4 => lerp((0.7, -1.0), (-0.65, 0.4), t / 0.4),
+        Drawing::Six => {
+            let angle = PI + 2.0 * PI * (t - 0.4) / 0.6;
+            (angle.cos() * 0.65, 0.4 - angle.sin() * 0.6)
+        },
         Drawing::Check => polyline(&[(-0.9, 0.0), (-0.3, 0.65), (1.0, -0.9)], t),
         Drawing::Z => polyline(&[(-1.0, -1.0), (1.0, -1.0), (-1.0, 1.0), (1.0, 1.0)], t),
         Drawing::Left => polyline(&[(1.0, 0.0), (-1.0, 0.0)], t),
@@ -138,6 +258,111 @@ fn templates() -> Vec<Vec<Vec<i32>>> {
     }).collect()).collect()
 }
 
+// 在每个拐角切去一小段，用二次曲线连起来，再加入尺寸、速度和手抖变化。
+fn hand_drawn_trace(encoded: &[i32], rng: &mut Xorshift) -> Vec<Point> {
+    let vertices: Vec<_> = encoded.chunks_exact(2).map(|p| (p[0] as f64, p[1] as f64)).collect();
+    let mut path = vec![vertices[0]];
+    for i in 1..vertices.len() {
+        let a = *path.last().unwrap();
+        let b = vertices[i];
+        let radius = rng.range(0.06, 0.16);
+        let before = if i + 1 < vertices.len() { lerp(b, vertices[i - 1], radius) } else { b };
+        path.extend((1..=24).map(|j| lerp(a, before, j as f64 / 24.0)));
+        if i + 1 < vertices.len() {
+            let after = lerp(b, vertices[i + 1], radius);
+            path.extend((1..=12).map(|j| {
+                let t = j as f64 / 12.0;
+                lerp(lerp(before, b, t), lerp(b, after, t), t)
+            }));
+        }
+    }
+    let scale = rng.range(1.5, 6.0);
+    let angle = rng.range(-8.0, 8.0).to_radians();
+    let (sin, cos) = angle.sin_cos();
+    let offset = (rng.range(-1000.0, 1000.0), rng.range(-1000.0, 1000.0));
+    path.iter().map(|&(x, y)| {
+        let (x, y) = (x + rng.range(-0.6, 0.6), y + rng.range(-0.6, 0.6));
+        (offset.0 + scale * (x * cos - y * sin), offset.1 + scale * (x * sin + y * cos))
+    }).collect()
+}
+
+#[test]
+fn stroke_classification_default_traces_and_curves() {
+    use shape::{classify_stroke, StrokeKind};
+    let config: Config = serde_json::from_str(include_str!("../assets/default-config.json")).unwrap();
+    let mut rng = Xorshift(0x2545f4914f6cdd1d);
+    let (mut traces, mut polylines) = (0, 0);
+    for points in config.scopes.iter().flat_map(|s| &s.bindings).flat_map(|b| &b.pattern).filter_map(|s| {
+        if let Step::Trace { points } = s { Some(points) } else { None }
+    }) {
+        let mut correct = 0;
+        for _ in 0..300 {
+            correct += usize::from(classify_stroke(&hand_drawn_trace(points, &mut rng)) == StrokeKind::Polyline);
+        }
+        println!("trace {points:?}: {correct}/300");
+        traces += 300;
+        polylines += correct;
+        assert!(correct >= 297, "trace {points:?}: {correct}/300");
+    }
+    for encoded in [
+        vec![0, 0, 50, 0, 0, 50, 50, 50],
+        vec![0, 0, 0, 50, 50, 50],
+        vec![0, 0, 0, 50, 50, 50, 50, 0],
+    ] {
+        let correct = (0..300).filter(|_| classify_stroke(&hand_drawn_trace(&encoded, &mut rng)) == StrokeKind::Polyline).count();
+        println!("rounded corner {encoded:?}: {correct}/300");
+        assert!(correct >= 297);
+    }
+    let (mut curves, mut shapes) = (0, 0);
+    for drawing in [Drawing::G, Drawing::C, Drawing::O, Drawing::S, Drawing::Six] {
+        let mut correct = 0;
+        for _ in 0..300 {
+            correct += usize::from(classify_stroke(&noisy(drawing, &mut rng)) == StrokeKind::Shape);
+        }
+        println!("curve {drawing:?}: {correct}/300");
+        curves += 300;
+        shapes += correct;
+        assert!(correct >= 297, "curve {drawing:?}: {correct}/300");
+    }
+    let data = real_shapes();
+    let mut real_correct = 0;
+    let mut non_z_correct = 0;
+    for (name, samples) in data.classes.iter().map(|(k, v)| (k.as_str(), v)).chain(std::iter::once(("engine G", &data.engine_g))) {
+        let mut correct = 0;
+        for sample in samples {
+            let raw: Vec<_> = sample.chunks_exact(2).map(|p| (p[0] as f64, p[1] as f64)).collect();
+            correct += usize::from(classify_stroke(&raw) == StrokeKind::Shape);
+        }
+        println!("real curve {name}: {correct}/{}", samples.len());
+        real_correct += correct;
+        if name != "Z" {
+            non_z_correct += correct;
+            assert_eq!(correct, samples.len(), "real curve {name}");
+        } else {
+            assert_eq!(correct, 0, "真实 Z 的三段折线应遵循几何判据");
+        }
+    }
+    println!("classification: traces {polylines}/{traces}, synthetic curves {shapes}/{curves}, real shapes {real_correct}/42");
+    assert!(polylines * 100 >= traces * 99);
+    assert!(shapes * 100 >= curves * 99);
+    assert_eq!(non_z_correct, 37);
+    assert_eq!(real_correct, 37);
+    for turns in [0.5, 1.0, 2.5] {
+        for count in [32, 64, 257] {
+            let raw: Vec<_> = (0..count).map(|i| {
+                let t = i as f64 / (count - 1) as f64;
+                let angle = 2.0 * PI * turns * t;
+                let radius = if turns > 1.0 { 30.0 + 100.0 * t } else { 100.0 };
+                (radius * angle.cos(), radius * angle.sin())
+            }).collect();
+            assert_eq!(classify_stroke(&raw), StrokeKind::Shape, "arc/spiral {turns}, {count}");
+        }
+    }
+    for raw in [vec![], vec![(0.0, 0.0)], vec![(1.0, 1.0); 100], vec![(0.0, 0.0), (f64::NAN, 1.0)], vec![(-f64::MAX, 0.0), (f64::MAX, 1.0)]] {
+        assert_eq!(classify_stroke(&raw), StrokeKind::Polyline);
+    }
+}
+
 #[test]
 fn noisy_shape_accuracy() {
     let samples = templates();
@@ -167,7 +392,7 @@ fn noisy_shape_accuracy() {
     }
     for (drawing, correct, wrong) in results {
         assert!(correct >= 285, "{drawing:?}: {correct} correct");
-        assert!(wrong <= 3, "{drawing:?}: {wrong} wrong");
+        assert_eq!(wrong, 0, "{drawing:?}");
     }
 }
 
@@ -189,7 +414,7 @@ fn straight_gestures_do_not_match_shapes() {
         total += accepted;
     }
     println!("straight total: false positives {total}/2700 ({:.3}%)", total as f64 / 27.0);
-    assert!(total <= 27);
+    assert_eq!(total, 0);
 }
 
 #[test]

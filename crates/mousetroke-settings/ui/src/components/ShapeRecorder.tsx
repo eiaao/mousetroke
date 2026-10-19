@@ -8,7 +8,7 @@ import { Recorder } from "./Recorder";
 const MAX_SAMPLES = 5;
 
 /** 仅展示核心返回的样本与分数；不在前端实现归一化或形状匹配。 */
-export function ShapeRecorder({ templates, onChange, others }: { templates: number[][]; onChange: (templates: number[][]) => void; others: Binding[] }) {
+export function ShapeRecorder({ templates, onChange, others, feedbackLine }: { templates: number[][]; onChange: (templates: number[][], raw?: [number, number][]) => void; others: Binding[]; feedbackLine?: React.ReactNode }) {
   const [feedback, setFeedback] = useState<{ lowest: number | null; accept: number; conflict: Binding | null } | null>(null);
   const [error, setError] = useState<string | null>(null);
 
@@ -39,13 +39,14 @@ export function ShapeRecorder({ templates, onChange, others }: { templates: numb
 
   return (
     <div className="shape-recorder">
-      <p className="field-help shape-instruction">{t("ui.shape.instruction")}</p>
+      <p className="field-help shape-instruction">{t(templates.length === 1 ? "ui.shape.more_samples" : "ui.shape.instruction")}</p>
       <Recorder
         mode="shape"
         points={templates.at(-1) ?? null}
         disabled={templates.length >= MAX_SAMPLES}
-        onChange={(sample) => onChange([...templates, sample].slice(0, MAX_SAMPLES))}
+        onChange={(sample, raw) => onChange([...templates, sample].slice(0, MAX_SAMPLES), raw)}
       />
+      {feedbackLine}
       <div className="shape-samples-head">
         <span>{t("ui.shape.samples", { count: templates.length, max: MAX_SAMPLES })}</span>
         {templates.length >= MAX_SAMPLES && <span className="muted">{t("ui.shape.limit")}</span>}

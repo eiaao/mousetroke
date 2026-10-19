@@ -10,7 +10,7 @@ const GRID = 30; // 与引擎默认最小识别距离一致：画布上一格 = 
  * 手势录制画布。用左键或右键按住拖动画出手势，松开后由引擎同一套算法
  * 规整为标准轨迹或形状样本并以动画展示（两种模式都由 Rust 核心处理）。
  */
-export function Recorder({ points, onChange, hint, mode = "trace", disabled = false }: { points: number[] | null; onChange: (p: number[]) => void; hint?: React.ReactNode; mode?: "trace" | "shape"; disabled?: boolean }) {
+export function Recorder({ points, onChange, hint, mode = "trace", disabled = false }: { points: number[] | null; onChange: (p: number[], raw: [number, number][], kind: "trace" | "shape") => void; hint?: React.ReactNode; mode?: "trace" | "shape"; disabled?: boolean }) {
   const wrap = useRef<HTMLDivElement>(null);
   const canvas = useRef<HTMLCanvasElement>(null);
   const raw = useRef<[number, number][]>([]);
@@ -21,6 +21,8 @@ export function Recorder({ points, onChange, hint, mode = "trace", disabled = fa
   const mounted = useRef(true);
   const onChangeRef = useRef(onChange);
   onChangeRef.current = onChange;
+  const pointsRef = useRef(points);
+  pointsRef.current = points;
   const [animKey, setAnimKey] = useState(0);
   const [size, setSize] = useState({ w: 400, h: 200 });
 
@@ -92,14 +94,17 @@ export function Recorder({ points, onChange, hint, mode = "trace", disabled = fa
     canvas.current!.releasePointerCapture(e.pointerId);
     setBusy(true);
     try {
-      const recorded = mode === "shape" ? await api.shapeSample([...raw.current, local(e)]) : await api.recordTrace(raw.current, GRID);
-      if (!mounted.current) return;
+      const original = pointsRef.current;
+      const drawing = [...raw.current, local(e)];
+      const kind = mode === "shape" ? "shape" : await api.classifyStroke(drawing);
+      const recorded = kind === "shape" ? await api.shapeSample(drawing) : await api.recordTrace(drawing, GRID);
+      if (!mounted.current || pointsRef.current !== original) return;
       if (recorded.length < 4) {
         setError(t("ui.recorder.too_short"));
         return;
       }
       setAnimKey((k) => k + 1);
-      onChangeRef.current(recorded);
+      onChangeRef.current(recorded, drawing, kind);
     } catch (e) {
       if (mounted.current) setError(errText(e));
     } finally {

@@ -1406,6 +1406,30 @@ select.lang-select {
   text-align: right;
 }
 
+.recorder-detection,
+.recorder-complex {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 4px 10px;
+  margin-top: 8px;
+  font-size: 12.5px;
+  color: var(--muted);
+}
+
+.recorder-detection .btn,
+.recorder-complex .btn {
+  min-height: 0;
+  padding: 2px 0;
+  box-shadow: none;
+  border: 0;
+  background: none;
+  color: var(--trail);
+  text-align: left;
+  white-space: normal;
+  font-size: inherit;
+}
+
 /* 形状样本沿用画布、轨迹颜色与步骤芯片的视觉语言。 */
 .shape-instruction {
   margin: 0 0 10px;
