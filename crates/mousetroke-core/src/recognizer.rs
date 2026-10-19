@@ -146,7 +146,7 @@ pub const ACCEPT_MAX: f64 = 1.25;
 /// 旧格式 P 是**归一化**坐标（格数是相对量），因此先把实际轨迹按
 /// 总长度缩放到与期望一致，再做逐段比较；方向相反按段重罚。
 pub fn match_polyline(points: &[i32], segments: &[Segment]) -> Option<f64> {
-    if points.len() < 4 || points.len() % 2 != 0 {
+    if points.len() < 4 || !points.len().is_multiple_of(2) {
         return None;
     }
     let expected_len = points.len() / 2 - 1;
@@ -174,15 +174,11 @@ pub fn match_polyline(points: &[i32], segments: &[Segment]) -> Option<f64> {
         let (sx, sy) = (seg.x as f64 * scale, seg.y as f64 * scale);
         score += (ex - sx).abs() + (ey - sy).abs();
         // 方向相反：重罚（除非实际分量几乎为零）
-        if *ex != 0.0 && sx.signum() as f64 != *ex {
-            if sx.abs() > 0.35 {
-                score += 1.5;
-            }
+        if *ex != 0.0 && sx.signum() != *ex && sx.abs() > 0.35 {
+            score += 1.5;
         }
-        if *ey != 0.0 && sy.signum() as f64 != *ey {
-            if sy.abs() > 0.35 {
-                score += 1.5;
-            }
+        if *ey != 0.0 && sy.signum() != *ey && sy.abs() > 0.35 {
+            score += 1.5;
         }
     }
     Some(score)

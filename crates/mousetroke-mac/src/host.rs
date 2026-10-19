@@ -13,6 +13,8 @@ use objc2_core_foundation::CGPoint;
 use objc2_core_graphics::{CGEvent, CGEventField, CGEventTapLocation, CGEventType, CGMouseButton};
 use objc2_foundation::NSLocale;
 
+use crate::overlay::{geometry::Rect, rect, Overlay};
+
 #[derive(Clone, Copy)]
 struct Replay {
     button: MouseButton,
@@ -24,14 +26,19 @@ thread_local! {
         wid: 0, pid: 0, exe: None, class: String::new(), is_desktop: false,
     }) };
     static SCREEN: RefCell<Screen> = const { RefCell::new(Screen {
-        rect: (0, 0, 1920, 1080), anchor: (960, 864), center: (960, 540),
+        center: (960, 540), displays: Vec::new(),
     }) };
 }
-#[derive(Clone, Copy, PartialEq)]
+#[derive(PartialEq)]
 struct Screen {
-    rect: (i32, i32, i32, i32),
-    anchor: (i32, i32),
     center: (i32, i32),
+    displays: Vec<Display>,
+}
+#[derive(PartialEq)]
+struct Display {
+    frame: Rect,
+    visible: Rect,
+    scale: f64,
 }
 
 pub fn system_langs() -> Vec<String> {
@@ -53,7 +60,10 @@ pub fn refresh_target() {
                 .executableURL()
                 .and_then(|url| url.path())
                 .map(|path| path.to_string()),
-            class: app.bundleIdentifier().map(|id| id.to_string()).unwrap_or_default(),
+            class: app
+                .bundleIdentifier()
+                .map(|id| id.to_string())
+                .unwrap_or_default(),
             is_desktop: false,
         })
         .unwrap_or(Target {
@@ -75,24 +85,15 @@ pub fn refresh_screen(mtm: MainThreadMarker) -> bool {
     let primary_height = primary.frame().size.height;
     let main = NSScreen::mainScreen(mtm).unwrap_or(primary);
     let frame = main.frame();
-    let work = main.visibleFrame();
-    let mut left = 0.0f64;
-    let mut top = 0.0f64;
-    let mut right = 0.0f64;
-    let mut bottom = 0.0f64;
-    for screen in screens.iter() {
-        let r = screen.frame();
-        left = left.min(r.origin.x);
-        top = top.min(primary_height - r.origin.y - r.size.height);
-        right = right.max(r.origin.x + r.size.width);
-        bottom = bottom.max(primary_height - r.origin.y);
-    }
     let new = Screen {
-        rect: (left as i32, top as i32, (right - left) as i32, (bottom - top) as i32),
-        anchor: (
-            (work.origin.x + work.size.width / 2.0) as i32,
-            (primary_height - work.origin.y - work.size.height + work.size.height * 0.8) as i32,
-        ),
+        displays: screens
+            .iter()
+            .map(|screen| Display {
+                frame: rect(screen.frame()).quartz(primary_height),
+                visible: rect(screen.visibleFrame()).quartz(primary_height),
+                scale: screen.backingScaleFactor(),
+            })
+            .collect(),
         center: (
             (frame.origin.x + frame.size.width / 2.0) as i32,
             (primary_height - frame.origin.y - frame.size.height / 2.0) as i32,
@@ -138,31 +139,35 @@ impl Host for SystemHost {
         });
     }
     fn execute(&self, action: Action, _target: Option<Target>, _vars: Vars, _pos: (i32, i32)) {
-        // 只记录枚举类型，绝不 Debug 整个动作，避免泄露脚本、网址、按键内容。
-        let kind = match action {
-            Action::KeySequence { .. } => "key_sequence",
-            Action::Shell { .. } => "shell",
-            Action::Lua { .. } => "lua",
-            Action::OpenUrl { .. } => "open_url",
-            Action::Menu { .. } => "menu",
-            Action::LaunchApp { .. } => "launch_app",
-            Action::WindowOp { .. } => "window_op",
-            Action::SystemKey { .. } => "system_key",
-        };
-        crate::log!("动作暂未支持（M3）: {kind}");
+        crate::input::enqueue(action);
     }
-    fn label_anchor(&self, _x: i32, _y: i32) -> (i32, i32) {
-        SCREEN.with(|slot| slot.borrow().anchor)
+    fn label_anchor(&self, x: i32, y: i32) -> (i32, i32) {
+        SCREEN.with(|slot| {
+            let screen = slot.borrow();
+            screen
+                .displays
+                .iter()
+                .find(|s| s.frame.contains(x as f64, y as f64))
+                .or_else(|| screen.displays.first())
+                .map(|s| s.visible.anchor())
+                .unwrap_or(screen.center)
+        })
     }
-    fn new_canvas(&self, _color: &str, _width: f64) -> Option<Box<dyn Canvas>> {
-        Some(Box::new(NullCanvas(SCREEN.with(|slot| slot.borrow().rect))))
+    fn new_canvas(&self, color: &str, width: f64) -> Option<Box<dyn Canvas>> {
+        Some(Box::new(Overlay::new(
+            MainThreadMarker::new()?,
+            color,
+            width,
+        )?))
     }
     fn init_shape_samples(&self) {}
     fn shape_sample(&self, encoded: Vec<i32>) {
         crate::log::shape_sample(encoded);
     }
     fn cursor_pos(&self) -> (i32, i32) {
-        cursor_pos().map(|p| (p.x as i32, p.y as i32)).unwrap_or((0, 0))
+        cursor_pos()
+            .map(|p| (p.x as i32, p.y as i32))
+            .unwrap_or((0, 0))
     }
     fn set_automatic_updates(&self, _enabled: bool) {}
     fn system_langs(&self) -> Vec<String> {
@@ -215,24 +220,12 @@ pub fn mouse_event(
     tag: i64,
 ) -> Option<objc2_core_foundation::CFRetained<CGEvent>> {
     let event = CGEvent::new_mouse_event(None, kind, pos, CGMouseButton(number))?;
-    CGEvent::set_integer_value_field(Some(&event), CGEventField::MouseEventButtonNumber, number as i64);
+    CGEvent::set_integer_value_field(
+        Some(&event),
+        CGEventField::MouseEventButtonNumber,
+        number as i64,
+    );
     CGEvent::set_integer_value_field(Some(&event), CGEventField::MouseEventClickState, 1);
     CGEvent::set_integer_value_field(Some(&event), CGEventField::EventSourceUserData, tag);
     Some(event)
-}
-
-struct NullCanvas((i32, i32, i32, i32));
-impl Canvas for NullCanvas {
-    fn set_color(&mut self, _: &str) {}
-    fn set_width(&mut self, _: f64) {}
-    fn start_session(&mut self, _: i32, _: i32) {}
-    fn line_to(&mut self, _: i32, _: i32) {}
-    fn finish(&mut self) {}
-    fn fade_out(&mut self) {}
-    fn tick_fade(&mut self) {}
-    fn draw_label(&mut self, _: &str, _: i32, _: i32, _: &str) {}
-    fn clear_label(&mut self) {}
-    fn virtual_rect(&self) -> (i32, i32, i32, i32) {
-        self.0
-    }
 }

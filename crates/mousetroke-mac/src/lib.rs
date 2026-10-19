@@ -1,20 +1,37 @@
-//! macOS M1 平台层：AppKit、输入 tap 与引擎均在主线程运行。
-#![cfg(target_os = "macos")]
+//! macOS M2 平台层：AppKit、输入 tap、覆盖层、按键执行与引擎均在主线程运行。
 #![deny(unsafe_op_in_unsafe_fn)]
 
+#[cfg(target_os = "macos")]
 mod app;
+#[cfg(target_os = "macos")]
 mod events;
+#[cfg(target_os = "macos")]
 mod host;
+#[cfg(target_os = "macos")]
+mod input;
+#[cfg(target_os = "macos")]
 mod instance;
+#[cfg(target_os = "macos")]
 pub mod log;
+#[cfg(target_os = "macos")]
 mod menu;
+#[cfg(target_os = "macos")]
+mod overlay;
+#[cfg(target_os = "macos")]
 mod permissions;
+#[cfg(target_os = "macos")]
 mod selftest;
 
+#[cfg(target_os = "macos")]
 pub use app::run;
+#[cfg(target_os = "macos")]
 pub use host::system_langs;
 
-#[cfg(test)]
+#[cfg(all(test, not(target_os = "macos")))]
+#[path = "overlay/geometry.rs"]
+mod overlay_geometry;
+
+#[cfg(all(test, target_os = "macos"))]
 mod bundle_tests {
     #[test]
     fn generated_plist_has_bundle_identity_and_workspace_version() {
@@ -42,7 +59,12 @@ mod bundle_tests {
             .stdout(std::process::Stdio::null())
             .spawn()
             .unwrap();
-        child.stdin.take().unwrap().write_all(xml.as_bytes()).unwrap();
+        child
+            .stdin
+            .take()
+            .unwrap()
+            .write_all(xml.as_bytes())
+            .unwrap();
         assert!(child.wait().unwrap().success());
     }
 }

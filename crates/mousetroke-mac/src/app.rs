@@ -3,6 +3,7 @@ use std::cell::{Cell, RefCell};
 use std::ffi::OsStr;
 use std::fs::OpenOptions;
 use std::panic::{catch_unwind, AssertUnwindSafe};
+use std::sync::atomic::{AtomicBool, Ordering};
 use std::time::{Duration, Instant};
 
 use block2::RcBlock;
@@ -13,13 +14,19 @@ use mousetroke_core::{
 use mousetroke_engine::{Engine, Reload};
 use objc2::{
     rc::{autoreleasepool, Retained},
+    runtime::ProtocolObject,
     MainThreadMarker,
 };
-use objc2_app_kit::{NSApplication, NSApplicationActivationPolicy, NSEvent, NSEventModifierFlags, NSEventType};
-use objc2_foundation::{NSPoint, NSRunLoop, NSRunLoopCommonModes, NSTimer};
+use objc2_app_kit::{
+    NSApplication, NSApplicationActivationPolicy,
+    NSApplicationDidChangeScreenParametersNotification, NSEvent, NSEventModifierFlags, NSEventType,
+};
+use objc2_foundation::{
+    NSNotificationCenter, NSObjectProtocol, NSPoint, NSRunLoop, NSRunLoopCommonModes, NSTimer,
+};
 
 use crate::{
-    events, host, instance, log,
+    events, host, input, instance, log,
     menu::{self, Menu},
     permissions::{self, Permissions},
     selftest::SelfTest,
@@ -31,8 +38,42 @@ thread_local! {
     static QUIT: Cell<Option<i32>> = const { Cell::new(None) };
 }
 
+static DISPLAY_CHANGED: AtomicBool = AtomicBool::new(false);
+
+struct DisplayObserver(Retained<ProtocolObject<dyn NSObjectProtocol>>);
+impl DisplayObserver {
+    fn new() -> Self {
+        // 不捕获 AppKit 对象；通知即使从别的线程到达，也只设置标志，下一轮主线程再重建。
+        let block = RcBlock::new(
+            |_notification: std::ptr::NonNull<objc2_foundation::NSNotification>| {
+                DISPLAY_CHANGED.store(true, Ordering::Relaxed);
+            },
+        );
+        // 安全：系统通知名有效，object/queue 均为空，block 可在任意发送线程安全调用。
+        Self(unsafe {
+            NSNotificationCenter::defaultCenter().addObserverForName_object_queue_usingBlock(
+                Some(NSApplicationDidChangeScreenParametersNotification),
+                None,
+                None,
+                &block,
+            )
+        })
+    }
+}
+impl Drop for DisplayObserver {
+    fn drop(&mut self) {
+        // 安全：移除本实例注册并保留的 observer token，先注销再释放所有权。
+        let token: &ProtocolObject<dyn NSObjectProtocol> = &self.0;
+        unsafe { NSNotificationCenter::defaultCenter().removeObserver(token.as_ref()) };
+    }
+}
+
 pub(crate) fn with_engine<R>(f: impl FnOnce(&mut Engine) -> R) -> Option<R> {
-    ENGINE.with(|slot| slot.try_borrow_mut().ok().and_then(|mut slot| slot.as_mut().map(f)))
+    ENGINE.with(|slot| {
+        slot.try_borrow_mut()
+            .ok()
+            .and_then(|mut slot| slot.as_mut().map(f))
+    })
 }
 pub(crate) fn toggle_pause() {
     if let Some(paused) = with_engine(|engine| {
@@ -54,6 +95,7 @@ struct Runtime {
     next_engine_tick: Instant,
     tap_failed: bool,
     selftest: Option<SelfTest>,
+    _displays: DisplayObserver,
 }
 
 impl Runtime {
@@ -63,7 +105,13 @@ impl Runtime {
             with_engine(|engine| engine.set_paused(true));
             menu::request_refresh();
         }
+        if DISPLAY_CHANGED.swap(false, Ordering::Relaxed) {
+            host::refresh_screen(mtm);
+            with_engine(Engine::on_display_change);
+        }
         host::drain_replays();
+        input::tick();
+        with_engine(Engine::overlay_tick);
         if now >= self.next_engine_tick {
             self.next_engine_tick = now + Duration::from_millis(250);
             host::refresh_target();
@@ -104,7 +152,9 @@ impl Runtime {
             }
             if let Some(Some(reload)) = with_engine(Engine::poll_config) {
                 match reload {
-                    Reload::Applied { scopes, bindings, .. } => {
+                    Reload::Applied {
+                        scopes, bindings, ..
+                    } => {
                         crate::log!("配置已更新: scopes={scopes}, bindings={bindings}")
                     }
                     Reload::Failed(error) => crate::log!("配置更新失败: {error}"),
@@ -116,7 +166,8 @@ impl Runtime {
         }
         if menu::take_refresh() {
             let paused = with_engine(|engine| engine.is_paused()).unwrap_or(false);
-            self.menu.refresh(mtm, self.permissions, events::active(), paused);
+            self.menu
+                .refresh(mtm, self.permissions, events::active(), paused);
         }
         if QUIT.with(Cell::get).is_some() {
             stop(mtm);
@@ -190,15 +241,29 @@ fn run_main(mtm: MainThreadMarker) -> Result<i32, String> {
     let expected = config
         .all_bindings()
         .find(|binding| binding.name_key.as_deref() == Some(keys::BUILTIN_GESTURE_CLOSE_TAB))
-        .map(|binding| binding.name.clone())
+        .map(|binding| {
+            (
+                binding.name.clone(),
+                match &binding.action {
+                    mousetroke_core::schema::Action::KeySequence { keys, .. } => keys.clone(),
+                    _ => String::new(),
+                },
+            )
+        })
         .unwrap_or_default();
     let app = NSApplication::sharedApplication(mtm);
     // Info.plist 已声明 LSUIElement 时策略本来就是 Accessory，此调用会返回 NO（真机验证），忽略即可。
     let _ = app.setActivationPolicy(NSApplicationActivationPolicy::Accessory);
     host::refresh_target();
     host::refresh_screen(mtm);
-    let engine = Engine::new(config, (!selftest).then_some(path), Box::new(host::SystemHost))
-        .ok_or_else(|| t(keys::MAC_ERROR_ENGINE).to_string())?;
+    input::initialize(selftest);
+    let displays = DisplayObserver::new();
+    let engine = Engine::new(
+        config,
+        (!selftest).then_some(path),
+        Box::new(host::SystemHost),
+    )
+    .ok_or_else(|| t(keys::MAC_ERROR_ENGINE).to_string())?;
     ENGINE.with(|slot| *slot.borrow_mut() = Some(engine));
     let prompt = match OpenOptions::new()
         .write(true)
@@ -227,7 +292,8 @@ fn run_main(mtm: MainThreadMarker) -> Result<i32, String> {
             next_permissions: now,
             next_engine_tick: now,
             tap_failed: false,
-            selftest: selftest.then(|| SelfTest::new(expected)),
+            selftest: selftest.then(|| SelfTest::new(expected.0, expected.1)),
+            _displays: displays,
         })
     });
     let block = RcBlock::new(move |_timer: std::ptr::NonNull<NSTimer>| {
@@ -251,9 +317,10 @@ fn run_main(mtm: MainThreadMarker) -> Result<i32, String> {
         }
     });
     // 安全：只在主 run loop common modes 调用 block；timer 在退出前失效，捕获的 mtm 也仅在主线程使用。
-    let timer: Retained<NSTimer> = unsafe { NSTimer::timerWithTimeInterval_repeats_block(0.01, true, &block) };
+    let timer: Retained<NSTimer> =
+        unsafe { NSTimer::timerWithTimeInterval_repeats_block(0.01, true, &block) };
     unsafe { NSRunLoop::mainRunLoop().addTimer_forMode(&timer, NSRunLoopCommonModes) };
-    crate::log!("Mousetroke macOS M1 启动");
+    crate::log!("Mousetroke macOS M2 启动");
     app.run();
     timer.invalidate();
     events::remove();

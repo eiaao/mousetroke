@@ -168,7 +168,7 @@ const LEGACY_DEFAULT_LINE_WIDTH: f64 = 1.5;
 pub fn import(gestures_raw: &str, prefs_raw: Option<&str>) -> Result<Config, String> {
     let wg: LegacyGestures = from_json_str(gestures_raw)?;
     let prefs = prefs_raw
-        .map(|raw| from_json_str::<LegacyPrefs>(raw))
+        .map(from_json_str::<LegacyPrefs>)
         .transpose()?
         .unwrap_or_default();
 

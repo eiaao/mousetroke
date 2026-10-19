@@ -11,6 +11,9 @@ static ECHO_DOWN: AtomicUsize = AtomicUsize::new(0);
 static ECHO_UP: AtomicUsize = AtomicUsize::new(0);
 static EXPECTED_PREFIX: OnceLock<String> = OnceLock::new();
 static EXPECTED_HIT: AtomicBool = AtomicBool::new(false);
+static EXPECTED_KEYS: OnceLock<String> = OnceLock::new();
+static KEY_DISPATCHES: AtomicUsize = AtomicUsize::new(0);
+static EXPECTED_ACTION: AtomicBool = AtomicBool::new(false);
 /// tap 已收到自测投递的移动事件：系统对新进程的前几次 CGEventPost 会静默丢弃（权限检查进行中），
 /// 必须确认事件真的能送达后才开始画手势。
 static WARMED: AtomicBool = AtomicBool::new(false);
@@ -19,7 +22,10 @@ const MATCH_PREFIX: &str = "手势命中:"; // i18n:allow 共享引擎的运行�
 pub fn observe(text: &str) {
     if ENABLED.load(Ordering::Relaxed) && text.starts_with(MATCH_PREFIX) {
         MATCHES.fetch_add(1, Ordering::Relaxed);
-        if EXPECTED_PREFIX.get().is_some_and(|prefix| text.starts_with(prefix)) {
+        if EXPECTED_PREFIX
+            .get()
+            .is_some_and(|prefix| text.starts_with(prefix))
+        {
             EXPECTED_HIT.store(true, Ordering::Relaxed);
         }
     }
@@ -41,6 +47,16 @@ pub fn tagged_echo(kind: Kind) {
     }
 }
 
+/// 只统计由真实动作队列成功解析并派发的预期动作；不记录按键字符串。
+pub fn key_sequence_dispatched(keys: &str, dry_run: bool) {
+    if ENABLED.load(Ordering::Relaxed) {
+        KEY_DISPATCHES.fetch_add(1, Ordering::Relaxed);
+        if dry_run && EXPECTED_KEYS.get().is_some_and(|expected| expected == keys) {
+            EXPECTED_ACTION.store(true, Ordering::Relaxed);
+        }
+    }
+}
+
 pub struct SelfTest {
     launched: Instant,
     next: Instant,
@@ -50,17 +66,21 @@ pub struct SelfTest {
     /// 预热完成、已开始投递手势事件。
     drawing: bool,
     done: bool,
+    overlay_before: (usize, usize),
 }
 
 impl SelfTest {
-    pub fn new(expected_name: String) -> Self {
+    pub fn new(expected_name: String, expected_keys: String) -> Self {
         let _ = EXPECTED_PREFIX.set(format!("{MATCH_PREFIX} {expected_name}"));
         EXPECTED_HIT.store(false, Ordering::Relaxed);
+        let _ = EXPECTED_KEYS.set(expected_keys);
+        KEY_DISPATCHES.store(0, Ordering::Relaxed);
+        EXPECTED_ACTION.store(false, Ordering::Relaxed);
         ENABLED.store(true, Ordering::Relaxed);
         MATCHES.store(0, Ordering::Relaxed);
         ECHO_DOWN.store(0, Ordering::Relaxed);
         ECHO_UP.store(0, Ordering::Relaxed);
-        crate::log!("自测等待事件 tap；只使用内置默认配置，不执行动作");
+        crate::log!("自测等待事件 tap；使用内置默认配置，按键执行器仅记录、不投递");
         crate::log!("自测预期手势: {expected_name}");
         let now = Instant::now();
         Self {
@@ -71,6 +91,7 @@ impl SelfTest {
             original_cursor: None,
             drawing: false,
             done: false,
+            overlay_before: crate::overlay::counters(),
         }
     }
 
@@ -97,7 +118,12 @@ impl SelfTest {
         // 预热：反复把光标移到起点，直到 tap 确认收到（真机上前几次投递会被丢弃）。
         if self.step == Some(0) && !WARMED.load(Ordering::Relaxed) {
             if now >= self.next {
-                if let Some(event) = crate::host::mouse_event(Kind::MouseMoved, 0, CGPoint::new(self.origin.0 as f64, self.origin.1 as f64), 0) {
+                if let Some(event) = crate::host::mouse_event(
+                    Kind::MouseMoved,
+                    0,
+                    CGPoint::new(self.origin.0 as f64, self.origin.1 as f64),
+                    0,
+                ) {
                     CGEvent::post(CGEventTapLocation::HIDEventTap, Some(&event));
                 }
                 self.next = now + Duration::from_millis(50);
@@ -120,19 +146,36 @@ impl SelfTest {
             let expected = EXPECTED_HIT.load(Ordering::Relaxed);
             let down = ECHO_DOWN.load(Ordering::Relaxed);
             let up = ECHO_UP.load(Ordering::Relaxed);
+            let (starts, lines) = crate::overlay::counters();
+            let starts = starts.saturating_sub(self.overlay_before.0);
+            let lines = lines.saturating_sub(self.overlay_before.1);
+            let dispatched = KEY_DISPATCHES.load(Ordering::Relaxed);
+            let action = EXPECTED_ACTION.load(Ordering::Relaxed);
             crate::log!(
                 "自测结果：手势命中次数={matched}，预期手势命中={expected}，点击已补发={}，带标记回声 down={down}, up={up}",
                 down == 1 && up == 1
             );
-            self.finish(if matched == 1 && expected && down == 1 && up == 1 {
-                0
-            } else {
-                1
-            });
+            crate::log!("自测覆盖层：start_session={starts}, line_to={lines}；按键派发={dispatched}，预期动作 dry_run={action}");
+            self.finish(
+                if matched == 1
+                    && expected
+                    && down == 1
+                    && up == 1
+                    && starts >= 1
+                    && lines > 0
+                    && dispatched == 1
+                    && action
+                {
+                    0
+                } else {
+                    1
+                },
+            );
             return;
         }
         let (kind, x, y) = test_event(step, self.origin);
-        let Some(event) = crate::host::mouse_event(kind, 1, CGPoint::new(x as f64, y as f64), 0) else {
+        let Some(event) = crate::host::mouse_event(kind, 1, CGPoint::new(x as f64, y as f64), 0)
+        else {
             crate::log!("自测失败：创建鼠标事件失败");
             self.finish(1);
             return;
@@ -154,13 +197,17 @@ impl SelfTest {
         if code != 0 && self.step.is_some_and(|step| (1..=63).contains(&step)) {
             // 创建事件失败或超时时，尽力释放合成右键，避免留下按下状态。
             if let Some(pos) = crate::host::cursor_pos() {
-                if let Some(event) = crate::host::mouse_event(Kind::RightMouseUp, 1, pos, crate::events::INJECT_TAG) {
+                if let Some(event) =
+                    crate::host::mouse_event(Kind::RightMouseUp, 1, pos, crate::events::INJECT_TAG)
+                {
                     CGEvent::post(CGEventTapLocation::HIDEventTap, Some(&event));
                 }
             }
         }
         if let Some(pos) = self.original_cursor {
-            if let Some(event) = crate::host::mouse_event(Kind::MouseMoved, 0, pos, crate::events::INJECT_TAG) {
+            if let Some(event) =
+                crate::host::mouse_event(Kind::MouseMoved, 0, pos, crate::events::INJECT_TAG)
+            {
                 CGEvent::post(CGEventTapLocation::HIDEventTap, Some(&event));
             }
         }
@@ -172,7 +219,11 @@ fn test_event(step: u32, (x, y): (i32, i32)) -> (Kind, i32, i32) {
     match step {
         0 => (Kind::RightMouseDown, x, y),
         1..=30 => (Kind::RightMouseDragged, x, y + step as i32 * 200 / 30),
-        31..=60 => (Kind::RightMouseDragged, x + (step - 30) as i32 * 200 / 30, y + 200),
+        31..=60 => (
+            Kind::RightMouseDragged,
+            x + (step - 30) as i32 * 200 / 30,
+            y + 200,
+        ),
         61 | 63 => (Kind::RightMouseUp, x + 200, y + 200),
         _ => (Kind::RightMouseDown, x + 200, y + 200),
     }
@@ -185,7 +236,10 @@ mod tests {
     fn selftest_draws_down_then_right_and_clicks_at_the_endpoint() {
         assert_eq!(test_event(0, (10, 20)), (Kind::RightMouseDown, 10, 20));
         assert_eq!(test_event(30, (10, 20)), (Kind::RightMouseDragged, 10, 220));
-        assert_eq!(test_event(60, (10, 20)), (Kind::RightMouseDragged, 210, 220));
+        assert_eq!(
+            test_event(60, (10, 20)),
+            (Kind::RightMouseDragged, 210, 220)
+        );
         assert_eq!(test_event(61, (10, 20)), (Kind::RightMouseUp, 210, 220));
         assert_eq!(test_event(62, (10, 20)), (Kind::RightMouseDown, 210, 220));
         assert_eq!(test_event(63, (10, 20)), (Kind::RightMouseUp, 210, 220));
