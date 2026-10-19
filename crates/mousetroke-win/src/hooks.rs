@@ -21,6 +21,7 @@ use crate::tray::Tray;
 pub fn run(cfg: Config, cfg_path: Option<std::path::PathBuf>) -> Result<(), String> {
     // 单实例：命名互斥体
     single_instance_guard()?;
+    crate::update::cleanup();
     let (tx, rx) = std::sync::mpsc::channel::<Result<(), String>>();
     let handle = std::thread::Builder::new()
         .name("mousetroke-engine".into())
@@ -80,11 +81,13 @@ fn engine_main(cfg: Config, cfg_path: Option<std::path::PathBuf>) -> Result<(), 
 
     let pause_hotkey = cfg.settings.pause_hotkey.clone();
     let show_tray = cfg.settings.show_tray;
+    let update_check = cfg.settings.update_check;
     let engine = Engine::new(cfg, cfg_path.clone()).ok_or_else(|| mousetroke_core::i18n::t(mousetroke_core::i18n::keys::CLI_OVERLAY_INIT_FAILED).to_string())?;
     crate::engine::ENGINE.with(|e| *e.borrow_mut() = Some(engine));
 
     // 托盘 + 暂停热键
-    let _tray = Tray::create(show_tray, &pause_hotkey, cfg_path);
+    let _tray = Tray::create(show_tray, &pause_hotkey, cfg_path.clone());
+    if let Some(path) = cfg_path { crate::update::start_automatic(path, update_check); }
 
     unsafe {
         let mouse_hook = SetWindowsHookExW(WH_MOUSE_LL, Some(mouse_proc), None, 0)

@@ -376,6 +376,9 @@ pub struct Settings {
     /// 暂停/恢复热键（keyseq 语法）。
     pub pause_hotkey: String,
     pub show_tray: bool,
+    /// 用户主动开启后才每天检查更新；检查记录另存，不混入配置。
+    #[serde(default, skip_serializing_if = "std::ops::Not::not")]
+    pub update_check: bool,
     pub trail: Trail,
     pub label: Label,
 }
@@ -422,6 +425,7 @@ impl Default for Settings {
             target_mode: TargetMode::UnderCursor,
             pause_hotkey: "#({ESC})".into(),
             show_tray: true,
+            update_check: false,
             trail: Trail {
                 show: true,
                 width: 2.0,
@@ -563,5 +567,19 @@ mod builtin_tests {
     fn missing_file_is_first_run() {
         let p = std::env::temp_dir().join("mousetroke-no-such-config.json");
         assert_eq!(Config::load_existing(&p), Ok(None));
+    }
+}
+
+#[cfg(test)]
+mod update_schema_tests {
+    use super::*;
+    #[test]
+    fn update_check_is_opt_in_and_round_trips() {
+        let mut cfg: Config = serde_json::from_str("{}").unwrap();
+        assert!(!cfg.settings.update_check);
+        assert!(!Config::builtin().settings.update_check);
+        cfg.settings.update_check = true;
+        let copy: Config = serde_json::from_str(&serde_json::to_string(&cfg).unwrap()).unwrap();
+        assert!(copy.settings.update_check);
     }
 }

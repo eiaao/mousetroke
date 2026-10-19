@@ -18,7 +18,7 @@ use windows::Win32::UI::Input::KeyboardAndMouse::{
     RegisterHotKey, UnregisterHotKey, HOT_KEY_MODIFIERS, MOD_ALT, MOD_CONTROL, MOD_NOREPEAT, MOD_SHIFT, MOD_WIN,
 };
 use windows::Win32::UI::Shell::{
-    Shell_NotifyIconW, NIF_ICON, NIF_INFO, NIF_MESSAGE, NIF_TIP, NIM_ADD, NIM_DELETE, NIM_MODIFY, NOTIFYICONDATAW,
+    Shell_NotifyIconW, NIF_ICON, NIF_INFO, NIF_MESSAGE, NIF_TIP, NIM_ADD, NIM_DELETE, NIM_MODIFY, NOTIFYICONDATAW, NIN_BALLOONUSERCLICK,
 };
 use windows::Win32::UI::WindowsAndMessaging::{
     AppendMenuW, CreateIconIndirect, CreatePopupMenu, CreateWindowExW, DefWindowProcW, DestroyIcon, DestroyMenu,
@@ -50,6 +50,7 @@ pub const CMD_PAUSE_OFF: usize = 3;
 
 /// 控制窗口句柄的全局镜像（跨线程 PostMessage 用）。
 static TRAY_HWND_GLOBAL: std::sync::atomic::AtomicIsize = std::sync::atomic::AtomicIsize::new(0);
+static UPDATE_BALLOON: std::sync::atomic::AtomicBool = std::sync::atomic::AtomicBool::new(false);
 
 /// 从任意线程向引擎线程发命令。
 pub fn post_engine_cmd(cmd: usize) -> bool {
@@ -190,21 +191,22 @@ pub fn refresh_texts() {
 }
 
 /// 托盘气泡通知。
-pub fn notify(text: &str) {
+pub fn notify(text: &str) -> bool {
+    UPDATE_BALLOON.store(false, std::sync::atomic::Ordering::Relaxed);
     STATE.with(|s| {
         let s = s.borrow();
-        let Some(st) = s.as_ref() else { return };
+        let Some(st) = s.as_ref() else { return false };
         if !st.show_icon {
-            return;
+            return false;
         }
         let mut nid = base_nid(st);
         nid.uFlags = NIF_INFO;
         copy_wide(&mut nid.szInfo, text);
         copy_wide(&mut nid.szInfoTitle, "Mousetroke");
         unsafe {
-            let _ = Shell_NotifyIconW(NIM_MODIFY, &nid);
+            Shell_NotifyIconW(NIM_MODIFY, &nid).as_bool()
         }
-    });
+    })
 }
 
 fn register_pause_hotkey(hwnd: HWND, hotkey: &str) {
@@ -262,10 +264,15 @@ fn cfg_path() -> Option<PathBuf> {
 /// 打开设置：以 `settings` 参数再启动一个自己（界面是独立进程，引擎进程里不放 WebView）。
 /// 任意线程可调用（Lua ShowSettings 在工作线程）。
 pub fn open_settings() {
+    open_settings_page(false);
+}
+
+fn open_settings_page(about: bool) {
     let Ok(exe) = std::env::current_exe() else { return };
     // 直接创建进程：ShellExecute 会把整套外壳组件加载进常驻的引擎进程（实测工作集 +12MB）
     let mut cmd = std::process::Command::new(exe);
     cmd.arg("settings").args(cfg_path());
+    if about { cmd.arg("--about"); }
     if let Err(e) = cmd.spawn() {
         crate::log!("打开设置失败: {e}");
     }
@@ -299,6 +306,9 @@ unsafe extern "system" fn tray_wndproc(hwnd: HWND, msg: u32, wparam: WPARAM, lpa
         WM_TRAY => {
             match (lparam.0 & 0xffff) as u32 {
                 WM_LBUTTONUP => open_settings(),
+                NIN_BALLOONUSERCLICK => {
+                    if UPDATE_BALLOON.swap(false, std::sync::atomic::Ordering::Relaxed) { open_settings_page(true); }
+                }
                 // WM_CONTEXTMENU：键盘选中托盘图标后按菜单键/Shift+F10
                 WM_RBUTTONUP | WM_CONTEXTMENU => show_menu(hwnd),
                 _ => {}
@@ -316,8 +326,8 @@ unsafe extern "system" fn tray_wndproc(hwnd: HWND, msg: u32, wparam: WPARAM, lpa
                 MENU_AUTOSTART => {
                     let on = !crate::autostart::is_enabled();
                     match crate::autostart::set(on) {
-                        Ok(_) => notify(t(if on { keys::TRAY_AUTOSTART_ON } else { keys::TRAY_AUTOSTART_OFF })),
-                        Err(e) => notify(&tf(keys::ERROR_AUTOSTART, &[("err", &e)])),
+                        Ok(_) => { notify(t(if on { keys::TRAY_AUTOSTART_ON } else { keys::TRAY_AUTOSTART_OFF })); }
+                        Err(e) => { notify(&tf(keys::ERROR_AUTOSTART, &[("err", &e)])); }
                     }
                 }
                 MENU_QUIT => {
@@ -346,6 +356,11 @@ unsafe extern "system" fn tray_wndproc(hwnd: HWND, msg: u32, wparam: WPARAM, lpa
             LRESULT(0)
         }
         WM_TIMER if wparam.0 == TOAST_TIMER_ID => {
+            if let Some((version, ack)) = crate::update::take_notice() {
+                let shown = notify(&tf(keys::UPDATE_AVAILABLE, &[("version", &version)]));
+                UPDATE_BALLOON.store(shown, std::sync::atomic::Ordering::Relaxed);
+                let _ = ack.send(shown);
+            }
             with_engine(|e| e.toast_tick());
             LRESULT(0)
         }
@@ -364,6 +379,22 @@ unsafe extern "system" fn tray_wndproc(hwnd: HWND, msg: u32, wparam: WPARAM, lpa
         }
         _ => DefWindowProcW(hwnd, msg, wparam, lparam),
     }
+}
+
+/// 设置进程查找引擎控制窗口；窗口 PID 用于更新后的有界等待。
+pub fn engine_window() -> Option<(HWND, u32)> {
+    use windows::Win32::UI::WindowsAndMessaging::{FindWindowW, GetWindowThreadProcessId};
+    unsafe {
+        let hwnd = FindWindowW(PCWSTR(wide("MousetrokeTray").as_ptr()), PCWSTR::null()).ok()?;
+        let mut pid = 0;
+        GetWindowThreadProcessId(hwnd, Some(&mut pid));
+        (pid != 0).then_some((hwnd, pid))
+    }
+}
+
+/// 跨进程复用托盘「退出」，由消息循环卸载钩子并关闭设置窗口。
+pub fn request_exit(hwnd: HWND) -> bool {
+    unsafe { PostMessageW(Some(hwnd), WM_COMMAND, WPARAM(MENU_QUIT as usize), LPARAM(0)).is_ok() }
 }
 
 unsafe fn show_menu(hwnd: HWND) {

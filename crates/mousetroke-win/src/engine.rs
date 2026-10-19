@@ -384,6 +384,7 @@ impl Engine {
 
     /// 替换配置并重算派生状态。须在无捕获时调用。
     fn apply_config(&mut self, cfg: Config) {
+        crate::update::set_automatic(cfg.settings.update_check);
         // 语言设置也随配置走：启动与热加载都在这里切换（托盘/屏幕提示 ≤1s 跟着换）
         let lang = mousetroke_core::i18n::resolve(&cfg.settings.language, &crate::system_langs());
         let lang_changed = lang != mousetroke_core::i18n::lang();

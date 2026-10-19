@@ -20,6 +20,7 @@ pub mod lua;
 pub mod overlay;
 pub mod targeting;
 pub mod tray;
+pub mod update;
 
 use mousetroke_core::schema::Config;
 

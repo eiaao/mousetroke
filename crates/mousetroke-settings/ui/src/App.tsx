@@ -60,7 +60,11 @@ function Main({ init }: { init: InitState }) {
   // 语言订阅放在根组件：切换语言时整棵树重渲染（t() 在渲染期取词条）
   const [lang] = useLang();
   const globalIdx = Math.max(0, config.scopes.findIndex((s) => s.kind === "global"));
-  const [view, setView] = useState<View>({ kind: "scope", index: globalIdx });
+  const [view, setView] = useState<View>(init.about ? { kind: "about" } : { kind: "scope", index: globalIdx });
+  useEffect(() => {
+    const timer = setInterval(() => { api.takeAboutRequest().then((about) => { if (about) setView({ kind: "about" }); }, () => {}); }, 1000);
+    return () => clearInterval(timer);
+  }, []);
   const [selected, setSelected] = useState<number | null>(null);
   // 分类与筛选跨作用域保留（切到某个程序时仍停在「触发角」）
   const [listTab, setListTab] = useState<ListTab>("gesture");

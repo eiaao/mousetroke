@@ -99,6 +99,7 @@ export interface Scope {
 }
 
 export interface Settings {
+  update_check?: boolean;
   /** auto | zh-CN | en-US */
   language?: string;
   drag_timeout_ms: number;
@@ -124,6 +125,7 @@ export interface EngineStatus {
 }
 
 export interface InitState {
+  about?: boolean;
   configPath: string;
   config: Config;
   configExists: boolean;
