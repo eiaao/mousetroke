@@ -1,9 +1,9 @@
 [workspace]
 resolver = "2"
-members = ["crates/mousetroke-core", "crates/mousetroke-win", "crates/mousetroke", "crates/mousetroke-settings"]
+members = ["crates/mousetroke-core", "crates/mousetroke-engine", "crates/mousetroke-win", "crates/mousetroke", "crates/mousetroke-settings"]
 # 设置程序（Tauri/WebView）构建较重且依赖前端产物，默认不参与 `cargo build/test`；
 # 用 `cargo build -p mousetroke-settings` 或 scripts/build.cmd 构建。
-default-members = ["crates/mousetroke-core", "crates/mousetroke-win", "crates/mousetroke"]
+default-members = ["crates/mousetroke-core", "crates/mousetroke-engine", "crates/mousetroke-win", "crates/mousetroke"]
 
 [workspace.package]
 version = "0.1.1"

@@ -13,7 +13,7 @@ use windows::Win32::UI::WindowsAndMessaging::{
     WM_RBUTTONDOWN, WM_RBUTTONUP, LLMHF_INJECTED, WM_SYSKEYDOWN, WM_XBUTTONDOWN, WM_XBUTTONUP, XBUTTON1,
 };
 
-use crate::engine::{Engine, InputEvent, Verdict};
+use mousetroke_engine::{InputEvent, Verdict};
 use crate::input::INJECT_TAG;
 use crate::tray::Tray;
 
@@ -82,7 +82,7 @@ fn engine_main(cfg: Config, cfg_path: Option<std::path::PathBuf>) -> Result<(), 
     let pause_hotkey = cfg.settings.pause_hotkey.clone();
     let show_tray = cfg.settings.show_tray;
     let update_check = cfg.settings.update_check;
-    let engine = Engine::new(cfg, cfg_path.clone()).ok_or_else(|| mousetroke_core::i18n::t(mousetroke_core::i18n::keys::CLI_OVERLAY_INIT_FAILED).to_string())?;
+    let engine = crate::engine::new(cfg, cfg_path.clone()).ok_or_else(|| mousetroke_core::i18n::t(mousetroke_core::i18n::keys::CLI_OVERLAY_INIT_FAILED).to_string())?;
     crate::engine::ENGINE.with(|e| *e.borrow_mut() = Some(engine));
 
     // 托盘 + 暂停热键

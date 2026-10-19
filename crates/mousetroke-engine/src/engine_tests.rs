@@ -5,7 +5,6 @@ use std::rc::Rc;
 
 use mousetroke_core::edge::{LEFT_BOTTOM, TOP};
 use mousetroke_core::schema::{Action, Binding, Config, MouseButton as B, PatternKey, Scope, ScopeKind, Step};
-use windows::Win32::Foundation::HWND;
 
 use super::*;
 
@@ -61,8 +60,25 @@ struct FakeHost {
 impl Host for FakeHost {
     fn target_at(&self, _: i32, _: i32) -> Target {
         let (class, exe) = self.under.borrow().clone();
-        Target { hwnd: HWND(std::ptr::null_mut()), pid: 0, exe, is_desktop: false, class }
+        Target { wid: 0, pid: 0, exe, is_desktop: false, class }
     }
+    fn ignore_target(&self, target: &Target) -> bool {
+        // 假宿主按 Windows 用例标记需要放行的窗口；平台判定留在宿主。
+        ["Shell_TrayWnd", "NotifyIconOverflowWindow", "TopLevelWindowForOverflowXamlIsland", "#32768"].contains(&target.class.as_str())
+            || target.exe.as_deref().is_some_and(|e| matcher::file_name(e).eq_ignore_ascii_case("mousetroke-settings.exe"))
+    }
+    fn window_title(&self, _: usize) -> String {
+        String::new()
+    }
+    fn init_shape_samples(&self) {}
+    fn cursor_pos(&self) -> (i32, i32) {
+        (960, 540)
+    }
+    fn set_automatic_updates(&self, _: bool) {}
+    fn system_langs(&self) -> Vec<String> {
+        Vec::new()
+    }
+    fn refresh_texts(&self) {}
     fn foreground_fullscreen(&self) -> bool {
         false
     }

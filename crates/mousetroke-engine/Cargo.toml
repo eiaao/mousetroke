@@ -1,0 +1,11 @@
+[package]
+name = "mousetroke-engine"
+description = "Mousetroke 平台无关的手势状态机与宿主接口"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+homepage.workspace = true
+
+[dependencies]
+mousetroke-core = { path = "../mousetroke-core" }

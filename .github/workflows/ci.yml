@@ -9,6 +9,13 @@ permissions:
   contents: read
 
 jobs:
+  macos-engine:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v7
+      - name: Test shared core and engine
+        run: cargo test -p mousetroke-core -p mousetroke-engine --locked
+
   test:
     runs-on: windows-latest
     steps:

@@ -36,7 +36,23 @@ const SHELL_UI_CLASSES: &[&str] = &[
 
 impl Target {
     pub fn is_shell_ui(&self) -> bool {
-        SHELL_UI_CLASSES.contains(&self.class.as_str())
+        is_shell_ui_class(&self.class)
+    }
+}
+
+pub(crate) fn is_shell_ui_class(class: &str) -> bool {
+    SHELL_UI_CLASSES.contains(&class)
+}
+
+impl From<Target> for mousetroke_engine::Target {
+    fn from(t: Target) -> Self {
+        Self { wid: t.hwnd.0 as usize, pid: t.pid, exe: t.exe, is_desktop: t.is_desktop, class: t.class }
+    }
+}
+
+impl From<mousetroke_engine::Target> for Target {
+    fn from(t: mousetroke_engine::Target) -> Self {
+        Self { hwnd: HWND(t.wid as *mut _), pid: t.pid, exe: t.exe, is_desktop: t.is_desktop, class: t.class }
     }
 }
 
