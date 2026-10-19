@@ -180,6 +180,16 @@ const savedWithSample = await page.evaluate(() => window.__saved.scopes[0].bindi
 if (savedWithSample[1]?.type !== "shape" || savedWithSample[1].templates.length !== 2 || JSON.stringify(savedWithSample[1].templates[0]) !== JSON.stringify(sample)) errors.push("saving must keep the shape step and original sample intact");
 await check("shape-samples"); await shot("02-shape-samples");
 
+// 核心按样本返回两档阈值：0.72 对两条曲线一致，对曲线/折线混合则需提示。
+await page.evaluate(() => { window.__shapeCompareScore = 0.72; });
+await click(".shape-sample:last-child .chip-x");
+await drawSample(); await sleep(400);
+if (await page.$(".shape-advice")) errors.push("curve consistency must use the core curve threshold");
+await drawSample(false, true); await sleep(400);
+if (!await page.$(".shape-advice")) errors.push("mixed consistency must consider the strict sample direction");
+await click(".shape-sample:last-child .chip-x");
+await page.evaluate(() => { delete window.__shapeCompareScore; });
+
 // 相反方向的样本给出友好提示；最多 5 个，移除后可继续添加。
 await drawSample(true);
 if (!await page.$(".shape-advice")) errors.push("inconsistent samples must show a hint");
@@ -191,6 +201,7 @@ if (await page.evaluate(() => window.__calls.filter(([cmd]) => cmd === "shape_sa
 for (let i = 0; i < 4; i++) await click(".shape-sample:last-child .chip-x");
 
 // 同作用域中的近似绑定会点名警告；停用绑定不参与比较。
+await page.evaluate(() => { window.__shapeCompareScore = 0.72; });
 await click(".editor-foot .btn");
 await page.waitForSelector(".shape-conflict");
 const conflict = await page.$eval(".shape-conflict", (el) => el.textContent);
@@ -202,6 +213,7 @@ await page.keyboard.press("Escape"); await sleep(150);
 await click(".row:has(.shape-glyph):not(.off)");
 await sleep(150);
 if (await page.$(".shape-conflict")) errors.push("disabled shapes must not cause a conflict");
+await page.evaluate(() => { delete window.__shapeCompareScore; });
 
 // 移除最后一个样本不能写盘；补录后才恢复自动保存。
 await sleep(500);

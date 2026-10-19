@@ -194,9 +194,11 @@ struct ShapeLimits {
     margin: f64,
 }
 
+/// 样本作为绘制输入时的核心阈值；混合曲线/折线的提示须逐样本查询。
 #[tauri::command]
-fn shape_limits() -> ShapeLimits {
-    ShapeLimits { accept: shape::ACCEPT, margin: shape::MARGIN }
+fn shape_limits(sample: Vec<i32>) -> ShapeLimits {
+    let accept = shape::decode(&sample).map_or(shape::ACCEPT, |path| shape::acceptance_threshold(&path));
+    ShapeLimits { accept, margin: shape::MARGIN }
 }
 
 /// 空笔画是尚未录完的编辑状态，不能覆盖磁盘上的有效配置。
@@ -539,17 +541,29 @@ mod tests {
         assert_eq!(shape_compare(vec![], sample.clone()), 0.0);
         assert_eq!(shape_compare(vec![0; shape::SAMPLE_POINTS * 2], sample), 0.0);
         assert_eq!(classify_stroke(vec![(0.0, 0.0), (100.0, 0.0)]), "trace");
-        let circle = (0..=64).map(|i| {
+        let circle: Vec<_> = (0..=64).map(|i| {
             let angle = std::f64::consts::TAU * i as f64 / 64.0;
             (angle.cos() * 100.0, angle.sin() * 100.0)
         }).collect();
+        let circle_sample = shape_sample(circle.clone()).unwrap();
         assert_eq!(classify_stroke(circle), "shape");
         for raw in [vec![], vec![(0.0, 0.0)], vec![(1.0, 1.0); 3], vec![(0.0, 0.0), (0.1, 0.1)], vec![(0.0, 0.0), (f64::NAN, 1.0)]] {
             assert_eq!(shape_sample(raw).unwrap_err().key, keys::UI_SHAPE_TOO_SHORT);
         }
-        let limits = shape_limits();
+        let limits = shape_limits(shape_sample(vec![(0.0, 0.0), (100.0, 0.0)]).unwrap());
         assert_eq!(limits.accept, shape::ACCEPT);
         assert_eq!(limits.margin, shape::MARGIN);
+        assert_eq!(shape_limits(circle_sample).accept, shape::ACCEPT_CURVE);
+        assert_eq!(shape_limits(vec![]).accept, shape::ACCEPT);
+        assert_eq!(shape_limits(vec![0; 128]).accept, shape::ACCEPT);
+        let fixture: serde_json::Value = serde_json::from_str(include_str!("../../mousetroke-core/tests/fixtures/real-shapes.json")).unwrap();
+        for (class, samples) in fixture["classes"].as_object().unwrap() {
+            for sample in samples.as_array().unwrap() {
+                let encoded: Vec<i32> = serde_json::from_value(sample.clone()).unwrap();
+                let expected = if class == "Z" { shape::ACCEPT } else { shape::ACCEPT_CURVE };
+                assert_eq!(shape_limits(encoded).accept, expected, "{class}");
+            }
+        }
     }
 
     #[test]

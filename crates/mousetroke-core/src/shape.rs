@@ -7,10 +7,16 @@ use std::f64::consts::FRAC_PI_2;
 
 /// 每条笔画重采样后的点数。
 pub const SAMPLE_POINTS: usize = 64;
-/// 基于真实 G/C/O/Z/S/6 留一法、12 条实用 G、3 条实用直线及 2700 条合成折线调参。
+/// 折线型输入的严格阈值；基于真实 G/C/O/Z/S/6、12 条实用 G、3 条实用直线及 2700 条合成折线。
 /// 零误接受要求高于合成最高误匹配 0.800959；按千分位取最低安全值 0.801。
-/// 仅降低全局阈值无法同时达到真实 G ≥10/12，详见候选阈值回归测试。
+/// 即使用户把 Z/✓ 录为 Shape，也不能让相似直线借用曲线的宽松阈值。
 pub const ACCEPT: f64 = 0.801;
+/// 曲线型输入的阈值；在相同真实/合成数据上固定折线阈值后扫描，优先零误接受，
+/// 再最大化实用 G、真实留一法与合成准确率。两档由输入几何决定，与模板类型无关。
+/// 0.001 步长下取保持最优 12/12、30/30、1794/1800 的最高阈值 0.687；
+/// 真实样本同时覆盖已归一化夹具及 match_chain_path 的原始路径入口。
+/// 合成直线/折线 0/2700、实用直线 0/3、真实及合成错类均为 0。
+pub const ACCEPT_CURVE: f64 = 0.687;
 /// 最佳绑定必须领先其他绑定的分数。0.04 用于拒绝近似形状之间的歧义；
 /// 同一绑定的多个样本不互相竞争。减小此值会增加相似绑定之间的误识别。
 pub const MARGIN: f64 = 0.04;
@@ -28,14 +34,30 @@ pub enum StrokeKind {
 /// 先等距采样，使判断不依赖绘制速度、尺寸和鼠标事件密度；退化输入交给录制器报错。
 pub fn classify_stroke(raw: &[(f64, f64)]) -> StrokeKind {
     let Some(path) = normalize(raw) else { return StrokeKind::Polyline };
+    classify_normalized_stroke(&path)
+}
+
+/// 对已经归一化的 64 点路径分类，供低层钩子直接复用；不重复重采样。
+/// RDP 最坏 O(64²)，其余检查与最多三次八方向量化均为 O(64)，临时存储也只随 64 点增长。
+/// 点数错误、非有限值或退化向量按折线处理，匹配器另行拒绝这些输入。
+pub fn classify_normalized_stroke(path: &[(f64, f64)]) -> StrokeKind {
+    if energy(path).is_none() { return StrokeKind::Polyline; }
     let mut bounds = (f64::INFINITY, f64::NEG_INFINITY, f64::INFINITY, f64::NEG_INFINITY);
-    for &(x, y) in &path {
+    for &(x, y) in path {
         bounds.0 = bounds.0.min(x);
         bounds.1 = bounds.1.max(x);
         bounds.2 = bounds.2.min(y);
         bounds.3 = bounds.3.max(y);
     }
     let diagonal = (bounds.1 - bounds.0).hypot(bounds.3 - bounds.2);
+    let (a, b) = (path[0], path[SAMPLE_POINTS - 1]);
+    let (dx, dy) = (b.0 - a.0, b.1 - a.1);
+    let chord = dx.hypot(dy);
+    // 近直线的独立抖动/收笔尾巴可能触发主干转弯检查。首尾弦覆盖整条笔画，
+    // 且所有点都在弦宽 8% 的走廊内时仍是折线；回环和明显弯曲不走此捷径。
+    if chord >= diagonal * 0.9 && path.iter().all(|p| ((p.0 - a.0) * dy - (p.1 - a.1) * dx).abs() <= chord * chord * 0.08) {
+        return StrokeKind::Polyline;
+    }
     // 固定 64 点，显式栈避免递归。
     let tolerance = diagonal * 0.06;
     let mut pending = vec![(0, path.len() - 1)];
@@ -91,6 +113,14 @@ pub fn classify_stroke(raw: &[(f64, f64)]) -> StrokeKind {
         StrokeKind::Polyline
     } else {
         StrokeKind::Shape
+    }
+}
+
+/// 只按绘制输入的几何选择接受阈值；设置提示和实际匹配共用此入口。
+pub fn acceptance_threshold(path_norm: &[(f64, f64)]) -> f64 {
+    match classify_normalized_stroke(path_norm) {
+        StrokeKind::Shape => ACCEPT_CURVE,
+        StrokeKind::Polyline => ACCEPT,
     }
 }
 
@@ -216,7 +246,7 @@ fn encoded_similarity(path: &[(f64, f64)], path_energy: f64, template: &[i32]) -
 
 /// 每个绑定取其所有样本的最高分；达标且领先其他 id 至少 [`MARGIN`] 才接受。
 /// id 可用绑定索引或稳定标识；同一 id 的样本即使分列多项也不参与歧义竞争。
-/// 时间复杂度 O(模板数 × 64)，样本循环不分配内存。
+/// 分类只检查已归一化的 64 点；时间复杂度 O(64² + 模板数 × 64)，样本循环不分配内存。
 pub fn best_match<Id: Copy + Eq>(path_norm: &[(f64, f64)], candidates: &[(Id, &[Vec<i32>])]) -> Option<(Id, f64)> {
     let path_energy = energy(path_norm)?;
     let mut best = None;
@@ -233,5 +263,6 @@ pub fn best_match<Id: Copy + Eq>(path_norm: &[(f64, f64)], candidates: &[(Id, &[
             _ => runner_up = runner_up.max(candidate_score),
         }
     }
-    best.filter(|&(_, value)| value >= ACCEPT && value - runner_up >= MARGIN)
+    let accept = acceptance_threshold(path_norm);
+    best.filter(|&(_, value)| value >= accept && value - runner_up >= MARGIN)
 }

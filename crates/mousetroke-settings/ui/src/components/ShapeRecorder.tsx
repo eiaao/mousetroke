@@ -9,7 +9,7 @@ const MAX_SAMPLES = 5;
 
 /** 仅展示核心返回的样本与分数；不在前端实现归一化或形状匹配。 */
 export function ShapeRecorder({ templates, onChange, others, feedbackLine }: { templates: number[][]; onChange: (templates: number[][], raw?: [number, number][]) => void; others: Binding[]; feedbackLine?: React.ReactNode }) {
-  const [feedback, setFeedback] = useState<{ lowest: number | null; accept: number; conflict: Binding | null } | null>(null);
+  const [feedback, setFeedback] = useState<{ lowest: number | null; inconsistent: boolean; conflict: Binding | null } | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
@@ -17,20 +17,28 @@ export function ShapeRecorder({ templates, onChange, others, feedbackLine }: { t
     setFeedback(null);
     setError(null);
     const compare = async () => {
-      const pairs = templates.flatMap((a, i) => templates.slice(i + 1).map((b) => api.shapeCompare(a, b)));
       const candidates = others.filter((b) => !b.disabled && b.pattern.some((s) => s.type === "shape"));
-      const [limits, scores, matches] = await Promise.all([
-        api.shapeLimits(),
+      const otherSamples = candidates.map((binding) => binding.pattern.flatMap((s) => s.type === "shape" ? s.templates : []));
+      const allSamples = [...templates, ...otherSamples.flat()];
+      // 每个样本作为绘制输入时的阈值由核心决定，前端不推断曲线/折线。
+      const limits = new Map(await Promise.all(allSamples.map(async (sample) => [sample, await api.shapeLimits(sample)] as const)));
+      const comparePair = async (a: number[], b: number[]) => {
+        const score = await api.shapeCompare(a, b);
+        const left = limits.get(a)!;
+        const right = limits.get(b)!;
+        return { score, inconsistent: score < Math.max(left.accept, right.accept), conflict: score >= Math.min(left.accept - left.margin, right.accept - right.margin) };
+      };
+      const pairs = templates.flatMap((a, i) => templates.slice(i + 1).map((b) => comparePair(a, b)));
+      const [scores, matches] = await Promise.all([
         Promise.all(pairs),
-        Promise.all(candidates.map(async (binding) => {
-          const samples = binding.pattern.flatMap((s) => s.type === "shape" ? s.templates : []);
-          const scores = await Promise.all(templates.flatMap((a) => samples.map((b) => api.shapeCompare(a, b))));
-          return { binding, best: Math.max(0, ...scores) };
+        Promise.all(candidates.map(async (binding, i) => {
+          const scores = await Promise.all(templates.flatMap((a) => otherSamples[i].map((b) => comparePair(a, b))));
+          return { binding, best: Math.max(0, ...scores.filter((s) => s.conflict).map((s) => s.score)), conflict: scores.some((s) => s.conflict) };
         })),
       ]);
       if (!active) return;
-      const best = matches.reduce<(typeof matches)[number] | null>((a, b) => !a || b.best > a.best ? b : a, null);
-      setFeedback({ lowest: scores.length ? Math.min(...scores) : null, accept: limits.accept, conflict: best && best.best >= limits.accept - limits.margin ? best.binding : null });
+      const best = matches.filter((m) => m.conflict).reduce<(typeof matches)[number] | null>((a, b) => !a || b.best > a.best ? b : a, null);
+      setFeedback({ lowest: scores.length ? Math.min(...scores.map((s) => s.score)) : null, inconsistent: scores.some((s) => s.inconsistent), conflict: best?.binding ?? null });
     };
     void compare().catch((e) => { if (active) setError(errText(e)); });
     // 切换绑定、删除样本或撤销后，旧的异步比较结果不能覆盖新状态。
@@ -62,9 +70,9 @@ export function ShapeRecorder({ templates, onChange, others, feedbackLine }: { t
       <div className="shape-feedback" aria-live="polite">
         {templates.length === 0 && <p className="field-warn">{t("ui.shape.needs_sample")}</p>}
         {feedback?.lowest != null && (
-          <p className={`field-help shape-consistency ${feedback.lowest < feedback.accept ? "warn" : ""}`}>
+          <p className={`field-help shape-consistency ${feedback.inconsistent ? "warn" : ""}`}>
             {t("ui.shape.consistency", { percent: Math.round(feedback.lowest * 100) })}
-            {feedback.lowest < feedback.accept && <span className="shape-advice">{t("ui.shape.differ")}</span>}
+            {feedback.inconsistent && <span className="shape-advice">{t("ui.shape.differ")}</span>}
           </p>
         )}
         {feedback?.conflict && <p className="field-warn shape-conflict">{t("ui.shape.conflict", { name: displayName(feedback.conflict.name, feedback.conflict.name_key) })}</p>}
