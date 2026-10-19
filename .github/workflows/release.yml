@@ -87,6 +87,8 @@ jobs:
           npm run typecheck
           npm test
           npm run build
+      - name: Test macOS packaging gates
+        run: python -m unittest discover -s scripts -p test_mac_packaging.py
       - name: Install universal targets
         run: rustup target add aarch64-apple-darwin x86_64-apple-darwin
       - name: Test core, engine, macOS and settings

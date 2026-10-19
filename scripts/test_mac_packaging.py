@@ -35,12 +35,20 @@ case "$tool" in
             [[ $# -eq 5 && "$3" == -create && "$4" == -output ]]
             test -f "$1" && test -f "$2"
             printf 'universal binary\n' > "$5"
-        else
-            # Apple lipo 的 -verify_arch 后只能出现架构，不能放输入文件。
-            [[ $# -eq 4 && "$2" == -verify_arch && "$3" == arm64 && "$4" == x86_64 ]]
+        elif [[ $# -eq 2 && "$2" == -archs ]]; then
             test -f "$1"
-            slices=" ${MOCK_SLICES:-arm64 x86_64} "
-            [[ "$slices" == *' arm64 '* && "$slices" == *' x86_64 '* ]]
+            [[ "${FAIL_ARCHS:-0}" != 1 ]] || exit 1
+            printf '%s\n' "${MOCK_SLICES-arm64 x86_64}"
+        else
+            # macOS 27 CommandLineTools 每次 -verify_arch 只接受一个架构。
+            if [[ $# -ne 3 || "$2" != -verify_arch ]]; then
+                printf 'lipo: -verify_arch requires exactly one input file\n' >&2
+                exit 1
+            fi
+            [[ "$3" == arm64 || "$3" == x86_64 ]]
+            test -f "$1"
+            slices=" ${MOCK_SLICES-arm64 x86_64} "
+            [[ "$slices" == *" $3 "* ]]
         fi
         ;;
     codesign)
@@ -147,6 +155,49 @@ class MacPackagingTests(unittest.TestCase):
         self.run_script("bundle", "--universal")
         self.assertFalse((self.bundle / "stale-resource").exists())
         self.assertEqual((self.bundle / "Contents/MacOS/mousetroke").read_text(), "universal binary\n")
+        self.assert_universal_verification()
+
+    def assert_universal_verification(self):
+        operations = [line.split("> ", 1)[1] for line in self.log.read_text().splitlines()
+                      if line.startswith("lipo <") and " <-create>" not in line]
+        self.assertEqual(operations, ["<-verify_arch> <arm64>", "<-verify_arch> <x86_64>", "<-archs>"])
+
+    def test_lipo_fake_rejects_multiple_architectures(self):
+        binary = (self.bundle / "Contents/MacOS/mousetroke").as_posix()
+        for arguments in [(binary, "-verify_arch", "arm64", "x86_64"),
+                          ("-verify_arch", "arm64", "x86_64", binary)]:
+            with self.subTest(arguments=arguments):
+                result = subprocess.run(
+                    [BASH, (self.root / "commands/lipo").as_posix(), *arguments],
+                    cwd=self.root, env=self.env, capture_output=True, text=True, timeout=30,
+                )
+                self.assertNotEqual(result.returncode, 0)
+                self.assertIn("-verify_arch requires exactly one input file", result.stderr)
+
+    def test_bundle_rejects_missing_extra_or_duplicate_architectures(self):
+        for slices in ["arm64", "x86_64", "arm64 x86_64 arm64e", "arm64 x86_64 x86_64", ""]:
+            with self.subTest(slices=slices):
+                self.seed_outputs()
+                self.run_script("bundle", "--universal", success=False, MOCK_SLICES=slices)
+                self.assertFalse(self.bundle.exists())
+                self.assertNotIn("codesign", self.log.read_text())
+
+    def test_bundle_and_dmg_accept_reversed_architecture_order(self):
+        for name, arguments in [("bundle", ("--universal",)), ("dmg", ())]:
+            with self.subTest(script=name):
+                self.seed_outputs()
+                self.run_script(name, *arguments, MOCK_SLICES="x86_64 arm64")
+                self.assert_universal_verification()
+
+    def test_architecture_listing_failure_stops_bundle_and_dmg(self):
+        for name, arguments, output in [("bundle", ("--universal",), self.bundle), ("dmg", (), self.image)]:
+            with self.subTest(script=name):
+                self.seed_outputs()
+                self.run_script(name, *arguments, success=False, FAIL_ARCHS="1")
+                self.assert_universal_verification()
+                self.assertFalse(output.exists())
+                self.assertNotIn("codesign", self.log.read_text())
+                self.assertNotIn("hdiutil", self.log.read_text())
 
     def test_failed_bundle_removes_old_or_partial_app(self):
         for failure, stage in [
@@ -186,6 +237,15 @@ class MacPackagingTests(unittest.TestCase):
                 self.assertFalse(self.image.exists())
                 self.assertNotIn("hdiutil", self.log.read_text())
 
+    def test_dmg_rejects_extra_duplicate_or_empty_architectures_before_creation(self):
+        for slices in ["arm64 x86_64 arm64e", "arm64 x86_64 arm64", ""]:
+            with self.subTest(slices=slices):
+                self.seed_outputs()
+                self.run_script("dmg", success=False, MOCK_SLICES=slices)
+                self.assertFalse(self.image.exists())
+                self.assertNotIn("codesign", self.log.read_text())
+                self.assertNotIn("hdiutil", self.log.read_text())
+
     def test_release_rejects_adhoc_signature_in_either_slice(self):
         for architecture in ["arm64", "x86_64", "all"]:
             with self.subTest(architecture=architecture):
@@ -209,6 +269,7 @@ class MacPackagingTests(unittest.TestCase):
                 self.run_script("dmg", **environment)
                 self.assertEqual(self.image.read_text(), "fresh DMG\n")
                 self.assertIn("hdiutil <verify>", self.log.read_text())
+                self.assert_universal_verification()
 
     def test_failed_image_creation_signing_or_verification_removes_partial_image(self):
         for failure, stage in [
