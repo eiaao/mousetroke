@@ -525,36 +525,40 @@ fn shape_samples_switch_logs_once_only_for_strokes() {
 #[test]
 #[ignore = "本地 release 校准：满路径与 100 个形状模板的完整释放处理"]
 fn shape_finish_timing_100_templates() {
-    let mut cfg = shape_config();
-    let g = g_path(160, false);
-    cfg.scopes[0].bindings = (0..100).map(|i| bind(&format!("shape-{i}"), vec![RIGHT, shape_step(&g)])).collect();
-    let mut t = T::with_config(cfg);
-    let full_path: Vec<_> = (0..SHAPE_PATH_CAP).map(|i| {
-        let position = i as f64 * (g.len() - 1) as f64 / (SHAPE_PATH_CAP - 1) as f64;
-        let index = (position as usize).min(g.len() - 2);
-        let (a, b, fraction) = (g[index], g[index + 1], position - index as f64);
-        (((a.0 as f64 + (b.0 - a.0) as f64 * fraction) * 10.0).round(),
-            ((a.1 as f64 + (b.1 - a.1) as f64 * fraction) * 10.0).round())
-    }).collect();
-    for accepted in [false, true] {
-        if accepted {
-            let mut b = bind("100-samples", vec![RIGHT, shape_step(&g)]);
-            if let Step::Shape { templates } = &mut b.pattern[1] { templates.resize(100, templates[0].clone()); }
-            t.e.cfg.scopes[0].bindings = vec![b];
+    use mousetroke_core::shape::{self, StrokeKind};
+    for (kind, g) in [(StrokeKind::Shape, g_path(160, false)), (StrokeKind::Polyline, vec![(0, 0), (320, 0)])] {
+        let normalized = shape::normalize(&g.iter().map(|&(x, y)| (x as f64, y as f64)).collect::<Vec<_>>()).unwrap();
+        assert_eq!(shape::classify_normalized_stroke(&normalized), kind);
+        let mut cfg = shape_config();
+        cfg.scopes[0].bindings = (0..100).map(|i| bind(&format!("shape-{i}"), vec![RIGHT, shape_step(&g)])).collect();
+        let mut t = T::with_config(cfg);
+        let full_path: Vec<_> = (0..SHAPE_PATH_CAP).map(|i| {
+            let position = i as f64 * (g.len() - 1) as f64 / (SHAPE_PATH_CAP - 1) as f64;
+            let index = (position as usize).min(g.len() - 2);
+            let (a, b, fraction) = (g[index], g[index + 1], position - index as f64);
+            (((a.0 as f64 + (b.0 - a.0) as f64 * fraction) * 10.0).round(),
+                ((a.1 as f64 + (b.1 - a.1) as f64 * fraction) * 10.0).round())
+        }).collect();
+        for accepted in [false, true] {
+            if accepted {
+                let mut b = bind("100-samples", vec![RIGHT, shape_step(&g)]);
+                if let Step::Shape { templates } = &mut b.pattern[1] { templates.resize(100, templates[0].clone()); }
+                t.e.cfg.scopes[0].bindings = vec![b];
+            }
+            let mut times = Vec::new();
+            for _ in 0..101 {
+                // 计时包含归一化、64 点分类与完整释放回调；满路径无重复点，100 个模板均参与评分。
+                t.draw_path(&g);
+                t.e.path.clone_from(&full_path);
+                let start = Instant::now();
+                std::hint::black_box(t.up(B::Right));
+                times.push(start.elapsed());
+            }
+            times.sort();
+            println!("full-cap path + classification + 100 shape templates ({kind:?}, accepted={accepted}): median {:.3} us, maximum {:.3} us (101 releases)", times[50].as_secs_f64() * 1e6, times[100].as_secs_f64() * 1e6);
+            assert!(times[100] < Duration::from_millis(1), "释放回调应远低于 1ms: {:?}", times[100]);
+            assert_eq!(t.executed().len(), if accepted { 101 } else { 0 });
         }
-        let mut times = Vec::new();
-        for _ in 0..101 {
-            // 计时包含完整释放回调；满路径无重复点，100 个模板均参与评分。
-            t.draw_path(&g);
-            t.e.path.clone_from(&full_path);
-            let start = Instant::now();
-            std::hint::black_box(t.up(B::Right));
-            times.push(start.elapsed());
-        }
-        times.sort();
-        println!("full-cap path + 100 shape templates (accepted={accepted}): median {:.3} us, maximum {:.3} us (101 releases)", times[50].as_secs_f64() * 1e6, times[100].as_secs_f64() * 1e6);
-        assert!(times[100] < Duration::from_millis(1), "释放回调应远低于 1ms: {:?}", times[100]);
-        assert_eq!(t.executed().len(), if accepted { 101 } else { 0 });
     }
 }
 

@@ -37,6 +37,23 @@
     const cx = xs.reduce((a, b) => a + b, 0) / 64, cy = ys.reduce((a, b) => a + b, 0) / 64;
     return pts.flatMap(([x, y]) => [Math.round((x - cx) * 1000 / span), Math.round((y - cy) * 1000 / span)]);
   }
+  function classifyStroke(raw) {
+    if (raw.length < 2) return "trace";
+    const xs = raw.map((p) => p[0]), ys = raw.map((p) => p[1]);
+    const diagonal = Math.hypot(Math.max(...xs) - Math.min(...xs), Math.max(...ys) - Math.min(...ys));
+    const simplify = (points) => {
+      const a = points[0], b = points.at(-1), dx = b[0] - a[0], dy = b[1] - a[1], length = dx * dx + dy * dy;
+      let far = 0, split = 0;
+      for (let i = 1; i < points.length - 1; i++) {
+        const p = points[i], t = length ? Math.max(0, Math.min(1, ((p[0] - a[0]) * dx + (p[1] - a[1]) * dy) / length)) : 0;
+        const distance = Math.hypot(p[0] - a[0] - t * dx, p[1] - a[1] - t * dy);
+        if (distance > far) { far = distance; split = i; }
+      }
+      return far > diagonal * 0.06 ? [...simplify(points.slice(0, split + 1)).slice(0, -1), ...simplify(points.slice(split))] : [a, b];
+    };
+    const path = simplify(raw);
+    return path.length <= 5 && [0.08, 0.10, 0.12].some((grid) => record(raw, Math.max(1, diagonal * grid)).length <= 10) ? "trace" : "shape";
+  }
   window.__listeners = {};
   // 测试用：触发 Tauri 事件（拖放等）
   window.__emit = (event, payload) => (window.__listeners[event] ?? []).forEach((h) => h({ event, payload, id: 1 }));
@@ -59,9 +76,13 @@
         case "get_engine_status": return { running: true, autostart: false, exeFound: true };
         case "validate_keys": return /\{[^}]*$/.test(args.keys) ? { key: "keyseq.error.near", params: { pos: String(args.keys.length), reason: "keyseq.error.missing_brace" } } : null;
         case "record_trace": return record(args.points, args.grid);
+        case "classify_stroke": return classifyStroke(args.points);
         case "shape_sample": return shapeSample(args.points);
-        case "shape_compare": return args.a.length === 128 && args.b.length === 128 ? Math.max(0, 1 - Math.sqrt(args.a.reduce((sum, x, i) => sum + (x - args.b[i]) ** 2, 0) / 128) / 500) : 0;
-        case "shape_limits": return { accept: 0.81, margin: 0.04 };
+        case "shape_compare": return window.__shapeCompareScore ?? (args.a.length === 128 && args.b.length === 128 ? Math.max(0, 1 - Math.sqrt(args.a.reduce((sum, x, i) => sum + (x - args.b[i]) ** 2, 0) / 128) / 500) : 0);
+        case "shape_limits": {
+          const raw = args.sample?.length === 128 ? Array.from({ length: 64 }, (_, i) => [args.sample[i * 2], args.sample[i * 2 + 1]]) : [];
+          return { accept: classifyStroke(raw) === "shape" ? 0.687 : 0.801, margin: 0.04 };
+        }
         case "app_icons": return Object.fromEntries(args.exes.map((e) => [e, /chrome/i.test(e) ? "data:image/svg+xml," + encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32"><circle cx="16" cy="16" r="15" fill="#db4437"/><circle cx="16" cy="16" r="7" fill="#4285f4" stroke="#fff" stroke-width="2"/></svg>') : null]));
         case "running_apps": return [{ exe: "C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe", title: "新标签页 - Google Chrome" }, { exe: "C:\\Windows\\explorer.exe", title: "下载" }, { exe: "C:\\Users\\me\\AppData\\Local\\Programs\\Microsoft VS Code\\Code.exe", title: "main.rs - mousetroke" }];
         case "save_config": window.__saved = args.config; return null;

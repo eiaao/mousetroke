@@ -1,6 +1,7 @@
 import * as React from "react";
 import { useEffect, useRef, useState } from "react";
 import type { Binding, MouseButton, Step } from "../types";
+import { api, errText } from "../api";
 import { EDGE, arrows, buttonName, buttonPhrase, codeToVk, compose, decompose, keyTagName, type PatternItem, type PatternModel } from "../gesture";
 import { t } from "../i18n";
 import { EdgePicker } from "./EdgePicker";
@@ -25,6 +26,16 @@ export function PatternEditor({ pattern, onChange, conflictHint, others }: { pat
   const stroke = model.items[strokeIdx];
   const trace = stroke?.kind === "trace" ? stroke.points : null;
   const [wantTrace, setWantTrace] = useState(false);
+  const [lastDrawing, setLastDrawing] = useState<[number, number][] | null>(null);
+  const [converting, setConverting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const patternRef = useRef(pattern);
+  patternRef.current = pattern;
+  const mounted = useRef(true);
+  useEffect(() => {
+    mounted.current = true;
+    return () => { mounted.current = false; };
+  }, []);
   const showRecorder = model.trigger.kind === "button" || stroke != null || wantTrace;
 
   const setTrigger = (id: string) => {
@@ -40,13 +51,53 @@ export function PatternEditor({ pattern, onChange, conflictHint, others }: { pat
   };
 
   const removeItem = (i: number) => {
-    if (model.items[i].kind !== "key") setWantTrace(false);
+    if (model.items[i].kind !== "key") {
+      setWantTrace(false);
+      setLastDrawing(null);
+    }
     set({ ...model, items: model.items.filter((_, j) => j !== i) });
   };
 
   const addKey = (key: string) => set({ ...model, items: [...model.items, { kind: "key", key }] });
 
   const triggerId = model.trigger.kind === "edge" ? "edge" : model.trigger.button;
+
+  const switchDrawing = async () => {
+    if (!lastDrawing || converting) return;
+    const original = pattern;
+    const asShape = stroke?.kind !== "shape";
+    setConverting(true);
+    setError(null);
+    try {
+      const points = asShape ? await api.shapeSample(lastDrawing) : await api.recordTrace(lastDrawing, 30);
+      if (!mounted.current || patternRef.current !== original) return;
+      if (points.length < 4) {
+        setError(t("ui.recorder.too_short"));
+        return;
+      }
+      // 整个类型转换只提交一次编辑，撤销可恢复全部形状样本。
+      setStroke(asShape ? { kind: "shape", templates: [points] } : { kind: "trace", points });
+    } catch (e) {
+      if (mounted.current) setError(errText(e));
+    } finally {
+      if (mounted.current) setConverting(false);
+    }
+  };
+
+  const feedbackLine = lastDrawing && stroke && (
+    <div className="recorder-detection" role="status">
+      <span>{t(stroke.kind === "shape" ? "ui.recorder.recognized_shape" : "ui.recorder.recognized_line")}</span>
+      <button type="button" className="btn text" disabled={converting} onClick={switchDrawing}>
+        {t(stroke.kind === "shape" ? stroke.templates.length > 1 ? "ui.recorder.use_line_drop_samples" : "ui.recorder.use_line" : "ui.recorder.use_shape")}
+      </button>
+    </div>
+  );
+
+  const emptyShape = () => {
+    setLastDrawing(null);
+    setError(null);
+    setStroke({ kind: "shape", templates: [] });
+  };
 
   return (
     <div className="pattern-editor">
@@ -78,10 +129,12 @@ export function PatternEditor({ pattern, onChange, conflictHint, others }: { pat
             hasTrace={trace !== null}
             hasShape={stroke?.kind === "shape"}
             onTrace={() => {
+              setLastDrawing(null);
+              setError(null);
               if (stroke?.kind === "shape") setStroke({ kind: "trace", points: [] });
               setWantTrace(true);
             }}
-            onShape={() => setStroke({ kind: "shape", templates: [] })}
+            onShape={emptyShape}
             onKey={addKey}
             exclude={model.trigger.kind === "button" ? model.trigger.button : null}
           />
@@ -91,10 +144,28 @@ export function PatternEditor({ pattern, onChange, conflictHint, others }: { pat
       {showRecorder && (
         <div className="field">
           {stroke?.kind === "shape" ? (
-            <ShapeRecorder templates={stroke.templates} onChange={(templates) => setStroke({ kind: "shape", templates })} others={others} />
+            <ShapeRecorder templates={stroke.templates} onChange={(templates, raw) => {
+              if (raw) setLastDrawing(raw);
+              setError(null);
+              setStroke({ kind: "shape", templates });
+            }} others={others} feedbackLine={feedbackLine} />
           ) : (
-            <Recorder key="trace" points={trace} onChange={(points) => setStroke({ kind: "trace", points })} hint={conflictHint} />
+            <>
+              <Recorder key="trace" points={trace} disabled={converting} onChange={(points, raw, kind) => {
+                setLastDrawing(raw);
+                setError(null);
+                setStroke(kind === "shape" ? { kind: "shape", templates: [points] } : { kind: "trace", points });
+              }} hint={conflictHint} />
+              {feedbackLine}
+              {trace && trace.length / 2 - 1 > 4 && (
+                <div className="recorder-complex field-help">
+                  <span>{t("ui.recorder.complex_hint")}</span>
+                  <button type="button" className="btn text" onClick={emptyShape}>{t("ui.recorder.redraw_shape")}</button>
+                </div>
+              )}
+            </>
           )}
+          {error && <p className="field-warn recorder-error" role="status">{error}</p>}
         </div>
       )}
     </div>
