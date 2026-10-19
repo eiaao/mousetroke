@@ -8,16 +8,16 @@
 //!
 //! 以后若换 Direct2D 渲染，架构不变，只替换渲染后端。
 
-use windows::Win32::Foundation::{COLORREF, HWND, LPARAM, LRESULT, POINT, RECT, SIZE, WPARAM};
+use windows::Win32::Foundation::{GetLastError, COLORREF, ERROR_CLASS_ALREADY_EXISTS, HWND, LPARAM, LRESULT, POINT, RECT, SIZE, WPARAM};
 use windows::core::PCWSTR;
 use windows::Win32::Graphics::Gdi::{
-    CreateCompatibleDC, CreateDIBSection, DeleteObject, GetTextExtentPoint32W, SelectObject, TextOutW,
+    CreateCompatibleDC, CreateDIBSection, DeleteDC, DeleteObject, GetTextExtentPoint32W, SelectObject, TextOutW,
     AC_SRC_ALPHA, AC_SRC_OVER, BI_RGB, BLENDFUNCTION, BITMAPINFO, BITMAPINFOHEADER,
     DIB_RGB_COLORS, HGDIOBJ, HDC, HBITMAP,
 };
 use windows::Win32::System::LibraryLoader::GetModuleHandleW;
 use windows::Win32::UI::WindowsAndMessaging::{
-    CreateWindowExW, DefWindowProcW, GetSystemMetrics, KillTimer, RegisterClassW, SetTimer,
+    CreateWindowExW, DefWindowProcW, DestroyWindow, GetSystemMetrics, KillTimer, RegisterClassW, SetTimer,
     ShowWindow, UpdateLayeredWindow, UpdateLayeredWindowIndirect, CS_HREDRAW, CS_VREDRAW,
     SM_CXVIRTUALSCREEN, SM_CYVIRTUALSCREEN, SM_XVIRTUALSCREEN, SM_YVIRTUALSCREEN,
     SW_SHOWNOACTIVATE, UPDATELAYEREDWINDOWINFO, WM_TIMER, WNDCLASSW, WS_EX_LAYERED,
@@ -86,6 +86,26 @@ pub struct Overlay {
 
 unsafe impl Send for Overlay {}
 
+/// 显示器布局变化时会换新覆盖层，旧的窗口与 GDI 资源必须释放。
+impl Drop for Overlay {
+    fn drop(&mut self) {
+        unsafe {
+            let _ = DestroyWindow(self.hwnd);
+            let _ = DeleteDC(self.mem_dc);
+            let _ = DeleteObject(HGDIOBJ(self._dib.0));
+            if !self.scratch_dc.is_invalid() {
+                let _ = DeleteDC(self.scratch_dc);
+            }
+            if !self._scratch_dib.is_invalid() {
+                let _ = DeleteObject(HGDIOBJ(self._scratch_dib.0));
+            }
+            if !self.font.is_invalid() {
+                let _ = DeleteObject(HGDIOBJ(self.font.0));
+            }
+        }
+    }
+}
+
 impl Overlay {
     /// 创建（窗口隐藏状态，缓冲区全透明）。
     pub fn new(color_normal: &str, width_px: f64) -> Option<Self> {
@@ -101,8 +121,9 @@ impl Overlay {
                 ..Default::default()
             };
             let atom = RegisterClassW(&wc);
-            if atom == 0 && windows::core::Error::from_thread().code().0 != 1410 {
-                // 1410 = ERROR_CLASS_ALREADY_EXISTS，重复创建时忽略
+            // 显示器布局变化时会再次创建：类已注册不算失败。
+            // 注意 Error::code() 是 HRESULT，不能直接和 Win32 错误码 1410 比。
+            if atom == 0 && GetLastError() != ERROR_CLASS_ALREADY_EXISTS {
                 return None;
             }
 
@@ -745,6 +766,18 @@ fn rounded_cover(x: f32, y: f32, w: f32, h: f32, r: f32) -> f32 {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    /// 显示器布局变化会在同一进程里重建覆盖层：类已注册不能导致创建失败，旧的要能正常释放。
+    #[test]
+    fn recreate_overlay_in_same_process() {
+        for _ in 0..3 {
+            let mut o = Overlay::new("#00C2FF08", 2.0).expect("overlay");
+            o.start_session(o.vx + 10, o.vy + 10);
+            o.line_to(o.vx + 40, o.vy + 10);
+            o.draw_label("测试", o.vx + 100, o.vy + 100, "#FFFFFF08");
+            o.finish();
+        }
+    }
 
     /// 淡出途中开始新手势：上次的轨迹必须清零（曾因先 take 走包围盒而残留在屏幕上）。
     #[test]
