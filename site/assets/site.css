@@ -572,3 +572,8 @@ body { position: relative; }
 .changelog-release li { padding-left: 4px; margin: 12px 0; overflow-wrap: break-word; }
 .changelog-release-link { font-size: 14px; color: var(--trail-ink); text-underline-offset: 4px; }
 @media (max-width: 480px) { .changelog-main { padding-top: 40px; } }
+
+/* Mac 下载与首次打开说明复用下载区排版。 */
+.get .mac-download { margin-top: 22px; }
+.get .mac-first-title { margin: 24px 0 8px; font-size: 18px; }
+.get .mac-first-text { font-size: 15px; line-height: 1.65; }

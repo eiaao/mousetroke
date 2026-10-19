@@ -96,6 +96,7 @@ struct Runtime {
     tap_failed: bool,
     selftest: Option<SelfTest>,
     _displays: DisplayObserver,
+    update_version: Option<String>,
 }
 
 impl Runtime {
@@ -165,7 +166,14 @@ impl Runtime {
         if let Some(test) = self.selftest.as_mut() {
             test.tick(events::active());
         }
+        if let Some((version, ack)) = crate::update::take_notice() {
+            crate::log!("有新版本：{version}");
+            self.update_version = Some(version);
+            let _ = ack.send(true);
+            menu::request_refresh();
+        }
         if menu::take_refresh() {
+            self.menu.set_update(self.update_version.as_deref());
             let paused = with_engine(|engine| engine.is_paused()).unwrap_or(false);
             self.menu
                 .refresh(mtm, self.permissions, events::active(), paused);
@@ -267,6 +275,8 @@ fn run_main(mtm: MainThreadMarker, config_path: Option<std::path::PathBuf>) -> R
     input::initialize(selftest);
     crate::lua::initialize();
     let displays = DisplayObserver::new();
+    let automatic_updates = config.settings.update_check;
+    let update_path = path.clone();
     let engine = Engine::new(
         config,
         (!selftest).then_some(path),
@@ -274,6 +284,13 @@ fn run_main(mtm: MainThreadMarker, config_path: Option<std::path::PathBuf>) -> R
     )
     .ok_or_else(|| t(keys::MAC_ERROR_ENGINE).to_string())?;
     ENGINE.with(|slot| *slot.borrow_mut() = Some(engine));
+    if !selftest {
+        crate::update::start_automatic(update_path, automatic_updates);
+        if std::env::current_exe().is_ok_and(|path| crate::first_run::needs_install(&path)) {
+            crate::log!("从 AppTranslocation 或 DMG 启动，请拖入 Applications 后再打开");
+            mousetroke_engine::push_toast(t(keys::MAC_FIRST_RUN_INSTALL).into(), 8000);
+        }
+    }
     let prompt = match OpenOptions::new()
         .write(true)
         .create_new(true)
@@ -303,6 +320,7 @@ fn run_main(mtm: MainThreadMarker, config_path: Option<std::path::PathBuf>) -> R
             tap_failed: false,
             selftest: selftest.then(|| SelfTest::new(expected.0, expected.1)),
             _displays: displays,
+            update_version: None,
         })
     });
     let block = RcBlock::new(move |_timer: std::ptr::NonNull<NSTimer>| {

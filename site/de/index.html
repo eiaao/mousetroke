@@ -57,7 +57,7 @@
       "description": "Globale Mausgesten für Windows: rechte, mittlere oder seitliche Maustaste gedrückt halten und zeichnen, um eine Aktion auszulösen; den Cursor in eine Bildschirmecke oder -kante stoßen, um Aktionen auszulösen; Gesten pro App festlegen oder in bestimmten Apps ganz deaktivieren.",
       "applicationCategory": "UtilitiesApplication",
       "applicationSubCategory": "Mausgesten",
-      "operatingSystem": "Windows 10 1809+, Windows 11 (x64)",
+      "operatingSystem": "Windows 10 1809+, Windows 11 (x64); macOS 11+ (Apple silicon, Intel)",
       "softwareVersion": "0.1.1",
       "sameAs": ["https://github.com/eiaao/mousetroke"],
       "fileSize": "12.9 MB",
@@ -98,7 +98,8 @@
         { "@type": "Question", "name": "How much memory and CPU does it use?", "acceptedAnswer": { "@type": "Answer", "text": "The resident gesture engine uses about 19 MB working set (about 10 MB private) and no CPU when idle. The settings window is a separate process that only runs while it is open." } },
         { "@type": "Question", "name": "Can I make my own gestures?", "acceptedAnswer": { "@type": "Answer", "text": "Yes. Create a gesture in settings and draw it once on the pad in the editor. You can also combine mouse buttons, the wheel, keyboard keys and screen edges, and set gestures separately for each app." } },
         { "@type": "Question", "name": "Where are the settings stored, and how do I back them up?", "acceptedAnswer": { "@type": "Answer", "text": "In %APPDATA%\\mousetroke\\config.json. Settings has import and export. Saved changes take effect within about a second, without a restart." } },
-        { "@type": "Question", "name": "How do I uninstall it?", "acceptedAnswer": { "@type": "Answer", "text": "Turn off start with Windows in preferences, choose Quit from the tray icon menu, then delete mousetroke.exe and the %APPDATA%\\mousetroke folder. Nothing else is left behind." } }
+        { "@type": "Question", "name": "How do I uninstall it?", "acceptedAnswer": { "@type": "Answer", "text": "Turn off start with Windows in preferences, choose Quit from the tray icon menu, then delete mousetroke.exe and the %APPDATA%\\mousetroke folder. Nothing else is left behind." } },
+        {"@type": "Question", "name": "Wie deinstalliere ich die Mac-Version?", "acceptedAnswer": {"@type": "Answer", "text": "Beende Mousetroke über die Menüleiste, lösche Mousetroke.app, ~/Library/Application Support/mousetroke und ~/Library/Logs/mousetroke und entferne den Mousetroke-Anmeldeeintrag in den Systemeinstellungen."}}
       ]
     }
   ]
@@ -353,6 +354,7 @@
         <details><summary>Kann ich eigene Gesten erstellen?</summary><div class="ans"><p>Ja. Legen Sie in den Einstellungen eine Geste an und zeichnen Sie sie einmal auf dem Feld des Editors. Sie können auch Maustasten, Rad, Tasten und Bildschirmkanten kombinieren und Gesten pro App getrennt festlegen.</p></div></details>
         <details><summary>Wo liegen die Einstellungen, und wie sichere ich sie?</summary><div class="ans"><p>In <code>%APPDATA%\mousetroke\config.json</code>. Die Einstellungen haben Import und Export. Gespeicherte Änderungen greifen in etwa einer Sekunde, ohne Neustart.</p></div></details>
         <details><summary>Wie deinstalliere ich es?</summary><div class="ans"><p>Windows-Start in den Einstellungen ausschalten, im Menü des Tray-Symbols Beenden wählen, dann mousetroke.exe und den Ordner <code>%APPDATA%\mousetroke</code> löschen. Es bleibt nichts weiter zurück.</p></div></details>
+        <details><summary>Wie deinstalliere ich die Mac-Version?</summary><div class="ans"><p>Beende Mousetroke über die Menüleiste, lösche Mousetroke.app, ~/Library/Application Support/mousetroke und ~/Library/Logs/mousetroke und entferne den Mousetroke-Anmeldeeintrag in den Systemeinstellungen.</p></div></details>
       </div>
     </div>
   </section>
@@ -363,10 +365,14 @@
       <div>
         <h2 id="h-get">Herunterladen, doppelklicken, fertig</h2>
         <p>Kein Installationsprogramm. Im Infobereich erscheint ein Symbol: Linksklick öffnet die Einstellungen, Rechtsklick pausiert oder beendet. Eine Anleitung in vier Schritten begleitet den ersten Start.</p>
+        <h3 class="mac-first-title">Erster Start auf dem Mac</h3>
+        <p class="mac-first-text">Ziehe Mousetroke in Programme und öffne es dort. Diese Beta ist nicht notarisiert: Wenn macOS sie blockiert, wähle Systemeinstellungen → Datenschutz &amp; Sicherheit → Dennoch öffnen (unter älterem macOS: Rechtsklick → Öffnen). Erlaube dann Bedienungshilfen und Eingabeüberwachung.</p>
       </div>
       <div>
-        <a class="btn primary" href="https://github.com/eiaao/mousetroke/releases/latest/download/mousetroke.exe">mousetroke.exe herunterladen <small>12,9 MB · v0.1.1</small></a>
+        <a class="btn primary" href="https://github.com/eiaao/mousetroke/releases/latest/download/mousetroke.exe">Windows-Version herunterladen <small>12,9 MB · v0.1.1</small></a>
         <div class="sys">Windows 10 1809+ / 11, 64-Bit</div>
+        <a class="btn primary mac-download" href="https://github.com/eiaao/mousetroke/releases/latest/download/Mousetroke.dmg">Mac-Version herunterladen (Beta) <small>@@MAC_DMG_SIZE@@ · v0.1.1</small></a>
+        <div class="sys">macOS 11+ · Apple silicon &amp; Intel</div>
         <a class="src" href="https://github.com/eiaao/mousetroke">github.com/eiaao/mousetroke</a>
         <a class="src" href="../en/changelog.html">Neuerungen</a>
       </div>

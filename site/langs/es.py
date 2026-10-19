@@ -197,7 +197,7 @@ REPL = base("es", "es", "es_ES", "Idioma", "español") + [
     ('<h2 id="h-get">Download, double-click, done</h2>', '<h2 id="h-get">Descarga, doble clic, listo</h2>'),
     ('<p>No installer. An icon appears in the notification area: left-click it for settings, right-click to pause or quit. A four-step guide walks you through the first run.</p>',
      '<p>Sin instalador. Aparece un icono en el área de notificación: clic izquierdo abre los ajustes, clic derecho pausa o sale. Una guía de cuatro pasos te acompaña en el primer arranque.</p>'),
-    ('>Download mousetroke.exe <small>12.9 MB · v0.1.1</small></a>', '>Descargar mousetroke.exe <small>12.9 MB · v0.1.1</small></a>'),
+    ('>Download Windows version <small>12.9 MB · v0.1.1</small></a>', '>Descargar para Windows <small>12.9 MB · v0.1.1</small></a>'),
     ('<div class="sys">Windows 10 1809+ / 11, 64-bit</div>', '<div class="sys">Windows 10 1809+ / 11, 64 bits</div>'),
     # footer
     ('<span>Mousetroke · MIT license</span>', '<span>Mousetroke · Licencia MIT</span>'),
@@ -232,3 +232,13 @@ REPL += [
 ('<a href="../en/changelog.html">Changelog</a>', '<a href="../en/changelog.html">Registro de cambios</a>'),
 ('<a class="src" href="../en/changelog.html">What’s new</a>', '<a class="src" href="../en/changelog.html">Novedades</a>'),
 ]
+
+MAC = {'windows': 'Descargar para Windows',
+ 'download': 'Descargar para Mac (beta)',
+ 'first_title': 'Primer inicio en Mac',
+ 'first_text': 'Arrastra Mousetroke a Aplicaciones y ábrelo desde allí. Esta beta no está notarizada: si macOS la '
+               'bloquea, ve a Ajustes del Sistema → Privacidad y seguridad → Abrir igualmente (en macOS antiguo, clic '
+               'derecho → Abrir). Después concede Accesibilidad y Monitorización de entrada.',
+ 'faq_title': '¿Cómo desinstalo la versión para Mac?',
+ 'faq_text': 'Sal desde la barra de menús, elimina Mousetroke.app, ~/Library/Application Support/mousetroke y '
+             '~/Library/Logs/mousetroke y quita Mousetroke de los ítems de inicio en Ajustes del Sistema.'}

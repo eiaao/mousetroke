@@ -2,7 +2,7 @@
 
 [![CI](https://github.com/eiaao/mousetroke/actions/workflows/ci.yml/badge.svg)](https://github.com/eiaao/mousetroke/actions/workflows/ci.yml) [![Release](https://img.shields.io/github/v/release/eiaao/mousetroke?include_prereleases)](https://github.com/eiaao/mousetroke/releases/latest) [![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE) ![Windows 10/11](https://img.shields.io/badge/platform-Windows%2010%20%7C%2011-0098d9)
 
-**Free, open-source mouse gestures for Windows.** Hold the right button and draw — `←` goes
+**Free, open-source mouse gestures for Windows and macOS (beta).** Hold the right button and draw — `←` goes
 back, `↓→` closes the tab, `↙` minimizes the window. Push the cursor into a screen corner for
 the Start menu, or scroll along the top edge to change the volume. A plain right-click still
 opens the context menu.
@@ -51,12 +51,30 @@ cargo test --workspace       :: engine, importer, i18n and settings tests
 | `i18n/` | Shared UI strings for every language (see `i18n/README.md`) |
 | `site/` | Product web page (static) |
 
-## macOS development
+## macOS beta
 
-The macOS development port (macOS 11+, Apple Silicon cross-checked) now supports
-window targeting, fullscreen pause and most actions. See the [macOS guide](crates/mousetroke-mac/README.md)
-for the action support table, permissions, defaults and real-Mac verification.
-It needs Accessibility and Input Monitoring; **Screen Recording is not required**.
+[Download Mac beta](https://github.com/eiaao/mousetroke/releases/latest/download/Mousetroke.dmg):
+macOS 11+, Apple silicon and Intel in one universal app. Compare its SHA-256 with the
+same release's `SHA256SUMS.txt` (which also lists the Windows exe).
+
+1. Open the DMG, drag **Mousetroke** into **Applications**, then open it from there.
+2. The beta is self-signed and **not notarized**. If macOS blocks it, use **System Settings →
+   Privacy & Security → Open Anyway**; on older macOS, **right-click → Open**. A newly
+   downloaded update may need this step again.
+3. Grant **Accessibility** and **Input Monitoring**. **Screen Recording is not required**.
+
+About supports manual update checks, shared release notes and a **Download new version**
+button that opens the DMG in your browser. Preferences controls the daily automatic check;
+a new-version menu item opens About. Installation remains a manual drag into Applications.
+Quit before replacing the app. Releases reuse one signing certificate to retain permissions;
+changing the certificate or installation path can require granting them again.
+
+Uninstall: quit from the menu bar, delete `Mousetroke.app`,
+`~/Library/Application Support/mousetroke` and `~/Library/Logs/mousetroke`, then remove
+Mousetroke from login items in System Settings.
+
+See the [macOS guide](crates/mousetroke-mac/README.md) for build/sign/DMG commands,
+release secrets, supported actions and the real-Mac acceptance checklist.
 
 ## Security
 

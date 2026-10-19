@@ -56,7 +56,7 @@ Rust 生态：`objc2` + `objc2-app-kit` / `objc2-foundation` / `objc2-core-graph
 - **辅助功能（Accessibility）**：可修改事件的 event tap 和 AX 窗口操作都需要。用 `AXIsProcessTrustedWithOptions` 检测并弹出系统提示。
 - **输入监控（Input Monitoring）**：部分系统版本对键盘事件单独要求，用 `CGPreflightListenEventAccess` / `CGRequestListenEventAccess`。
 - **引导流程**：首次启动的使用引导里加一步"授权"，用深链接 `x-apple.systempreferences:com.apple.preference.security?Privacy_Accessibility` 直接打开对应设置页；授权后自动检测、继续，不要求重启。没有授权时菜单栏图标显示提示状态。
-- **授权跟代码签名绑定**：签名身份变了授权就失效，所以从第一个公开版本起就要用稳定的 Developer ID 签名。
+- **授权跟代码签名绑定**：签名身份变了授权就失效，第一个公开测试版起复用同一自签名证书；M5b 再迁移 Developer ID。M5a 固定 designated requirement 为 bundle identifier + 自签名 certificate root 哈希，更新时用 `codesign -d -r-` 比较。迁移证书需要重新授权。
 
 ## 5. 产品层面的差异（需要单独设计）
 

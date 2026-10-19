@@ -186,7 +186,7 @@ REPL = base("de", "de", "de_DE", "Sprache", "Deutsch") + [
     ('<h2 id="h-get">Download, double-click, done</h2>', '<h2 id="h-get">Herunterladen, doppelklicken, fertig</h2>'),
     ('<p>No installer. An icon appears in the notification area: left-click it for settings, right-click to pause or quit. A four-step guide walks you through the first run.</p>',
      '<p>Kein Installationsprogramm. Im Infobereich erscheint ein Symbol: Linksklick öffnet die Einstellungen, Rechtsklick pausiert oder beendet. Eine Anleitung in vier Schritten begleitet den ersten Start.</p>'),
-    ('>Download mousetroke.exe <small>12.9 MB · v0.1.1</small></a>', '>mousetroke.exe herunterladen <small>12,9 MB · v0.1.1</small></a>'),
+    ('>Download Windows version <small>12.9 MB · v0.1.1</small></a>', '>Windows-Version herunterladen <small>12,9 MB · v0.1.1</small></a>'),
     ('<div class="sys">Windows 10 1809+ / 11, 64-bit</div>', '<div class="sys">Windows 10 1809+ / 11, 64-Bit</div>'),
     ('<span>Mousetroke · MIT license</span>', '<span>Mousetroke · MIT-Lizenz</span>'),
     ('<nav aria-label="Footer">', '<nav aria-label="Fußzeile">'),
@@ -217,3 +217,13 @@ REPL += [
 ('<a href="../en/changelog.html">Changelog</a>', '<a href="../en/changelog.html">Änderungsprotokoll</a>'),
 ('<a class="src" href="../en/changelog.html">What’s new</a>', '<a class="src" href="../en/changelog.html">Neuerungen</a>'),
 ]
+
+MAC = {'windows': 'Windows-Version herunterladen',
+ 'download': 'Mac-Version herunterladen (Beta)',
+ 'first_title': 'Erster Start auf dem Mac',
+ 'first_text': 'Ziehe Mousetroke in Programme und öffne es dort. Diese Beta ist nicht notarisiert: Wenn macOS sie '
+               'blockiert, wähle Systemeinstellungen → Datenschutz & Sicherheit → Dennoch öffnen (unter älterem macOS: '
+               'Rechtsklick → Öffnen). Erlaube dann Bedienungshilfen und Eingabeüberwachung.',
+ 'faq_title': 'Wie deinstalliere ich die Mac-Version?',
+ 'faq_text': 'Beende Mousetroke über die Menüleiste, lösche Mousetroke.app, ~/Library/Application Support/mousetroke '
+             'und ~/Library/Logs/mousetroke und entferne den Mousetroke-Anmeldeeintrag in den Systemeinstellungen.'}

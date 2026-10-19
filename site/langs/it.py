@@ -186,7 +186,7 @@ REPL = base("it", "it", "it_IT", "Lingua", "Italiano") + [
     ('<h2 id="h-get">Download, double-click, done</h2>', '<h2 id="h-get">Scarica, doppio clic, fatto</h2>'),
     ('<p>No installer. An icon appears in the notification area: left-click it for settings, right-click to pause or quit. A four-step guide walks you through the first run.</p>',
      '<p>Nessun installer. Nell’area di notifica compare un’icona: clic sinistro per le impostazioni, destro per mettere in pausa o uscire. Una guida in quattro passaggi accompagna il primo avvio.</p>'),
-    ('>Download mousetroke.exe <small>12.9 MB · v0.1.1</small></a>', '>Scarica mousetroke.exe <small>12,9 MB · v0.1.1</small></a>'),
+    ('>Download Windows version <small>12.9 MB · v0.1.1</small></a>', '>Scarica per Windows <small>12,9 MB · v0.1.1</small></a>'),
     ('<div class="sys">Windows 10 1809+ / 11, 64-bit</div>', '<div class="sys">Windows 10 1809+ / 11, 64 bit</div>'),
     ('<span>Mousetroke · MIT license</span>', '<span>Mousetroke · Licenza MIT</span>'),
     ('<nav aria-label="Footer">', '<nav aria-label="Piè di pagina">'),
@@ -217,3 +217,13 @@ REPL += [
 ('<a href="../en/changelog.html">Changelog</a>', '<a href="../en/changelog.html">Registro delle modifiche</a>'),
 ('<a class="src" href="../en/changelog.html">What’s new</a>', '<a class="src" href="../en/changelog.html">Novità</a>'),
 ]
+
+MAC = {'windows': 'Scarica per Windows',
+ 'download': 'Scarica per Mac (beta)',
+ 'first_title': 'Primo avvio su Mac',
+ 'first_text': 'Trascina Mousetroke in Applicazioni e aprilo da lì. Questa beta non è autenticata da Apple: se macOS '
+               'la blocca, vai in Impostazioni di Sistema → Privacy e sicurezza → Apri comunque (su macOS meno '
+               'recente, clic destro → Apri). Poi autorizza Accessibilità e Monitoraggio input.',
+ 'faq_title': 'Come disinstallo la versione Mac?',
+ 'faq_text': 'Esci dalla barra dei menu, elimina Mousetroke.app, ~/Library/Application Support/mousetroke e '
+             '~/Library/Logs/mousetroke e rimuovi Mousetroke dagli elementi di login nelle Impostazioni di Sistema.'}

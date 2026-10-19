@@ -155,6 +155,7 @@ pub struct Menu {
     open_log: Retained<NSMenuItem>,
     settings: Retained<NSMenuItem>,
     about: Retained<NSMenuItem>,
+    update: Retained<NSMenuItem>,
     quit: Retained<NSMenuItem>,
 }
 
@@ -194,6 +195,8 @@ impl Menu {
         settings.setKeyEquivalent(ns_string!(","));
         settings.setKeyEquivalentModifierMask(NSEventModifierFlags::Command);
         let about = entry(Some(sel!(openAbout:)));
+        let update = entry(Some(sel!(openAbout:)));
+        update.setHidden(true);
         let quit = entry(Some(sel!(quit:)));
         let item = NSStatusBar::systemStatusBar().statusItemWithLength(24.0);
         let drawing = RcBlock::new(|rect: NSRect| -> Bool {
@@ -235,7 +238,15 @@ impl Menu {
             open_log,
             settings,
             about,
+            update,
             quit,
+        }
+    }
+
+    pub fn set_update(&self, version: Option<&str>) {
+        self.update.setHidden(version.is_none());
+        if let Some(version) = version {
+            self.update.setTitle(&NSString::from_str(&mousetroke_core::i18n::tf(keys::MAC_UPDATE_AVAILABLE, &[("version", version)])));
         }
     }
 

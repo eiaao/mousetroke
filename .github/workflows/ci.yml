@@ -39,8 +39,19 @@ jobs:
       - name: Test settings commands and headless config round-trip smoke
         run: cargo test -p mousetroke-settings --locked
 
+      - name: Universal bundle and DMG smoke test
+        env:
+          MOUSETROKE_SIGN_ID: "-"
+        run: |
+          rustup target add aarch64-apple-darwin x86_64-apple-darwin
+          bash scripts/mac/bundle.sh --universal
+          bash scripts/mac/dmg.sh
+
   test:
     runs-on: windows-latest
+    env:
+      CARGO_BUILD_JOBS: 4
+      CARGO_TARGET_DIR: ${{ github.workspace }}/target
     steps:
       - uses: actions/checkout@v7
       - uses: actions/setup-node@v7
@@ -57,7 +68,7 @@ jobs:
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
           python -m unittest discover -s scripts -p test_changelog.py
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
-          python site/check.py
+          python site/check.py --allow-mac-size-placeholder
       - name: Build settings UI
         working-directory: crates/mousetroke-settings/ui
         run: |

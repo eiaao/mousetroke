@@ -14,11 +14,16 @@ if [[ -f "$keychain" && -f "$secret" ]]; then
     exit 0
 fi
 mac_message mac.cert.instructions
-mkdir -p "$secret_dir" "$root/target/mac"
+mkdir -p "$secret_dir"
 chmod 700 "$secret_dir"
-temporary=$(mktemp -d "$root/target/mac/dev-cert.XXXXXX")
+temporary=$(mktemp -d)
 chmod 700 "$temporary"
 trap 'rm -f "$temporary/key.pem" "$temporary/cert.pem" "$temporary/cert.p12" "$temporary/openssl.cnf"; rmdir "$temporary"' EXIT
+# 系统临时目录若被调用者指到仓库，拒绝在其中生成私钥。
+if git -C "$temporary" rev-parse --git-dir >/dev/null 2>&1; then
+    mac_message mac.release.cert_outside >&2
+    exit 2
+fi
 password=$(openssl rand -hex 24)
 (umask 077; printf '%s' "$password" > "$secret")
 security create-keychain -p "$password" "$keychain"

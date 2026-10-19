@@ -1,5 +1,9 @@
 # Mousetroke
 
+macOS 测试版现提供 [通用 DMG](https://github.com/eiaao/mousetroke/releases/latest/download/Mousetroke.dmg)，支持 macOS 11+、Apple silicon 和 Intel。首次打开请先拖入“应用程序”；测试版未公证，如被拦截，到“系统设置 → 隐私与安全性 → 仍要打开”（旧系统右键 → 打开），再授予辅助功能和输入监控权限。关于页可检查更新并用浏览器下载新版；偏好设置控制每日检查。更新前退出并覆盖原位置，同一发布证书用于保留权限。
+
+Mac 卸载：从菜单栏退出，删除应用、`~/Library/Application Support/mousetroke`、`~/Library/Logs/mousetroke`，并在系统设置中移除登录项。构建、签名与验收见 [Mac 指南](crates/mousetroke-mac/README.md)。
+
 [![CI](https://github.com/eiaao/mousetroke/actions/workflows/ci.yml/badge.svg)](https://github.com/eiaao/mousetroke/actions/workflows/ci.yml) [![Release](https://img.shields.io/github/v/release/eiaao/mousetroke?include_prereleases)](https://github.com/eiaao/mousetroke/releases/latest) [![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE) ![Windows 10/11](https://img.shields.io/badge/platform-Windows%2010%20%7C%2011-0098d9)
 
 **免费开源的 Windows 鼠标手势工具。** 按住右键画一笔：`←` 后退，`↓→` 关闭标签页，`↙` 最小化窗口。

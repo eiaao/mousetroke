@@ -1,10 +1,15 @@
 # Mousetroke
 
-> Mousetroke is a free, open-source (MIT) mouse gesture tool for Windows 10 (1809+) and Windows 11, x64. Hold the right mouse button and draw a stroke anywhere to run an action — ← goes back, ↓→ closes the tab, ↙ minimizes the window. Pushing the cursor into a screen corner or along an edge triggers actions too (Start menu, show desktop, volume and brightness with the wheel). A plain right-click still opens the context menu. The resident engine uses about 19 MB of memory; the download is a single 12.9 MB exe with no installer.
+> Mousetroke is a free, open-source (MIT) mouse gesture tool for Windows 10 (1809+) and Windows 11, x64, and macOS 11+ (beta, Apple silicon and Intel). Hold the right mouse button and draw a stroke anywhere to run an action — ← goes back, ↓→ closes the tab, ↙ minimizes the window. Pushing the cursor into a screen corner or along an edge triggers actions too (Start menu, show desktop, volume and brightness with the wheel). A plain right-click still opens the context menu. The resident engine uses about 19 MB of memory; the download is a single 12.9 MB exe with no installer.
 
-Mousetroke（中文）：免费开源的 Windows 鼠标手势工具。按住右键画一笔执行操作；鼠标推到屏幕边角开开始菜单、调音量和亮度；单击右键菜单照常弹出；常驻内存约 19 MB，单个 exe 免安装。
+Mousetroke（中文）：免费开源的 Windows 与 macOS（测试版）鼠标手势工具。按住右键画一笔执行操作；鼠标推到屏幕边角开开始菜单、调音量和亮度；单击右键菜单照常弹出；常驻内存约 19 MB，单个 exe 免安装。
 
 ## Key facts
+
+- Mac beta: macOS 11+, universal Apple silicon and Intel. Download https://github.com/eiaao/mousetroke/releases/latest/download/Mousetroke.dmg ; verify with the release's SHA256SUMS.txt, which lists both platforms. Mac size is pending measurement of the release artifact.
+- Mac first open: drag to Applications and open there. The self-signed beta is not notarized; if blocked, use System Settings → Privacy & Security → Open Anyway (older macOS: right-click → Open), then grant Accessibility and Input Monitoring. No Screen Recording permission is needed. Each newly downloaded update may need Open Anyway again.
+- Mac updates: About checks versions and shows release notes, then opens the DMG download in the browser. Daily automatic checking follows Preferences; a new-version menu item opens About. Quit and replace the app manually in Applications. The stable release certificate is reused to preserve permissions.
+- Mac files: ~/Library/Application Support/mousetroke/config.json ; logs in ~/Library/Logs/mousetroke. Uninstall: quit from the menu bar, delete the app and both directories, and remove the login item in System Settings. Pause shortcut: ⌃⌥⌘P.
 
 - Platform: Windows 10 1809+ and Windows 11, 64-bit. The settings window needs Microsoft Edge WebView2 (built into Windows 11); the gesture engine itself has no runtime dependencies.
 - Source code: https://github.com/eiaao/mousetroke (issues and releases there).

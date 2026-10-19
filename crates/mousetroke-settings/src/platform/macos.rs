@@ -155,22 +155,4 @@ pub fn pick_window(window: tauri::WebviewWindow) -> MsgResult<Option<picker::Pic
         .map_err(|_| Msg::new(keys::ERROR_PICK_FAILED, &[]))?
 }
 
-// 更新命令在 macOS 上明确拒绝；前端不会显示或自动调用它们。
-pub mod update {
-    use serde::Serialize;
-    pub const RELEASES_URL: &str = "https://github.com/eiaao/mousetroke/releases";
-    #[derive(Serialize)]
-    pub struct Check {}
-    pub struct Error;
-    impl Error {
-        pub fn key(&self) -> &'static str {
-            crate::keys::MAC_SETTINGS_WINDOWS_ONLY
-        }
-    }
-    pub fn check() -> Result<Check, Error> {
-        Err(Error)
-    }
-    pub fn install(_exe: &std::path::Path, _config: &std::path::Path) -> Result<(), Error> {
-        Err(Error)
-    }
-}
+pub use mousetroke_mac::update;
