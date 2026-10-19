@@ -2,6 +2,15 @@ import { useEffect, useState } from "react";
 import type { MouseButton } from "../types";
 import { api } from "../api";
 
+/** 关于页的 GitHub Star 图标。 */
+export function StarIcon() {
+  return (
+    <svg className="ico" width="16" height="16" viewBox="0 0 16 16" aria-hidden>
+      <path className="ico-line" d="m8 1.5 2 4.1 4.5.7-3.3 3.2.8 4.5-4-2.1L4 14l.8-4.5L1.5 6.3l4.5-.7Z" />
+    </svg>
+  );
+}
+
 /** 小鼠标图标，高亮指定按键（筛选标签、触发方式用）。 */
 export function MouseIcon({ button, size = 16 }: { button?: MouseButton; size?: number }) {
   return (

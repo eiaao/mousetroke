@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import type { AppInfo, EngineStatus } from "../types";
 import { api, errText } from "../api";
 import { t } from "../i18n";
+import { StarIcon } from "./Icons";
 
 /** 设置界面里的键盘操作（关于页列出，便于发现）。 */
 const SHORTCUTS: [string, keyof typeof KEY_LABELS][] = [
@@ -29,7 +30,7 @@ export function About({ engine, onShowGuide, notify }: { engine: EngineStatus; o
   useEffect(() => {
     api.appInfo().then(setInfo, () => {});
   }, []);
-  const open = (what: "log" | "config_dir") => api.openPath(what).catch((e) => notify(errText(e)));
+  const open = (what: Parameters<typeof api.openPath>[0]) => api.openPath(what).catch((e) => notify(errText(e)));
 
   return (
     <section className="prefs about" aria-label={t("ui.about.aria")}>
@@ -50,6 +51,44 @@ export function About({ engine, onShowGuide, notify }: { engine: EngineStatus; o
         <button type="button" className="btn primary about-guide" onClick={onShowGuide}>
           {t("ui.about.show_guide")}
         </button>
+      </div>
+
+      <div className="pref-group about-project" role="group" aria-labelledby="about-project-title">
+        <h2 id="about-project-title">{t("ui.about.project_group")}</h2>
+        <div className="pref-row">
+          <span className="pref-label" id="about-homepage">
+            {t("ui.about.homepage")}
+            <small>{t("ui.about.homepage_address")}</small>
+          </span>
+          <button type="button" className="btn small" aria-describedby="about-homepage" onClick={() => open("homepage")}>
+            {t("ui.about.open_link")}
+          </button>
+        </div>
+        <div className="pref-row">
+          <span className="pref-label" id="about-source">
+            {t("ui.about.source")}
+            <small>{t("ui.about.source_address")}</small>
+          </span>
+          <button type="button" className="btn small" aria-describedby="about-source" onClick={() => open("github")}>
+            {t("ui.about.open_link")}
+          </button>
+        </div>
+        <div className="pref-row">
+          <span className="pref-label" id="about-feedback">
+            {t("ui.about.feedback")}
+            <small>{t("ui.about.feedback_help")}</small>
+          </span>
+          <button type="button" className="btn small" aria-describedby="about-feedback" onClick={() => open("issues")}>
+            {t("ui.about.open_link")}
+          </button>
+        </div>
+        <div className="about-star">
+          <p>{t("ui.about.star_prompt")}</p>
+          <button type="button" className="btn primary" onClick={() => open("github")}>
+            <StarIcon />
+            {t("ui.about.star_button")}
+          </button>
+        </div>
       </div>
 
       <div className="pref-group">

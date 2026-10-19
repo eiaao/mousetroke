@@ -65,6 +65,9 @@
         case "app_icons": return Object.fromEntries(args.exes.map((e) => [e, /chrome/i.test(e) ? "data:image/svg+xml," + encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32"><circle cx="16" cy="16" r="15" fill="#db4437"/><circle cx="16" cy="16" r="7" fill="#4285f4" stroke="#fff" stroke-width="2"/></svg>') : null]));
         case "running_apps": return [{ exe: "C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe", title: "新标签页 - Google Chrome" }, { exe: "C:\\Windows\\explorer.exe", title: "下载" }, { exe: "C:\\Users\\me\\AppData\\Local\\Programs\\Microsoft VS Code\\Code.exe", title: "main.rs - mousetroke" }];
         case "save_config": window.__saved = args.config; return null;
+        case "open_path":
+          if (["log", "config_dir", "homepage", "github", "issues"].includes(args.what)) return null;
+          throw { key: "error.unknown_location", params: { what: args.what } };
         case "plugin:event|listen": (window.__listeners[args.event] ??= []).push(args.handler); return window.__listeners[args.event].length;
         case "resolve_app":
           if (/\.exe$/i.test(args.path)) return args.path;

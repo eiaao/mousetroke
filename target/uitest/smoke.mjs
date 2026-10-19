@@ -18,13 +18,18 @@ const browser = await puppeteer.launch({
 const page = await browser.newPage();
 await page.setViewport({ width: 1180, height: 760, deviceScaleFactor: 1 });
 const errors = [];
+// 项目链接只能交给后端打开，设置界面自身不应请求外站。
+page.on("request", (request) => {
+  const target = new URL(request.url());
+  if (/^https?:$/.test(target.protocol) && target.origin !== new URL(url).origin) errors.push(`external request: ${target.href}`);
+});
 page.on("pageerror", (e) => errors.push("pageerror: " + e.message));
 page.on("console", (m) => m.type() === "error" && !m.text().includes("404") && errors.push("console: " + m.text()));
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 const shot = async (n) => {
   // 检查控件自身的内容尺寸；滚动容器中尚未滚到的控件不算文字裁剪。
   const clipped = await page.evaluate(() => {
-    const selectors = ".action-types button, .tab, .filter, .chip, .nav-item, .nav-label, .guide .btn, .guide-app, .toast-action, .toast-text, .segmented button, .app-list .muted, .keys-row .btn, .shape-instruction, .shape-samples-head, .shape-feedback p, .recorder-error";
+    const selectors = ".action-types button, .tab, .filter, .chip, .nav-item, .nav-label, .guide .btn, .guide-app, .toast-action, .toast-text, .segmented button, .app-list .muted, .keys-row .btn, .shape-instruction, .shape-samples-head, .shape-feedback p, .recorder-error, .about .btn, .about .pref-label, .about-star, .about-star p";
     return [...document.querySelectorAll(selectors)].flatMap((el) => {
       if (!el.getClientRects().length) return [];
       const style = getComputedStyle(el);
@@ -229,6 +234,43 @@ const navCount = await page.evaluate(() => document.querySelectorAll(".nav-group
 await clickAll(".nav-bottom .nav-item", 0); await check("prefs"); await shot("04-prefs");
 await clickAll(".nav-bottom .nav-item", 1); await check("data"); await shot("05-data");
 await clickAll(".nav-bottom .nav-item", 2); await check("about"); await shot("06-about");
+
+// 项目组位于文件位置之前；每个按钮只传白名单名称，Star 复用 GitHub。
+await page.waitForSelector('.about-project[role="group"]');
+if (await page.$$(".about-project .pref-row").then((els) => els.length) !== 3) errors.push("about must show three project rows");
+if (catalog) {
+  const headings = await page.$$eval(".about .pref-group h2", (els) => els.map((el) => el.textContent));
+  if (headings[0] !== catalog["ui.about.project_group"] || headings[1] !== catalog["ui.about.files_group"]) errors.push("project group must precede files");
+  const projectText = await page.$eval(".about-project", (el) => el.textContent);
+  for (const key of ["homepage", "homepage_address", "source", "source_address", "feedback", "feedback_help", "star_prompt", "star_button"]) {
+    if (!projectText.includes(catalog[`ui.about.${key}`])) errors.push(`missing project text: ${key}`);
+  }
+}
+if (!await page.$(".about-star .btn.primary svg[aria-hidden]")) errors.push("star button must have a decorative SVG icon");
+const callsBeforeLinks = await page.evaluate(() => window.__calls.length);
+for (const selector of [".about-project .pref-row:nth-of-type(1) .btn", ".about-project .pref-row:nth-of-type(2) .btn", ".about-project .pref-row:nth-of-type(3) .btn", ".about-star .btn"]) {
+  await page.click(selector);
+}
+const linkCalls = await page.evaluate((n) => window.__calls.slice(n).filter(([cmd]) => cmd === "open_path"), callsBeforeLinks);
+const expectedLinks = ["homepage", "github", "issues", "github"].map((what) => ["open_path", { what }]);
+if (JSON.stringify(linkCalls) !== JSON.stringify(expectedLinks)) errors.push(`incorrect about links: ${JSON.stringify(linkCalls)}`);
+
+// 最小窗口验证长译文：内容不横向溢出，按钮始终完整显示且不在词中换行。
+await page.setViewport({ width: 900, height: 580 });
+await page.$eval(".about-project", (el) => el.scrollIntoView({ block: "start" }));
+await sleep(150);
+const aboutLayout = await page.evaluate(() => {
+  const about = document.querySelector(".about");
+  const fits = about.scrollWidth <= about.clientWidth + 1;
+  const buttonsFit = [...about.querySelectorAll(".btn")].every((el) => {
+    const style = getComputedStyle(el), rect = el.getBoundingClientRect(), bounds = about.getBoundingClientRect();
+    return style.whiteSpace === "nowrap" && rect.left >= bounds.left && rect.right <= bounds.right;
+  });
+  return fits && buttonsFit;
+});
+if (!aboutLayout) errors.push("about layout must fit the minimum window without wrapping buttons");
+await check("about-min"); await shot("06-about-min");
+await page.setViewport({ width: 1180, height: 760 });
 
 // 添加程序对话框（建议清单 + 禁用模式）
 await clickAll(".nav-group:not(.nav-bottom) .nav-item", navCount - 1); // 添加程序…
