@@ -5,7 +5,7 @@
 重复行（如 data-on/data-off）一次性全换。生成后运行 site-check.py 校验结构。
 用法：python gen.py es fr …（缺省生成全部已定义语言）
 """
-import sys, pathlib
+import sys, pathlib, re, json
 
 ROOT = pathlib.Path(__file__).resolve().parent.parent
 TPL = (ROOT / "site/en/index.html").read_text(encoding="utf-8")
@@ -217,8 +217,8 @@ ES = base("es", "es", "es_ES", "Idioma", "español") + [
      '<details><summary>¿Se dispara por error en juegos o escritorio remoto?</summary><div class="ans"><p>Los juegos, vídeos y presentaciones a pantalla completa pausan los gestos automáticamente. Los programas que necesitan el arrastre derecho o central para sí mismos, como Escritorio remoto, AnyDesk, Blender o AutoCAD, se pueden excluir con un clic en el primer arranque. Win+Esc pausa en cualquier momento.</p></div></details>'),
     ('<details><summary>Which versions of Windows are supported?</summary><div class="ans"><p>Windows 10 1809 or later and Windows 11, 64-bit. The gesture engine has no runtime dependencies; the settings window uses Microsoft Edge WebView2, which ships with Windows 11 and comes with Edge on most Windows 10 PCs.</p></div></details>',
      '<details><summary>¿Qué versiones de Windows son compatibles?</summary><div class="ans"><p>Windows 10 1809 o posterior y Windows 11, de 64 bits. El motor de gestos no tiene dependencias en tiempo de ejecución; la ventana de ajustes usa Microsoft Edge WebView2, incluido en Windows 11 y presente con Edge en la mayoría de equipos con Windows 10.</p></div></details>'),
-    ('<details><summary>Is Mousetroke free?</summary><div class="ans"><p>Yes. It is open source under the MIT license, with no ads, no account and no network access.</p></div></details>',
-     '<details><summary>¿Mousetroke es gratis?</summary><div class="ans"><p>Sí. Es de código abierto bajo la licencia MIT, sin anuncios, sin cuenta y sin acceso a la red.</p></div></details>'),
+    ('<details><summary>Is Mousetroke free?</summary><div class="ans"><p>Yes. It is open source under the MIT license, with no ads or account. It connects to GitHub only when you check for updates manually or enable the optional daily check. No telemetry or personal data is sent.</p></div></details>',
+     '<details><summary>¿Mousetroke es gratis?</summary><div class="ans"><p>Sí. Es de código abierto bajo la licencia MIT, sin anuncios ni cuenta. Solo se conecta a GitHub al buscar actualizaciones manualmente o activar la comprobación diaria opcional. No envía telemetría ni datos personales.</p></div></details>'),
     ('<details><summary>How much memory and CPU does it use?</summary><div class="ans"><p>The resident gesture engine uses about 19 MB working set (about 10 MB private) and no CPU when idle. The settings window is a separate process that only runs while it is open.</p></div></details>',
      '<details><summary>¿Cuánta memoria y CPU usa?</summary><div class="ans"><p>El motor residente usa unos 19 MB de conjunto de trabajo (unos 10 MB privados) y nada de CPU en reposo. La ventana de ajustes es un proceso aparte que solo corre mientras está abierta.</p></div></details>'),
     ('<details><summary>Can I make my own gestures?</summary><div class="ans"><p>Yes. Create a gesture in settings and draw it once on the pad in the editor. You can also combine mouse buttons, the wheel, keyboard keys and screen edges, and set gestures separately for each app.</p></div></details>',
@@ -277,6 +277,12 @@ def gen(tag, repls):
             missed.append(old[:80])
             continue
         out = out.replace(old, new)
+        # 免费说明的结构化数据与可见回答保持同一译文。
+        if '<summary>Is Mousetroke free?</summary>' in old:
+            old_faq = re.search(r'<summary>(.*?)</summary>.*?<p>(.*?)</p>', old)
+            new_faq = re.search(r'<summary>(.*?)</summary>.*?<p>(.*?)</p>', new)
+            for source, translated in zip(old_faq.groups(), new_faq.groups()):
+                out = out.replace(json.dumps(source, ensure_ascii=False), json.dumps(translated, ensure_ascii=False))
     d = ROOT / "site" / tag
     d.mkdir(exist_ok=True)
     (d / "index.html").write_text(out, encoding="utf-8")

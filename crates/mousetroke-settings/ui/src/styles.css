@@ -2825,3 +2825,14 @@ select.lang-select {
   font-size: 13px;
   text-align: right;
 }
+
+/* 更新状态允许长译文自然换行，操作按钮独占一行时仍保持可读。 */
+.update-group .pref-row { flex-wrap: wrap; gap: 12px; }
+.update-status:empty { display: none; }
+.update-status { padding: 0 16px 14px; }
+.update-status p { margin: 8px 0 12px; }
+.update-actions { display: flex; flex-wrap: wrap; gap: 8px; }
+.update-error { color: var(--danger, #c43e3e); }
+.update-spinner { display: inline-block; width: 12px; height: 12px; margin-right: 8px; border: 2px solid currentColor; border-right-color: transparent; border-radius: 50%; animation: update-spin .8s linear infinite; flex-shrink: 0; }
+@keyframes update-spin { to { transform: rotate(360deg); } }
+@media (prefers-reduced-motion: reduce) { .update-spinner { animation: none; } }

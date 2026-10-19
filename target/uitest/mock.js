@@ -73,6 +73,19 @@
             engine: { running: true, autostart: false, exeFound: true },
             systemLangs: [lang === "qps-ploc" ? "en-US" : lang], resolvedLang: lang };
         }
+        case "take_about_request": { const about = window.__aboutRequest ?? false; window.__aboutRequest = false; return about; }
+        case "check_update": {
+          const outcome = window.__updateOutcome ?? new URLSearchParams(location.search).get("update") ?? "current";
+          await new Promise((r) => setTimeout(r, 100));
+          if (outcome === "error") throw { key: "update.error.network", params: {} };
+          return { current: "0.1.0", latest: outcome === "newer" ? "0.2.0" : "0.1.0", newer: outcome === "newer", notes_url: "https://github.com/eiaao/mousetroke/releases/latest" };
+        }
+        case "install_update": {
+          const outcome = window.__installOutcome ?? new URLSearchParams(location.search).get("install") ?? "success";
+          if (outcome === "pending") return new Promise(() => {});
+          if (outcome !== "success") throw { key: `update.error.${outcome}`, params: {} };
+          return null;
+        }
         case "get_engine_status": return { running: true, autostart: false, exeFound: true };
         case "validate_keys": return /\{[^}]*$/.test(args.keys) ? { key: "keyseq.error.near", params: { pos: String(args.keys.length), reason: "keyseq.error.missing_brace" } } : null;
         case "record_trace": return record(args.points, args.grid);
@@ -87,7 +100,7 @@
         case "running_apps": return [{ exe: "C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe", title: "新标签页 - Google Chrome" }, { exe: "C:\\Windows\\explorer.exe", title: "下载" }, { exe: "C:\\Users\\me\\AppData\\Local\\Programs\\Microsoft VS Code\\Code.exe", title: "main.rs - mousetroke" }];
         case "save_config": window.__saved = args.config; return null;
         case "open_path":
-          if (["log", "config_dir", "homepage", "github", "issues"].includes(args.what)) return null;
+          if (["log", "config_dir", "homepage", "github", "issues", "releases"].includes(args.what)) return null;
           throw { key: "error.unknown_location", params: { what: args.what } };
         case "plugin:event|listen": (window.__listeners[args.event] ??= []).push(args.handler); return window.__listeners[args.event].length;
         case "resolve_app":

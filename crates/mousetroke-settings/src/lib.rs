@@ -2,7 +2,7 @@
 //!
 //! 独立进程、按需打开、关掉即退（常驻引擎不含 WebView，保持低占用）。
 //! 只读写原生 `config.json`（原子写入），引擎轮询 mtime 热加载——两个进程之间
-//! 没有其他通道。所有配置语义（解析/导入/录制/校验）都复用 mousetroke-core。
+//! 更新时通过托盘退出消息交接进程；命名事件用于定位关于页。配置语义复用 mousetroke-core。
 //!
 //! 以库的形式编进 `mousetroke.exe`（`mousetroke settings [配置路径]` 启动本界面进程）：
 //! 只发布一个 exe，但界面仍是独立进程——常驻的引擎进程里没有 WebView。
@@ -43,6 +43,7 @@ struct AppPaths {
 #[derive(Serialize)]
 #[serde(rename_all = "camelCase")]
 struct InitState {
+    about: bool,
     config_path: String,
     /// 文件不存在时为默认配置，`config_exists = false`。
     config: Config,
@@ -117,6 +118,7 @@ fn init_state(paths: State<AppPaths>) -> InitState {
     // 后端自己需要的少量文字（窗口标题、点选提示条）也用这个语言
     i18n::set_lang(resolved);
     InitState {
+        about: take_about_request(),
         config_path: path.to_string_lossy().into_owned(),
         config,
         config_exists: exists,
@@ -349,6 +351,7 @@ fn project_url(what: &str, lang: &str) -> Option<&'static str> {
         "homepage" => Some(HOMEPAGES.iter().find(|(tag, _)| *tag == lang).unwrap_or(&HOMEPAGES[1]).1),
         "github" => Some(GITHUB_URL),
         "issues" => Some(ISSUES_URL),
+        "releases" => Some(mousetroke_win::update::RELEASES_URL),
         _ => None,
     }
 }
@@ -431,6 +434,40 @@ fn reveal_config(paths: State<AppPaths>) {
 
 // ---------------------------------------------------------------- 单实例
 
+/// 自动复位事件跨进程传递定位请求；已有设置窗口也能跳到关于页。
+fn about_event() -> windows::Win32::Foundation::HANDLE {
+    static EVENT: std::sync::OnceLock<isize> = std::sync::OnceLock::new();
+    let value = *EVENT.get_or_init(|| unsafe {
+        windows::Win32::System::Threading::CreateEventW(None, false, false, windows::core::w!("Mousetroke::settings-about"))
+            .map(|h| h.0 as isize).unwrap_or(0)
+    });
+    windows::Win32::Foundation::HANDLE(value as *mut core::ffi::c_void)
+}
+
+#[tauri::command]
+fn take_about_request() -> bool {
+    unsafe { windows::Win32::System::Threading::WaitForSingleObject(about_event(), 0) == windows::Win32::Foundation::WAIT_OBJECT_0 }
+}
+
+#[tauri::command]
+async fn check_update() -> MsgResult<mousetroke_win::update::Check> {
+    tauri::async_runtime::spawn_blocking(mousetroke_win::update::check).await
+        .map_err(|_| Msg::new(keys::UPDATE_ERROR_NETWORK, &[]))?
+        .map_err(|e| Msg::new(e.key(), &[]))
+}
+
+#[tauri::command]
+async fn install_update(paths: State<'_, AppPaths>, app: tauri::AppHandle) -> MsgResult<()> {
+    let exe = engine_exe().ok_or_else(|| Msg::new(keys::ERROR_ENGINE_NOT_FOUND, &[]))?;
+    let config = paths.config.clone();
+    tauri::async_runtime::spawn_blocking(move || mousetroke_win::update::install(&exe, &config)).await
+        .map_err(|_| Msg::new(keys::UPDATE_ERROR_REPLACE, &[]))?
+        .map_err(|e| Msg::new(e.key(), &[]))?;
+    // 新进程等待本 PID 退出；引擎也通过托盘同一退出路径停止。
+    app.exit(0);
+    Ok(())
+}
+
 /// 设置窗口已开着 → 把它带到前台并退出本进程。
 /// 标题可能已被切换成其他语言，把已知的都找一遍。
 fn focus_existing() -> bool {
@@ -459,6 +496,10 @@ fn focus_existing() -> bool {
 
 /// 运行设置界面（阻塞到窗口关闭）。`config` 缺省为默认配置路径。已有设置窗口时把它带到前台后返回。
 pub fn run(config: Option<PathBuf>) {
+    let event = about_event();
+    if std::env::args().any(|s| s == "--about") {
+        unsafe { let _ = windows::Win32::System::Threading::SetEvent(event); }
+    }
     // 启动时按配置确定语言：focus_existing 找窗口、托盘/气泡等少量原生文字都依赖它
     let config = config.unwrap_or_else(default_config_path);
     let langs = mousetroke_win::system_langs();
@@ -491,6 +532,9 @@ pub fn run(config: Option<PathBuf>) {
             resolve_app,
             preset_apps,
             app_info,
+            check_update,
+            install_update,
+            take_about_request,
             open_path,
             pick_window,
             set_autostart,
@@ -526,6 +570,7 @@ mod tests {
             assert_eq!(project_url("homepage", tag), Some(format!("https://mousetroke.pages.dev/{suffix}").as_str()));
             assert_eq!(project_url("github", tag), Some("https://github.com/eiaao/mousetroke"));
             assert_eq!(project_url("issues", tag), Some("https://github.com/eiaao/mousetroke/issues"));
+            assert_eq!(project_url("releases", tag), Some(mousetroke_win::update::RELEASES_URL));
         }
         for what in ["", "https://example.com", "file:///C:/Windows", "Homepage", "github/issues"] {
             assert_eq!(project_url(what, "en-US"), None);

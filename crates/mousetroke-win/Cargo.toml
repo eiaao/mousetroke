@@ -12,3 +12,5 @@ mousetroke-core = { path = "../mousetroke-core" }
 mlua = { version = "0.12.2", features = ["lua54", "vendored"] }
 regex = "1"
 windows = { workspace = true }
+serde = { workspace = true }
+serde_json = { workspace = true }

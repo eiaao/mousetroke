@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import type { AppInfo, EngineStatus } from "../types";
-import { api, errText } from "../api";
+import { api, errText, type Msg } from "../api";
 import { t } from "../i18n";
 import { StarIcon } from "./Icons";
 
@@ -27,10 +27,27 @@ const KEY_LABELS = {
 
 export function About({ engine, onShowGuide, notify }: { engine: EngineStatus; onShowGuide: () => void; notify: (msg: string) => void }) {
   const [info, setInfo] = useState<AppInfo | null>(null);
+  const [update, setUpdate] = useState<Awaited<ReturnType<typeof api.checkUpdate>> | null>(null);
+  const [busy, setBusy] = useState<"check" | "install" | null>(null);
+  const [error, setError] = useState<unknown>(null);
   useEffect(() => {
     api.appInfo().then(setInfo, () => {});
   }, []);
   const open = (what: Parameters<typeof api.openPath>[0]) => api.openPath(what).catch((e) => notify(errText(e)));
+  const checkUpdate = async () => {
+    setBusy("check"); setError(null);
+    try { setUpdate(await api.checkUpdate()); }
+    catch (e) { setError(e); }
+    finally { setBusy(null); }
+  };
+  const installUpdate = async () => {
+    setBusy("install"); setError(null);
+    try { await api.installUpdate(); }
+    catch (e) {
+      setError(e);
+      if ((e as Msg)?.key === "update.error.not_writable") await open("releases");
+    } finally { setBusy(null); }
+  };
 
   return (
     <section className="prefs about" aria-label={t("ui.about.aria")}>
@@ -51,6 +68,28 @@ export function About({ engine, onShowGuide, notify }: { engine: EngineStatus; o
         <button type="button" className="btn primary about-guide" onClick={onShowGuide}>
           {t("ui.about.show_guide")}
         </button>
+      </div>
+
+      <div className="pref-group update-group" aria-busy={busy !== null}>
+        <div className="pref-row">
+          <span className="pref-label">{t("ui.update.version")}<small>{info?.version ?? "…"}</small></span>
+          <button type="button" className="btn small update-check" disabled={busy !== null} onClick={checkUpdate}>
+            {busy === "check" && <span className="update-spinner" aria-hidden />}
+            {t(busy === "check" ? "ui.update.checking" : error ? "ui.update.retry" : "ui.update.check")}
+          </button>
+        </div>
+        <div className="update-status" role="status" aria-live="polite">
+          {busy === "install" ? <p><span className="update-spinner" aria-hidden />{t("ui.update.installing")}</p> : error ? <>
+            <p className="update-error">{errText(error)}</p>
+            <button type="button" className="btn small update-download" onClick={() => open("releases")}>{t("ui.update.download")}</button>
+          </> : update && (update.newer ? <>
+            <p>{t("update.available", { version: update.latest })}</p>
+            <div className="update-actions">
+              <button type="button" className="btn small update-notes" disabled={busy !== null} onClick={() => open("releases")}>{t("ui.update.notes")}</button>
+              <button type="button" className="btn primary update-install" disabled={busy !== null} onClick={installUpdate}>{t("ui.update.install")}</button>
+            </div>
+          </> : <p>{t("ui.update.current")}</p>)}
+        </div>
       </div>
 
       <div className="pref-group about-project" role="group" aria-labelledby="about-project-title">

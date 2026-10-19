@@ -25,11 +25,18 @@ fn main() {
     match args.first().map(String::as_str) {
         None => cmd_run(&[]),
         Some("--config") => cmd_run(&args),
+        Some("--after-update") => {
+            let pids = args.get(1..3).and_then(|p| p.iter().map(|s| s.parse::<u32>().ok()).collect::<Option<Vec<_>>>());
+            if let Some(pids) = pids {
+                if mousetroke_win::update::wait_for_previous(&pids).is_ok() { cmd_run(&args[3..]); }
+                else { eprintln!("{}", t(keys::UPDATE_ERROR_RESTART)); }
+            }
+        }
         Some("import") => cmd_import(&args[1..]),
         Some("run") => cmd_run(&args[1..]),
         Some("autostart") => cmd_autostart(&args[1..]),
         Some("lua") => cmd_lua(&args[1..]),
-        Some("settings") | Some("--settings") => mousetroke_settings::run(args.get(1).map(PathBuf::from)),
+        Some("settings") | Some("--settings") => mousetroke_settings::run(args.get(1).filter(|s| !s.starts_with("--")).map(PathBuf::from)),
         Some("diag") => cmd_diag(),
         Some("-h") | Some("--help") => print_help(),
         Some(other) => {

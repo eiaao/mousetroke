@@ -290,6 +290,11 @@ await clickAll(".tab", 1); await sleep(200); await shot("03-edges");
 // 偏好设置（语言下拉）、导入导出、关于
 const navCount = await page.evaluate(() => document.querySelectorAll(".nav-group:not(.nav-bottom) .nav-item").length);
 await clickAll(".nav-bottom .nav-item", 0); await check("prefs"); await shot("04-prefs");
+if (await page.$eval(".update-preference input", (el) => el.checked)) errors.push("automatic updates must default off");
+await click(".update-preference input"); await sleep(450);
+if (!await page.evaluate(() => window.__saved?.settings.update_check)) errors.push("automatic update preference must save true");
+await click(".update-preference input"); await sleep(450);
+if (await page.evaluate(() => window.__saved?.settings.update_check) !== false) errors.push("automatic update preference must save false");
 await clickAll(".nav-bottom .nav-item", 1); await check("data"); await shot("05-data");
 await clickAll(".nav-bottom .nav-item", 2); await check("about"); await shot("06-about");
 
@@ -312,6 +317,40 @@ for (const selector of [".about-project .pref-row:nth-of-type(1) .btn", ".about-
 const linkCalls = await page.evaluate((n) => window.__calls.slice(n).filter(([cmd]) => cmd === "open_path"), callsBeforeLinks);
 const expectedLinks = ["homepage", "github", "issues", "github"].map((what) => ["open_path", { what }]);
 if (JSON.stringify(linkCalls) !== JSON.stringify(expectedLinks)) errors.push(`incorrect about links: ${JSON.stringify(linkCalls)}`);
+
+// 进入关于页不能自行联网；只有按钮才调用检查。
+if (await page.evaluate(() => window.__calls.some(([cmd]) => cmd === "check_update"))) errors.push("opening About must not check automatically");
+for (const outcome of ["current", "newer", "error"]) {
+  await page.evaluate((value) => { window.__updateOutcome = value; }, outcome);
+  await click(".update-check");
+  const text = await page.$eval(".update-status", (el) => el.textContent);
+  if (catalog) {
+    const expected = outcome === "current" ? catalog["ui.update.current"] : outcome === "newer" ? catalog["update.available"].replace("{version}", "0.2.0") : catalog["update.error.network"];
+    if (!text.includes(expected)) errors.push(`incorrect update state: ${outcome}`);
+  }
+  if (outcome === "newer") {
+    if (!await page.$(".update-install.primary")) errors.push("newer release needs primary install action");
+    await click(".update-notes");
+  }
+  if (outcome === "error") await click(".update-download");
+  await page.$eval(".update-group", (el) => el.scrollIntoView({ block: "start" }));
+  await check(`update-${outcome}`); await shot(`06-update-${outcome}`);
+}
+await page.evaluate(() => { window.__updateOutcome = "newer"; window.__installOutcome = "checksum"; });
+await click(".update-check"); await click(".update-install");
+if (catalog && !(await page.$eval(".update-error", (el) => el.textContent)).includes(catalog["update.error.checksum"])) errors.push("install checksum failure must be localized");
+await page.evaluate(() => { window.__installOutcome = "not_writable"; });
+await click(".update-check"); await click(".update-install");
+const fallback = await page.evaluate(() => window.__calls.filter(([cmd]) => cmd === "open_path").at(-1));
+if (fallback?.[1]?.what !== "releases") errors.push("non-writable install must open releases");
+await page.evaluate(() => { window.__installOutcome = "pending"; });
+await click(".update-check"); await click(".update-install");
+if (!await page.$('.update-group[aria-busy="true"] .update-check:disabled')) errors.push("install must disable duplicate checks");
+await check("update-installing"); await shot("06-update-installing");
+// 定位请求也应切换已经打开的窗口。
+await clickAll(".nav-bottom .nav-item", 0);
+await page.evaluate(() => { window.__aboutRequest = true; });
+await page.waitForSelector(".about", { timeout: 3000 });
 
 // 最小窗口验证长译文：内容不横向溢出，按钮始终完整显示且不在词中换行。
 await page.setViewport({ width: 900, height: 580 });

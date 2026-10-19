@@ -1934,6 +1934,8 @@ dependencies = [
  "mlua",
  "mousetroke-core",
  "regex",
+ "serde",
+ "serde_json",
  "windows",
 ]
 
