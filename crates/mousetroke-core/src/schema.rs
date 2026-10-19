@@ -493,9 +493,14 @@ impl Config {
     }
 
     /// 内置默认配置：首次运行（还没有配置文件）时使用并写盘。
-    /// 内容在 `assets/default-config.json`；名称按当前界面语言本地化。
+    /// Windows 与 macOS 各自使用内置资源；名称按当前界面语言本地化。
     pub fn builtin() -> Self {
-        let mut cfg = Self::from_json(include_str!("../assets/default-config.json")).expect("内置配置必须能解析"); // i18n:allow 内置资源损坏属于编译期错误，测试覆盖
+        let source = if cfg!(target_os = "macos") {
+            include_str!("../assets/default-config-macos.json")
+        } else {
+            include_str!("../assets/default-config.json")
+        };
+        let mut cfg = Self::from_json(source).expect("内置配置必须能解析"); // i18n:allow 内置资源损坏属于编译期错误，测试覆盖
         crate::names::localize_builtin(&mut cfg);
         cfg
     }
@@ -546,6 +551,42 @@ pub fn default_config_path() -> std::path::PathBuf {
 #[cfg(test)]
 mod builtin_tests {
     use super::*;
+
+    #[test]
+    fn mac_defaults_parse_and_have_only_portable_or_disabled_actions() {
+        let source = include_str!("../assets/default-config-macos.json");
+        let cfg = Config::from_json(source).unwrap();
+        assert_eq!(cfg.scopes.len(), 1);
+        assert_eq!(cfg.settings.pause_hotkey, "^%#p");
+        assert!(cfg.all_bindings().count() >= 40);
+        for scope in &cfg.scopes {
+            assert!(!matches!(scope.id.as_str(), "explorer" | "cmd"));
+            assert!(scope.app.is_none());
+            for binding in &scope.bindings {
+                assert!(crate::i18n::try_t(binding.name_key.as_deref().unwrap()).is_some());
+                binding.action.visit(&mut |action| {
+                    if let Action::KeySequence { keys, .. } = action {
+                        let seq = crate::keyseq::parse(keys, false).unwrap();
+                        for step in seq.actions {
+                            if let crate::keyseq::Action::Key { key: crate::keyseq::Key::Vk(vk), .. } = step {
+                                assert!(crate::keymap::vk_to_kvk(vk).is_some());
+                            }
+                        }
+                    } else { assert!(binding.disabled); }
+                });
+            }
+        }
+        let lower = source.to_ascii_lowercase();
+        for windows_only in [".exe", "c:\\", "taskkill", "start cmd", "explorer"] {
+            assert!(!lower.contains(windows_only), "{windows_only}");
+        }
+        let key = |name: &str| cfg.all_bindings().find(|b| b.name_key.as_deref() == Some(name)).unwrap().action.clone();
+        for (name, expected) in [("back", "#["), ("forward", "#]"), ("close_tab", "#w"),
+            ("home", "#{UP}"), ("end", "#{DOWN}"), ("minimize", "#m"),
+            ("prev_tab", "^+{TAB}"), ("next_tab", "^{TAB}")] {
+            assert!(matches!(key(&format!("builtin.gesture.{name}")), Action::KeySequence { keys, .. } if keys == expected));
+        }
+    }
 
     #[test]
     fn config_path_uses_the_platform_directory() {
