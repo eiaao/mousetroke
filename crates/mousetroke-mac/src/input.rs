@@ -203,6 +203,17 @@ fn key_modifier(vk: u16) -> Flags {
     }
 }
 
+/// 真实键盘上 F 键与导航键带 fn 位、方向键与小键盘另带 NumericPad 位；
+/// 缺这些位时系统快捷键（如 ⌃↑ 调度中心、F11 显示桌面）不会匹配。
+fn hardware_flags(vk: u16) -> Flags {
+    match vk {
+        0x25..=0x28 => Flags::MaskSecondaryFn | Flags::MaskNumericPad,
+        0x70..=0x83 | 0x21..=0x24 | 0x2E | 0x2F => Flags::MaskSecondaryFn,
+        0x60..=0x6F | 0x0C | 0x90 | 0x92 => Flags::MaskNumericPad,
+        _ => Flags::empty(),
+    }
+}
+
 /// 修饰键按下累加 flags，按相反顺序抬起时先去掉相应位；两侧通用键不重复注入。
 fn chord(vk: u16, mods: &[ModKey]) -> Option<Vec<(u16, bool, Flags)>> {
     let key = vk_to_kvk(vk)?;
@@ -217,8 +228,8 @@ fn chord(vk: u16, mods: &[ModKey]) -> Option<Vec<(u16, bool, Flags)>> {
             result.push((code, true, flags));
         }
     }
-    result.push((key, true, flags | key_modifier(vk)));
-    result.push((key, false, flags));
+    result.push((key, true, flags | key_modifier(vk) | hardware_flags(vk)));
+    result.push((key, false, flags | hardware_flags(vk)));
     for (code, flag) in held.into_iter().rev() {
         flags.remove(flag);
         result.push((code, false, flags));
@@ -365,6 +376,11 @@ mod tests {
             ]
         );
         assert_eq!(modifier(ModKey::Ctrl), (0x3B, Flags::MaskControl));
+        let up = chord(0x26, &[ModKey::Ctrl]).unwrap();
+        let arrow = Flags::MaskControl | Flags::MaskSecondaryFn | Flags::MaskNumericPad;
+        assert_eq!(up[1], (0x7E, true, arrow));
+        assert_eq!(up[2], (0x7E, false, arrow));
+        assert_eq!(chord(0x7A, &[]).unwrap()[0], (0x67, true, Flags::MaskSecondaryFn));
         assert_eq!(modifier(ModKey::Alt), (0x3A, Flags::MaskAlternate));
         assert!(chord(0xB3, &[]).is_none());
         assert_eq!(chord(0x11, &[ModKey::Ctrl]).unwrap().len(), 2);
