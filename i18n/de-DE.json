@@ -553,7 +553,6 @@
   "mac.cli.help": "Mousetroke {version} — Mausgesten für macOS\n\nVerwendung: mousetroke [run]\n            mousetroke --help",
   "mac.cli.unsupported": "Dieser Unterbefehl wird unter macOS noch nicht unterstützt.",
   "mac.error.main_thread": "Mousetroke muss im Hauptthread starten.",
-  "mac.error.activation": "Der Menüleistenmodus konnte nicht aktiviert werden.",
   "mac.error.engine": "Die Gesten-Engine konnte nicht erstellt werden.",
   "mac.error.startup": "Mousetroke konnte nicht initialisiert werden.",
   "mac.bundle.adhoc_warning": "Warnung: Die Signieridentität {identity} ist nicht verfügbar; Ad-hoc-Signierung wird verwendet. Die Identität ändert sich bei jedem Build, daher fragt macOS erneut nach der Bedienungshilfen-Berechtigung.",

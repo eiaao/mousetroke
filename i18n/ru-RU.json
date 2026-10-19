@@ -565,7 +565,6 @@
   "mac.cli.help": "Mousetroke {version} — жесты мыши для macOS\n\nИспользование: mousetroke [run]\n               mousetroke --help",
   "mac.cli.unsupported": "Эта подкоманда пока не поддерживается в macOS.",
   "mac.error.main_thread": "Mousetroke должен запускаться в главном потоке.",
-  "mac.error.activation": "Не удалось включить режим приложения в строке меню.",
   "mac.error.engine": "Не удалось создать движок жестов.",
   "mac.error.startup": "Не удалось инициализировать Mousetroke.",
   "mac.bundle.adhoc_warning": "Предупреждение: идентификатор подписи {identity} недоступен; используется подпись ad hoc. Идентификатор меняется при каждой сборке, поэтому macOS снова запросит универсальный доступ.",

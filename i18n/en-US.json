@@ -553,7 +553,6 @@
   "mac.cli.help": "Mousetroke {version} — mouse gestures for macOS\n\nUsage: mousetroke [run]\n       mousetroke --help",
   "mac.cli.unsupported": "This subcommand is not supported on macOS yet.",
   "mac.error.main_thread": "Mousetroke must start on the main thread.",
-  "mac.error.activation": "Could not enable menu bar application mode.",
   "mac.error.engine": "Could not create the gesture engine.",
   "mac.error.startup": "Could not initialize Mousetroke.",
   "mac.bundle.adhoc_warning": "Warning: signing identity {identity} is unavailable; using ad-hoc signing. Identity changes every build, so macOS will ask for Accessibility permission again.",

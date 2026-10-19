@@ -193,10 +193,8 @@ fn run_main(mtm: MainThreadMarker) -> Result<i32, String> {
         .map(|binding| binding.name.clone())
         .unwrap_or_default();
     let app = NSApplication::sharedApplication(mtm);
-    // Info.plist 已声明 LSUIElement 时策略本来就是 Accessory，此调用可能返回 NO；不作为启动失败。
-    if !app.setActivationPolicy(NSApplicationActivationPolicy::Accessory) {
-        mousetroke_engine::log!("{}", t(keys::MAC_ERROR_ACTIVATION));
-    }
+    // Info.plist 已声明 LSUIElement 时策略本来就是 Accessory，此调用会返回 NO（真机验证），忽略即可。
+    let _ = app.setActivationPolicy(NSApplicationActivationPolicy::Accessory);
     host::refresh_target();
     host::refresh_screen(mtm);
     let engine = Engine::new(config, (!selftest).then_some(path), Box::new(host::SystemHost))

@@ -547,7 +547,6 @@
   "mac.cli.help": "Mousetroke {version} — macOS 用マウスジェスチャー\n\n使い方：mousetroke [run]\n        mousetroke --help",
   "mac.cli.unsupported": "このサブコマンドは macOS ではまだサポートされていません。",
   "mac.error.main_thread": "Mousetroke はメインスレッドで起動する必要があります。",
-  "mac.error.activation": "メニューバーアプリモードを有効にできませんでした。",
   "mac.error.engine": "ジェスチャーエンジンを作成できませんでした。",
   "mac.error.startup": "Mousetroke を初期化できませんでした。",
   "mac.bundle.adhoc_warning": "警告：署名 ID {identity} が見つからないため、アドホック署名を使用します。ビルドごとに ID が変わるため、macOS は再びアクセシビリティの許可を求めます。",

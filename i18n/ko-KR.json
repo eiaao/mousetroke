@@ -547,7 +547,6 @@
   "mac.cli.help": "Mousetroke {version} — macOS용 마우스 제스처\n\n사용법: mousetroke [run]\n        mousetroke --help",
   "mac.cli.unsupported": "이 하위 명령은 macOS에서 아직 지원되지 않습니다.",
   "mac.error.main_thread": "Mousetroke는 메인 스레드에서 시작해야 합니다.",
-  "mac.error.activation": "메뉴 막대 앱 모드를 활성화할 수 없습니다.",
   "mac.error.engine": "제스처 엔진을 만들 수 없습니다.",
   "mac.error.startup": "Mousetroke를 초기화할 수 없습니다.",
   "mac.bundle.adhoc_warning": "경고: 서명 ID {identity}를 사용할 수 없어 임시 서명을 사용합니다. 빌드할 때마다 ID가 바뀌므로 macOS에서 손쉬운 사용 권한을 다시 요청합니다.",

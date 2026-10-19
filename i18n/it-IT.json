@@ -553,7 +553,6 @@
   "mac.cli.help": "Mousetroke {version} — gesti del mouse per macOS\n\nUso: mousetroke [run]\n     mousetroke --help",
   "mac.cli.unsupported": "Questo sottocomando non è ancora supportato su macOS.",
   "mac.error.main_thread": "Mousetroke deve avviarsi sul thread principale.",
-  "mac.error.activation": "Impossibile attivare la modalità applicazione nella barra dei menu.",
   "mac.error.engine": "Impossibile creare il motore dei gesti.",
   "mac.error.startup": "Impossibile inizializzare Mousetroke.",
   "mac.bundle.adhoc_warning": "Avviso: l’identità di firma {identity} non è disponibile; verrà usata una firma ad hoc. L’identità cambia a ogni compilazione e macOS richiederà nuovamente il permesso di accessibilità.",

@@ -553,7 +553,6 @@
   "mac.cli.help": "Mousetroke {version} — gestos del ratón para macOS\n\nUso: mousetroke [run]\n     mousetroke --help",
   "mac.cli.unsupported": "Este subcomando aún no es compatible con macOS.",
   "mac.error.main_thread": "Mousetroke debe iniciarse en el hilo principal.",
-  "mac.error.activation": "No se pudo activar el modo de aplicación de la barra de menús.",
   "mac.error.engine": "No se pudo crear el motor de gestos.",
   "mac.error.startup": "No se pudo inicializar Mousetroke.",
   "mac.bundle.adhoc_warning": "Advertencia: la identidad de firma {identity} no está disponible; se usará una firma ad hoc. La identidad cambia con cada compilación y macOS volverá a pedir permiso de accesibilidad.",

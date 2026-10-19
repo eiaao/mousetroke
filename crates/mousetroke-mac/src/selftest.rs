@@ -11,6 +11,9 @@ static ECHO_DOWN: AtomicUsize = AtomicUsize::new(0);
 static ECHO_UP: AtomicUsize = AtomicUsize::new(0);
 static EXPECTED_PREFIX: OnceLock<String> = OnceLock::new();
 static EXPECTED_HIT: AtomicBool = AtomicBool::new(false);
+/// tap 已收到自测投递的移动事件：系统对新进程的前几次 CGEventPost 会静默丢弃（权限检查进行中），
+/// 必须确认事件真的能送达后才开始画手势。
+static WARMED: AtomicBool = AtomicBool::new(false);
 const MATCH_PREFIX: &str = "手势命中:"; // i18n:allow 共享引擎的运行日志协议
 
 pub fn observe(text: &str) {
@@ -19,6 +22,12 @@ pub fn observe(text: &str) {
         if EXPECTED_PREFIX.get().is_some_and(|prefix| text.starts_with(prefix)) {
             EXPECTED_HIT.store(true, Ordering::Relaxed);
         }
+    }
+}
+/// tap 回调收到未打标的 MouseMoved 时调用。
+pub fn moved() {
+    if ENABLED.load(Ordering::Relaxed) {
+        WARMED.store(true, Ordering::Relaxed);
     }
 }
 pub fn tagged_echo(kind: Kind) {
@@ -38,6 +47,8 @@ pub struct SelfTest {
     step: Option<u32>,
     origin: (i32, i32),
     original_cursor: Option<CGPoint>,
+    /// 预热完成、已开始投递手势事件。
+    drawing: bool,
     done: bool,
 }
 
@@ -58,6 +69,7 @@ impl SelfTest {
             step: None,
             origin: (0, 0),
             original_cursor: None,
+            drawing: false,
             done: false,
         }
     }
@@ -80,9 +92,24 @@ impl SelfTest {
             self.origin = (center.0 - 100, center.1 - 100);
             self.original_cursor = crate::host::cursor_pos();
             self.step = Some(0);
-            // 启用后等一轮 run loop，确保 tap source 先开始接收事件。
+            self.next = now;
+        }
+        // 预热：反复把光标移到起点，直到 tap 确认收到（真机上前几次投递会被丢弃）。
+        if self.step == Some(0) && !WARMED.load(Ordering::Relaxed) {
+            if now >= self.next {
+                if let Some(event) = crate::host::mouse_event(Kind::MouseMoved, 0, CGPoint::new(self.origin.0 as f64, self.origin.1 as f64), 0) {
+                    CGEvent::post(CGEventTapLocation::HIDEventTap, Some(&event));
+                }
+                self.next = now + Duration::from_millis(50);
+            }
+            return;
+        }
+        if !self.drawing {
+            // 收到移动后再等一小会，让光标位置稳定
+            self.drawing = true;
             self.next = now + Duration::from_millis(100);
             crate::log!("自测开始：右键 ↓→，随后普通右键单击");
+            return;
         }
         if now < self.next {
             return;

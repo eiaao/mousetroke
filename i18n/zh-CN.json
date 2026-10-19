@@ -553,7 +553,6 @@
   "mac.cli.help": "Mousetroke {version} — macOS 鼠标手势\n\n用法：mousetroke [run]\n      mousetroke --help",
   "mac.cli.unsupported": "macOS 暂不支持此子命令。",
   "mac.error.main_thread": "必须在主线程启动 Mousetroke。",
-  "mac.error.activation": "无法启用菜单栏应用模式。",
   "mac.error.engine": "无法创建手势引擎。",
   "mac.error.startup": "无法初始化 Mousetroke。",
   "mac.bundle.adhoc_warning": "警告：找不到签名身份 {identity}，使用临时签名；每次构建身份都会改变，macOS 会再次要求辅助功能授权。",

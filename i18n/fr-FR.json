@@ -553,7 +553,6 @@
   "mac.cli.help": "Mousetroke {version} — gestes de souris pour macOS\n\nUtilisation : mousetroke [run]\n              mousetroke --help",
   "mac.cli.unsupported": "Cette sous-commande n’est pas encore prise en charge sur macOS.",
   "mac.error.main_thread": "Mousetroke doit démarrer sur le thread principal.",
-  "mac.error.activation": "Impossible d’activer le mode d’application de la barre des menus.",
   "mac.error.engine": "Impossible de créer le moteur de gestes.",
   "mac.error.startup": "Impossible d’initialiser Mousetroke.",
   "mac.bundle.adhoc_warning": "Attention : l’identité de signature {identity} est indisponible ; une signature ad hoc sera utilisée. L’identité change à chaque compilation et macOS redemandera l’autorisation d’accessibilité.",

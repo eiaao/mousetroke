@@ -32,6 +32,12 @@ impl Drop for Tap {
     }
 }
 
+/// 调试开关 MOUSETROKE_TRACE_EVENTS=1：记录 tap 收到的每个鼠标按下/抬起（启动时读一次）。
+fn trace_events() -> bool {
+    static TRACE: std::sync::OnceLock<bool> = std::sync::OnceLock::new();
+    *TRACE.get_or_init(|| std::env::var_os("MOUSETROKE_TRACE_EVENTS").is_some_and(|v| v == "1"))
+}
+
 const KINDS: &[Kind] = &[
     Kind::LeftMouseDown,
     Kind::LeftMouseUp,
@@ -161,6 +167,12 @@ unsafe extern "C-unwind" fn callback(
         }
         let pos = CGEvent::location(Some(event_ref));
         let button = CGEvent::integer_value_field(Some(event_ref), Field::MouseEventButtonNumber);
+        if kind == Kind::MouseMoved {
+            crate::selftest::moved();
+        }
+        if trace_events() && !matches!(kind, Kind::ScrollWheel | Kind::KeyDown | Kind::KeyUp | Kind::FlagsChanged) {
+            crate::log!("tap 事件: {kind:?} 按钮={button} ({:.0},{:.0})", pos.x, pos.y);
+        }
         let wheel = if kind == Kind::ScrollWheel {
             let continuous = CGEvent::integer_value_field(Some(event_ref), Field::ScrollWheelEventIsContinuous) != 0;
             // 连续滚动的 fixed-point 数据以像素计；从该事件的 source 读取每行像素数。
