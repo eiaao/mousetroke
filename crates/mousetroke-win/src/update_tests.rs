@@ -162,8 +162,11 @@ fn local_download_verify_replace_and_rollback() {
     state.save(&state_path).unwrap();
     assert!(!UpdateState::load(&state_path).due(now()));
     assert_eq!(UpdateState::load(&state_path).last_notified.as_deref(), Some("1.2.3"));
-    // 已有临时文件属于其他更新事务，失败时不得删除它。
-    std::fs::write(sidecar(&exe, ".new"), b"reserved").unwrap();
-    assert!(matches!(download_replace(&source, &release, &exe), Err(Error::NotWritable)));
-    assert_eq!(std::fs::read(sidecar(&exe, ".new")).unwrap(), b"reserved");
+    // 设置窗口单实例，不会并发更新；残留的半个 .new 来自中断的上次更新，应被覆盖而不是误报不可写。
+    release.sums = format!("{origin}/sums");
+    std::fs::write(sidecar(&exe, ".new"), b"stale").unwrap();
+    let transaction = download_replace(&source, &release, &exe).unwrap();
+    assert_eq!(std::fs::read(&exe).unwrap(), data);
+    transaction.rollback().unwrap();
+    assert_eq!(std::fs::read(&exe).unwrap(), b"original");
 }
