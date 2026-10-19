@@ -1,7 +1,7 @@
 //! flock 保证单实例；原子替换的小请求文件负责唤醒和定位关于页，不依赖窗口标题或 PID 重用。
 use crate::{keys, Msg, MsgResult};
+use mousetroke_mac::instance::InstanceLock;
 use std::{
-    fs::File,
     sync::{
         atomic::{AtomicBool, Ordering},
         OnceLock,
@@ -10,7 +10,7 @@ use std::{
 };
 use tauri::Manager;
 
-static LOCK: OnceLock<File> = OnceLock::new();
+static LOCK: OnceLock<InstanceLock> = OnceLock::new();
 static ABOUT: AtomicBool = AtomicBool::new(false);
 
 fn request_path() -> std::path::PathBuf {
