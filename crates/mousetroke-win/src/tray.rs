@@ -28,7 +28,8 @@ use windows::Win32::UI::WindowsAndMessaging::{
     WM_TIMER, WNDCLASSW, WS_EX_TOOLWINDOW, WS_POPUP,
 };
 
-use crate::engine::{with_engine, Reload};
+use crate::engine::with_engine;
+use mousetroke_engine::Reload;
 use mousetroke_core::i18n::{keys, t, tf};
 use mousetroke_core::keyseq::{parse_hotkey, ModKey};
 

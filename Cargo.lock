@@ -1913,6 +1913,13 @@ dependencies = [
 ]
 
 [[package]]
+name = "mousetroke-engine"
+version = "0.1.1"
+dependencies = [
+ "mousetroke-core",
+]
+
+[[package]]
 name = "mousetroke-settings"
 version = "0.1.1"
 dependencies = [
@@ -1933,6 +1940,7 @@ version = "0.1.1"
 dependencies = [
  "mlua",
  "mousetroke-core",
+ "mousetroke-engine",
  "regex",
  "serde",
  "serde_json",

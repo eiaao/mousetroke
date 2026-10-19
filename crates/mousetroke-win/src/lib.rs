@@ -1,6 +1,6 @@
 //! mousetroke-win —— Windows 平台层。
 //!
-//! - [`engine`]：手势状态机
+//! - [`engine`]：共享手势引擎的 Windows 宿主适配
 //! - [`hooks`]：WH_MOUSE_LL / WH_KEYBOARD_LL 安装与回调
 //! - [`overlay`]：透明穿透轨迹覆盖层（分层窗口 + 软件光栅）
 //! - [`input`]：SendInput 注入 / cmd / 窗口操作
