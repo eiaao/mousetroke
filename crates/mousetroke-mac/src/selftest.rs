@@ -16,6 +16,8 @@ static KEY_DISPATCHES: AtomicUsize = AtomicUsize::new(0);
 static EXPECTED_ACTION: AtomicBool = AtomicBool::new(false);
 static TARGET_SEEN: AtomicBool = AtomicBool::new(false);
 static TARGET_EMPTY: AtomicBool = AtomicBool::new(false);
+static EDGE_MATCHES: AtomicUsize = AtomicUsize::new(0);
+static EDGE_ACTIONS: AtomicUsize = AtomicUsize::new(0);
 
 pub fn resolved_target(bundle_id: &str) {
     if ENABLED.load(Ordering::Relaxed) {
@@ -39,6 +41,9 @@ pub fn observe(text: &str) {
             .is_some_and(|prefix| text.starts_with(prefix))
         {
             EXPECTED_HIT.store(true, Ordering::Relaxed);
+        }
+        if text.contains("（左上角）") { // i18n:allow 引擎边角命中日志协议
+            EDGE_MATCHES.fetch_add(1, Ordering::Relaxed);
         }
     }
 }
@@ -66,6 +71,7 @@ pub fn key_sequence_dispatched(keys: &str, dry_run: bool) {
         if dry_run && EXPECTED_KEYS.get().is_some_and(|expected| expected == keys) {
             EXPECTED_ACTION.store(true, Ordering::Relaxed);
         }
+        if dry_run && keys == "^{UP}" { EDGE_ACTIONS.fetch_add(1, Ordering::Relaxed); }
     }
 }
 
@@ -79,6 +85,7 @@ pub struct SelfTest {
     drawing: bool,
     done: bool,
     overlay_before: (usize, usize),
+    edge_starts_before: usize,
 }
 
 impl SelfTest {
@@ -94,6 +101,8 @@ impl SelfTest {
         MATCHES.store(0, Ordering::Relaxed);
         ECHO_DOWN.store(0, Ordering::Relaxed);
         ECHO_UP.store(0, Ordering::Relaxed);
+        EDGE_MATCHES.store(0, Ordering::Relaxed);
+        EDGE_ACTIONS.store(0, Ordering::Relaxed);
         crate::log!("自测等待事件 tap；使用内置默认配置，按键执行器仅记录、不投递");
         crate::log!("自测预期手势: {expected_name}");
         let now = Instant::now();
@@ -106,6 +115,7 @@ impl SelfTest {
             drawing: false,
             done: false,
             overlay_before: crate::overlay::counters(),
+            edge_starts_before: 0,
         }
     }
 
@@ -156,6 +166,33 @@ impl SelfTest {
         }
         let step = self.step.unwrap_or(0);
         if step == 64 {
+            self.edge_starts_before = crate::overlay::counters().0;
+            let Some((x, y)) = crate::host::virtual_top_left() else { self.finish(1); return };
+            crate::log!("自测边角：合成移动到左上角，停留后离开");
+            // 仅一次移动；由驻留计时器完成第二次检查，覆盖撞角后不再收到移动的情况。
+            if let Some(event) = crate::host::mouse_event(Kind::MouseMoved, 0, CGPoint::new(x as f64, y as f64), 0) {
+                CGEvent::post(CGEventTapLocation::HIDEventTap, Some(&event));
+                self.step = Some(65);
+                self.next = now + Duration::from_millis(250);
+            } else { self.finish(1); }
+            return;
+        }
+        if step == 65 {
+            // 在离开前记录角落只触发一次；不直接调用引擎。
+            if EDGE_MATCHES.load(Ordering::Relaxed) != 1 || crate::overlay::counters().0 != self.edge_starts_before + 1 {
+                crate::log!("自测失败：左上角未开始恰好一次边缘捕获或未匹配");
+                self.finish(1);
+                return;
+            }
+            let center = crate::host::screen_center();
+            if let Some(event) = crate::host::mouse_event(Kind::MouseMoved, 0, CGPoint::new(center.0 as f64, center.1 as f64), 0) {
+                CGEvent::post(CGEventTapLocation::HIDEventTap, Some(&event));
+                self.step = Some(66);
+                self.next = now + Duration::from_millis(300);
+            } else { self.finish(1); }
+            return;
+        }
+        if step == 66 {
             let matched = MATCHES.load(Ordering::Relaxed);
             let expected = EXPECTED_HIT.load(Ordering::Relaxed);
             let down = ECHO_DOWN.load(Ordering::Relaxed);
@@ -165,20 +202,23 @@ impl SelfTest {
             let lines = lines.saturating_sub(self.overlay_before.1);
             let dispatched = KEY_DISPATCHES.load(Ordering::Relaxed);
             let action = EXPECTED_ACTION.load(Ordering::Relaxed);
+            let edge = EDGE_MATCHES.load(Ordering::Relaxed) == 1 && EDGE_ACTIONS.load(Ordering::Relaxed) == 1;
             crate::log!(
                 "自测结果：手势命中次数={matched}，预期手势命中={expected}，点击已补发={}，带标记回声 down={down}, up={up}",
                 down == 1 && up == 1
             );
             crate::log!("自测覆盖层：start_session={starts}, line_to={lines}；按键派发={dispatched}，预期动作 dry_run={action}");
+            crate::log!("自测左上角：捕获并匹配，动作 dry_run={edge}，已移开");
             self.finish(
-                if matched == 1
+                if matched == 2
                     && expected
                     && down == 1
                     && up == 1
-                    && starts >= 1
+                    && starts >= 2
                     && lines > 0
-                    && dispatched == 1
+                    && dispatched == 2
                     && action
+                    && edge
                     && TARGET_SEEN.load(Ordering::Relaxed)
                     && !TARGET_EMPTY.load(Ordering::Relaxed)
                 {

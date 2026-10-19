@@ -560,5 +560,8 @@
   "mac.cert.exists": "L’identità di firma Mousetroke Dev esiste già e verrà riutilizzata.",
   "mac.cert.instructions": "Verrà creato un certificato locale di firma del codice Mousetroke Dev in un portachiavi dedicato (~/Library/Keychains/mousetroke-dev.keychain-db). Funziona via SSH e non chiede password. Conservalo perché i permessi restino validi dopo le ricompilazioni.",
   "mac.cert.created": "Certificato pronto. Eseguire bash scripts/mac/bundle.sh. Conservare il certificato senza rigenerarlo a ogni compilazione.",
-  "mac.action.topmost_unsupported": "macOS non consente di tenere in primo piano le finestre di altre app"
+  "mac.action.topmost_unsupported": "macOS non consente di tenere in primo piano le finestre di altre app",
+  "builtin.gesture.mission_control": "Mission Control",
+  "builtin.gesture.spotlight": "Spotlight",
+  "mac.hot_corner.conflict": "L’angolo attivo di sistema è in conflitto con Mousetroke: {corner}"
 }

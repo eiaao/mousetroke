@@ -155,4 +155,24 @@ mod tests {
         assert_eq!(rgba("#ff0000"), [1.0, 0.0, 0.0, 1.0]);
         assert_eq!(rgba("bad"), [0.0, 0.0, 0.0, 48.0 / 255.0]);
     }
+
+    #[test]
+    fn edges_use_full_frames_including_menu_bar_dock_and_multidisplay_union() {
+        use mousetroke_core::edge::{self, LEFT_TOP, RIGHT_BOTTOM, TOP, BOTTOM};
+        let full = Rect { x: 0.0, y: 0.0, w: 2560.0, h: 1440.0 }.quartz(1440.0);
+        let visible = Rect { x: 0.0, y: 80.0, w: 2560.0, h: 1330.0 }.quartz(1440.0);
+        let bounds = |r: Rect| (r.x as i32, r.y as i32, r.w as i32, r.h as i32);
+        assert_eq!(edge::edge_at(0, 0, bounds(full)), Some(LEFT_TOP));
+        assert_eq!(edge::edge_at(1280, 0, bounds(full)), Some(TOP));
+        assert_eq!(edge::edge_at(1280, 1439, bounds(full)), Some(BOTTOM));
+        assert_eq!(edge::edge_at(2559, 1439, bounds(full)), Some(RIGHT_BOTTOM));
+        assert!(!visible.contains(1280.0, 0.0));
+        assert!(!visible.contains(1280.0, 1439.0));
+        let left = Rect { x: -1920.0, y: 0.0, w: 1920.0, h: 1080.0 }.quartz(1440.0);
+        let above = Rect { x: 0.0, y: 1440.0, w: 2560.0, h: 1440.0 }.quartz(1440.0);
+        let union = full.union(left).union(above);
+        assert_eq!(bounds(union), (-1920, -1440, 4480, 2880));
+        assert_eq!(edge::edge_at(2559, 1439, bounds(union)), Some(RIGHT_BOTTOM));
+        assert_eq!(edge::edge_at(0, 500, bounds(union)), None, "相邻屏幕接缝不是虚拟桌面的边");
+    }
 }

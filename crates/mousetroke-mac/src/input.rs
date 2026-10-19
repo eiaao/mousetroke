@@ -20,10 +20,12 @@ thread_local! {
 
 #[derive(Default)]
 struct Executor {
-    queue: VecDeque<Action>,
+    queue: VecDeque<Queued>,
     active: Option<Job>,
     dry_run: bool,
 }
+
+enum Queued { Action(Action), Parsed(keyseq::KeySeq) }
 
 struct Repeat {
     vk: u16,
@@ -60,7 +62,20 @@ pub fn enqueue(action: Action) {
             crate::log!("按键序列过长，跳过动作");
             return;
         }
-        executor.queue.push_back(action);
+        executor.queue.push_back(Queued::Action(action));
+    });
+}
+
+/// Lua 已按 text_by_default 解析，不能再经过字符串重解析丢失文本语义。
+pub fn enqueue_parsed(sequence: keyseq::KeySeq) {
+    EXECUTOR.with(|slot| {
+        let mut executor = slot.borrow_mut();
+        if executor.queue.len() >= CAPACITY || sequence.actions.len() > MAX_KEYS_BYTES
+            || sequence.actions.iter().any(|s| matches!(s, Step::Text(t) if t.len() > MAX_KEYS_BYTES)) {
+            crate::log!("Lua 按键队列已满或序列过长，跳过调用");
+            return;
+        }
+        executor.queue.push_back(Queued::Parsed(sequence));
     });
 }
 
@@ -83,7 +98,10 @@ impl Executor {
                 let Some(action) = self.queue.pop_front() else {
                     break;
                 };
-                self.active = self.prepare(action, now);
+                self.active = match action {
+                    Queued::Action(action) => self.prepare(action, now),
+                    Queued::Parsed(sequence) => Some(Self::job(sequence, now)),
+                };
                 continue;
             }
             let job = self.active.as_mut().unwrap();
@@ -151,13 +169,17 @@ impl Executor {
         };
         crate::selftest::key_sequence_dispatched(&keys, self.dry_run);
         crate::log!("按键动作已派发: dry_run={}", self.dry_run);
-        Some(Job {
+        Some(Self::job(sequence, now))
+    }
+
+    fn job(sequence: keyseq::KeySeq, now: Instant) -> Job {
+        Job {
             steps: sequence.actions.into_iter(),
             repeat: None,
             text: Vec::new().into_iter(),
             resume: now,
             warned_unsupported: false,
-        })
+        }
     }
 }
 

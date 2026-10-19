@@ -111,6 +111,7 @@ impl Runtime {
         }
         host::drain_replays();
         host::refresh_target();
+        events::settle_edges(now);
         input::tick();
         with_engine(Engine::overlay_tick);
         if now >= self.next_engine_tick {
@@ -257,6 +258,7 @@ fn run_main(mtm: MainThreadMarker) -> Result<i32, String> {
     host::refresh_target();
     host::refresh_screen(mtm);
     input::initialize(selftest);
+    crate::lua::initialize();
     let displays = DisplayObserver::new();
     let engine = Engine::new(
         config,
@@ -308,6 +310,7 @@ fn run_main(mtm: MainThreadMarker) -> Result<i32, String> {
                     }
                 });
                 crate::actions::tick();
+                crate::lua::tick();
             })
         }))
         .is_err()
@@ -321,10 +324,11 @@ fn run_main(mtm: MainThreadMarker) -> Result<i32, String> {
     let timer: Retained<NSTimer> =
         unsafe { NSTimer::timerWithTimeInterval_repeats_block(0.01, true, &block) };
     unsafe { NSRunLoop::mainRunLoop().addTimer_forMode(&timer, NSRunLoopCommonModes) };
-    crate::log!("Mousetroke macOS M2 启动");
+    crate::log!("Mousetroke macOS M3b 启动");
     app.run();
     timer.invalidate();
     crate::actions::shutdown();
+    crate::lua::shutdown();
     events::remove();
     RUNTIME.with(|slot| {
         slot.borrow_mut().take();

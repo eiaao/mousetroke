@@ -418,15 +418,7 @@ fn dispatch(request: Request) {
             }
         }
         Action::Shell { script } => {
-            let script = vars::expand(script, vars);
-            process(
-                move || {
-                    let mut cmd = Command::new("/bin/zsh");
-                    cmd.args(["-c", &script]);
-                    cmd
-                },
-                true,
-            );
+            run_shell(vars::expand(script, vars));
         }
         Action::LaunchApp {
             exe,
@@ -459,11 +451,27 @@ fn dispatch(request: Request) {
                 }
             }
         }
-        Action::Lua { .. } => crate::log!("macOS Lua 动作留待 M3b"),
+        Action::Lua { code } => {
+            let ctx = mousetroke_lua::LuaCtx {
+                pos: *pos,
+                wid: target.as_ref().map_or(0, |t| t.wid),
+                pid: target.as_ref().map_or(0, |t| t.pid),
+                exe: vars.get("MS_EXE").cloned().unwrap_or_default(),
+                title: vars.get("MS_WIN_NAME").cloned().unwrap_or_default(),
+                mode: vars.get("MS_TARGET_MODE").cloned().unwrap_or_default(),
+            };
+            // AX 标题只在工作线程读取；主线程不会等待 Lua 完成。
+            let (code, window) = (code.clone(), window.clone());
+            std::thread::spawn(move || {
+                let mut ctx = ctx;
+                if ctx.pid != 0 { ctx.title = ax::title(ctx.pid, window.as_ref(), ctx.pos); }
+                crate::lua::run(code, ctx);
+            });
+        }
     }
 }
 #[allow(deprecated)] // macOS 11 起的兼容激活入口；新激活 API 不能覆盖最低系统版本。
-fn activate(pid: u32) {
+pub(crate) fn activate(pid: u32) {
     if !NSRunningApplication::runningApplicationWithProcessIdentifier(pid as i32).is_some_and(
         |app| app.activateWithOptions(NSApplicationActivationOptions::ActivateIgnoringOtherApps),
     ) {
@@ -489,7 +497,7 @@ fn completion() -> RcBlock<dyn Fn(*mut NSRunningApplication, *mut NSError)> {
         );
     })
 }
-fn launch(exe: &str, args: &str, if_running: IfRunning) {
+pub(crate) fn launch(exe: &str, args: &str, if_running: IfRunning) {
     let Some(args) = helpers::arguments(args) else {
         crate::log!("应用参数引号不完整，跳过动作");
         return;
@@ -532,7 +540,7 @@ fn launch(exe: &str, args: &str, if_running: IfRunning) {
         Some(&completed),
     );
 }
-fn open_url(text: &str, browser: Option<&str>) {
+pub(crate) fn open_url(text: &str, browser: Option<&str>) {
     let Some(url) = NSURL::URLWithString(&NSString::from_str(text)) else {
         crate::log!("URL 无效，跳过动作");
         return;
@@ -555,6 +563,14 @@ fn open_url(text: &str, browser: Option<&str>) {
     }
 }
 static PROCESSES: AtomicUsize = AtomicUsize::new(0);
+/// 普通 Shell 动作先展开变量；Lua cmd 直接运行传入脚本，与 Windows API 一致。
+pub(crate) fn run_shell(script: String) {
+    process(move || {
+        let mut cmd = Command::new("/bin/zsh");
+        cmd.args(["-c", &script]);
+        cmd
+    }, true);
+}
 fn process(build: impl FnOnce() -> Command + Send + 'static, shell: bool) {
     if PROCESSES.fetch_add(1, Ordering::Relaxed) >= 16 {
         PROCESSES.fetch_sub(1, Ordering::Relaxed);

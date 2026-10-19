@@ -10,6 +10,7 @@ homepage.workspace = true
 [target.'cfg(target_os = "macos")'.dependencies]
 mousetroke-core = { path = "../mousetroke-core" }
 mousetroke-engine = { path = "../mousetroke-engine" }
+mousetroke-lua = { path = "../mousetroke-lua" }
 objc2 = "=0.6.4"
 objc2-foundation = { version = "=0.3.2", default-features = false, features = ["std", "NSArray", "NSEnumerator", "NSString", "NSURL", "NSLocale", "NSDate", "NSDateFormatter", "NSRunLoop", "NSTimer", "NSNotification", "NSOperation", "NSValue", "NSData", "NSDictionary", "block2"] }
 objc2-app-kit = { version = "=0.3.2", default-features = false, features = ["std", "libc", "NSApplication", "NSCell", "NSGraphicsContext", "NSResponder", "NSStatusBar", "NSStatusItem", "NSStatusBarButton", "NSButton", "NSControl", "NSView", "NSWindow", "NSGraphics", "NSFont", "NSAttributedString", "NSStringDrawing", "NSMenu", "NSMenuItem", "NSImage", "NSBezierPath", "NSColor", "NSEvent", "NSScreen", "NSWorkspace", "NSPasteboard", "NSPasteboardItem", "NSRunningApplication", "block2", "objc2-core-foundation", "objc2-core-graphics", "objc2-quartz-core"] }

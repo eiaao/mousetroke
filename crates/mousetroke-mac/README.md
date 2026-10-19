@@ -1,4 +1,4 @@
-# Mousetroke macOS M3a
+# Mousetroke macOS M3b
 
 Apple Silicon, macOS 11+. Install Xcode Command Line Tools and Rust. From the repository root:
 
@@ -6,7 +6,7 @@ Apple Silicon, macOS 11+. Install Xcode Command Line Tools and Rust. From the re
 export CARGO_BUILD_JOBS=4 CARGO_TARGET_DIR="$PWD/target" MACOSX_DEPLOYMENT_TARGET=11.0
 cargo check -p mousetroke-mac -p mousetroke --locked
 cargo clippy -p mousetroke-mac --all-targets -- -D warnings
-cargo test -p mousetroke-core -p mousetroke-engine -p mousetroke-mac --locked
+cargo test -p mousetroke-core -p mousetroke-engine -p mousetroke-lua -p mousetroke-mac --locked
 bash scripts/mac/make-dev-cert.sh
 bash scripts/mac/bundle.sh
 open target/mac/Mousetroke.app
@@ -62,13 +62,13 @@ The frontmost app's first layer-0 window is compared with each full screen frame
 | Shell | Detached `/bin/zsh -c`; null stdin/stdout/stderr; asynchronous exit-status log without script content |
 | SystemKey | Play/pause, next, previous, mute, volume up/down, built-in brightness up/down; unknown keys log and skip; no external DDC |
 | Menu | Native NSMenu at the captured cursor position; recursive submenus; actions queued after selection; columns ignored |
-| Lua | Unsupported until M3b; log and skip |
+| Lua | Shared Lua 5.4 runtime on a worker; macOS backend and limits below; self-test only logs and never starts a VM |
 
 `%MS_EXE%`, `%MS_PID%`, `%MS_WID%`, `%MS_WIN_NAME%`, `%MS_TARGET_MODE%`, mouse coordinates and app basename retain shared-engine semantics. `%MS_SELECTED_TEXT%` first reads AXSelectedText from the system-wide focused element. If unsupported, it snapshots all pasteboard items/types, posts tagged ⌘C, polls changeCount for up to 300 ms, reads the string and restores the previous contents. Backup is split across timer turns (up to 64 items / 256 types / 8 MiB / 300 ms); incomplete or promised-file backups skip capture without modifying the pasteboard. `%MS_CLIPBOARD_TEXT%` reads NSPasteboard before the copy fallback. There are no sleeps on the main thread. Avoid changing the clipboard during that short fallback: the system does not identify which writer changed it. Secure fields, app AX gaps and late copy responses can yield empty text. Logs never include keys, text, clipboard contents, scripts or URL query strings.
 
 ## macOS defaults
 
-`Config::builtin()` selects `assets/default-config-macos.json` on macOS. All 47 general-scope gestures retain their patterns, names and translation keys; explorer/cmd scopes are omitted. Existing saved configurations, including M1 configs, are preserved. Self-test uses new defaults in memory. For interactive testing, quit the app, back up `~/Library/Application Support/mousetroke/config.json`, then copy `crates/mousetroke-core/assets/default-config-macos.json` there before restarting.
+`Config::builtin()` selects `assets/default-config-macos.json` on macOS. The general-scope gestures share the configuration schema; macOS corner names and enabled rules are platform-specific; explorer/cmd scopes are omitted. Existing saved configurations, including M1 configs, are preserved. Self-test uses new defaults in memory. For interactive testing, quit the app, back up `~/Library/Application Support/mousetroke/config.json`, then copy `crates/mousetroke-core/assets/default-config-macos.json` there before restarting.
 
 | Gestures | macOS decision |
 | --- | --- |
@@ -80,7 +80,7 @@ The frontmost app's first layer-0 window is compared with each full screen frame
 | Enter / backspace / forward delete / Esc | Return / Delete / Forward Delete / Esc |
 | Screenshot / minimize / full screen / close window | ⌘⇧4 / AXMinimized / ⌃⌘F / ⌘⇧W (browser window shortcut) |
 | Previous / next desktop | ⌃← / ⌃→ |
-| Start / show desktop / switch app / task switcher | Spotlight ⌘Space / F11 / ⌘Tab / Mission Control ⌃↑ |
+| Corners / edge combinations | See the M3b table below; new defaults apply to fresh configurations |
 | Zoom in / out / reset | ⌘= / ⌘− / ⌘0 |
 | Maximize / minimize | Enabled: AX zoom button / AXMinimized on the captured window |
 | Topmost | Disabled: no public cross-app API |
@@ -89,7 +89,51 @@ The frontmost app's first layer-0 window is compared with each full screen frame
 | Brightness | Supported for built-in displays; defaults remain disabled for the Mac mini external-display test setup; external DDC is out of scope |
 | Task Manager / system settings | Enabled: `com.apple.ActivityMonitor` / `com.apple.systempreferences` |
 
-System and application shortcuts can be reassigned. F11, Spaces and Mission Control depend on Keyboard Shortcuts settings. Maximize/restore is not replaced by full screen. macOS has no public API for keeping another application's window always on top. Labels reuse all ten existing translation catalogs.
+System and application shortcuts can be reassigned. F11, Spaces and Mission Control depend on Keyboard Shortcuts settings. Maximize/restore is not replaced by full screen. macOS has no public API for keeping another application's window always on top. Labels and the Hot Corner warning use all ten translation catalogs.
+
+## Screen corners, edges and system Hot Corners
+
+The canvas uses the union of **full** `NSScreen.frame` rectangles, converted from AppKit bottom-left coordinates to Quartz global logical points with `screens[0]` as the origin reference. `visibleFrame` is used only for label anchors: neither the menu bar nor Dock is subtracted from edge hit testing. Retina scale changes rendering, not event coordinates. Negative screen origins and displays above/below the primary are included. As on Windows, edges belong to the virtual desktop bounding rectangle: internal display seams are not edges; an unoccupied corner of a staggered multi-display bounding rectangle cannot be reached with a physical pointer.
+
+The shared engine requires a 30 ms dwell. macOS can stop emitting mouse moves when the pointer hits a boundary, so the main timer supplies one settle check after 40 ms. It uses the last delivered position, starts only an idle edge capture, or re-evaluates an existing button-free edge trace after its final segment has grown past the denoising threshold. It does not post another event, append trace points or affect held-button gestures. Pure corners fire once until the pointer leaves the edge region; wheel combinations can repeat while held at the edge; the first click/wheel must be within one point of the edge. The shared 100-segment maximum and swallowed-button-release handling remain in effect.
+
+| Position / input | Fresh macOS default |
+| --- | --- |
+| Top-left | Mission Control, ⌃↑ |
+| Top-right | Unbound (the old template is disabled) |
+| Bottom-right | Show desktop, F11 |
+| Bottom-left | Spotlight, ⌘Space |
+| Top + wheel up / down | Volume up / down |
+| Top + middle / right click | Mute / play-pause |
+| Bottom + wheel | Brightness templates disabled: Dock overlap and external-display limitations |
+| Right + ↑↓↑↓ rubbing | Activity Monitor (`com.apple.ActivityMonitor`), execute on match without a button release |
+
+Top-right stays unbound because Notification Center has no stable public scripting entry, and Launchpad/Apps availability and shortcuts differ across macOS versions. No private API or fixed application path is assumed. Saved configurations are preserved; changing built-in defaults does not rewrite an existing user's rules.
+
+At startup and after each **successful** config reload, the host refreshes and reads `com.apple.dock` preferences through `CFPreferencesCopyAppValue`: `wvous-tl-corner` → 9, `wvous-tr-corner` → 3, `wvous-bl-corner` → 12, `wvous-br-corner` → 6. Missing/non-numeric values and 0/1 mean no action. A value >1 conflicts only with an enabled binding beginning with that corner in an enabled scope (including corner combinations and app scopes). Each conflicting corner is logged once per check; one short translated toast names all conflicts. It does not alter system preferences or Mousetroke bindings. Modifier-based system Hot Corners are conservatively reported too. This check is skipped in self-test, and is not a continuous preferences watcher.
+
+## Shared Lua runtime
+
+`crates/mousetroke-lua` owns VM creation, safe standard-library setup (`Lua::new`), the 8 MiB memory limit, BOM handling, `ms_action(pos, wid, pid, exe, title, mode)` entry dispatch, integer compatibility conversions, formatting, the `ms` table and the migrated neutral tests. `LuaPlatform` receives plain Rust values. The Windows crate keeps the original Win32 implementation and WG/User32/luanet/import shims; the macOS crate implements supported operations using M3a helpers. `wgAction` remains an entry fallback, but macOS does not install Windows legacy tables.
+
+Each gesture starts a fresh VM on a worker, after obtaining the captured target's title through AX on that worker. `wid` is CGWindowID; `exe` is the captured .app bundle path (or executable fallback); `pid`, title and mode describe that captured target. AppKit requests go through a bounded queue (64 requests, at most 8 drained per timer turn). Only the Lua worker waits for a read result; the main thread never waits for Lua. `ms.keys` retains parsed text mode and returns after the timer-driven sequence completes; pauses and mouse input remain responsive during sequence delays and `ms.sleep`.
+
+| Lua API | macOS support |
+| --- | --- |
+| `ms.log`, `ms.sleep`, `ms.read_text` | Supported on the worker; explicit logs/errors may include script-provided text |
+| `ms.get_mouse_pos`, `ms.set_mouse_pos` | Quartz global points; posted moves carry the recursion-suppression tag |
+| `ms.get_screen(x, y)` | Full containing display bounds `{left, top, right, bottom}`, exclusive right/bottom; primary fallback outside all screens |
+| `ms.keys(sequence, text_by_default?)` | Shared parser, mapped keyboard chords/text, sleep/repeat; mouse/unmapped items skipped like M3a KeySequence |
+| `ms.open`, `ms.run`, `ms.cmd` | M3a NSWorkspace URL/app launch and `/bin/zsh -c`; run args use the existing quoted word parser |
+| `ms.is_paused`, `ms.set_paused`, `ms.show_toast` | Supported; state writes are dispatched to the main thread; toast uses the engine queue |
+| `ms.get_clipboard_text`, `ms.set_clipboard_text` | String pasteboard on the main thread; set replaces current contents |
+| `ms.focus_win(wid)` | Activates the captured application for the captured CGWindowID; does not raise a particular AX window |
+| `ms.find_win_by_class`, `ms.find_win_by_title`, `ms.set_win_state`, `ms.get_win_state`, `ms.set_win_top` | Unsupported in the Lua backend; nil + one log per API per process (normal WindowOp actions still use M3a AX) |
+| `ms.get_brightness`, `ms.set_brightness` | Unsupported Lua brightness reads/adjustments; nil + one log; media brightness actions remain separate |
+| `ms.is_keys_pressed`, `ms.keys_down`, `ms.keys_up`, `ms.show_settings` | Unsupported in M3b; nil + one log; settings integration is M4 |
+| `WG`, `User32`, `luanet`, `import` | Windows-only shims, absent on macOS |
+
+Compatibility deliberately retains the existing Windows execution policy: **there is no wall-clock timeout or cancellation hook**. Load/entry errors stop that VM invocation, memory errors respect the 8 MiB limit, and sleep blocks only its worker. An infinite loop can consume a worker until process exit; changing this policy on both platforms is separate work. `Lua::new` is not an untrusted-code security boundary. In self-test, Lua actions log their dry-run kind before any AX, clipboard or VM work.
 
 ## Self-test and real-Mac verification
 
@@ -102,7 +146,7 @@ tail -n 80 "$HOME/Library/Logs/mousetroke/mousetroke.log"
 test "$result" -eq 0
 ```
 
-Self-test preserves existing saved config. Once its warm-up move reaches the tap, it posts **untagged** right-button ↓ then → drags (200 points per leg, 30 steps per leg, at least 10 ms apart), then a plain right click. Avoid physical mouse input. After one second it requires exactly one expected close-tab match, exactly one tagged replay down/up pair, positive real-overlay `start_session`/`line_to` counters and exactly one expected KeySequence dispatch in dry-run mode, plus non-empty bundle IDs resolved from the mouse-down target. The executor logs what it would post and **never posts ⌘W or other action keys**. The cursor is restored. Exit **0** means all checks passed; **1** means failure or a 120-second timeout. Overlay counters verify calls, not WindowServer pixels.
+Self-test preserves existing saved config. Once its warm-up move reaches the tap, it posts **untagged** right-button ↓ then → drags (200 points per leg, 30 steps per leg, at least 10 ms apart), then a plain right click. Avoid physical mouse input. After that, it posts one untagged move into the virtual top-left corner, waits for the idle settle check, verifies one corner match, then moves away. It requires one expected close-tab match plus one top-left match, exactly one tagged replay down/up pair, positive real-overlay `start_session`/`line_to` counters, two expected KeySequence dispatches in dry-run mode, and non-empty bundle IDs resolved from the mouse-down target. A system Hot Corner can still react to the physical cursor move; clear it before an isolated self-test. The executor logs what it would post and **never posts ⌘W or other action keys**. The cursor is restored. Exit **0** means all checks passed; **1** means failure or a 120-second timeout. Overlay counters verify calls, not WindowServer pixels.
 
 Then start normally with the macOS defaults and check:
 
@@ -114,7 +158,7 @@ Then start normally with the macOS defaults and check:
 
 Config: `~/Library/Application Support/mousetroke/config.json`. Log: `~/Library/Logs/mousetroke/mousetroke.log`, rotated at 1 MiB to `.log.old`. `MOUSETROKE_SHAPE_SAMPLES=1` enables normalized shape samples. A nonblocking exclusive `flock` prevents duplicate instances.
 
-AppKit, engine, tap, overlay, timers, menus and executor all run on the main thread. WindowServer queries, AX IPC and process launch/wait run on workers with plain data sent back to the main timer. Replay and action injection occur after the tap returns. Logs use a bounded background queue; callback boundaries catch Rust panics. Windows config and CLI behavior are unchanged. Pure coordinate/color tests also run on Windows.
+AppKit, engine, tap, overlay, timers, menus and the key executor all run on the main thread. Lua VMs run on workers. WindowServer queries, AX IPC and process launch/wait run on workers with plain data sent back to the main timer. Replay and action injection occur after the tap returns. Logs use a bounded background queue; callback boundaries catch Rust panics. Windows config and CLI behavior are unchanged. Pure coordinate/color tests also run on Windows.
 
 ## M3a reviewer checklist (real Mac)
 
@@ -140,8 +184,18 @@ Use a signed build with both permissions granted, an active graphical session, a
 - SystemKey mute/up/down: observe system volume changes; on fixed-volume external audio outputs macOS may ignore them.
 - SystemKey brightness up/down: on a MacBook built-in panel brightness changes; on the Mac mini external display only the scope-limit log is expected; unknown key logs and skips.
 - Menu: invoke a multi-item menu with a nested menu; choose an action and observe it after menu dismissal, Escape cancels; repeat with monitors left/above/below primary and mixed Retina scale to verify cursor placement.
-- Lua: run a temporary Lua action; observe the M3b unsupported log and no script effect.
+- Lua: assign `function ms_action(pos, wid, pid, exe, title, mode) ms.log("target %d %s", pid, title); ms.keys("#c{SLEEP 500}"); ms.sleep(500); ms.show_toast("Lua OK"); end`; use a disposable document, check captured context, responsive input/pause during delays, and no recursive gestures. Test text-mode keys and clipboard set/get; call an unsupported API twice and verify nil plus only one unsupported log.
 - System Settings: invoke the default gesture; the existing settings app activates or opens using its bundle id.
 - Permissions/privacy: keep Screen Recording denied, revoke/regrant Accessibility and Input Monitoring separately; prompts/recovery work, AX title has no Screen Recording dependency, no sensitive action content appears in the log.
 
 Remaining risks requiring hardware validation: WindowServer/LaunchServices/AX behavior on macOS 27 and macOS 11, approximately 250 ms stale targeting/fullscreen snapshots, applications with incomplete AX support or identical overlapping window bounds, the unavoidable race with unrelated or late clipboard writes, and media/brightness hardware policy. Synchronous individual AppKit pasteboard calls still depend on the pasteboard server/provider responding promptly; timer slicing bounds our own work, not a misbehaving external provider.
+
+## M3b reviewer checks (real Mac)
+
+- Build/check/clippy on the Mac with the system `cc` (vendored Lua compiles from source); run core/engine/lua/mac tests and the signed self-test; require exit 0 and two dry-run dispatches with no action key posting.
+- On the 2560×1440 display, push into each enabled corner once, remain there, move away and return. Mission Control, F11 and Spotlight depend on the user's system shortcut assignments. Top-right should do nothing.
+- At the literal menu-bar top row, test repeated wheel volume and middle/right clicks. Just below the edge, native clicks/scrolling must pass. The Dock must keep working; brightness defaults remain disabled.
+- Rub ↑↓↑↓ along the right edge without any mouse button: Activity Monitor opens once. More rubbing must not fire until leaving/re-entering. For the scribble limit, use a temporary non-executing long edge-trace binding and exceed 100 segments, with/without an additional held button; release must not leak.
+- Set each system Hot Corner in turn, reload the configuration, and verify one named warning only for enabled Mousetroke corner bindings; disable the binding/scope and reload to verify no warning. Confirm neither setting is changed. Repeat after changing UI language.
+- Repeat edge/corner input on left/above/below display layouts, mixed scaling, and after hot-plug/rearrangement; test fullscreen pause. Internal seams and physically unreachable bounding corners follow the Windows virtual-desktop behavior.
+- Run the Lua cases above, plus URL/app/shell actions, captured-app focus, unsupported calls and load/runtime errors. Restart after deliberately testing a runaway script; there is no script cancellation UI.

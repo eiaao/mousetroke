@@ -898,8 +898,8 @@
           "secured": false
         },
         {
-          "name": "开始菜单",
-          "name_key": "builtin.gesture.start",
+          "name": "聚焦搜索",
+          "name_key": "builtin.gesture.spotlight",
           "pattern": [
             {
               "type": "edge",
@@ -932,8 +932,8 @@
           "secured": false
         },
         {
-          "name": "切换程序",
-          "name_key": "builtin.gesture.switch_app",
+          "name": "调度中心",
+          "name_key": "builtin.gesture.mission_control",
           "pattern": [
             {
               "type": "edge",
@@ -942,7 +942,7 @@
           ],
           "action": {
             "type": "key_sequence",
-            "keys": "#{TAB}"
+            "keys": "^{UP}"
           },
           "execute_on_match": false,
           "hide_label": false,
@@ -963,7 +963,8 @@
           },
           "execute_on_match": false,
           "hide_label": false,
-          "secured": false
+          "secured": false,
+          "disabled": true
         },
         {
           "name": "音量加",
@@ -1121,7 +1122,7 @@
             "type": "launch_app",
             "exe": "com.apple.ActivityMonitor"
           },
-          "execute_on_match": false,
+          "execute_on_match": true,
           "hide_label": false,
           "secured": false
         },

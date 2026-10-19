@@ -93,6 +93,20 @@ pub fn refresh_screen(mtm: MainThreadMarker) -> bool {
 pub fn screen_center() -> (i32, i32) {
     SCREEN.with(|slot| slot.borrow().center)
 }
+pub fn virtual_top_left() -> Option<(i32, i32)> {
+    SCREEN.with(|slot| slot.borrow().displays.iter().map(|d| d.frame).reduce(Rect::union).map(|r| (r.x as i32, r.y as i32)))
+}
+/// 屏幕完整 frame，不扣除菜单栏或 Dock；边角和 Lua 使用同一套 Quartz 全局点。
+pub fn screen_rect(x: i32, y: i32) -> Option<(i32, i32, i32, i32)> {
+    SCREEN.with(|slot| {
+        let screen = slot.borrow();
+        screen.displays.iter().find(|d| d.frame.contains(x as f64, y as f64))
+            .or_else(|| screen.displays.first()).map(|d| {
+                let r = d.frame;
+                (r.x as i32, r.y as i32, (r.x + r.w) as i32, (r.y + r.h) as i32)
+            })
+    })
+}
 pub fn cursor_pos() -> Option<CGPoint> {
     CGEvent::new(None).map(|event| CGEvent::location(Some(&event)))
 }
@@ -159,6 +173,11 @@ impl Host for SystemHost {
     }
     fn refresh_texts(&self) {
         crate::menu::request_refresh();
+    }
+    fn config_applied(&self, config: &mousetroke_core::schema::Config) {
+        if std::env::var_os("MOUSETROKE_SELFTEST").as_deref() != Some(std::ffi::OsStr::new("1")) {
+            crate::hot_corners::check(config);
+        }
     }
 }
 

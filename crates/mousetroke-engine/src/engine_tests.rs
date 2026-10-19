@@ -942,6 +942,53 @@ fn corner_fires_once_until_leaving() {
 }
 
 #[test]
+fn stationary_corner_settle_respects_dwell_pause_and_rearm() {
+    let mut t = T::new(false);
+    t.to(0, 1079);
+    t.e.settle_edges(0, 1079);
+    assert!(t.executed().is_empty());
+    t.e.edge_pending.as_mut().unwrap().1 = Instant::now() - EDGE_DWELL;
+    t.e.settle_edges(1, 1079);
+    assert!(t.executed().is_empty(), "过期坐标不能触发");
+    t.e.set_paused(true);
+    t.e.settle_edges(0, 1079);
+    assert!(t.executed().is_empty());
+    t.e.set_paused(false);
+    t.e.settle_edges(0, 1079);
+    assert_eq!(t.executed(), ["start"]);
+    t.e.settle_edges(0, 1079);
+    assert_eq!(t.executed(), ["start"]);
+    t.to(300, 700);
+    t.to(0, 1079);
+    t.e.edge_pending.as_mut().unwrap().1 = Instant::now() - EDGE_DWELL;
+    t.e.settle_edges(0, 1079);
+    assert_eq!(t.executed(), ["start", "start"]);
+}
+
+#[test]
+fn mac_default_right_edge_rubbing_executes_without_a_button_release() {
+    let mut cfg = Config::from_json(include_str!("../../mousetroke-core/assets/default-config-macos.json")).unwrap();
+    let binding = cfg.scopes[0].bindings.iter_mut().find(|b| b.name_key.as_deref() == Some("builtin.gesture.task_manager")).unwrap();
+    assert!(matches!(&binding.action, Action::LaunchApp { exe, .. } if exe == "com.apple.ActivityMonitor"));
+    binding.action = Action::Shell { script: "activity_monitor".into() };
+    let mut t = T::with_config(cfg);
+    t.dwell(1919, 600);
+    assert!(t.e.capture.is_some());
+    for y in [400, 600, 400, 600] { t.drag(1919, y); }
+    t.e.settle_edges(1919, 600);
+    assert_eq!(t.executed(), ["activity_monitor"], "segments={:?}, strokes={:?}, label={:?}, capture={:?}", t.e.tracker.segments(), t.e.tracker.strokes(), t.e.live_label, t.e.capture.as_ref().map(|c| (c.trigger, c.state)));
+    assert!(t.e.capture.is_none());
+    for y in [400, 600, 400, 600] { t.drag(1919, y); }
+    t.e.settle_edges(1919, 600);
+    assert_eq!(t.executed(), ["activity_monitor"], "segments={:?}, strokes={:?}, label={:?}, capture={:?}", t.e.tracker.segments(), t.e.tracker.strokes(), t.e.live_label, t.e.capture.as_ref().map(|c| (c.trigger, c.state)));
+    t.to(1500, 600);
+    t.dwell(1919, 600);
+    for y in [400, 600, 400, 600] { t.drag(1919, y); }
+    t.e.settle_edges(1919, 600);
+    assert_eq!(t.executed(), ["activity_monitor", "activity_monitor"]);
+}
+
+#[test]
 fn lost_release_does_not_wedge_the_engine() {
     let mut t = T::new(false);
     t.down(B::Right);
