@@ -559,5 +559,6 @@
   "mac.bundle.done": "Bundle created: {path}",
   "mac.cert.exists": "The Mousetroke Dev code-signing identity already exists and will be reused.",
   "mac.cert.instructions": "Creating a local Mousetroke Dev code-signing certificate in a dedicated keychain (~/Library/Keychains/mousetroke-dev.keychain-db). It works over SSH and never asks for a password. Keep it so permissions survive rebuilds.",
-  "mac.cert.created": "Certificate ready. Run bash scripts/mac/bundle.sh. Keep the certificate; do not regenerate it for each build."
+  "mac.cert.created": "Certificate ready. Run bash scripts/mac/bundle.sh. Keep the certificate; do not regenerate it for each build.",
+  "mac.action.topmost_unsupported": "Keeping other apps on top is unavailable on macOS"
 }

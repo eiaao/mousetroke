@@ -110,11 +110,11 @@ impl Runtime {
             with_engine(Engine::on_display_change);
         }
         host::drain_replays();
+        host::refresh_target();
         input::tick();
         with_engine(Engine::overlay_tick);
         if now >= self.next_engine_tick {
             self.next_engine_tick = now + Duration::from_millis(250);
-            host::refresh_target();
             with_engine(Engine::toast_tick);
         }
         if now >= self.next_permissions {
@@ -307,6 +307,7 @@ fn run_main(mtm: MainThreadMarker) -> Result<i32, String> {
                         }
                     }
                 });
+                crate::actions::tick();
             })
         }))
         .is_err()
@@ -323,6 +324,7 @@ fn run_main(mtm: MainThreadMarker) -> Result<i32, String> {
     crate::log!("Mousetroke macOS M2 启动");
     app.run();
     timer.invalidate();
+    crate::actions::shutdown();
     events::remove();
     RUNTIME.with(|slot| {
         slot.borrow_mut().take();

@@ -559,5 +559,6 @@
   "mac.bundle.done": "应用已打包：{path}",
   "mac.cert.exists": "Mousetroke Dev 代码签名身份已存在，将继续使用。",
   "mac.cert.instructions": "将在专用钥匙串（~/Library/Keychains/mousetroke-dev.keychain-db）中创建本地 Mousetroke Dev 代码签名证书，SSH 下也可使用，无需输入密码。请保留它，重建后权限才能继续有效。",
-  "mac.cert.created": "证书已就绪。运行 bash scripts/mac/bundle.sh；请勿删除证书或每次重新生成。"
+  "mac.cert.created": "证书已就绪。运行 bash scripts/mac/bundle.sh；请勿删除证书或每次重新生成。",
+  "mac.action.topmost_unsupported": "macOS 不支持其他应用窗口置顶"
 }

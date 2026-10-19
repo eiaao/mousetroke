@@ -1,4 +1,4 @@
-# Mousetroke macOS M2
+# Mousetroke macOS M3a
 
 Apple Silicon, macOS 11+. Install Xcode Command Line Tools and Rust. From the repository root:
 
@@ -14,9 +14,9 @@ open target/mac/Mousetroke.app
 
 The certificate script creates a **Mousetroke Dev** signing identity in a dedicated keychain. Follow its trust instructions and keep the identity and app path stable across rebuilds. Set `MOUSETROKE_SIGN_ID` for another identity. Without a matching identity, bundling warns and uses ad-hoc signing; rebuilding can then require Accessibility permission again. This development bundle is not notarized.
 
-Grant **Accessibility** and **Input Monitoring** to `Mousetroke.app` in System Settings → Privacy & Security. The menu links to missing permissions. Permissions are checked every two seconds and the tap starts without restarting. Prompts are requested only on first launch, tracked by `permission-prompted` in Application Support. SSH tests require an active graphical login for the same user. Use the signed bundle for repeatable permission tests.
+**Screen Recording is not required**: titles are obtained through Accessibility, never `kCGWindowName`. Grant **Accessibility** and **Input Monitoring** to `Mousetroke.app` in System Settings → Privacy & Security. The menu links to missing permissions. Permissions are checked every two seconds and the tap starts without restarting. Prompts are requested only on first launch, tracked by `permission-prompted` in Application Support. SSH tests require an active graphical login for the same user. Use the signed bundle for repeatable permission tests.
 
-The menu icon dims while paused or awaiting permission. Toggle pause from the menu or with **⌃⌥⌘P**. Ordinary right clicks are replayed. Right-button drags recognize shared-engine gestures and send configured keys to the focused application. Frontmost-app metadata is sampled every 250 ms; window IDs remain zero. Fullscreen detection, target activation and automatic updates remain for later milestones.
+The menu icon dims while paused or awaiting permission. Toggle pause from the menu or with **⌃⌥⌘P**. Ordinary right clicks are replayed. Right-button drags recognize shared-engine gestures and send configured keys to the focused application. Window targeting and fullscreen pause use a roughly 250 ms snapshot. Target activation is supported; automatic updates remain for later milestones.
 
 ## Overlay
 
@@ -39,7 +39,32 @@ Trail and label fade together through an explicit 200 ms opacity animation; the 
 | `%` Alt | Option ⌥ | `0x3a` | `MaskAlternate` |
 | `#` Win | Command ⌘ | `0x37` | `MaskCommand` |
 
-Chords release modifiers in reverse order, with matching flags. A whole chord is allocated before posting. Repeats are lazy, `{SLEEP ms}` uses a deadline, and each timer tick runs at most 32 executor steps. Parser `Text` items use `CGEventKeyboardSetUnicodeString`, one complete Unicode scalar (including surrogate pairs) per event pair. The existing `parse(..., false)` grammar produces US-layout presses for literal characters and rejects non-ASCII literals; the shared grammar is unchanged. Mouse items and unmapped keys are skipped with one content-free log per sequence. Non-`down_up` modes are skipped. `activate_target` is ignored with one log per process. Other action types log unsupported until M3.
+Chords release modifiers in reverse order, with matching flags. A whole chord is allocated before posting. Repeats are lazy, `{SLEEP ms}` uses a deadline, and each timer tick runs at most 32 executor steps. Parser `Text` items use `CGEventKeyboardSetUnicodeString`, one complete Unicode scalar (including surrogate pairs) per event pair. The existing `parse(..., false)` grammar produces US-layout presses for literal characters and rejects non-ASCII literals; the shared grammar is unchanged. Mouse items and unmapped keys are skipped with one content-free log per sequence. Non-`down_up` modes are skipped. `activate_target` activates the captured application and yields at least 30 ms before sending keys. Key sequences are serialized with the other action requests.
+
+## Targeting, fullscreen pause and actions
+
+A worker calls `CGWindowListCopyWindowInfo(OnScreenOnly | ExcludeDesktopElements)` in front-to-back order. The main timer resolves each owner PID through `NSRunningApplication` and caches targets by `(pid, CGWindowID)` for about 250 ms. A mouse-down performs only a layer-0 bounds hit-test in Quartz global points; the first covering window wins. Nothing under the cursor (desktop/menu area without a window) falls back to the frontmost application and its first layer-0 window. Own-app, Dock, SystemUIServer, Control Center and Notification Center bundle IDs pass through; visible shell surfaces above layer 0 are checked before underlying application windows. A slow `target_at` (>2 ms) is logged once.
+
+`Target.exe` is the **.app bundle path**, falling back to the executable path for unbundled programs. Existing per-app scopes match either `/Applications/Google Chrome.app` or the basename `Google Chrome.app` through the unchanged core matcher (case-insensitive). `Target.class` is the **bundle id**, such as `com.google.Chrome`; it filters system UI and is not a second scope matcher. `wid` is the CGWindowID, `pid` the owner PID. The current shared engine resolves scopes from `exe`, not title/class. Window titles are cached at `Host::window_title`; actions referencing `%MS_WIN_NAME%` lazily refresh them on an AX worker, matching AX windows by position and size. No Screen Recording prompt is needed. A moved/closed or inaccessible target is skipped rather than operating on an unrelated focused window.
+
+The frontmost app's first layer-0 window is compared with each full screen frame (2-point tolerance). A matching fullscreen Space or presentation window pauses button and edge gestures. This follows the shared engine's existing automatic pause behavior; there is currently no separate `pause_fullscreen` setting. Detection may lag the snapshot by roughly one interval.
+
+| Action | macOS support / limits |
+| --- | --- |
+| KeySequence | Supported: Command/Option/Control/Shift, tagged events, timer-based sleep/repeat; only `down_up`, mapped keyboard keys and supported shared grammar |
+| WindowOp Minimize | AXMinimized = true on the captured window |
+| WindowOp ToggleMaximize | AXZoomButton + AXPress; minimized windows or absent buttons log and skip |
+| WindowOp Close | AXCloseButton + AXPress on the captured window; normal unsaved-document prompts still apply |
+| WindowOp ToggleTopmost | Unsupported public cross-app API: translated short toast and log |
+| LaunchApp | .app path, bundle id or absolute executable via asynchronous NSWorkspace; if LaunchServices rejects an unbundled executable, launch it on a worker; args use quoted/escaped word splitting without shell expansion |
+| LaunchApp if_running | Activate reuses/activates an existing app; RunAgain requests a new instance (app may refuse); SendKeys is treated as Activate and logged; elevate is ignored and logged |
+| OpenUrl | NSWorkspace, optional browser .app path/bundle id; selected text is URL-encoded, or opened directly if it is already a URL |
+| Shell | Detached `/bin/zsh -c`; null stdin/stdout/stderr; asynchronous exit-status log without script content |
+| SystemKey | Play/pause, next, previous, mute, volume up/down, built-in brightness up/down; unknown keys log and skip; no external DDC |
+| Menu | Native NSMenu at the captured cursor position; recursive submenus; actions queued after selection; columns ignored |
+| Lua | Unsupported until M3b; log and skip |
+
+`%MS_EXE%`, `%MS_PID%`, `%MS_WID%`, `%MS_WIN_NAME%`, `%MS_TARGET_MODE%`, mouse coordinates and app basename retain shared-engine semantics. `%MS_SELECTED_TEXT%` first reads AXSelectedText from the system-wide focused element. If unsupported, it snapshots all pasteboard items/types, posts tagged ⌘C, polls changeCount for up to 300 ms, reads the string and restores the previous contents. Backup is split across timer turns (up to 64 items / 256 types / 8 MiB / 300 ms); incomplete or promised-file backups skip capture without modifying the pasteboard. `%MS_CLIPBOARD_TEXT%` reads NSPasteboard before the copy fallback. There are no sleeps on the main thread. Avoid changing the clipboard during that short fallback: the system does not identify which writer changed it. Secure fields, app AX gaps and late copy responses can yield empty text. Logs never include keys, text, clipboard contents, scripts or URL query strings.
 
 ## macOS defaults
 
@@ -53,13 +78,16 @@ Chords release modifiers in reverse order, with matching flags. A whole chord is
 | Top / bottom | ⌘↑ / ⌘↓ |
 | Copy / paste / cut / paste + Enter | ⌘C / ⌘V / ⌘X / ⌘V then Return |
 | Enter / backspace / forward delete / Esc | Return / Delete / Forward Delete / Esc |
-| Screenshot / minimize / full screen / close window | ⌘⇧4 / ⌘M / ⌃⌘F / ⌘⇧W (browser window shortcut) |
+| Screenshot / minimize / full screen / close window | ⌘⇧4 / AXMinimized / ⌃⌘F / ⌘⇧W (browser window shortcut) |
 | Previous / next desktop | ⌃← / ⌃→ |
 | Start / show desktop / switch app / task switcher | Spotlight ⌘Space / F11 / ⌘Tab / Mission Control ⌃↑ |
 | Zoom in / out / reset | ⌘= / ⌘− / ⌘0 |
-| Maximize / topmost / force kill / web search | Retained, disabled pending M3; kill command uses `/bin/kill` |
-| Media, volume, brightness (8 gestures) | Retained, disabled pending M3 |
-| Task Manager / system settings | Activity Monitor / System Settings app paths, disabled pending M3 |
+| Maximize / minimize | Enabled: AX zoom button / AXMinimized on the captured window |
+| Topmost | Disabled: no public cross-app API |
+| Force kill / web search | Enabled: `/bin/kill -9 %MS_PID%` / selected-text search |
+| Media / volume | Enabled: tagged NX system-defined events |
+| Brightness | Supported for built-in displays; defaults remain disabled for the Mac mini external-display test setup; external DDC is out of scope |
+| Task Manager / system settings | Enabled: `com.apple.ActivityMonitor` / `com.apple.systempreferences` |
 
 System and application shortcuts can be reassigned. F11, Spaces and Mission Control depend on Keyboard Shortcuts settings. Maximize/restore is not replaced by full screen. macOS has no public API for keeping another application's window always on top. Labels reuse all ten existing translation catalogs.
 
@@ -74,16 +102,46 @@ tail -n 80 "$HOME/Library/Logs/mousetroke/mousetroke.log"
 test "$result" -eq 0
 ```
 
-Self-test preserves existing saved config. Once its warm-up move reaches the tap, it posts **untagged** right-button ↓ then → drags (200 points per leg, 30 steps per leg, at least 10 ms apart), then a plain right click. Avoid physical mouse input. After one second it requires exactly one expected close-tab match, exactly one tagged replay down/up pair, positive real-overlay `start_session`/`line_to` counters and exactly one expected KeySequence dispatch in dry-run mode. The executor logs what it would post and **never posts ⌘W or other action keys**. The cursor is restored. Exit **0** means all checks passed; **1** means failure or a 120-second timeout. Overlay counters verify calls, not WindowServer pixels.
+Self-test preserves existing saved config. Once its warm-up move reaches the tap, it posts **untagged** right-button ↓ then → drags (200 points per leg, 30 steps per leg, at least 10 ms apart), then a plain right click. Avoid physical mouse input. After one second it requires exactly one expected close-tab match, exactly one tagged replay down/up pair, positive real-overlay `start_session`/`line_to` counters and exactly one expected KeySequence dispatch in dry-run mode, plus non-empty bundle IDs resolved from the mouse-down target. The executor logs what it would post and **never posts ⌘W or other action keys**. The cursor is restored. Exit **0** means all checks passed; **1** means failure or a 120-second timeout. Overlay counters verify calls, not WindowServer pixels.
 
 Then start normally with the macOS defaults and check:
 
 1. In a browser with history, draw ←/→; verify back/forward, trail, translated label and unchanged focus. Try ↓→ on a disposable tab; it must close that tab.
 2. Start another gesture within 200 ms of release, repeatedly. No old trail should remain or erase the new trail. Try an unrecognized gesture and verify its toast disappears.
-3. Repeat on Retina/1x screens, screens left/above/below primary, across screen boundaries and in a full-screen browser. Verify visible-frame label anchors, crisp text and configured colors/width.
+3. Repeat on Retina/1x screens, screens left/above/below primary, across screen boundaries and in a full-screen browser (gestures must pass through while fullscreen pause is active). Verify visible-frame label anchors, crisp text and configured colors/width.
 4. While idle and drawing, connect/disconnect a display, change resolution/scaling or rearrange screens. The old canvas must close, capture must cancel, and the next gesture must use the new layout.
 5. Test copy/paste, tab navigation, Option/Control/Command chords and `#c{SLEEP 500}#v` in a disposable document. Confirm no recursion or stuck modifiers; clicks and pause should respond during delays.
 
 Config: `~/Library/Application Support/mousetroke/config.json`. Log: `~/Library/Logs/mousetroke/mousetroke.log`, rotated at 1 MiB to `.log.old`. `MOUSETROKE_SHAPE_SAMPLES=1` enables normalized shape samples. A nonblocking exclusive `flock` prevents duplicate instances.
 
-AppKit, engine, tap, overlay, timers, menus and executor all run on the main thread. Replay and action injection occur after the tap returns. Logs use a bounded background queue; callback boundaries catch Rust panics. Windows config and CLI behavior are unchanged. Pure coordinate/color tests also run on Windows.
+AppKit, engine, tap, overlay, timers, menus and executor all run on the main thread. WindowServer queries, AX IPC and process launch/wait run on workers with plain data sent back to the main timer. Replay and action injection occur after the tap returns. Logs use a bounded background queue; callback boundaries catch Rust panics. Windows config and CLI behavior are unchanged. Pure coordinate/color tests also run on Windows.
+
+## M3a reviewer checklist (real Mac)
+
+Use a signed build with both permissions granted, an active graphical session, and fresh macOS defaults copied as described above. Run the self-test first (exit 0; resolved bundle id non-empty; no action side effects). Use disposable documents/windows and a disposable process for destructive actions. For action cases without a built-in binding, temporarily assign the JSON action to a known gesture in the config and let hot reload apply it.
+
+- Target/scopes: overlap two apps, keep A frontmost but draw on B's exposed window; B's `/Applications/…app` scope must win; repeat with `…app` basename, a disabled scope, and two windows of the same app.
+- Fallback/ignore: right-click the desktop, Dock, menu bar, Control Center, Notification Center and Mousetroke menu; normal system menus must work without an accidental gesture.
+- Fullscreen pause: enter a browser fullscreen Space, then a presentation covering an entire display; gestures pass through, resume after leaving; a merely maximized window with the menu bar visible must not pause; repeat on a secondary screen.
+- KeySequence: back/forward and `#c{SLEEP 500}#v`; observe correct keys, responsive pause/clicks during the delay, no recursive gestures or stuck modifiers; `activate_target:true` must activate the captured app first.
+- Minimize: draw on an exposed background window; only that window enters the Dock, the other app stays open.
+- ToggleMaximize: draw twice on a resizable window; zoom then restore; a window without a zoom button logs and skips; minimize it before dispatch to verify the minimized skip.
+- Close: draw on a disposable background window; only the captured window closes (or asks to save).
+- ToggleTopmost: enable a temporary binding; observe a short translated unsupported toast and log, no window stacking change; repeat after changing UI language.
+- LaunchApp Activate: launch `com.apple.ActivityMonitor`, then its .app path; the second gesture activates the existing app; quoted args such as `--args 'two words'` must remain separate arguments when tested with a suitable app.
+- LaunchApp RunAgain/SendKeys/elevate: test a disposable app supporting multiple instances; RunAgain requests a second instance, SendKeys activates without typing args, elevate logs unsupported without prompting for root.
+- LaunchApp executable: launch an absolute test executable such as `/usr/bin/true`; a completion status appears and mouse input remains responsive.
+- OpenUrl: select `a b&中文` and invoke search; the query is encoded exactly once; select `https://example.com/?x=1` and observe direct navigation; repeat with `browser:com.apple.Safari` and a browser .app path.
+- Shell/variables: use `/bin/sleep 2; /usr/bin/printf '%s\n' '%MS_EXE%' '%MS_PID%' '%MS_WID%' '%MS_WIN_NAME%' '%MS_TARGET_MODE%' '%MS_CLIPBOARD_TEXT%' > /tmp/mousetroke-m3a-vars`; input stays responsive, file values describe the captured target, status is logged later, no values appear in the log.
+- Force kill: open a disposable app and draw the kill gesture on its window; `/bin/kill -9` ends only the captured PID.
+- Selected text AX: select text in TextEdit and search; the selected text is used while an existing rich clipboard remains unchanged.
+- Selected text fallback: in an app that omits AXSelectedText, select text and search; ⌘C works, the previous text/rich/image pasteboard items are restored; with no selection or a copy timeout the action completes using empty text and input stays responsive.
+- SystemKey play/next/previous: with a media app open, trigger each action; playback toggles and tracks move as expected, with no echo gesture.
+- SystemKey mute/up/down: observe system volume changes; on fixed-volume external audio outputs macOS may ignore them.
+- SystemKey brightness up/down: on a MacBook built-in panel brightness changes; on the Mac mini external display only the scope-limit log is expected; unknown key logs and skips.
+- Menu: invoke a multi-item menu with a nested menu; choose an action and observe it after menu dismissal, Escape cancels; repeat with monitors left/above/below primary and mixed Retina scale to verify cursor placement.
+- Lua: run a temporary Lua action; observe the M3b unsupported log and no script effect.
+- System Settings: invoke the default gesture; the existing settings app activates or opens using its bundle id.
+- Permissions/privacy: keep Screen Recording denied, revoke/regrant Accessibility and Input Monitoring separately; prompts/recovery work, AX title has no Screen Recording dependency, no sensitive action content appears in the log.
+
+Remaining risks requiring hardware validation: WindowServer/LaunchServices/AX behavior on macOS 27 and macOS 11, approximately 250 ms stale targeting/fullscreen snapshots, applications with incomplete AX support or identical overlapping window bounds, the unavoidable race with unrelated or late clipboard writes, and media/brightness hardware policy. Synchronous individual AppKit pasteboard calls still depend on the pasteboard server/provider responding promptly; timer slicing bounds our own work, not a misbehaving external provider.

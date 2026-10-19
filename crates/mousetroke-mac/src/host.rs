@@ -8,7 +8,7 @@ use mousetroke_core::{
 };
 use mousetroke_engine::{Canvas, Host, Target};
 use objc2::MainThreadMarker;
-use objc2_app_kit::{NSScreen, NSWorkspace};
+use objc2_app_kit::NSScreen;
 use objc2_core_foundation::CGPoint;
 use objc2_core_graphics::{CGEvent, CGEventField, CGEventTapLocation, CGEventType, CGMouseButton};
 use objc2_foundation::NSLocale;
@@ -22,9 +22,6 @@ struct Replay {
 }
 thread_local! {
     static REPLAYS: RefCell<VecDeque<Replay>> = RefCell::new(VecDeque::with_capacity(64));
-    static TARGET: RefCell<Target> = const { RefCell::new(Target {
-        wid: 0, pid: 0, exe: None, class: String::new(), is_desktop: false,
-    }) };
     static SCREEN: RefCell<Screen> = const { RefCell::new(Screen {
         center: (960, 540), displays: Vec::new(),
     }) };
@@ -51,29 +48,16 @@ pub fn system_langs() -> Vec<String> {
 }
 
 pub fn refresh_target() {
-    let front = NSWorkspace::sharedWorkspace().frontmostApplication();
-    let target = front
-        .map(|app| Target {
-            wid: 0,
-            pid: app.processIdentifier() as u32,
-            exe: app
-                .executableURL()
-                .and_then(|url| url.path())
-                .map(|path| path.to_string()),
-            class: app
-                .bundleIdentifier()
-                .map(|id| id.to_string())
-                .unwrap_or_default(),
-            is_desktop: false,
-        })
-        .unwrap_or(Target {
-            wid: 0,
-            pid: 0,
-            exe: None,
-            class: String::new(),
-            is_desktop: false,
-        });
-    TARGET.with(|slot| *slot.borrow_mut() = target);
+    SCREEN.with(|slot| {
+        crate::targeting::refresh(
+            &slot
+                .borrow()
+                .displays
+                .iter()
+                .map(|d| d.frame)
+                .collect::<Vec<_>>(),
+        )
+    });
 }
 
 pub fn refresh_screen(mtm: MainThreadMarker) -> bool {
@@ -115,17 +99,17 @@ pub fn cursor_pos() -> Option<CGPoint> {
 
 pub struct SystemHost;
 impl Host for SystemHost {
-    fn target_at(&self, _x: i32, _y: i32) -> Target {
-        TARGET.with(|slot| slot.borrow().clone())
+    fn target_at(&self, x: i32, y: i32) -> Target {
+        crate::targeting::at(x, y)
     }
     fn ignore_target(&self, target: &Target) -> bool {
-        target.pid == std::process::id() || target.class == "io.github.eiaao.mousetroke"
+        crate::targeting::ignored(target)
     }
-    fn window_title(&self, _wid: usize) -> String {
-        String::new()
+    fn window_title(&self, wid: usize) -> String {
+        crate::targeting::title(wid)
     }
     fn foreground_fullscreen(&self) -> bool {
-        false
+        crate::targeting::fullscreen()
     }
     fn replay(&self, button: MouseButton, click: bool) {
         REPLAYS.with(|slot| {
@@ -138,8 +122,8 @@ impl Host for SystemHost {
             }
         });
     }
-    fn execute(&self, action: Action, _target: Option<Target>, _vars: Vars, _pos: (i32, i32)) {
-        crate::input::enqueue(action);
+    fn execute(&self, action: Action, target: Option<Target>, vars: Vars, pos: (i32, i32)) {
+        crate::actions::enqueue(action, target, vars, pos);
     }
     fn label_anchor(&self, x: i32, y: i32) -> (i32, i32) {
         SCREEN.with(|slot| {

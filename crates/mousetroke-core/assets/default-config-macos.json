@@ -470,8 +470,7 @@
           },
           "execute_on_match": false,
           "hide_label": false,
-          "secured": false,
-          "disabled": true
+          "secured": false
         },
         {
           "name": "回车",
@@ -640,8 +639,8 @@
             }
           ],
           "action": {
-            "type": "key_sequence",
-            "keys": "#m"
+            "type": "window_op",
+            "op": "minimize"
           },
           "execute_on_match": false,
           "hide_label": false,
@@ -671,8 +670,7 @@
           },
           "execute_on_match": false,
           "hide_label": false,
-          "secured": false,
-          "disabled": true
+          "secured": false
         },
         {
           "name": "全屏",
@@ -762,8 +760,7 @@
           },
           "execute_on_match": false,
           "hide_label": false,
-          "secured": false,
-          "disabled": true
+          "secured": false
         },
         {
           "name": "窗口置顶",
@@ -820,8 +817,7 @@
           },
           "execute_on_match": false,
           "hide_label": false,
-          "secured": false,
-          "disabled": true
+          "secured": false
         },
         {
           "name": "下一曲",
@@ -847,8 +843,7 @@
           },
           "execute_on_match": false,
           "hide_label": false,
-          "secured": false,
-          "disabled": true
+          "secured": false
         },
         {
           "name": "上一个虚拟桌面",
@@ -989,8 +984,7 @@
           },
           "execute_on_match": false,
           "hide_label": false,
-          "secured": false,
-          "disabled": true
+          "secured": false
         },
         {
           "name": "音量减",
@@ -1011,8 +1005,7 @@
           },
           "execute_on_match": false,
           "hide_label": false,
-          "secured": false,
-          "disabled": true
+          "secured": false
         },
         {
           "name": "静音",
@@ -1033,8 +1026,7 @@
           },
           "execute_on_match": false,
           "hide_label": false,
-          "secured": false,
-          "disabled": true
+          "secured": false
         },
         {
           "name": "播放/暂停",
@@ -1055,8 +1047,7 @@
           },
           "execute_on_match": false,
           "hide_label": false,
-          "secured": false,
-          "disabled": true
+          "secured": false
         },
         {
           "name": "调亮屏幕",
@@ -1128,12 +1119,11 @@
           ],
           "action": {
             "type": "launch_app",
-            "exe": "/System/Applications/Utilities/Activity Monitor.app"
+            "exe": "com.apple.ActivityMonitor"
           },
           "execute_on_match": false,
           "hide_label": false,
-          "secured": false,
-          "disabled": true
+          "secured": false
         },
         {
           "name": "系统设置",
@@ -1163,12 +1153,11 @@
           ],
           "action": {
             "type": "launch_app",
-            "exe": "/System/Applications/System Settings.app"
+            "exe": "com.apple.systempreferences"
           },
           "execute_on_match": false,
           "hide_label": false,
-          "secured": false,
-          "disabled": true
+          "secured": false
         },
         {
           "name": "放大",

@@ -559,5 +559,6 @@
   "mac.bundle.done": "Aplicación empaquetada: {path}",
   "mac.cert.exists": "La identidad de firma Mousetroke Dev ya existe y se reutilizará.",
   "mac.cert.instructions": "Se creará un certificado local de firma de código Mousetroke Dev en un llavero dedicado (~/Library/Keychains/mousetroke-dev.keychain-db). Funciona por SSH y no pide contraseña. Consérvalo para que los permisos se mantengan tras recompilar.",
-  "mac.cert.created": "Certificado listo. Ejecute bash scripts/mac/bundle.sh. Conserve el certificado; no lo regenere en cada compilación."
+  "mac.cert.created": "Certificado listo. Ejecute bash scripts/mac/bundle.sh. Conserve el certificado; no lo regenere en cada compilación.",
+  "mac.action.topmost_unsupported": "macOS no permite mantener encima las ventanas de otras apps"
 }

@@ -553,5 +553,6 @@
   "mac.bundle.done": "アプリを作成しました：{path}",
   "mac.cert.exists": "既存の Mousetroke Dev コード署名 ID を再利用します。",
   "mac.cert.instructions": "専用キーチェーン（~/Library/Keychains/mousetroke-dev.keychain-db）にローカルの Mousetroke Dev コード署名証明書を作成します。SSH でも使え、パスワード入力は不要です。再ビルド後も権限を維持するため、証明書を保管してください。",
-  "mac.cert.created": "証明書の準備ができました。bash scripts/mac/bundle.sh を実行してください。ビルドごとに証明書を作り直さず、保管してください。"
+  "mac.cert.created": "証明書の準備ができました。bash scripts/mac/bundle.sh を実行してください。ビルドごとに証明書を作り直さず、保管してください。",
+  "mac.action.topmost_unsupported": "macOS では他のアプリのウインドウを最前面に固定できません"
 }

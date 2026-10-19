@@ -14,6 +14,18 @@ static EXPECTED_HIT: AtomicBool = AtomicBool::new(false);
 static EXPECTED_KEYS: OnceLock<String> = OnceLock::new();
 static KEY_DISPATCHES: AtomicUsize = AtomicUsize::new(0);
 static EXPECTED_ACTION: AtomicBool = AtomicBool::new(false);
+static TARGET_SEEN: AtomicBool = AtomicBool::new(false);
+static TARGET_EMPTY: AtomicBool = AtomicBool::new(false);
+
+pub fn resolved_target(bundle_id: &str) {
+    if ENABLED.load(Ordering::Relaxed) {
+        TARGET_SEEN.store(true, Ordering::Relaxed);
+        if bundle_id.is_empty() {
+            TARGET_EMPTY.store(true, Ordering::Relaxed);
+        }
+        crate::log!("自测鼠标按下目标 bundle id: {bundle_id}");
+    }
+}
 /// tap 已收到自测投递的移动事件：系统对新进程的前几次 CGEventPost 会静默丢弃（权限检查进行中），
 /// 必须确认事件真的能送达后才开始画手势。
 static WARMED: AtomicBool = AtomicBool::new(false);
@@ -77,6 +89,8 @@ impl SelfTest {
         KEY_DISPATCHES.store(0, Ordering::Relaxed);
         EXPECTED_ACTION.store(false, Ordering::Relaxed);
         ENABLED.store(true, Ordering::Relaxed);
+        TARGET_SEEN.store(false, Ordering::Relaxed);
+        TARGET_EMPTY.store(false, Ordering::Relaxed);
         MATCHES.store(0, Ordering::Relaxed);
         ECHO_DOWN.store(0, Ordering::Relaxed);
         ECHO_UP.store(0, Ordering::Relaxed);
@@ -165,6 +179,8 @@ impl SelfTest {
                     && lines > 0
                     && dispatched == 1
                     && action
+                    && TARGET_SEEN.load(Ordering::Relaxed)
+                    && !TARGET_EMPTY.load(Ordering::Relaxed)
                 {
                     0
                 } else {

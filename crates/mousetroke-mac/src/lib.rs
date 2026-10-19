@@ -2,6 +2,15 @@
 #![deny(unsafe_op_in_unsafe_fn)]
 
 #[cfg(target_os = "macos")]
+mod actions;
+#[cfg(target_os = "macos")]
+mod ax;
+#[cfg(any(target_os = "macos", test))]
+mod helpers;
+#[cfg(target_os = "macos")]
+mod targeting;
+
+#[cfg(target_os = "macos")]
 mod app;
 #[cfg(target_os = "macos")]
 mod events;
