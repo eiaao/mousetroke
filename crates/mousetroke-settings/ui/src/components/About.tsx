@@ -1,3 +1,4 @@
+import { isMac } from "../platform";
 import { useEffect, useState } from "react";
 import type { AppInfo, EngineStatus } from "../types";
 import { api, errText, type Msg } from "../api";
@@ -70,7 +71,7 @@ export function About({ engine, onShowGuide, notify }: { engine: EngineStatus; o
         </button>
       </div>
 
-      <div className="pref-group update-group" aria-busy={busy !== null}>
+      {!isMac() && <div className="pref-group update-group" aria-busy={busy !== null}>
         <div className="pref-row">
           <span className="pref-label">{t("ui.update.version")}<small>{info?.version ?? "…"}</small></span>
           <button type="button" className="btn small update-check" disabled={busy !== null} onClick={checkUpdate}>
@@ -94,6 +95,9 @@ export function About({ engine, onShowGuide, notify }: { engine: EngineStatus; o
           </> : <p>{t("ui.update.current")}</p>)}
         </div>
       </div>
+
+      }
+      {isMac() && <div className="pref-group"><button type="button" className="btn small" onClick={() => open("releases")}>{t("ui.update.notes")}</button></div>}
 
       <div className="pref-group about-project" role="group" aria-labelledby="about-project-title">
         <h2 id="about-project-title">{t("ui.about.project_group")}</h2>
@@ -165,7 +169,9 @@ export function About({ engine, onShowGuide, notify }: { engine: EngineStatus; o
       <div className="pref-group">
         <h2>{t("ui.about.keys_group")}</h2>
         <dl className="shortcuts">
-          {SHORTCUTS.map(([k, v]) => (
+          {SHORTCUTS.map(([original, v]) => {
+            const k = isMac() ? original === "Ctrl+Z / Ctrl+Y" ? "⌘+Z / ⌘+⇧+Z" : original.replaceAll("Ctrl", "⌘") : original;
+            return (
             <div key={k}>
               <dt>
                 {k === "SPACE_KEY" ? (
@@ -186,7 +192,7 @@ export function About({ engine, onShowGuide, notify }: { engine: EngineStatus; o
               </dt>
               <dd>{t(KEY_LABELS[v])}</dd>
             </div>
-          ))}
+          ); })}
         </dl>
       </div>
     </section>

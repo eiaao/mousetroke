@@ -129,7 +129,7 @@ impl LuaPlatform for MacPlatform {
         });
     }
     fn show_settings(&self) {
-        self.unsupported("show_settings");
+        crate::settings::open(false);
     }
     fn show_toast(&self, message: String, duration: u64) {
         mousetroke_engine::push_toast(message, duration);

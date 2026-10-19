@@ -1,3 +1,4 @@
+import { isMac } from "../platform";
 import { useEffect, useState } from "react";
 import type { PresetApp } from "../types";
 import { api } from "../api";
@@ -212,7 +213,7 @@ function AppsArt({ presets }: { presets: PresetApp[] | null }) {
 
 function TrayArt() {
   return (
-    <svg viewBox="0 0 320 180" className="art art-tray" aria-hidden>
+    <svg viewBox="0 0 320 180" className={`art art-tray ${isMac() ? "art-menubar" : ""}`} aria-hidden>
       <rect className="art-taskbar" x="20" y="138" width="280" height="28" rx="6" />
       <rect className="art-tray-icon" x="246" y="145" width="14" height="14" rx="3.5" />
       <g className="art-menu">

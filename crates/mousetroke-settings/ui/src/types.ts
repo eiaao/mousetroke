@@ -125,6 +125,7 @@ export interface EngineStatus {
 }
 
 export interface InitState {
+  platform: "windows" | "macos";
   about?: boolean;
   configPath: string;
   config: Config;

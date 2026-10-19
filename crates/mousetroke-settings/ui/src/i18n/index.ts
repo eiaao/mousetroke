@@ -1,3 +1,4 @@
+import { isMac } from "../platform";
 // i18n 运行时（设计见 docs/I18N-DESIGN.md §4）。
 //
 // - 词条与 Rust 侧共用仓库根目录的 i18n/*.json（vite 原生支持 JSON 导入），
@@ -155,6 +156,7 @@ function interpolate(templ: string, params?: Record<string, string | number>): s
 /** 取词条。缺失回退 zh-CN，再缺失返回键名。`count` 按当前语言的复数规则选变体，
  *  回退顺序 `_<类别>` → `_other` → 基础键。 */
 export function t(key: MsgKey, params?: Record<string, string | number>): string {
+  if (isMac() && `mac.${key}` in zh) key = `mac.${key}` as MsgKey;
   const lang = resolved;
   let templ: string | undefined;
   if (params && params.count != null) {

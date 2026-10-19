@@ -1,3 +1,4 @@
+import { isMac } from "../platform";
 import type { EngineStatus, Settings } from "../types";
 import { KeysInput } from "./KeysInput";
 import { LANGS, t, useLang, type Lang, type LangSetting, type MsgKey } from "../i18n";
@@ -142,9 +143,9 @@ export function Prefs({
           onChange={onAutostart}
         />
         <Toggle label={t("ui.prefs.show_tray")} checked={s.show_tray} onChange={(v) => onChange((x) => ({ ...x, show_tray: v }))} />
-        <div className="update-preference">
+        {!isMac() && <div className="update-preference">
           <Toggle label={t("ui.prefs.update_check")} help={t("ui.prefs.update_check_help")} checked={s.update_check ?? true} onChange={(v) => onChange((x) => ({ ...x, update_check: v }))} />
-        </div>
+        </div>}
         <div className="pref-row">
           <span className="pref-label">
             {t("ui.prefs.pause_hotkey")}

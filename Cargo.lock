@@ -1949,7 +1949,12 @@ name = "mousetroke-settings"
 version = "0.1.1"
 dependencies = [
  "mousetroke-core",
+ "mousetroke-mac",
  "mousetroke-win",
+ "objc2",
+ "objc2-app-kit",
+ "objc2-core-foundation",
+ "objc2-foundation",
  "png 0.18.1",
  "rfd",
  "serde",

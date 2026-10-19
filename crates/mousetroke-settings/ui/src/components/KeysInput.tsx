@@ -3,8 +3,9 @@ import { useEffect, useRef, useState } from "react";
 import { api } from "../api";
 import { comboToKeyseq, keyseqToCaps } from "../gesture";
 import { t } from "../i18n";
+import { isMac } from "../platform";
 
-export function Caps({ keys }: { keys: string }) {
+export function Caps({ keys, compact }: { keys: string; compact?: boolean }) {
   const groups = keyseqToCaps(keys);
   if (!groups.length) return null;
   return (
@@ -12,7 +13,7 @@ export function Caps({ keys }: { keys: string }) {
       {groups.map((g, i) => (
         <span key={i} className="cap-group">
           {g.map((k, j) => (
-            <kbd key={j}>{k}</kbd>
+            <kbd key={j} title={compact && isMac() ? k : undefined}>{compact && isMac() ? /^([⌘⌥⌃⇧]) /.exec(k)?.[1] ?? k : k}</kbd>
           ))}
         </span>
       ))}

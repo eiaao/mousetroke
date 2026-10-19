@@ -1251,6 +1251,126 @@
           "secured": false
         }
       ]
+    },
+    {
+      "id": "disabled-parallels",
+      "name": "Parallels Desktop",
+      "name_key": "preset.app.parallels",
+      "kind": "app",
+      "app": {
+        "exe": "com.parallels.desktop.console"
+      },
+      "inherit_global": false,
+      "disabled": true,
+      "bindings": []
+    },
+    {
+      "id": "disabled-fusion",
+      "name": "VMware Fusion",
+      "name_key": "preset.app.fusion",
+      "kind": "app",
+      "app": {
+        "exe": "com.vmware.fusion"
+      },
+      "inherit_global": false,
+      "disabled": true,
+      "bindings": []
+    },
+    {
+      "id": "disabled-windows_app",
+      "name": "Windows App",
+      "name_key": "preset.app.windows_app",
+      "kind": "app",
+      "app": {
+        "exe": "com.microsoft.rdc.macos"
+      },
+      "inherit_global": false,
+      "disabled": true,
+      "bindings": []
+    },
+    {
+      "id": "disabled-screen_sharing",
+      "name": "屏幕共享",
+      "name_key": "preset.app.screen_sharing",
+      "kind": "app",
+      "app": {
+        "exe": "com.apple.ScreenSharing"
+      },
+      "inherit_global": false,
+      "disabled": true,
+      "bindings": []
+    },
+    {
+      "id": "disabled-virtualboxvm",
+      "name": "VirtualBox",
+      "name_key": "preset.app.virtualboxvm",
+      "kind": "app",
+      "app": {
+        "exe": "org.virtualbox.app.VirtualBoxVM"
+      },
+      "inherit_global": false,
+      "disabled": true,
+      "bindings": []
+    },
+    {
+      "id": "disabled-blender",
+      "name": "Blender",
+      "name_key": "preset.app.blender",
+      "kind": "app",
+      "app": {
+        "exe": "org.blenderfoundation.blender"
+      },
+      "inherit_global": false,
+      "disabled": true,
+      "bindings": []
+    },
+    {
+      "id": "disabled-cinema_4d",
+      "name": "Cinema 4D",
+      "name_key": "preset.app.cinema_4d",
+      "kind": "app",
+      "app": {
+        "exe": "net.maxon.cinema4d"
+      },
+      "inherit_global": false,
+      "disabled": true,
+      "bindings": []
+    },
+    {
+      "id": "disabled-maya",
+      "name": "Maya",
+      "name_key": "preset.app.maya",
+      "kind": "app",
+      "app": {
+        "exe": "com.autodesk.Maya"
+      },
+      "inherit_global": false,
+      "disabled": true,
+      "bindings": []
+    },
+    {
+      "id": "disabled-unity",
+      "name": "Unity",
+      "name_key": "preset.app.unity",
+      "kind": "app",
+      "app": {
+        "exe": "com.unity3d.UnityEditor"
+      },
+      "inherit_global": false,
+      "disabled": true,
+      "bindings": []
+    },
+    {
+      "id": "disabled-unrealeditor",
+      "name": "Unreal Editor",
+      "name_key": "preset.app.unrealeditor",
+      "kind": "app",
+      "app": {
+        "exe": "com.epicgames.UnrealEditor"
+      },
+      "inherit_global": false,
+      "disabled": true,
+      "bindings": []
     }
   ],
   "settings": {

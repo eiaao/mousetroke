@@ -20,15 +20,24 @@ tauri-build = { version = "2.7.3", features = [] }
 
 [dependencies]
 mousetroke-core = { path = "../mousetroke-core" }
-mousetroke-win = { path = "../mousetroke-win" }
 tauri = { version = "2.12.4", features = [] }
 rfd = "0.17.2"
 png = "0.18.1"
 serde = { workspace = true }
 serde_json = { workspace = true }
-windows = { workspace = true }
 
 [features]
 # 默认内嵌前端产物（ui/dist）。用 Vite 开发服务器调试时以 --no-default-features 构建。
 default = ["custom-protocol"]
 custom-protocol = ["tauri/custom-protocol"]
+
+[target.'cfg(windows)'.dependencies]
+windows = { workspace = true }
+mousetroke-win = { path = "../mousetroke-win" }
+
+[target.'cfg(target_os = "macos")'.dependencies]
+mousetroke-mac = { path = "../mousetroke-mac" }
+objc2 = "=0.6.4"
+objc2-foundation = { version = "=0.3.2", default-features = false, features = ["std", "NSArray", "NSString", "NSURL", "NSBundle", "NSData", "NSDictionary", "NSError", "NSProcessInfo"] }
+objc2-app-kit = { version = "=0.3.2", default-features = false, features = ["std", "NSWorkspace", "NSRunningApplication", "NSApplication", "NSImage", "NSImageRep", "NSBitmapImageRep", "NSWindow", "NSPanel", "NSView", "NSTextField", "NSText", "NSControl", "NSCell", "NSResponder", "NSColor", "NSFont", "NSCursor", "NSEvent", "NSScreen", "NSGraphics"] }
+objc2-core-foundation = { version = "=0.3.2", default-features = false, features = ["std", "CFArray", "CFDictionary", "CFNumber"] }

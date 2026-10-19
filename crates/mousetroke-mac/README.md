@@ -1,10 +1,12 @@
-# Mousetroke macOS M3b
+# Mousetroke macOS M4
 
 Apple Silicon, macOS 11+. Install Xcode Command Line Tools and Rust. From the repository root:
 
 ```bash
 export CARGO_BUILD_JOBS=4 CARGO_TARGET_DIR="$PWD/target" MACOSX_DEPLOYMENT_TARGET=11.0
-cargo check -p mousetroke-mac -p mousetroke --locked
+npm --prefix crates/mousetroke-settings/ui ci
+npm --prefix crates/mousetroke-settings/ui run build
+cargo check -p mousetroke-settings -p mousetroke-mac -p mousetroke --locked
 cargo clippy -p mousetroke-mac --all-targets -- -D warnings
 cargo test -p mousetroke-core -p mousetroke-engine -p mousetroke-lua -p mousetroke-mac --locked
 bash scripts/mac/make-dev-cert.sh
@@ -16,7 +18,7 @@ The certificate script creates a **Mousetroke Dev** signing identity in a dedica
 
 **Screen Recording is not required**: titles are obtained through Accessibility, never `kCGWindowName`. Grant **Accessibility** and **Input Monitoring** to `Mousetroke.app` in System Settings → Privacy & Security. The menu links to missing permissions. Permissions are checked every two seconds and the tap starts without restarting. Prompts are requested only on first launch, tracked by `permission-prompted` in Application Support. SSH tests require an active graphical login for the same user. Use the signed bundle for repeatable permission tests.
 
-The menu icon dims while paused or awaiting permission. Toggle pause from the menu or with **⌃⌥⌘P**. Ordinary right clicks are replayed. Right-button drags recognize shared-engine gestures and send configured keys to the focused application. Window targeting and fullscreen pause use a roughly 250 ms snapshot. Target activation is supported; automatic updates remain for later milestones.
+The menu icon dims while paused or awaiting permission. Toggle pause from the menu or with **⌃⌥⌘P**. Ordinary right clicks are replayed. Right-button drags recognize shared-engine gestures and send configured keys to the focused application. Window targeting and fullscreen pause use a roughly 250 ms snapshot. Target activation is supported. Settings run in a separate process; automatic updates remain Windows-only until macOS packaging is ready.
 
 ## Overlay
 
@@ -45,7 +47,7 @@ Chords release modifiers in reverse order, with matching flags. A whole chord is
 
 A worker calls `CGWindowListCopyWindowInfo(OnScreenOnly | ExcludeDesktopElements)` in front-to-back order. The main timer resolves each owner PID through `NSRunningApplication` and caches targets by `(pid, CGWindowID)` for about 250 ms. A mouse-down performs only a layer-0 bounds hit-test in Quartz global points; the first covering window wins. Nothing under the cursor (desktop/menu area without a window) falls back to the frontmost application and its first layer-0 window. Own-app, Dock, SystemUIServer, Control Center and Notification Center bundle IDs pass through; visible shell surfaces above layer 0 are checked before underlying application windows. A slow `target_at` (>2 ms) is logged once.
 
-`Target.exe` is the **.app bundle path**, falling back to the executable path for unbundled programs. Existing per-app scopes match either `/Applications/Google Chrome.app` or the basename `Google Chrome.app` through the unchanged core matcher (case-insensitive). `Target.class` is the **bundle id**, such as `com.google.Chrome`; it filters system UI and is not a second scope matcher. `wid` is the CGWindowID, `pid` the owner PID. The current shared engine resolves scopes from `exe`, not title/class. Window titles are cached at `Host::window_title`; actions referencing `%MS_WIN_NAME%` lazily refresh them on an AX worker, matching AX windows by position and size. No Screen Recording prompt is needed. A moved/closed or inaccessible target is skipped rather than operating on an unrelated focused window.
+`Target.exe` is the **bundle id**, such as `com.google.Chrome`, falling back to the full executable path for unbundled programs. App scopes use that same identity through the unchanged core matcher (case-insensitive). `Target.class` is the **bundle id**, such as `com.google.Chrome`; it filters system UI and is not a second scope matcher. `wid` is the CGWindowID, `pid` the owner PID. The current shared engine resolves scopes from `exe`, not title/class. Window titles are cached at `Host::window_title`; actions referencing `%MS_WIN_NAME%` lazily refresh them on an AX worker, matching AX windows by position and size. No Screen Recording prompt is needed. A moved/closed or inaccessible target is skipped rather than operating on an unrelated focused window.
 
 The frontmost app's first layer-0 window is compared with each full screen frame (2-point tolerance). A matching fullscreen Space or presentation window pauses button and edge gestures. This follows the shared engine's existing automatic pause behavior; there is currently no separate `pause_fullscreen` setting. Detection may lag the snapshot by roughly one interval.
 
@@ -116,7 +118,7 @@ At startup and after each **successful** config reload, the host refreshes and r
 
 `crates/mousetroke-lua` owns VM creation, safe standard-library setup (`Lua::new`), the 8 MiB memory limit, BOM handling, `ms_action(pos, wid, pid, exe, title, mode)` entry dispatch, integer compatibility conversions, formatting, the `ms` table and the migrated neutral tests. `LuaPlatform` receives plain Rust values. The Windows crate keeps the original Win32 implementation and WG/User32/luanet/import shims; the macOS crate implements supported operations using M3a helpers. `wgAction` remains an entry fallback, but macOS does not install Windows legacy tables.
 
-Each gesture starts a fresh VM on a worker, after obtaining the captured target's title through AX on that worker. `wid` is CGWindowID; `exe` is the captured .app bundle path (or executable fallback); `pid`, title and mode describe that captured target. AppKit requests go through a bounded queue (64 requests, at most 8 drained per timer turn). Only the Lua worker waits for a read result; the main thread never waits for Lua. `ms.keys` retains parsed text mode and returns after the timer-driven sequence completes; pauses and mouse input remain responsive during sequence delays and `ms.sleep`.
+Each gesture starts a fresh VM on a worker, after obtaining the captured target's title through AX on that worker. `wid` is CGWindowID; `exe` is the captured bundle id (or executable-path fallback); `pid`, title and mode describe that captured target. AppKit requests go through a bounded queue (64 requests, at most 8 drained per timer turn). Only the Lua worker waits for a read result; the main thread never waits for Lua. `ms.keys` retains parsed text mode and returns after the timer-driven sequence completes; pauses and mouse input remain responsive during sequence delays and `ms.sleep`.
 
 | Lua API | macOS support |
 | --- | --- |
@@ -130,7 +132,8 @@ Each gesture starts a fresh VM on a worker, after obtaining the captured target'
 | `ms.focus_win(wid)` | Activates the captured application for the captured CGWindowID; does not raise a particular AX window |
 | `ms.find_win_by_class`, `ms.find_win_by_title`, `ms.set_win_state`, `ms.get_win_state`, `ms.set_win_top` | Unsupported in the Lua backend; nil + one log per API per process (normal WindowOp actions still use M3a AX) |
 | `ms.get_brightness`, `ms.set_brightness` | Unsupported Lua brightness reads/adjustments; nil + one log; media brightness actions remain separate |
-| `ms.is_keys_pressed`, `ms.keys_down`, `ms.keys_up`, `ms.show_settings` | Unsupported in M3b; nil + one log; settings integration is M4 |
+| `ms.show_settings` | Opens the independent settings process using the current engine config |
+| `ms.is_keys_pressed`, `ms.keys_down`, `ms.keys_up` | Unsupported; nil + one log |
 | `WG`, `User32`, `luanet`, `import` | Windows-only shims, absent on macOS |
 
 Compatibility deliberately retains the existing Windows execution policy: **there is no wall-clock timeout or cancellation hook**. Load/entry errors stop that VM invocation, memory errors respect the 8 MiB limit, and sleep blocks only its worker. An infinite loop can consume a worker until process exit; changing this policy on both platforms is separate work. `Lua::new` is not an untrusted-code security boundary. In self-test, Lua actions log their dry-run kind before any AX, clipboard or VM work.
@@ -164,7 +167,7 @@ AppKit, engine, tap, overlay, timers, menus and the key executor all run on the 
 
 Use a signed build with both permissions granted, an active graphical session, and fresh macOS defaults copied as described above. Run the self-test first (exit 0; resolved bundle id non-empty; no action side effects). Use disposable documents/windows and a disposable process for destructive actions. For action cases without a built-in binding, temporarily assign the JSON action to a known gesture in the config and let hot reload apply it.
 
-- Target/scopes: overlap two apps, keep A frontmost but draw on B's exposed window; B's `/Applications/…app` scope must win; repeat with `…app` basename, a disabled scope, and two windows of the same app.
+- Target/scopes: overlap two apps, keep A frontmost but draw on B's exposed window; B's bundle-id scope (for example `com.google.Chrome`) must win; repeat after moving the .app, a disabled scope, and two windows of the same app.
 - Fallback/ignore: right-click the desktop, Dock, menu bar, Control Center, Notification Center and Mousetroke menu; normal system menus must work without an accidental gesture.
 - Fullscreen pause: enter a browser fullscreen Space, then a presentation covering an entire display; gestures pass through, resume after leaving; a merely maximized window with the menu bar visible must not pause; repeat on a secondary screen.
 - KeySequence: back/forward and `#c{SLEEP 500}#v`; observe correct keys, responsive pause/clicks during the delay, no recursive gestures or stuck modifiers; `activate_target:true` must activate the captured app first.
@@ -199,3 +202,43 @@ Remaining risks requiring hardware validation: WindowServer/LaunchServices/AX be
 - Set each system Hot Corner in turn, reload the configuration, and verify one named warning only for enabled Mousetroke corner bindings; disable the binding/scope and reload to verify no warning. Confirm neither setting is changed. Repeat after changing UI language.
 - Repeat edge/corner input on left/above/below display layouts, mixed scaling, and after hot-plug/rearrangement; test fullscreen pause. Internal seams and physically unreachable bounding corners follow the Windows virtual-desktop behavior.
 - Run the Lua cases above, plus URL/app/shell actions, captured-app focus, unsupported calls and load/runtime errors. Restart after deliberately testing a runaway script; there is no script cancellation UI.
+
+
+## Settings (M4)
+
+Build the embedded UI **before** invoking `scripts/mac/bundle.sh`:
+
+```bash
+cd crates/mousetroke-settings/ui
+npm ci
+npm run typecheck
+npm test
+npm run build
+cd ../../..
+CARGO_TARGET_DIR=target CARGO_BUILD_JOBS=4 scripts/mac/bundle.sh
+```
+
+The default `custom-protocol` feature embeds `ui/dist` into the executable. The bundle remains a single `Contents/MacOS/mousetroke` executable. `mousetroke settings [config] [--about]` runs Tauri on that process's main thread. The menu bar has **Settings… (⌘,)** and **About Mousetroke**; both spawn a separate settings process with the engine's config path. Closing settings exits that process; engine config hot reload continues unchanged. `ms.show_settings()` uses the same launch path. `mousetroke [run] [--config path]` also supports an explicit engine config.
+
+Engine and settings hold separate nonblocking `flock` files in Application Support. The locked files are never replaced or unlinked during normal use. A second settings launch atomically publishes a focus/about request, and the existing process restores, shows and activates its native window. Requests also work while the first window is still starting. No title search, Screen Recording permission or PID-based signaling is involved. A single settings instance edits the config selected by its first launch; later launches focus it without changing that config.
+
+The settings backend lives in `platform/windows.rs` and `platform/macos.rs`, with platform-specific icon and picker modules. macOS uses `NSLocale.preferredLanguages`, the same config/log locations as the engine, regular `NSWorkspace.runningApplications`, and `NSWorkspace.iconForFile` → TIFF → `NSBitmapImageRep` PNG with a bounded cache. Every app selector, drop and `.app` resolution returns the **bundle id**, falling back to an absolute executable path for non-bundle programs. App scopes, `%MS_EXE%` and Lua `exe` follow that identity. Existing path-based app scopes must be reselected to use the bundle id; saved configs are not silently rewritten.
+
+The picker places a transparent click-catching window on every display, uses a crosshair and translated hint, and handles left-click, Escape, right-click and a 60-second timeout. It converts AppKit points to Quartz coordinates, including negative display origins, and selects the first normal layer-zero window under the point, excluding Mousetroke and system UI. It reads bounds and owner PID only, never window titles, so **Screen Recording is not required**. Fullscreen Spaces, cursor appearance and display rearrangement still need real-Mac validation.
+
+Login launch uses **SMAppService.mainAppService on macOS 13+**, discovered only after a runtime version check; no 13+ class symbol is imported on Big Sur. Enabled state comes from the service status, including user approval/disabled states. Approval-needed registration shows a translated instruction and stays unchecked. Run the signed `.app`, rather than a standalone development binary, for this path. On **11–12**, a per-user `~/Library/LaunchAgents/io.github.eiaao.mousetroke.plist` contains the absolute executable path as one ProgramArguments entry, with RunAtLoad. `launchctl enable/bootstrap/disable` applies changes without stopping a running engine when login launch is disabled, and status checks the plist, loaded service and launchd disabled override. No administrator privileges are needed. Moving the app requires re-enabling login launch.
+
+macOS retains the native title bar/traffic lights and light/dark appearance. The backend platform value drives Command/Option/Control/Shift names, physical-key recording and ⌘F/⌘D/⌘Z/⌘⇧Z UI shortcuts; stored keys remain shared Windows-VK logical values. Finder, menu bar, login launch and application examples have ten-language variants. Unsupported imported action options get an explicit warning and repair button; unmapped or mouse keys in key sequences get a translated validation error; topmost cannot be selected, elevation is hidden, and Windows Lua shims are called out. **One-click update and automatic update preferences/checks remain Windows-only**. About still exposes the version, homepage, source/Star, feedback and changelog links.
+
+Fresh macOS defaults disable gestures in Parallels Desktop, VMware Fusion, Windows App, Screen Sharing, VirtualBox VM, Blender, Cinema 4D, Maya, Unity and Unreal Editor. Remote/VM apps need their mouse buttons passed through to another OS; 3D/game editors need right/middle drag for viewport navigation. These bundle-id entries also populate the existing recommended-disable picker and onboarding list; installation detection uses LaunchServices. Existing configurations remain intact.
+
+CI builds/tests the UI on macOS and Windows, builds the embedded settings library and binary, and runs the Rust command tests plus `settings_config_round_trip` without a window server or permissions. The smoke test exercises missing config defaults, validated atomic save, reload, export/import and invalid-config reporting.
+
+Real-Mac hand test (signed bundle; macOS 27 on Apple silicon, repeat login fallback on 11/12):
+
+1. Open Settings from the menu and CLI with a config path containing spaces; reopen normally and with `--about`, including while minimized. There must be one settings window and the engine must keep responding after closing it.
+2. Edit a gesture, pause hotkey, language and trail setting; verify save/reload, live engine behavior, undo/redo and light/dark appearance. Record Command/Option/Control/Shift, arrows and function keys.
+3. Select running apps, browse/drop a `.app` from /Applications, and select an executable. Verify bundle ids/full executable paths in the saved scope and matching behavior in the engine. Check icons and the ten default-disabled apps.
+4. With Screen Recording denied, pick an overlapping background app; cancel with Escape/right-click. Repeat on the 2560×1440 screen, fullscreen Spaces and secondary screens at negative origins; no click should reach the target app.
+5. Enable/disable login launch, verify the actual System Settings state, log out/in, and repeat with user approval denied. Confirm engine status/start and Finder/log/project links.
+6. Open About and confirm no update controls; import unsupported action options and check their warning and explicit repair. Run onboarding in each of the ten languages and check native traffic lights and focus.

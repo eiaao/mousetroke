@@ -200,10 +200,14 @@ fn stop(mtm: MainThreadMarker) {
 }
 
 pub fn run() -> Result<i32, String> {
+    run_with_config(None)
+}
+
+pub fn run_with_config(config: Option<std::path::PathBuf>) -> Result<i32, String> {
     let mtm = MainThreadMarker::new().ok_or_else(|| t(keys::MAC_ERROR_MAIN_THREAD).to_string())?;
     log::init().map_err(|error| error.to_string())?;
     mousetroke_engine::log::set_sink(log::write);
-    let result = autoreleasepool(|_| run_main(mtm));
+    let result = autoreleasepool(|_| run_main(mtm, config));
     // 启动失败也写进日志：从 Finder/open 启动时看不到 stderr。
     if let Err(error) = &result {
         mousetroke_engine::log!("运行失败：{error}");
@@ -212,10 +216,13 @@ pub fn run() -> Result<i32, String> {
     result
 }
 
-fn run_main(mtm: MainThreadMarker) -> Result<i32, String> {
+fn run_main(mtm: MainThreadMarker, config_path: Option<std::path::PathBuf>) -> Result<i32, String> {
     let selftest = std::env::var_os("MOUSETROKE_SELFTEST").as_deref() == Some(OsStr::new("1"));
-    let path = default_config_path();
-    let dir = path
+    let path = config_path.unwrap_or_else(default_config_path);
+    crate::settings::initialize(path.clone());
+    // 引擎单实例锁固定在应用目录，设置中的自定义配置不会绕过检测。
+    let lock_path = default_config_path();
+    let dir = lock_path
         .parent()
         .ok_or_else(|| t(keys::MAC_ERROR_STARTUP).to_string())?
         .to_path_buf();

@@ -556,12 +556,17 @@ mod builtin_tests {
     fn mac_defaults_enable_supported_actions_and_keep_topmost_disabled() {
         let source = include_str!("../assets/default-config-macos.json");
         let cfg = Config::from_json(source).unwrap();
-        assert_eq!(cfg.scopes.len(), 1);
+        assert_eq!(cfg.scopes.len(), 1 + crate::presets::MAC_DISABLE_SUGGESTIONS.len());
+        for (identity, _, _) in crate::presets::MAC_DISABLE_SUGGESTIONS {
+            assert!(cfg.scopes.iter().any(|scope| scope.disabled && scope.app.as_ref().is_some_and(|app| app.exe == *identity)));
+        }
         assert_eq!(cfg.settings.pause_hotkey, "^%#p");
         assert!(cfg.all_bindings().count() >= 40);
         for scope in &cfg.scopes {
             assert!(!matches!(scope.id.as_str(), "explorer" | "cmd"));
-            assert!(scope.app.is_none());
+            if scope.app.is_some() {
+                assert!(scope.disabled && scope.bindings.is_empty());
+            }
             for binding in &scope.bindings {
                 assert!(crate::i18n::try_t(binding.name_key.as_deref().unwrap()).is_some());
                 binding.action.visit(&mut |action| {

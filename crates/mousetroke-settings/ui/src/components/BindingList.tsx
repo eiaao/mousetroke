@@ -1,3 +1,4 @@
+import { primaryModifier } from "../platform";
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import type { Binding, MouseButton, Scope, Step } from "../types";
 import { EDGE, actionSummary, buttonName, conflicts, decompose, describePattern, edgeName, fileName } from "../gesture";
@@ -96,7 +97,7 @@ export function BindingList({
   // Ctrl+F 聚焦搜索
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
-      if (e.ctrlKey && e.key.toLowerCase() === "f") {
+      if (primaryModifier(e) && e.key.toLowerCase() === "f") {
         e.preventDefault();
         search.current?.focus();
         search.current?.select();
@@ -123,7 +124,7 @@ export function BindingList({
     } else if (e.key === "Delete" && selected != null) {
       e.preventDefault();
       onDelete(selected);
-    } else if (e.key.toLowerCase() === "d" && e.ctrlKey && selected != null) {
+    } else if (e.key.toLowerCase() === "d" && primaryModifier(e) && selected != null) {
       e.preventDefault();
       onDuplicate(selected);
     }
@@ -322,7 +323,7 @@ function Row({ n, b, on, clash, onClick, onToggle }: { n: number; b: Binding; on
         <span className="row-pattern">{describePattern(b.pattern)}</span>
       </span>
       <span className="row-action">
-        {b.action.type === "key_sequence" && !b.secured ? <Caps keys={b.action.keys} /> : <span className="row-action-text">{b.secured ? "••••" : actionSummary(b.action)}</span>}
+        {b.action.type === "key_sequence" && !b.secured ? <Caps keys={b.action.keys} compact /> : <span className="row-action-text">{b.secured ? "••••" : actionSummary(b.action)}</span>}
       </span>
       <input
         type="checkbox"

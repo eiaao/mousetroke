@@ -53,11 +53,29 @@ pub const DISABLE_SUGGESTIONS: &[(&str, &str, PresetCategory)] = &[
     ("Unity.exe", keys::PRESET_APP_UNITY, PresetCategory::GameDev),
 ];
 
+/// macOS 的应用身份均为 bundle id，避免安装位置或语言影响匹配。
+pub const MAC_DISABLE_SUGGESTIONS: &[(&str, &str, PresetCategory)] = &[
+    ("com.parallels.desktop.console", keys::PRESET_APP_PARALLELS, PresetCategory::Remote),
+    ("com.vmware.fusion", keys::PRESET_APP_FUSION, PresetCategory::Remote),
+    ("com.microsoft.rdc.macos", keys::PRESET_APP_WINDOWS_APP, PresetCategory::Remote),
+    ("com.apple.ScreenSharing", keys::PRESET_APP_SCREEN_SHARING, PresetCategory::Remote),
+    ("org.virtualbox.app.VirtualBoxVM", keys::PRESET_APP_VIRTUALBOXVM, PresetCategory::Remote),
+    ("org.blenderfoundation.blender", keys::PRESET_APP_BLENDER, PresetCategory::Design),
+    ("net.maxon.cinema4d", keys::PRESET_APP_CINEMA_4D, PresetCategory::Design),
+    ("com.autodesk.Maya", keys::PRESET_APP_MAYA, PresetCategory::Design),
+    ("com.unity3d.UnityEditor", keys::PRESET_APP_UNITY, PresetCategory::GameDev),
+    ("com.epicgames.UnrealEditor", keys::PRESET_APP_UNREALEDITOR, PresetCategory::GameDev),
+];
+
+pub fn disable_suggestions() -> &'static [(&'static str, &'static str, PresetCategory)] {
+    if cfg!(target_os = "macos") { MAC_DISABLE_SUGGESTIONS } else { DISABLE_SUGGESTIONS }
+}
+
 /// 程序（exe 名或完整路径）在建议清单里时，返回它显示名的词条键（preset.app.*）。
 /// 添加程序时写入作用域的 `name_key`，显示随语言切换。
 pub fn name_key(exe: &str) -> Option<&'static str> {
     let file = crate::matcher::file_name(exe).to_ascii_lowercase();
-    DISABLE_SUGGESTIONS
+    disable_suggestions()
         .iter()
         .find(|(e, _, _)| e.to_ascii_lowercase() == file)
         .map(|(_, k, _)| *k)
@@ -70,11 +88,16 @@ mod tests {
     #[test]
     fn preset_name_keys_match_catalog() {
         // 键名生成规则必须和 build.rs / i18n 词条一致，这里抽查几个
-        assert_eq!(name_key("C:\\Program Files\\Cinema 4D.exe"), Some(keys::PRESET_APP_CINEMA_4D));
-        assert_eq!(name_key("MSTSC.EXE"), Some(keys::PRESET_APP_MSTSC));
+        if cfg!(target_os = "macos") {
+            assert_eq!(name_key("com.vmware.fusion"), Some(keys::PRESET_APP_FUSION));
+            assert_eq!(name_key("ORG.BLENDERFOUNDATION.BLENDER"), Some(keys::PRESET_APP_BLENDER));
+        } else {
+            assert_eq!(name_key("C:\\Program Files\\Cinema 4D.exe"), Some(keys::PRESET_APP_CINEMA_4D));
+            assert_eq!(name_key("MSTSC.EXE"), Some(keys::PRESET_APP_MSTSC));
+        }
         assert_eq!(name_key("chrome.exe"), None);
         // 每个键都真实存在于词条库（不断言具体译文：当前语言是进程全局，别的测试会切换它）
-        for (_, k, cat) in DISABLE_SUGGESTIONS {
+        for (_, k, cat) in DISABLE_SUGGESTIONS.iter().chain(MAC_DISABLE_SUGGESTIONS) {
             assert!(crate::i18n::try_t(k).is_some(), "缺少词条 {k}");
             assert!(crate::i18n::try_t(cat.key()).is_some(), "缺少词条 {}", cat.key());
         }
