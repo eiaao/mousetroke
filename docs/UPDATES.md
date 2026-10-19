@@ -1,13 +1,16 @@
 # 更新实现与本机回归
 
 更新由 `mousetroke-win/src/update.rs` 和 `update/http.rs` 实现，不使用 Tauri updater。
-默认不联网：关于页只读取本地版本，手动点击才调用 `check_update`。配置
-`settings.update_check` 默认为 false；开启后引擎的独立更新线程检查，每次尝试前将时间
+默认每天向 GitHub 询问一次是否有新版本，可在偏好设置中关闭；不发送其他信息，无遥测。
+关于页打开时只读取本地版本，手动点击调用 `check_update`。配置 `settings.update_check`
+默认为 true；引擎的独立更新线程检查，每次尝试前将时间
 写入配置旁的 `update-state.json`，失败也等待 24 小时。配置热加载只唤醒该线程。
 通知成功提交给托盘后记录版本；点击通知通过 `settings --about` 启动/聚焦设置，
 `Mousetroke::settings-about` 自动复位命名事件使已有窗口也能定位关于页。
 
 设置命令通过 `spawn_blocking` 执行同步 WinHTTP，钩子回调不参与网络、文件或进程工作。
+发布正文使用同一次 API 响应的 `body`，按界面语言选择中文或英文条目，缺中文时回退英文；
+剥离 Markdown/HTML 后最多显示 12 条、每条 300 字符，不额外请求正文。
 API 只连接 HTTPS 的 `api.github.com`；下载及其每次跳转只允许 HTTPS 的 `github.com`、
 `objects.githubusercontent.com`、`release-assets.githubusercontent.com`，端口 443。
 禁用自动重定向及自动登录，逐次检查 Location，不打印完整 URL。API/校验文件上限

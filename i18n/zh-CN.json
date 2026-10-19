@@ -535,7 +535,7 @@
   "ui.update.retry": "重试",
   "ui.update.download": "打开下载页",
   "ui.prefs.update_check": "自动检查更新",
-  "ui.prefs.update_check_help": "开启后每天连接一次 GitHub 检查更新。",
+  "ui.prefs.update_check_help": "每天向 GitHub 检查一次是否有新版本，可在此关闭。不发送其他信息。",
   "update.error.network": "检查或下载更新失败，请检查网络后重试。",
   "update.error.checksum": "更新文件校验失败，已取消更新。",
   "update.error.not_writable": "无法在此目录更新，请从发布页下载。",

@@ -535,7 +535,7 @@
   "ui.update.retry": "Tentar novamente",
   "ui.update.download": "Abrir página de download",
   "ui.prefs.update_check": "Verificar atualizações automaticamente",
-  "ui.prefs.update_check_help": "Quando ativado, conecta ao GitHub uma vez por dia para verificar atualizações.",
+  "ui.prefs.update_check_help": "Consulta o GitHub uma vez por dia para buscar uma versão nova. Você pode desativar aqui; nada mais é enviado.",
   "update.error.network": "Não foi possível verificar ou baixar a atualização. Verifique a conexão e tente novamente.",
   "update.error.checksum": "A soma de verificação não confere. Atualização cancelada.",
   "update.error.not_writable": "Não é possível atualizar nesta pasta. Baixe pela página de versões.",

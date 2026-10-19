@@ -84,6 +84,9 @@ export function About({ engine, onShowGuide, notify }: { engine: EngineStatus; o
             <button type="button" className="btn small update-download" onClick={() => open("releases")}>{t("ui.update.download")}</button>
           </> : update && (update.newer ? <>
             <p>{t("update.available", { version: update.latest })}</p>
+            {update.notes.length > 0 && <ul className="update-note-list" tabIndex={0}>
+              {update.notes.map((note, index) => <li key={index}>{note}</li>)}
+            </ul>}
             <div className="update-actions">
               <button type="button" className="btn small update-notes" disabled={busy !== null} onClick={() => open("releases")}>{t("ui.update.notes")}</button>
               <button type="button" className="btn primary update-install" disabled={busy !== null} onClick={installUpdate}>{t("ui.update.install")}</button>

@@ -143,7 +143,7 @@ export function Prefs({
         />
         <Toggle label={t("ui.prefs.show_tray")} checked={s.show_tray} onChange={(v) => onChange((x) => ({ ...x, show_tray: v }))} />
         <div className="update-preference">
-          <Toggle label={t("ui.prefs.update_check")} help={t("ui.prefs.update_check_help")} checked={s.update_check ?? false} onChange={(v) => onChange((x) => ({ ...x, update_check: v }))} />
+          <Toggle label={t("ui.prefs.update_check")} help={t("ui.prefs.update_check_help")} checked={s.update_check ?? true} onChange={(v) => onChange((x) => ({ ...x, update_check: v }))} />
         </div>
         <div className="pref-row">
           <span className="pref-label">

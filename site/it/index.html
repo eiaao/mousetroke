@@ -94,7 +94,7 @@
         { "@type": "Question", "name": "Does the right-click menu still work with Mousetroke?", "acceptedAnswer": { "@type": "Answer", "text": "Yes. A right-click without dragging is passed back to Windows unchanged, so the context menu opens as usual. Holding still past the drag timeout (0.5 seconds by default, adjustable) also becomes a normal right-drag." } },
         { "@type": "Question", "name": "Will it misfire in games or remote desktop?", "acceptedAnswer": { "@type": "Answer", "text": "Fullscreen games, video and presentations pause gestures automatically. Programs that need right- or middle-drag themselves, such as Remote Desktop, AnyDesk, Blender or AutoCAD, can be excluded in one click on first run. Win+Esc pauses at any time." } },
         { "@type": "Question", "name": "Which versions of Windows are supported?", "acceptedAnswer": { "@type": "Answer", "text": "Windows 10 1809 or later and Windows 11, 64-bit. The gesture engine has no runtime dependencies; the settings window uses Microsoft Edge WebView2, which ships with Windows 11 and comes with Edge on most Windows 10 PCs." } },
-        { "@type": "Question", "name": "Mousetroke è gratuito?", "acceptedAnswer": { "@type": "Answer", "text": "Sì. È open source con licenza MIT, senza pubblicità né account. Si connette a GitHub solo cercando aggiornamenti manualmente o attivando il controllo giornaliero facoltativo. Non invia telemetria né dati personali." } },
+        { "@type": "Question", "name": "Mousetroke è gratuito?", "acceptedAnswer": { "@type": "Answer", "text": "Sì. È open source con licenza MIT, senza pubblicità né account. Una volta al giorno chiede a GitHub se esiste una nuova versione (disattivabile nelle preferenze). Non viene inviato altro; nessuna telemetria." } },
         { "@type": "Question", "name": "How much memory and CPU does it use?", "acceptedAnswer": { "@type": "Answer", "text": "The resident gesture engine uses about 19 MB working set (about 10 MB private) and no CPU when idle. The settings window is a separate process that only runs while it is open." } },
         { "@type": "Question", "name": "Can I make my own gestures?", "acceptedAnswer": { "@type": "Answer", "text": "Yes. Create a gesture in settings and draw it once on the pad in the editor. You can also combine mouse buttons, the wheel, keyboard keys and screen edges, and set gestures separately for each app." } },
         { "@type": "Question", "name": "Where are the settings stored, and how do I back them up?", "acceptedAnswer": { "@type": "Answer", "text": "In %APPDATA%\\mousetroke\\config.json. Settings has import and export. Saved changes take effect within about a second, without a restart." } },
@@ -348,7 +348,7 @@
         <details open><summary>Il menu del clic destro funziona ancora con Mousetroke?</summary><div class="ans"><p>Sì. Un clic destro senza trascinare viene restituito a Windows invariato, quindi il menu contestuale si apre come sempre. Restare fermi oltre il tempo di attesa (0,5 s di default, regolabile) diventa anch’esso un normale trascinamento col destro.</p></div></details>
         <details><summary>Scatta per errore nei giochi o nel desktop remoto?</summary><div class="ans"><p>Giochi, video e presentazioni a schermo intero mettono in pausa i gesti da soli. I programmi che usano il trascinamento col destro o col centrale — Desktop remoto, AnyDesk, Blender, AutoCAD — si escludono con un clic al primo avvio. Win+Esc mette in pausa in qualsiasi momento.</p></div></details>
         <details><summary>Quali versioni di Windows sono supportate?</summary><div class="ans"><p>Windows 10 1809 o successivo e Windows 11, a 64 bit. Il motore dei gesti non ha dipendenze di runtime; la finestra delle impostazioni usa Microsoft Edge WebView2, incluso in Windows 11 e presente con Edge sulla maggior parte dei PC con Windows 10.</p></div></details>
-        <details><summary>Mousetroke è gratuito?</summary><div class="ans"><p>Sì. È open source con licenza MIT, senza pubblicità né account. Si connette a GitHub solo cercando aggiornamenti manualmente o attivando il controllo giornaliero facoltativo. Non invia telemetria né dati personali.</p></div></details>
+        <details><summary>Mousetroke è gratuito?</summary><div class="ans"><p>Sì. È open source con licenza MIT, senza pubblicità né account. Una volta al giorno chiede a GitHub se esiste una nuova versione (disattivabile nelle preferenze). Non viene inviato altro; nessuna telemetria.</p></div></details>
         <details><summary>Quanta memoria e CPU usa?</summary><div class="ans"><p>Il motore residente usa circa 19 MB di working set (circa 10 MB privati) e nessuna CPU a riposo. La finestra delle impostazioni è un processo separato che gira solo mentre è aperta.</p></div></details>
         <details><summary>Posso creare gesti miei?</summary><div class="ans"><p>Sì. Crea un gesto nelle impostazioni e disegnalo una volta nel riquadro dell’editor. Puoi anche combinare pulsanti del mouse, rotella, tasti e bordi dello schermo, e definire gesti separati per ogni app.</p></div></details>
         <details><summary>Dove sono salvate le impostazioni e come faccio un backup?</summary><div class="ans"><p>In <code>%APPDATA%\mousetroke\config.json</code>. Le impostazioni hanno importazione ed esportazione. Le modifiche salvate valgono in circa un secondo, senza riavvio.</p></div></details>
@@ -368,6 +368,7 @@
         <a class="btn primary" href="https://github.com/eiaao/mousetroke/releases/latest/download/mousetroke.exe">Scarica mousetroke.exe <small>12,6 MB · v0.1.0</small></a>
         <div class="sys">Windows 10 1809+ / 11, 64 bit</div>
         <a class="src" href="https://github.com/eiaao/mousetroke">github.com/eiaao/mousetroke</a>
+        <a class="src" href="../en/changelog.html">Novità</a>
       </div>
     </div>
   </section>
@@ -387,6 +388,7 @@
       <a href="../ru/index.html" hreflang="ru" lang="ru">Русский</a>
       <a class="cur" href="index.html" hreflang="it" lang="it">Italiano</a>
       <a href="../ko/index.html" hreflang="ko" lang="ko">한국어</a>
+      <a href="../en/changelog.html">Registro delle modifiche</a>
       <a href="https://github.com/eiaao/mousetroke">GitHub</a>
       <a href="../llms.txt">llms.txt</a>
       <a href="#faq">Domande</a>

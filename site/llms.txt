@@ -8,7 +8,7 @@ Mousetroke（中文）：免费开源的 Windows 鼠标手势工具。按住右�
 
 - Platform: Windows 10 1809+ and Windows 11, 64-bit. The settings window needs Microsoft Edge WebView2 (built into Windows 11); the gesture engine itself has no runtime dependencies.
 - Source code: https://github.com/eiaao/mousetroke (issues and releases there).
-- Price and license: free, MIT. No ads or account. Connects to GitHub only for manual update checks or the opt-in daily check and requested update downloads. No telemetry or personal data is sent.
+- Price and license: free, MIT. No ads or account. Once a day it asks GitHub whether a newer version exists (turn it off in Preferences). Manual checks and requested update downloads are also available. Nothing else is sent; no telemetry.
 - Version: 0.1.0. Download: https://github.com/eiaao/mousetroke/releases/latest/download/mousetroke.exe (12.6 MB, portable, no installer).
 - Resource use: gesture engine ≈ 19 MB working set (≈ 10 MB private), no CPU when idle. The settings window is a separate process that only runs while it is open.
 - Languages: 10 (Simplified Chinese, English, Spanish, French, German, Japanese, Portuguese (Brazil), Russian, Italian, Korean).
@@ -63,3 +63,5 @@ Mousetroke（中文）：免费开源的 Windows 鼠标手势工具。按住右�
 - Does the right-click menu still work? Yes. A right-click without dragging is passed through unchanged; holding still past the drag timeout (0.5 s by default, adjustable) becomes a normal right-drag.
 - Will it misfire in games or remote desktop? Fullscreen apps pause gestures automatically; remote desktop and 3D/design apps can be excluded in one click during first run; Win+Esc pauses at any time.
 - How to uninstall? Turn off "start with Windows" in preferences, quit from the tray menu, then delete mousetroke.exe and the %APPDATA%\mousetroke folder.
+
+- Changelog: https://mousetroke.pages.dev/changelog.html (Chinese), https://mousetroke.pages.dev/en/changelog.html (English).

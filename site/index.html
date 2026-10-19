@@ -96,7 +96,7 @@
         { "@type": "Question", "name": "装了 Mousetroke 以后右键菜单还能用吗？", "acceptedAnswer": { "@type": "Answer", "text": "能。只按右键、不拖动时，Mousetroke 会把这次点击原样交还给系统，右键菜单照常弹出。按住不动超过设定时间（默认 0.5 秒，可调）也会当作普通的右键拖拽。" } },
         { "@type": "Question", "name": "玩游戏或用远程桌面时会误触吗？", "acceptedAnswer": { "@type": "Answer", "text": "全屏的游戏、视频和演示会自动暂停手势。远程桌面、ToDesk、Blender、AutoCAD 等自己要用右键或中键拖动的程序，首次启动时可以一键禁用；也可以随时按 Win+Esc 暂停。" } },
         { "@type": "Question", "name": "支持哪些 Windows 版本？", "acceptedAnswer": { "@type": "Answer", "text": "Windows 10 1809 及以上和 Windows 11，64 位。手势引擎不依赖任何运行库；设置界面使用 Microsoft Edge WebView2，Windows 11 自带，Windows 10 多数已随 Edge 安装。" } },
-        { "@type": "Question", "name": "Mousetroke 免费吗？", "acceptedAnswer": { "@type": "Answer", "text": "免费，以 MIT 许可证开源，没有广告或账号。仅在你手动检查更新或开启可选的每日检查时连接 GitHub，不发送遥测或个人数据。" } },
+        { "@type": "Question", "name": "Mousetroke 免费吗？", "acceptedAnswer": { "@type": "Answer", "text": "免费，以 MIT 许可证开源，没有广告或账号。默认每天向 GitHub 询问一次是否有新版本，可在偏好设置中关闭。不发送其他信息，无遥测。" } },
         { "@type": "Question", "name": "占用多少内存和 CPU？", "acceptedAnswer": { "@type": "Answer", "text": "常驻的手势引擎约 19 MB 工作集（私有内存约 10 MB），空闲时不占 CPU。设置界面是单独的进程，打开时才启动，关掉就退出。" } },
         { "@type": "Question", "name": "能自己定义手势吗？", "acceptedAnswer": { "@type": "Answer", "text": "能。在设置里新建一个手势，用鼠标在编辑面板的画板上画一遍轨迹就记下来了；也可以组合鼠标键、滚轮、键盘键和屏幕边角，并给每个程序单独设置。" } },
         { "@type": "Question", "name": "配置保存在哪里？怎么备份？", "acceptedAnswer": { "@type": "Answer", "text": "配置在 %APPDATA%\\mousetroke\\config.json，设置里可以导入和导出。改动保存后约 1 秒内生效，不用重启。" } },
@@ -350,7 +350,7 @@
         <details open><summary>装了 Mousetroke 以后右键菜单还能用吗？</summary><div class="ans"><p>能。只按右键、不拖动时，Mousetroke 会把这次点击原样交还给系统，右键菜单照常弹出。按住不动超过设定时间（默认 0.5 秒，可调）也会当作普通的右键拖拽。</p></div></details>
         <details><summary>玩游戏或用远程桌面时会误触吗？</summary><div class="ans"><p>全屏的游戏、视频和演示会自动暂停手势。远程桌面、ToDesk、Blender、AutoCAD 等自己要用右键或中键拖动的程序，首次启动时可以一键禁用；也可以随时按 Win+Esc 暂停。</p></div></details>
         <details><summary>支持哪些 Windows 版本？</summary><div class="ans"><p>Windows 10 1809 及以上和 Windows 11，64 位。手势引擎不依赖任何运行库；设置界面使用 Microsoft Edge WebView2，Windows 11 自带，Windows 10 多数已随 Edge 安装。</p></div></details>
-        <details><summary>Mousetroke 免费吗？</summary><div class="ans"><p>免费，以 MIT 许可证开源，没有广告或账号。仅在你手动检查更新或开启可选的每日检查时连接 GitHub，不发送遥测或个人数据。</p></div></details>
+        <details><summary>Mousetroke 免费吗？</summary><div class="ans"><p>免费，以 MIT 许可证开源，没有广告或账号。默认每天向 GitHub 询问一次是否有新版本，可在偏好设置中关闭。不发送其他信息，无遥测。</p></div></details>
         <details><summary>占用多少内存和 CPU？</summary><div class="ans"><p>常驻的手势引擎约 19 MB 工作集（私有内存约 10 MB），空闲时不占 CPU。设置界面是单独的进程，打开时才启动，关掉就退出。</p></div></details>
         <details><summary>能自己定义手势吗？</summary><div class="ans"><p>能。在设置里新建一个手势，用鼠标在编辑面板的画板上画一遍轨迹就记下来了；也可以组合鼠标键、滚轮、键盘键和屏幕边角，并给每个程序单独设置。</p></div></details>
         <details><summary>配置保存在哪里？怎么备份？</summary><div class="ans"><p>配置在 <code>%APPDATA%\mousetroke\config.json</code>，设置里可以导入和导出。改动保存后约 1 秒内生效，不用重启。</p></div></details>
@@ -370,6 +370,7 @@
         <a class="btn primary" href="https://github.com/eiaao/mousetroke/releases/latest/download/mousetroke.exe">下载 mousetroke.exe <small>12.6 MB · v0.1.0</small></a>
         <div class="sys">Windows 10 1809+ / 11，64 位</div>
         <a class="src" href="https://github.com/eiaao/mousetroke">github.com/eiaao/mousetroke</a>
+        <a class="src" href="changelog.html">更新内容</a>
       </div>
     </div>
   </section>
@@ -389,6 +390,7 @@
       <a href="ru/index.html" hreflang="ru" lang="ru">Русский</a>
       <a href="it/index.html" hreflang="it" lang="it">Italiano</a>
       <a href="ko/index.html" hreflang="ko" lang="ko">한국어</a>
+      <a href="changelog.html">更新日志</a>
       <a href="https://github.com/eiaao/mousetroke">GitHub</a>
       <a href="llms.txt">llms.txt</a>
       <a href="#faq">常见问题</a>

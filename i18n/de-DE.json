@@ -535,7 +535,7 @@
   "ui.update.retry": "Erneut versuchen",
   "ui.update.download": "Downloadseite öffnen",
   "ui.prefs.update_check": "Automatisch nach Updates suchen",
-  "ui.prefs.update_check_help": "Verbindet sich eingeschaltet einmal täglich mit GitHub, um nach Updates zu suchen.",
+  "ui.prefs.update_check_help": "Fragt GitHub einmal täglich nach einer neuen Version. Hier abschaltbar; sonst wird nichts gesendet.",
   "update.error.network": "Updates konnten nicht geprüft oder geladen werden. Verbindung prüfen und erneut versuchen.",
   "update.error.checksum": "Die Prüfsumme stimmt nicht überein. Update abgebrochen.",
   "update.error.not_writable": "In diesem Ordner ist kein Update möglich. Bitte die Veröffentlichungsseite öffnen.",

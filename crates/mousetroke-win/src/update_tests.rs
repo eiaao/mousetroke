@@ -1,6 +1,27 @@
 use super::*;
 
 #[test]
+fn notes_select_language_and_fall_back_only_to_english() {
+    let body = "Intro\n### English\n- First\n  continued\n- Second\n\n### 中文\n- 第一项\n### Other\n- Ignore";
+    for language in ["zh-CN", "zh-TW", "ZH-hans"] { assert_eq!(release_notes(body, language), ["第一项"]); }
+    for language in ["en-US", "de-DE", "qps-ploc"] { assert_eq!(release_notes(body, language), ["First continued", "Second"]); }
+    assert_eq!(release_notes("### English\n- Fallback", "zh-CN"), ["Fallback"]);
+    assert_eq!(release_notes("### 中文\n- <b></b>\n### English\n- Fallback", "zh-CN"), ["Fallback"]);
+    assert!(release_notes("### 中文\n- 中文", "en-US").is_empty());
+    assert!(release_notes("No sections", "zh-CN").is_empty());
+}
+
+#[test]
+fn notes_strip_markdown_html_and_cap_unicode_text() {
+    let body = "### English\n- **Bold**, _emphasis_, ~~old~~ and `code`: [a link](https://example.com/a_(b)) and [reference][id].\n- <b>Text</b><script>alert(1)</script><style>hidden</style><!-- secret --> stays.\n- ![Alt](image.png) and \\*literal\\*\n- <img src=x>";
+    assert_eq!(release_notes(body, "en"), ["Bold, emphasis, old and code: a link and reference.", "Text stays.", "Alt and *literal*"]);
+    let body = format!("### English\n{}", (0..20).map(|_| format!("- {}\n", "中".repeat(400))).collect::<String>());
+    let notes = release_notes(&body, "en-US");
+    assert_eq!(notes.len(), 12);
+    assert!(notes.iter().all(|note| note.chars().count() == 300 && note.ends_with('…')));
+}
+
+#[test]
 fn versions_are_numeric_and_malformed_tags_are_rejected() {
     let tags = ["0.1.0", "v0.1.1", "0.2.0", "v1.0.0", "1.10.0"];
     for pair in tags.windows(2) { assert!(version(pair[0]).unwrap() < version(pair[1]).unwrap()); }
@@ -41,6 +62,7 @@ fn download_hosts_are_exact_https_and_local_override_is_loopback_only() {
 
 fn sample(origin: &str) -> serde_json::Value {
     serde_json::json!({ "tag_name": "v1.2.3", "draft": false, "prerelease": false,
+        "body": "### English\n- From the API\n### 中文\n- 来自 API",
         "html_url": format!("{origin}/releases/tag/v1.2.3"), "assets": [
             {"name":"other.exe", "browser_download_url":format!("{origin}/other")},
             {"name":"mousetroke.exe", "browser_download_url":format!("{origin}/exe")},
@@ -55,6 +77,9 @@ fn release_requires_stable_version_and_both_exact_assets() {
     let parse = |v: &serde_json::Value| select_release(&serde_json::to_vec(v).unwrap(), &source);
     let release = parse(&valid).unwrap();
     assert_eq!(release.latest, "1.2.3");
+    assert_eq!(release_notes(&release.body, "en-US"), ["From the API"]);
+    let mut no_body = valid.clone(); no_body["body"] = serde_json::Value::Null;
+    assert!(release_notes(&parse(&no_body).unwrap().body, "en-US").is_empty());
     assert_eq!(release.exe, "https://github.com/exe");
     assert_eq!(release.sums, "https://github.com/sums");
     for field in ["draft", "prerelease"] { let mut v = valid.clone(); v[field] = true.into(); assert!(parse(&v).is_err()); }

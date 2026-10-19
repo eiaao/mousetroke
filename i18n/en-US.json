@@ -535,7 +535,7 @@
   "ui.update.retry": "Try again",
   "ui.update.download": "Open download page",
   "ui.prefs.update_check": "Check for updates automatically",
-  "ui.prefs.update_check_help": "When on, connects to GitHub once a day to check for updates.",
+  "ui.prefs.update_check_help": "Checks GitHub once a day for a newer version. You can turn this off here; nothing else is sent.",
   "update.error.network": "Couldn’t check or download updates. Check your connection and try again.",
   "update.error.checksum": "The update checksum doesn’t match. Update canceled.",
   "update.error.not_writable": "Can’t update in this folder. Download from the release page.",

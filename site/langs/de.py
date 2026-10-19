@@ -173,8 +173,8 @@ REPL = base("de", "de", "de_DE", "Sprache", "Deutsch") + [
      '<details><summary>Fehlauslösungen in Spielen oder bei Fernwartung?</summary><div class="ans"><p>Vollbildspiele, Video und Präsentationen pausieren die Gesten automatisch. Programme, die Rechts- oder Mittelziehen selbst brauchen — etwa Remotedesktop, AnyDesk, Blender oder AutoCAD — lassen sich beim ersten Start mit einem Klick ausschließen. Win+Esc pausiert jederzeit.</p></div></details>'),
     ('<details><summary>Which versions of Windows are supported?</summary><div class="ans"><p>Windows 10 1809 or later and Windows 11, 64-bit. The gesture engine has no runtime dependencies; the settings window uses Microsoft Edge WebView2, which ships with Windows 11 and comes with Edge on most Windows 10 PCs.</p></div></details>',
      '<details><summary>Welche Windows-Versionen werden unterstützt?</summary><div class="ans"><p>Windows 10 ab 1809 und Windows 11, 64-Bit. Die Gesten-Engine hat keine Laufzeitabhängigkeiten; das Einstellungsfenster nutzt Microsoft Edge WebView2, das Windows 11 beiliegt und auf den meisten Windows-10-PCs mit Edge kommt.</p></div></details>'),
-    ('<details><summary>Is Mousetroke free?</summary><div class="ans"><p>Yes. It is open source under the MIT license, with no ads or account. It connects to GitHub only when you check for updates manually or enable the optional daily check. No telemetry or personal data is sent.</p></div></details>',
-     '<details><summary>Ist Mousetroke kostenlos?</summary><div class="ans"><p>Ja. Es ist Open Source unter der MIT-Lizenz, ohne Werbung oder Konto. Eine Verbindung zu GitHub erfolgt nur bei manueller Updatesuche oder aktivierter optionaler täglicher Prüfung. Es werden keine Telemetrie oder persönlichen Daten gesendet.</p></div></details>'),
+    ('<details><summary>Is Mousetroke free?</summary><div class="ans"><p>Yes. It is open source under the MIT license, with no ads or account. Once a day it asks GitHub whether a newer version exists (turn it off in Preferences). Nothing else is sent; there is no telemetry.</p></div></details>',
+     '<details><summary>Ist Mousetroke kostenlos?</summary><div class="ans"><p>Ja. Es ist Open Source unter der MIT-Lizenz, ohne Werbung oder Konto. Einmal täglich wird GitHub nach einer neuen Version gefragt (in den Einstellungen abschaltbar). Sonst wird nichts gesendet; es gibt keine Telemetrie.</p></div></details>'),
     ('<details><summary>How much memory and CPU does it use?</summary><div class="ans"><p>The resident gesture engine uses about 19 MB working set (about 10 MB private) and no CPU when idle. The settings window is a separate process that only runs while it is open.</p></div></details>',
      '<details><summary>Wie viel Speicher und CPU?</summary><div class="ans"><p>Die residente Engine braucht etwa 19 MB Working Set (rund 10 MB privat) und im Leerlauf keine CPU. Das Einstellungsfenster ist ein eigener Prozess, der nur läuft, während er offen ist.</p></div></details>'),
     ('<details><summary>Can I make my own gestures?</summary><div class="ans"><p>Yes. Create a gesture in settings and draw it once on the pad in the editor. You can also combine mouse buttons, the wheel, keyboard keys and screen edges, and set gestures separately for each app.</p></div></details>',
@@ -210,4 +210,10 @@ REPL = base("de", "de", "de_DE", "Sprache", "Deutsch") + [
      '"pageHint": "Rechte Taste irgendwo halten und zeichnen: <b>↓</b> nächster Abschnitt, <b>↑</b> vorheriger, <b>←↑</b> nach oben"'),
     ('"hintClose": "Dismiss", "dots": "Sections", "heroDot": "Start"',
      '"hintClose": "Ausblenden", "dots": "Abschnitte", "heroDot": "Start"'),
+]
+
+# 更新日志共用英文内容，入口标签使用当前语言。
+REPL += [
+('<a href="../en/changelog.html">Changelog</a>', '<a href="../en/changelog.html">Änderungsprotokoll</a>'),
+('<a class="src" href="../en/changelog.html">What’s new</a>', '<a class="src" href="../en/changelog.html">Neuerungen</a>'),
 ]
