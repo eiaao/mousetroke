@@ -559,5 +559,6 @@
   "mac.bundle.done": "App erstellt: {path}",
   "mac.cert.exists": "Die Signieridentität Mousetroke Dev ist bereits vorhanden und wird wiederverwendet.",
   "mac.cert.instructions": "Ein lokales Codesignaturzertifikat Mousetroke Dev wird in einem eigenen Schlüsselbund (~/Library/Keychains/mousetroke-dev.keychain-db) erstellt. Es funktioniert auch über SSH und fragt nach keinem Passwort. Bewahren Sie es auf, damit Berechtigungen nach Neubauten erhalten bleiben.",
-  "mac.cert.created": "Zertifikat bereit. Führen Sie bash scripts/mac/bundle.sh aus. Bewahren Sie das Zertifikat auf und erstellen Sie es nicht bei jedem Build neu."
+  "mac.cert.created": "Zertifikat bereit. Führen Sie bash scripts/mac/bundle.sh aus. Bewahren Sie das Zertifikat auf und erstellen Sie es nicht bei jedem Build neu.",
+  "mac.action.topmost_unsupported": "macOS unterstützt das dauerhafte Voranstellen fremder App-Fenster nicht"
 }

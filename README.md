@@ -51,6 +51,13 @@ cargo test --workspace       :: engine, importer, i18n and settings tests
 | `i18n/` | Shared UI strings for every language (see `i18n/README.md`) |
 | `site/` | Product web page (static) |
 
+## macOS development
+
+The macOS development port (macOS 11+, Apple Silicon cross-checked) now supports
+window targeting, fullscreen pause and most actions. See the [macOS guide](crates/mousetroke-mac/README.md)
+for the action support table, permissions, defaults and real-Mac verification.
+It needs Accessibility and Input Monitoring; **Screen Recording is not required**.
+
 ## Security
 
 Shell and Lua actions run with your user rights — only import configurations you trust.

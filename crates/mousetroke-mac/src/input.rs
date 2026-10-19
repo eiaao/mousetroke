@@ -23,7 +23,6 @@ struct Executor {
     queue: VecDeque<Action>,
     active: Option<Job>,
     dry_run: bool,
-    warned_activation: bool,
 }
 
 struct Repeat {
@@ -41,6 +40,7 @@ struct Job {
 }
 
 pub fn initialize(dry_run: bool) {
+    crate::actions::initialize(dry_run);
     EXECUTOR.with(|slot| {
         *slot.borrow_mut() = Executor {
             dry_run,
@@ -67,6 +67,13 @@ pub fn enqueue(action: Action) {
 /// 此函数仅由 AppKit 主线程计时器调用，不能从事件 tap 调用。
 pub fn tick() {
     EXECUTOR.with(|slot| slot.borrow_mut().tick(Instant::now()));
+}
+
+pub fn busy() -> bool {
+    EXECUTOR.with(|s| {
+        let s = s.borrow();
+        s.active.is_some() || !s.queue.is_empty()
+    })
 }
 
 impl Executor {
@@ -130,31 +137,10 @@ impl Executor {
     }
 
     fn prepare(&mut self, action: Action, now: Instant) -> Option<Job> {
-        let Action::KeySequence {
-            keys,
-            mode,
-            activate_target,
-            ..
-        } = action
-        else {
-            // 只记录类型，避免日志泄露脚本、网址、按键内容。
-            let kind = match action {
-                Action::Shell { .. } => "shell",
-                Action::Lua { .. } => "lua",
-                Action::OpenUrl { .. } => "open_url",
-                Action::Menu { .. } => "menu",
-                Action::LaunchApp { .. } => "launch_app",
-                Action::WindowOp { .. } => "window_op",
-                Action::SystemKey { .. } => "system_key",
-                Action::KeySequence { .. } => unreachable!(),
-            };
-            crate::log!("动作暂未支持（M3）: {kind}");
+        let Action::KeySequence { keys, mode, .. } = action else {
+            crate::log!("非按键动作误入按键队列，已跳过");
             return None;
         };
-        if activate_target && !self.warned_activation {
-            self.warned_activation = true;
-            crate::log!("macOS 暂不支持 activate_target，已忽略");
-        }
         if mode != SendMode::DownUp {
             crate::log!("macOS 暂不支持此按键模式，已跳过（不记录内容）");
             return None;
@@ -252,6 +238,11 @@ fn post_chord(vk: u16, mods: &[ModKey], dry_run: bool) -> bool {
         CGEvent::post(CGEventTapLocation::HIDEventTap, Some(&event));
     }
     true
+}
+
+/// 仅由异步选区状态机调用，沿用普通按键的注入标记与完整释放组。
+pub fn copy_selection() -> bool {
+    post_chord(0x43, &[ModKey::Win], false)
 }
 
 fn post_text(ch: char, dry_run: bool) -> bool {

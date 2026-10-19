@@ -553,7 +553,7 @@ mod builtin_tests {
     use super::*;
 
     #[test]
-    fn mac_defaults_parse_and_have_only_portable_or_disabled_actions() {
+    fn mac_defaults_enable_supported_actions_and_keep_topmost_disabled() {
         let source = include_str!("../assets/default-config-macos.json");
         let cfg = Config::from_json(source).unwrap();
         assert_eq!(cfg.scopes.len(), 1);
@@ -572,7 +572,14 @@ mod builtin_tests {
                                 assert!(crate::keymap::vk_to_kvk(vk).is_some());
                             }
                         }
-                    } else { assert!(binding.disabled); }
+                    } else if matches!(action, Action::WindowOp { op: WindowOpKind::ToggleTopmost, .. }) {
+                        assert!(binding.disabled);
+                    } else {
+                        assert!(!matches!(action, Action::Lua { .. }));
+                        if !matches!(action, Action::SystemKey { key } if key.starts_with("BRIGHTNESS_")) {
+                            assert!(!binding.disabled);
+                        }
+                    }
                 });
             }
         }
@@ -582,10 +589,15 @@ mod builtin_tests {
         }
         let key = |name: &str| cfg.all_bindings().find(|b| b.name_key.as_deref() == Some(name)).unwrap().action.clone();
         for (name, expected) in [("back", "#["), ("forward", "#]"), ("close_tab", "#w"),
-            ("home", "#{UP}"), ("end", "#{DOWN}"), ("minimize", "#m"),
+            ("home", "#{UP}"), ("end", "#{DOWN}"),
             ("prev_tab", "^+{TAB}"), ("next_tab", "^{TAB}")] {
             assert!(matches!(key(&format!("builtin.gesture.{name}")), Action::KeySequence { keys, .. } if keys == expected));
         }
+        assert!(matches!(key("builtin.gesture.minimize"), Action::WindowOp { op: WindowOpKind::Minimize, .. }));
+        assert!(matches!(key("builtin.gesture.maximize"), Action::WindowOp { op: WindowOpKind::ToggleMaximize, .. }));
+        assert!(matches!(key("builtin.gesture.kill"), Action::Shell { script } if script == "/bin/kill -9 %MS_PID%"));
+        assert!(matches!(key("builtin.gesture.task_manager"), Action::LaunchApp { exe, .. } if exe == "com.apple.ActivityMonitor"));
+        assert!(matches!(key("builtin.gesture.system_settings"), Action::LaunchApp { exe, .. } if exe == "com.apple.systempreferences"));
     }
 
     #[test]

@@ -8,13 +8,16 @@ use objc2::rc::Retained;
 use objc2::runtime::{Bool, Sel};
 use objc2::{define_class, msg_send, sel, MainThreadMarker, MainThreadOnly};
 use objc2_app_kit::{
-    NSBezierPath, NSColor, NSEventModifierFlags, NSImage, NSLineCapStyle, NSMenu, NSMenuItem, NSStatusBar,
-    NSStatusItem, NSWorkspace,
+    NSBezierPath, NSColor, NSEventModifierFlags, NSImage, NSLineCapStyle, NSMenu, NSMenuItem,
+    NSStatusBar, NSStatusItem, NSWorkspace,
 };
-use objc2_foundation::{ns_string, NSObject, NSObjectProtocol, NSPoint, NSRect, NSSize, NSString, NSURL};
+use objc2_foundation::{
+    ns_string, NSObject, NSObjectProtocol, NSPoint, NSRect, NSSize, NSString, NSURL,
+};
 
 use crate::permissions::Permissions;
 thread_local! { static DIRTY: Cell<bool> = const { Cell::new(true) }; }
+thread_local! { static SELECTED: Cell<Option<usize>> = const { Cell::new(None) }; }
 pub fn request_refresh() {
     DIRTY.with(|flag| flag.set(true));
 }
@@ -35,6 +38,10 @@ define_class!(
     struct MenuTarget;
     unsafe impl NSObjectProtocol for MenuTarget {}
     impl MenuTarget {
+        #[unsafe(method(selectAction:))]
+        fn select_action(&self, sender: &NSMenuItem) {
+            guard(|| SELECTED.with(|s| s.set(usize::try_from(sender.tag()).ok())));
+        }
         #[unsafe(method(togglePause:))]
         fn toggle_pause(&self, _sender: Option<&NSObject>) { guard(crate::app::toggle_pause); }
         #[unsafe(method(grantAccessibility:))]
@@ -57,8 +64,72 @@ define_class!(
     }
 );
 
+/// 必须在 tap 返回后的主线程调用；模态跟踪仍泵送 common-mode tap 和计时器。
+pub fn popup(
+    items: &[mousetroke_core::schema::MenuItem],
+    pos: (i32, i32),
+    mtm: MainThreadMarker,
+) -> Option<mousetroke_core::schema::Action> {
+    use mousetroke_core::schema::Action;
+    fn build(
+        items: &[mousetroke_core::schema::MenuItem],
+        target: &MenuTarget,
+        actions: &mut Vec<Action>,
+        depth: usize,
+        mtm: MainThreadMarker,
+    ) -> Retained<NSMenu> {
+        let menu = NSMenu::new(mtm);
+        menu.setAutoenablesItems(false);
+        if depth > 16 {
+            return menu;
+        }
+        for item in items.iter().take(256) {
+            if actions.len() >= 256 {
+                break;
+            }
+            // 安全：action selector 在 MenuTarget 定义；target 保留至整个模态菜单返回。
+            let entry = unsafe {
+                NSMenuItem::initWithTitle_action_keyEquivalent(
+                    NSMenuItem::alloc(mtm),
+                    &NSString::from_str(&item.label),
+                    Some(sel!(selectAction:)),
+                    ns_string!(""),
+                )
+            };
+            if let Action::Menu { items, .. } = &item.action {
+                entry.setSubmenu(Some(&build(items, target, actions, depth + 1, mtm)));
+            } else {
+                entry.setTag(actions.len() as isize);
+                unsafe { entry.setTarget(Some(target)) };
+                actions.push(item.action.clone());
+            }
+            menu.addItem(&entry);
+        }
+        menu
+    }
+    // 安全：NSObject 初始化，在主线程持有 MenuTarget 到菜单关闭。
+    let target: Retained<MenuTarget> = unsafe { msg_send![MenuTarget::alloc(mtm), init] };
+    let mut actions = Vec::new();
+    let menu = build(items, &target, &mut actions, 0, mtm);
+    SELECTED.with(|s| s.set(None));
+    let height = objc2_app_kit::NSScreen::screens(mtm)
+        .iter()
+        .next()?
+        .frame()
+        .size
+        .height;
+    let (x, y) = crate::helpers::menu_point(pos.0 as f64, pos.1 as f64, height);
+    if !menu.popUpMenuPositioningItem_atLocation_inView(None, NSPoint::new(x, y), None) {
+        return None;
+    }
+    SELECTED
+        .with(|s| s.take())
+        .and_then(|i| actions.get(i).cloned())
+}
+
 fn open_url(text: &str) {
-    if !NSURL::URLWithString(&NSString::from_str(text)).is_some_and(|url| NSWorkspace::sharedWorkspace().openURL(&url))
+    if !NSURL::URLWithString(&NSString::from_str(text))
+        .is_some_and(|url| NSWorkspace::sharedWorkspace().openURL(&url))
     {
         crate::log!("打开系统权限设置失败");
     }
@@ -101,7 +172,9 @@ impl Menu {
         let pause = entry(Some(sel!(togglePause:)));
         pause.setKeyEquivalent(ns_string!("p"));
         pause.setKeyEquivalentModifierMask(
-            NSEventModifierFlags::Control | NSEventModifierFlags::Option | NSEventModifierFlags::Command,
+            NSEventModifierFlags::Control
+                | NSEventModifierFlags::Option
+                | NSEventModifierFlags::Command,
         );
         let accessibility = entry(Some(sel!(grantAccessibility:)));
         let input_monitoring = entry(Some(sel!(grantInputMonitoring:)));
@@ -127,7 +200,8 @@ impl Menu {
             }));
             Bool::new(result.is_ok())
         });
-        let image = NSImage::imageWithSize_flipped_drawingHandler(NSSize::new(22.0, 22.0), true, &drawing);
+        let image =
+            NSImage::imageWithSize_flipped_drawingHandler(NSSize::new(22.0, 22.0), true, &drawing);
         image.setTemplate(true);
         if let Some(button) = item.button(mtm) {
             button.setImage(Some(&image));
@@ -148,7 +222,13 @@ impl Menu {
         }
     }
 
-    pub fn refresh(&self, mtm: MainThreadMarker, permissions: Permissions, active: bool, paused: bool) {
+    pub fn refresh(
+        &self,
+        mtm: MainThreadMarker,
+        permissions: Permissions,
+        active: bool,
+        paused: bool,
+    ) {
         let key = if !permissions.ready() || !active {
             keys::MAC_STATUS_PERMISSION
         } else if paused {
@@ -164,8 +244,10 @@ impl Menu {
         self.accessibility.setHidden(permissions.accessibility);
         self.input_monitoring
             .setTitle(&NSString::from_str(t(keys::MAC_GRANT_INPUT_MONITORING)));
-        self.input_monitoring.setHidden(permissions.input_monitoring);
-        self.open_log.setTitle(&NSString::from_str(t(keys::MAC_OPEN_LOG)));
+        self.input_monitoring
+            .setHidden(permissions.input_monitoring);
+        self.open_log
+            .setTitle(&NSString::from_str(t(keys::MAC_OPEN_LOG)));
         self.quit.setTitle(&NSString::from_str(t(keys::MAC_QUIT)));
         if let Some(button) = self.item.button(mtm) {
             button.setAppearsDisabled(paused || !permissions.ready() || !active);
