@@ -76,13 +76,20 @@ def notes(releases: list[Release], version: str) -> str:
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     commands = parser.add_subparsers(dest="command", required=True)
-    commands.add_parser("notes").add_argument("version")
+    notes_parser = commands.add_parser("notes")
+    notes_parser.add_argument("version")
+    # 直接写 UTF-8 文件：经 PowerShell 重定向可能按控制台代码页转码，中文会乱
+    notes_parser.add_argument("--out", type=Path)
     commands.add_parser("check")
     args = parser.parse_args()
     try:
         releases = load()
         if args.command == "notes":
-            print(notes(releases, args.version))
+            body = notes(releases, args.version)
+            if args.out:
+                args.out.write_text(body + "\n", encoding="utf-8")
+            else:
+                print(body)
         else:
             version = tomllib.loads((ROOT / "Cargo.toml").read_text(encoding="utf-8"))["workspace"]["package"]["version"]
             notes(releases, version)

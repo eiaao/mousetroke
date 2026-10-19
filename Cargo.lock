@@ -1895,7 +1895,7 @@ dependencies = [
 
 [[package]]
 name = "mousetroke"
-version = "0.1.0"
+version = "0.1.1"
 dependencies = [
  "mousetroke-core",
  "mousetroke-settings",
@@ -1906,7 +1906,7 @@ dependencies = [
 
 [[package]]
 name = "mousetroke-core"
-version = "0.1.0"
+version = "0.1.1"
 dependencies = [
  "serde",
  "serde_json",
@@ -1914,7 +1914,7 @@ dependencies = [
 
 [[package]]
 name = "mousetroke-settings"
-version = "0.1.0"
+version = "0.1.1"
 dependencies = [
  "mousetroke-core",
  "mousetroke-win",
@@ -1929,7 +1929,7 @@ dependencies = [
 
 [[package]]
 name = "mousetroke-win"
-version = "0.1.0"
+version = "0.1.1"
 dependencies = [
  "mlua",
  "mousetroke-core",
