@@ -11,6 +11,9 @@ permissions:
 jobs:
   macos-engine:
     runs-on: macos-latest
+    defaults:
+      run:
+        shell: /bin/bash --noprofile --norc -e -o pipefail {0}
     env:
       CARGO_BUILD_JOBS: 4
       CARGO_TARGET_DIR: ${{ github.workspace }}/target
@@ -28,10 +31,10 @@ jobs:
       - name: Build and test settings UI
         working-directory: crates/mousetroke-settings/ui
         run: |
-          npm ci
-          npm run typecheck
-          npm test
-          npm run build
+          npm ci || exit 1
+          npm run typecheck || exit 1
+          npm test || exit 1
+          npm run build || exit 1
       - name: Build macOS application
         run: cargo build -p mousetroke -p mousetroke-settings --locked
       - name: Test shared core, engine and macOS platform
@@ -46,9 +49,9 @@ jobs:
           MOUSETROKE_SIGN_ID: "-"
           MOUSETROKE_REQUIRE_SIGNING: "0"
         run: |
-          rustup target add aarch64-apple-darwin x86_64-apple-darwin
-          bash scripts/mac/bundle.sh --universal
-          bash scripts/mac/dmg.sh
+          rustup target add aarch64-apple-darwin x86_64-apple-darwin || exit 1
+          /bin/bash scripts/mac/bundle.sh --universal || exit 1
+          /bin/bash scripts/mac/dmg.sh || exit 1
 
   test:
     runs-on: windows-latest

@@ -9,6 +9,7 @@ mac_message() {
         *) language=en-US ;;
     esac
     local message
-    message=$(awk -v key="$1" '$1 == "\"" key "\":" { sub(/^[^:]*: "/, ""); sub(/",?$/, ""); print; exit }' "$root/i18n/$language.json")
+    message=$(awk -v key="$1" '$1 == "\"" key "\":" { sub(/^[^:]*: "/, ""); sub(/",?$/, ""); print; exit }' "$root/i18n/$language.json") || return 1
+    [[ -n "$message" ]] || { printf 'Missing macOS message: %s\n' "$1" >&2; return 1; }
     printf '%s\n' "$message"
 }

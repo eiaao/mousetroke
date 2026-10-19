@@ -1,42 +1,44 @@
 """用隔离目录和 Apple 工具替身验证打包失败时不会留下可发布的旧产物。"""
 import os
 from pathlib import Path
+import re
 import shutil
 import subprocess
 import tempfile
+import textwrap
 import unittest
 
 
 ROOT = Path(__file__).resolve().parents[1]
 BASH = (shutil.which("bash", path="C:/Program Files/Git/bin")
-        if os.name == "nt" else shutil.which("bash"))
+        if os.name == "nt" else "/bin/bash" if Path("/bin/bash").is_file() else shutil.which("bash"))
 
 MOCK_TOOL = r"""#!/bin/bash
 set -euo pipefail
-tool=$(basename "$0")
+tool=$(basename "$0") || exit 1
 printf '%s' "$tool" >> "$TEST_LOG"
 printf ' <%s>' "$@" >> "$TEST_LOG"
 printf '\n' >> "$TEST_LOG"
 case "$tool" in
     cargo)
-        test ! -e "$PWD/target/mac/Mousetroke.app"
+        test ! -e "$PWD/target/mac/Mousetroke.app" || exit 1
         [[ "${FAIL_CARGO:-0}" != 1 ]] || exit 1
         target=
         while [[ $# -gt 0 ]]; do
             if [[ "$1" == --target ]]; then target="$2/"; shift; fi
             shift
         done
-        mkdir -p "$CARGO_TARGET_DIR/${target}release"
+        mkdir -p "$CARGO_TARGET_DIR/${target}release" || exit 1
         printf 'new binary\n' > "$CARGO_TARGET_DIR/${target}release/mousetroke"
         ;;
     lipo)
         [[ "${FAIL_LIPO:-0}" != 1 ]] || exit 1
         if [[ " $* " == *' -create '* ]]; then
-            [[ $# -eq 5 && "$3" == -create && "$4" == -output ]]
-            test -f "$1" && test -f "$2"
+            [[ $# -eq 5 && "$3" == -create && "$4" == -output ]] || exit 1
+            { test -f "$1" && test -f "$2"; } || exit 1
             printf 'universal binary\n' > "$5"
         elif [[ $# -eq 2 && "$2" == -archs ]]; then
-            test -f "$1"
+            test -f "$1" || exit 1
             [[ "${FAIL_ARCHS:-0}" != 1 ]] || exit 1
             printf '%s\n' "${MOCK_SLICES-arm64 x86_64}"
         else
@@ -45,15 +47,15 @@ case "$tool" in
                 printf 'lipo: -verify_arch requires exactly one input file\n' >&2
                 exit 1
             fi
-            [[ "$3" == arm64 || "$3" == x86_64 ]]
-            test -f "$1"
+            [[ "$3" == arm64 || "$3" == x86_64 ]] || exit 1
+            test -f "$1" || exit 1
             slices=" ${MOCK_SLICES-arm64 x86_64} "
-            [[ "$slices" == *" $3 "* ]]
+            [[ "$slices" == *" $3 "* ]] || exit 1
         fi
         ;;
     codesign)
         case "$1" in
-            --verify) [[ "${FAIL_VERIFY:-0}" != 1 ]] ;;
+            --verify) [[ "${FAIL_VERIFY:-0}" != 1 ]] || exit 1 ;;
             --display)
                 [[ "${FAIL_DISPLAY:-0}" != 1 ]] || exit 1
                 architecture=
@@ -69,32 +71,146 @@ case "$tool" in
                 ;;
             --force)
                 path="${!#}"
-                [[ "$path" != *"${FAIL_SIGN_SUFFIX:-.never}" ]]
+                [[ "$path" != *"${FAIL_SIGN_SUFFIX:-.never}" ]] || exit 1
                 ;;
             *) exit 2 ;;
         esac
         ;;
-    security) printf '1) AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA "Fixture"\n' ;;
-    plutil) : ;;
-    ditto) cp -R "$1" "$2" ;;
+    security)
+        [[ "$1" != "${FAIL_SECURITY:-.never}" ]] || exit 1
+        case "$1" in
+            find-identity) printf '1) %s "Fixture"\n' "${MOCK_FINGERPRINT-AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA}" ;;
+            find-certificate) printf 'SHA-1 hash: AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA\n' ;;
+            list-keychains)
+                if [[ $# -eq 3 ]]; then printf '%s\n' "${MOCK_KEYCHAINS:-}"; fi
+                ;;
+        esac
+        ;;
+    openssl)
+        [[ "$1" != "${FAIL_OPENSSL:-.never}" ]] || exit 1
+        if [[ "$1" == rand ]]; then printf 'fixture-password\n'; fi
+        ;;
+    git)
+        if [[ "${!#}" == --git-common-dir ]]; then
+            printf '%s/.git\n' "$PWD"
+        else
+            # 隔离证书测试模拟仓库外的临时目录；不查询真实 worktree。
+            exit 1
+        fi
+        ;;
+    base64)
+        [[ "${FAIL_BASE64:-0}" != 1 ]] || exit 1
+        cat || exit 1
+        ;;
+    plutil) [[ "${FAIL_PLUTIL:-0}" != 1 ]] || exit 1 ;;
+    ditto)
+        [[ "${FAIL_DITTO:-0}" != 1 ]] || exit 1
+        cp -R "$1" "$2" || exit 1
+        ;;
     ln)
         # Windows 的 Git Bash 无法链接到不存在的 macOS /Applications。
-        [[ $# -eq 3 && "$1" == -s && "$2" == /Applications ]]
+        [[ $# -eq 3 && "$1" == -s && "$2" == /Applications ]] || exit 1
         printf '/Applications\n' > "$3"
         ;;
     hdiutil)
         if [[ "$1" == create ]]; then
             image="$2"
-            [[ "$image" == *.dmg && ! -e "$image" ]]
+            [[ "$image" == *.dmg && ! -e "$image" ]] || exit 1
             printf 'fresh DMG\n' > "$image"
-            [[ "${FAIL_CREATE:-0}" != 1 ]]
+            [[ "${FAIL_CREATE:-0}" != 1 ]] || exit 1
         else
-            [[ "$1" == verify && "${FAIL_IMAGE_VERIFY:-0}" != 1 ]]
+            [[ "$1" == verify && "${FAIL_IMAGE_VERIFY:-0}" != 1 ]] || exit 1
         fi
         ;;
     *) exit 2 ;;
 esac
 """
+
+
+# 有意只识别常见的不兼容语法；真正的 3.2 运行和 bash -n 仍是最终校验。
+BASH4_FEATURES = {
+    "associative/global arrays or namerefs": r"\b(?:declare|local|typeset)\s+[^;\n]*-[a-zA-Z]*[Agn][a-zA-Z]*(?:\s|$)",
+    "mapfile/readarray/coproc": r"\b(?:mapfile|readarray|coproc)\b",
+    "case conversion": r"\$\{[^}\n]*(?:,|\^)[^}\n]*\}",
+    "new redirections/case fallthrough": r"\|&|&>>|;;&|;&",
+    "negative array indices": r"\b\w+\[\s*-\d",
+    "dynamic file descriptors": r"\{[A-Za-z_]\w*\}[<>]",
+    "variable transformations": r"\$\{[^}\n]*@[A-Za-z][^}\n]*\}",
+    "variable existence test": r"\[\[\s*(?:!\s*)?-(?:v|R)\s",
+    "wait -n / read -N": r"\b(?:wait\s+-[a-zA-Z]*n|read\s+-[a-zA-Z]*N)\b",
+    "new shopt options": r"\bshopt\s+[^;\n]*\b(?:globstar|lastpipe|direxpand|localvar_inherit|localvar_unset)\b",
+    "masked command substitution": r"\b(?:local|declare|typeset|export|readonly)\s+[^;\n]*=\$\(",
+    "unguarded standalone predicate": r"^\s*(?:\[\[.*\]\]|\(\(.*\)\)|test\s+(?:(?!\|\||&&|;).)+|\[\s+.*\])\s*$",
+}
+
+
+def shell_compatibility_issues(source):
+    # 注释不是可执行代码；避免文档里的特性名称造成误报。
+    source = "\n".join(line for line in source.splitlines() if not line.lstrip().startswith("#"))
+    return [name for name, pattern in BASH4_FEATURES.items() if re.search(pattern, source, re.MULTILINE)]
+
+
+def workflow_bash_blocks():
+    """读取本仓库的简单 run 标量，不引入 PyYAML；排除 Windows 的 PowerShell/CMD。"""
+    for path in sorted((ROOT / ".github/workflows").glob("*.y*ml")):
+        source = path.read_text(encoding="utf-8").split("\njobs:\n", 1)[1]
+        jobs = re.split(r"(?m)^  [\w-]+:\s*\n", source)[1:]
+        for job in jobs:
+            if re.search(r"runs-on:\s*windows", job):
+                continue
+            macos = bool(re.search(r"runs-on:\s*macos", job))
+            lines = job.splitlines()
+            step = ""
+            for number, line in enumerate(lines):
+                if line.lstrip().startswith("- name:"):
+                    step = line.strip()[7:].strip()
+                match = re.match(r"(\s+)run:\s*(.*)", line)
+                if not match:
+                    continue
+                indent, value = match.groups()
+                if not value:  # defaults.run 配置，不是 step 的 run 标量。
+                    continue
+                if value in ("|", ">", "|-", ">-"):
+                    block = []
+                    for following in lines[number + 1:]:
+                        if following.strip() and len(following) - len(following.lstrip()) <= len(indent):
+                            break
+                        block.append(following)
+                    value = textwrap.dedent("\n".join(block))
+                value = re.sub(r"\$\{\{.*?\}\}", "workflow-value", value)
+                yield f"{path.name}: {step}", value, macos
+
+
+class MacShellCompatibilityTests(unittest.TestCase):
+    def test_compatibility_guard_detects_bash4_and_masked_failures(self):
+        for source in ["declare -A items", "local -n reference=items", "mapfile -t items",
+                       "readarray items", "coproc command", "echo ${value,,}", "echo ${value^^}",
+                       "a |& b", "a &>> log", "case x in x) a ;& esac", "echo ${items[-1]}",
+                       "exec {fd}>file", "echo ${value@Q}", "[[ -v value ]]", "wait -n",
+                       "shopt -s globstar", "local value=$(false)", "[[ 1 == 2 ]]", "(( count++ ))"]:
+            with self.subTest(source=source):
+                self.assertTrue(shell_compatibility_issues(source), source)
+
+    def test_mac_sources_avoid_bash4_and_unguarded_checks(self):
+        sources = [(path.name, path.read_text(encoding="utf-8"))
+                   for path in sorted((ROOT / "scripts/mac").glob("*.sh"))]
+        sources += [(name, code) for name, code, macos in workflow_bash_blocks() if macos]
+        sources.append(("MOCK_TOOL", MOCK_TOOL))
+        for name, code in sources:
+            with self.subTest(source=name):
+                self.assertEqual(shell_compatibility_issues(code), [], name)
+
+    @unittest.skipUnless(BASH, "Bash is required")
+    def test_shell_and_workflow_bash_syntax(self):
+        sources = [(path.name, path.read_text(encoding="utf-8"))
+                   for path in sorted((ROOT / "scripts/mac").glob("*.sh"))]
+        sources += [(name, code) for name, code, _ in workflow_bash_blocks()]
+        sources.append(("MOCK_TOOL", MOCK_TOOL))
+        for name, code in sources:
+            with self.subTest(source=name):
+                result = subprocess.run([BASH, "--noprofile", "--norc", "-n"], input=code,
+                                        text=True, capture_output=True, timeout=30)
+                self.assertEqual(result.returncode, 0, f"{name}: {result.stderr}")
 
 
 @unittest.skipUnless(BASH, "Bash is required (Git Bash on Windows)")
@@ -111,9 +227,10 @@ class MacPackagingTests(unittest.TestCase):
         shutil.copyfile(ROOT / "i18n/en-US.json", self.root / "i18n/en-US.json")
         commands = self.root / "commands"
         commands.mkdir()
-        for name in ["cargo", "lipo", "codesign", "security", "plutil", "ditto", "ln", "hdiutil"]:
+        for name in ["cargo", "lipo", "codesign", "security", "openssl", "git", "base64", "plutil", "ditto", "ln", "hdiutil"]:
             executable = commands / name
-            executable.write_text(MOCK_TOOL, encoding="utf-8", newline="\n")
+            with executable.open("w", encoding="utf-8", newline="\n") as stream:
+                stream.write(MOCK_TOOL)
             executable.chmod(0o755)
         self.bundle = self.root / "target/mac/Mousetroke.app"
         self.image = self.root / "target/mac/Mousetroke.dmg"
@@ -128,6 +245,8 @@ class MacPackagingTests(unittest.TestCase):
             "MOUSETROKE_SIGN_ID": "Fixture",
             "MOUSETROKE_SIGN_KEYCHAIN": "",
             "MOUSETROKE_REQUIRE_SIGNING": "0",
+            # 不读取测试机器的真实开发证书/钥匙串。
+            "HOME": (self.root / "home").as_posix(),
         }
         self.seed_outputs()
 
@@ -138,18 +257,28 @@ class MacPackagingTests(unittest.TestCase):
         self.image.write_text("old DMG")
         self.log.write_text("")
 
-    def run_script(self, name, *arguments, success=True, **environment):
+    def run_script(self, name, *arguments, success=True, input=None, **environment):
+        return self.run_shell('exec "$BASH" --noprofile --norc "$@"',
+                              (self.root / f"scripts/mac/{name}.sh").as_posix(), *arguments,
+                              success=success, input=input, **environment)
+
+    def run_shell(self, source, *arguments, success=True, input=None, **environment):
         result = subprocess.run(
             [BASH, "--noprofile", "--norc", "-c",
-             'export PATH="$PWD/commands:$PATH"; exec "$BASH" --noprofile --norc "$@"',
-             "mac-packaging-test", (self.root / f"scripts/mac/{name}.sh").as_posix(), *arguments],
-            cwd=self.root, env={**self.env, **environment}, capture_output=True, text=True, timeout=30,
+             'export PATH="$PWD/commands:$PATH";\n' + source,
+             "mac-packaging-test", *arguments],
+            cwd=self.root, env={**self.env, **environment}, input=input,
+            capture_output=True, text=True, timeout=30,
         )
         if success:
             self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
         else:
             self.assertNotEqual(result.returncode, 0, result.stdout + result.stderr)
         return result
+
+    def workflow_step(self, name):
+        return next(code for label, code, _ in workflow_bash_blocks()
+                    if label == f"release.yml: {name}")
 
     def test_universal_bundle_replaces_old_resources_and_uses_apple_lipo_syntax(self):
         self.run_script("bundle", "--universal")
@@ -216,6 +345,141 @@ class MacPackagingTests(unittest.TestCase):
         self.assertTrue((self.bundle / "stale-resource").exists())
         self.assertEqual(self.log.read_text(), "")
 
+    def test_plist_preview_and_validation_propagate_failures(self):
+        self.run_script("bundle", "--universal", success=False, FAIL_PLUTIL="1")
+        self.assertFalse(self.bundle.exists())
+        self.assertNotIn("codesign", self.log.read_text())
+        self.seed_outputs()
+        (self.root / "scripts/mac/Info.plist.in").unlink()
+        self.run_script("bundle", "--print-plist", success=False)
+        self.assertTrue((self.bundle / "stale-resource").exists())
+
+    def test_signing_query_failures_and_malformed_fingerprints_stop_packaging(self):
+        for name, arguments, output in [("bundle", ("--universal",), self.bundle), ("dmg", (), self.image)]:
+            for failure in [dict(FAIL_SECURITY="find-identity"), dict(MOCK_FINGERPRINT="invalid")]:
+                with self.subTest(script=name, failure=failure):
+                    self.seed_outputs()
+                    self.run_script(name, *arguments, success=False, **failure)
+                    self.assertFalse(output.exists())
+                    self.assertNotIn("codesign <--force>", self.log.read_text())
+                    self.assertNotIn("hdiutil <verify>", self.log.read_text())
+                    if name == "bundle":
+                        self.assertNotIn("hdiutil", self.log.read_text())
+
+    def test_signing_function_propagates_failures_when_called_in_a_condition(self):
+        source = '''set -euo pipefail
+root=$PWD
+source "$root/scripts/mac/messages.sh" || exit 1
+source "$root/scripts/mac/sign.sh" || exit 1
+if sign_mac "$root/target/mac/Mousetroke.app"; then exit 0; else exit 1; fi
+'''
+        for failure in [dict(FAIL_SIGN_SUFFIX=".app"), dict(FAIL_VERIFY="1"),
+                        dict(FAIL_SECURITY="find-identity"), dict(MOCK_FINGERPRINT="invalid")]:
+            with self.subTest(failure=failure):
+                self.seed_outputs()
+                self.run_shell(source, success=False, **failure)
+                if "FAIL_SIGN_SUFFIX" in failure:
+                    self.assertNotIn("codesign <--verify>", self.log.read_text())
+
+    def test_message_function_propagates_missing_file_or_key_in_a_condition(self):
+        source = '''set -euo pipefail
+root=$PWD
+source "$root/scripts/mac/messages.sh" || exit 1
+if message=$(mac_message mac.bundle.done); then exit 0; else exit 1; fi
+'''
+        catalog = self.root / "i18n/en-US.json"
+        catalog.write_text("{}", encoding="utf-8")
+        self.run_shell(source, success=False)
+        catalog.unlink()
+        self.run_shell(source, success=False)
+
+    def test_development_signing_stops_on_unlock_and_certificate_query_failure(self):
+        home = self.root / "home"
+        (home / "Library/Keychains").mkdir(parents=True)
+        (home / "Library/Keychains/mousetroke-dev.keychain-db").touch()
+        (home / ".config/mousetroke-dev").mkdir(parents=True)
+        (home / ".config/mousetroke-dev/keychain-password").write_text("fixture-password")
+        for operation in ["unlock-keychain", "find-certificate"]:
+            with self.subTest(operation=operation):
+                self.seed_outputs()
+                self.run_script("bundle", "--universal", success=False,
+                                MOUSETROKE_SIGN_ID="", FAIL_SECURITY=operation)
+                self.assertFalse(self.bundle.exists())
+                self.assertNotIn("codesign", self.log.read_text())
+
+    def test_dev_certificate_preserves_keychain_list_and_accepts_empty_list(self):
+        for keychains in ["", '    "existing keychain"', '    "existing keychain"\n']:
+            with self.subTest(keychains=keychains):
+                self.log.write_text("")
+                self.run_script("make-dev-cert", MOCK_KEYCHAINS=keychains)
+                last = self.log.read_text().splitlines()[-1]
+                self.assertIn("security <list-keychains> <-d> <user> <-s>", last)
+                if keychains:
+                    self.assertIn("<existing keychain>", last)
+
+    def test_dev_certificate_query_and_generation_failures_stop_before_success(self):
+        for failure in [dict(FAIL_SECURITY="list-keychains"), dict(FAIL_OPENSSL="rand"),
+                        dict(FAIL_OPENSSL="req"), dict(FAIL_OPENSSL="pkcs12")]:
+            with self.subTest(failure=failure):
+                self.log.write_text("")
+                self.run_script("make-dev-cert", success=False, **failure)
+                self.assertNotIn("security <list-keychains> <-d> <user> <-s>", self.log.read_text())
+
+    def test_release_certificate_rejects_unreadable_empty_or_mismatched_password(self):
+        (self.root / ".git").mkdir()
+        # 输出位于 worktree 的忽略目录，但在模拟的证书脚本仓库之外。
+        with tempfile.TemporaryDirectory(prefix="cert output ", dir=ROOT / "target") as output:
+            certificate = (Path(output) / "release.p12").as_posix()
+            for password in ["", "\n", "one\ntwo\n", "one\n"]:
+                with self.subTest(password=password):
+                    self.run_script("make-release-cert", certificate, success=False, input=password)
+                    self.assertNotIn("openssl", self.log.read_text())
+            self.run_script("make-release-cert", certificate, success=False,
+                            input="one\none\n", FAIL_OPENSSL="req")
+            self.assertNotIn("openssl <pkcs12>", self.log.read_text())
+
+    def test_release_workflow_import_stops_on_tool_or_decode_failure(self):
+        runner = self.root / "runner"
+        runner.mkdir()
+        github_env = runner / "github-env"
+        for failure in [dict(FAIL_OPENSSL="rand"), dict(FAIL_SECURITY="list-keychains"),
+                        dict(FAIL_BASE64="1"), dict(FAIL_SECURITY="create-keychain"),
+                        dict(FAIL_SECURITY="import"), dict(FAIL_SECURITY="set-key-partition-list")]:
+            with self.subTest(failure=failure):
+                self.log.write_text("")
+                self.run_shell(self.workflow_step("Import stable release identity"), success=False,
+                               RUNNER_TEMP=runner.as_posix(), GITHUB_ENV=github_env.as_posix(),
+                               MAC_SIGN_P12_BASE64="fixture", MAC_SIGN_P12_PASSWORD="fixture", **failure)
+                self.assertNotIn("security <list-keychains> <-d> <user> <-s>", self.log.read_text())
+                self.assertFalse(github_env.exists())
+
+    def test_release_workflow_import_exports_identity_only_after_success(self):
+        runner = self.root / "runner"
+        runner.mkdir()
+        github_env = runner / "github-env"
+        self.run_shell(self.workflow_step("Import stable release identity"),
+                       RUNNER_TEMP=runner.as_posix(), GITHUB_ENV=github_env.as_posix(),
+                       MAC_SIGN_P12_BASE64="fixture", MAC_SIGN_P12_PASSWORD="fixture")
+        self.assertIn("MOUSETROKE_SIGN_ID=Mousetroke Self-Signed", github_env.read_text())
+        self.assertIn("security <import>", self.log.read_text())
+        self.assertFalse((runner / "mousetroke-release.p12").exists())
+
+    def test_release_workflow_cleanup_handles_empty_lists_and_preserves_failures(self):
+        runner = self.root / "runner"
+        runner.mkdir()
+        for keychains, failure in [("", {}), ('    "existing keychain"\n', {}),
+                                   ("", dict(FAIL_SECURITY="list-keychains")),
+                                   ("", dict(FAIL_SECURITY="delete-keychain"))]:
+            with self.subTest(keychains=keychains, failure=failure):
+                (runner / "mousetroke-keychains.txt").write_text(keychains, encoding="utf-8")
+                (runner / "mousetroke-release.keychain-db").touch()
+                (runner / "mousetroke-release.p12").touch()
+                self.run_shell(self.workflow_step("Delete temporary signing material"),
+                               success=not failure, RUNNER_TEMP=runner.as_posix(), **failure)
+                self.assertFalse((runner / "mousetroke-keychains.txt").exists())
+                self.assertFalse((runner / "mousetroke-release.p12").exists())
+                self.assertIn("security <delete-keychain>", self.log.read_text())
+
     def test_failed_bundle_cannot_feed_stale_app_into_dmg(self):
         self.run_script("bundle", "--universal", success=False, FAIL_CARGO="1")
         self.run_script("dmg", success=False)
@@ -273,6 +537,7 @@ class MacPackagingTests(unittest.TestCase):
 
     def test_failed_image_creation_signing_or_verification_removes_partial_image(self):
         for failure, stage in [
+            (dict(FAIL_DITTO="1"), "ditto <"),
             (dict(FAIL_CREATE="1"), "hdiutil <create>"),
             (dict(FAIL_SIGN_SUFFIX=".dmg"), "codesign <--force>"),
             (dict(FAIL_IMAGE_VERIFY="1"), "hdiutil <verify>"),

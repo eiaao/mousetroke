@@ -56,6 +56,9 @@ jobs:
 
   macos:
     runs-on: macos-latest
+    defaults:
+      run:
+        shell: /bin/bash --noprofile --norc -e -o pipefail {0}
     env:
       CARGO_BUILD_JOBS: 4
       CARGO_TARGET_DIR: ${{ github.workspace }}/target
@@ -83,10 +86,10 @@ jobs:
       - name: Build and test settings UI
         working-directory: crates/mousetroke-settings/ui
         run: |
-          npm ci
-          npm run typecheck
-          npm test
-          npm run build
+          npm ci || exit 1
+          npm run typecheck || exit 1
+          npm test || exit 1
+          npm run build || exit 1
       - name: Test macOS packaging gates
         run: python -m unittest discover -s scripts -p test_mac_packaging.py
       - name: Install universal targets
@@ -102,24 +105,25 @@ jobs:
           umask 077
           keychain="$RUNNER_TEMP/mousetroke-release.keychain-db"
           p12="$RUNNER_TEMP/mousetroke-release.p12"
-          password=$(openssl rand -hex 32)
+          password=$(openssl rand -hex 32) || exit 1
+          [[ -n "$password" ]] || { echo '::error::Empty keychain password'; exit 1; }
           printf '::add-mask::%s\n' "$password"
-          security list-keychains -d user > "$RUNNER_TEMP/mousetroke-keychains.txt"
-          printf '%s' "$MAC_SIGN_P12_BASE64" | base64 -D > "$p12"
-          security create-keychain -p "$password" "$keychain"
-          security set-keychain-settings -lut 21600 "$keychain"
-          security unlock-keychain -p "$password" "$keychain"
-          security import "$p12" -k "$keychain" -P "$MAC_SIGN_P12_PASSWORD" -T /usr/bin/codesign >/dev/null 2>&1
-          security set-key-partition-list -S apple-tool:,apple:,codesign: -s -k "$password" "$keychain" >/dev/null 2>&1
-          security list-keychains -d user -s "$keychain"
-          rm -f "$p12"
-          echo "MOUSETROKE_SIGN_KEYCHAIN=$keychain" >> "$GITHUB_ENV"
-          echo 'MOUSETROKE_SIGN_ID=Mousetroke Self-Signed' >> "$GITHUB_ENV"
+          security list-keychains -d user > "$RUNNER_TEMP/mousetroke-keychains.txt" || exit 1
+          printf '%s' "$MAC_SIGN_P12_BASE64" | base64 -D > "$p12" || exit 1
+          security create-keychain -p "$password" "$keychain" || exit 1
+          security set-keychain-settings -lut 21600 "$keychain" || exit 1
+          security unlock-keychain -p "$password" "$keychain" || exit 1
+          security import "$p12" -k "$keychain" -P "$MAC_SIGN_P12_PASSWORD" -T /usr/bin/codesign >/dev/null 2>&1 || exit 1
+          security set-key-partition-list -S apple-tool:,apple:,codesign: -s -k "$password" "$keychain" >/dev/null 2>&1 || exit 1
+          security list-keychains -d user -s "$keychain" || exit 1
+          rm -f "$p12" || exit 1
+          echo "MOUSETROKE_SIGN_KEYCHAIN=$keychain" >> "$GITHUB_ENV" || exit 1
+          echo 'MOUSETROKE_SIGN_ID=Mousetroke Self-Signed' >> "$GITHUB_ENV" || exit 1
       - name: Universal signed bundle and DMG
         run: |
-          bash scripts/mac/bundle.sh --universal
-          bash scripts/mac/dmg.sh
-          codesign -d -r- target/mac/Mousetroke.app
+          /bin/bash scripts/mac/bundle.sh --universal || exit 1
+          /bin/bash scripts/mac/dmg.sh || exit 1
+          codesign -d -r- target/mac/Mousetroke.app || exit 1
       - uses: actions/upload-artifact@v4
         with:
           name: macos-release
@@ -133,14 +137,14 @@ jobs:
           if [[ -f "$RUNNER_TEMP/mousetroke-keychains.txt" ]]; then
             while IFS= read -r line; do
               line=${line#*\"}; line=${line%\"*}
-              [[ -z "$line" ]] || keychains+=("$line")
-            done < "$RUNNER_TEMP/mousetroke-keychains.txt"
-            security list-keychains -d user -s "${keychains[@]}" || status=1
+              if [[ -n "$line" ]]; then keychains+=("$line"); fi
+            done < "$RUNNER_TEMP/mousetroke-keychains.txt" || status=1
+            security list-keychains -d user -s ${keychains[@]+"${keychains[@]}"} || status=1
           fi
           if [[ -f "$RUNNER_TEMP/mousetroke-release.keychain-db" ]]; then
             security delete-keychain "$RUNNER_TEMP/mousetroke-release.keychain-db" || status=1
           fi
-          rm -f "$RUNNER_TEMP/mousetroke-release.p12" "$RUNNER_TEMP/mousetroke-keychains.txt"
+          rm -f "$RUNNER_TEMP/mousetroke-release.p12" "$RUNNER_TEMP/mousetroke-keychains.txt" || status=1
           exit "$status"
 
   publish:

@@ -44,7 +44,8 @@ jobs:
         run: rm -rf site/gen.py site/check.py site/langs site/README.md
       - name: Create project if missing
         run: |
-          if npx --yes wrangler@4 pages project list | grep -qw "$PROJECT"; then
+          projects=$(npx --yes wrangler@4 pages project list) || exit 1
+          if grep -qw "$PROJECT" <<< "$projects"; then
             echo "project $PROJECT exists"
           else
             npx --yes wrangler@4 pages project create "$PROJECT" --production-branch main
