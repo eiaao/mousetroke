@@ -33,6 +33,8 @@ struct Snapshot {
     titles: HashMap<(u32, usize), String>,
     warned_slow: bool,
     next_query: Option<Instant>,
+    /// 各屏 Quartz 逻辑坐标，用于识别铺满整屏的透明壳窗口。
+    screens: Vec<Rect>,
 }
 thread_local! { static SNAPSHOT: RefCell<Snapshot> = RefCell::new(Snapshot::default()); }
 
@@ -112,6 +114,9 @@ pub fn ignored(target: &Target) -> bool {
 pub fn refresh(screens: &[Rect]) {
     SNAPSHOT.with(|slot| {
         let mut snapshot = slot.borrow_mut();
+        if snapshot.screens != screens {
+            snapshot.screens = screens.to_vec();
+        }
         let received = snapshot.pending.as_ref().map(|rx| rx.try_recv());
         let now = Instant::now();
         if matches!(received, None | Some(Err(mpsc::TryRecvError::Empty)))
@@ -187,6 +192,8 @@ pub fn at(x: i32, y: i32) -> Target {
             .find(|w| {
                 w.bounds.contains(x as f64, y as f64)
                     && w.layer < 1000 // 穿透式轨迹窗不能遮住后续手势目标。
+                    // Dock 有一扇铺满整屏的透明窗（真机 layer=20），不能当成遮挡，否则整屏都被忽略。
+                    && !covers_screen(&w.bounds, &snapshot.screens)
                     && snapshot.targets.get(&(w.pid, w.wid)).is_some_and(ignored)
             });
         let row = shell.or_else(|| helpers::hit_test(&snapshot.rows, x as f64, y as f64));
@@ -242,4 +249,28 @@ pub fn remember_title(target: &Target, title: String) {
             .titles
             .insert((target.pid, target.wid), title);
     });
+}
+
+/// 窗口是否几乎铺满它所在的某块屏幕（≥90% 宽和高）。
+fn covers_screen(bounds: &Rect, screens: &[Rect]) -> bool {
+    screens.iter().any(|screen| {
+        bounds.x <= screen.x + 1.0
+            && bounds.y <= screen.y + 1.0
+            && bounds.w >= screen.w * 0.9
+            && bounds.h >= screen.h * 0.9
+    })
+}
+
+#[cfg(test)]
+mod shell_tests {
+    use super::*;
+
+    #[test]
+    fn full_screen_shell_window_is_not_an_occluder() {
+        let screen = Rect { x: 0.0, y: 0.0, w: 2560.0, h: 1440.0 };
+        assert!(covers_screen(&Rect { x: 0.0, y: 0.0, w: 2560.0, h: 1440.0 }, &[screen]));
+        // 菜单栏、Dock 条只占一部分，仍算遮挡
+        assert!(!covers_screen(&Rect { x: 0.0, y: 0.0, w: 2560.0, h: 30.0 }, &[screen]));
+        assert!(!covers_screen(&Rect { x: 600.0, y: 1360.0, w: 1300.0, h: 80.0 }, &[screen]));
+    }
 }
