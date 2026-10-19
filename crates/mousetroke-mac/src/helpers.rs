@@ -26,14 +26,13 @@ pub fn covers(window: Rect, screen: Rect) -> bool {
         && (window.h - screen.h).abs() <= 2.0
 }
 
-/// exe 优先使用 .app 路径：matcher 现有完整路径/文件名比较即可匹配 Chrome.app；
-/// class 保存 bundle id，供日志与系统壳过滤使用，核心作用域目前只比较 exe。
+/// 作用域身份使用 bundle id；无 bundle 的命令行程序回退到可执行文件路径。
 pub fn identity(
-    bundle: Option<String>,
+    _bundle: Option<String>,
     executable: Option<String>,
     id: String,
 ) -> (Option<String>, String) {
-    (bundle.or(executable), id)
+    (if id.is_empty() { executable } else { Some(id.clone()) }, id)
 }
 
 pub fn menu_point(x: f64, y: f64, primary_height: f64) -> (f64, f64) {
@@ -150,12 +149,9 @@ mod tests {
         );
         let exe = exe.unwrap();
         assert_eq!(class, "com.google.Chrome");
+        assert_eq!(exe, "com.google.Chrome");
         assert!(mousetroke_core::matcher::exe_matches(
-            "/Applications/Google Chrome.app",
-            &exe
-        ));
-        assert!(mousetroke_core::matcher::exe_matches(
-            "Google Chrome.app",
+            "com.google.Chrome",
             &exe
         ));
         assert_eq!(

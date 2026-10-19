@@ -2838,3 +2838,11 @@ select.lang-select {
 .update-spinner { display: inline-block; width: 12px; height: 12px; margin-right: 8px; border: 2px solid currentColor; border-right-color: transparent; border-radius: 50%; animation: update-spin .8s linear infinite; flex-shrink: 0; }
 @keyframes update-spin { to { transform: rotate(360deg); } }
 @media (prefers-reduced-motion: reduce) { .update-spinner { animation: none; } }
+/* macOS 保留原生标题栏和交通灯，正文使用系统字体，深浅色仍沿用同一套变量。 */
+:root[data-platform="macos"] {
+  --font: -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
+  --font-display: -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
+  --font-code: ui-monospace, Menlo, monospace;
+}
+.art-menubar .art-taskbar, .art-menubar .art-tray-icon { transform: translateY(-124px); }
+.art-menubar .art-menu { transform: translateY(-14px); }

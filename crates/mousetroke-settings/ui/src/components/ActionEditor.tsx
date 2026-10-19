@@ -1,3 +1,4 @@
+import { isMac, unsupportedAction, supportedAction } from "../platform";
 import { useRef } from "react";
 import type { Action, MenuItem } from "../types";
 import { ACTION_ORDER, SYSTEM_KEYS, WINDOW_OPS, actionName, defaultAction } from "../gesture";
@@ -33,6 +34,10 @@ export function ActionEditor({ action, onChange, depth = 0 }: { action: Action; 
           </button>
         ))}
       </div>
+      {unsupportedAction(action) && <div className="field-warn" role="alert">
+        <p>{t("mac.ui.action.unsupported")}</p>
+        <button type="button" className="btn small" onClick={() => onChange(supportedAction(action))}>{t("mac.ui.action.repair")}</button>
+      </div>}
       <ActionFields action={action} onChange={onChange} depth={depth} />
     </div>
   );
@@ -80,7 +85,7 @@ function ActionFields({ action, onChange, depth }: { action: Action; onChange: (
         <div className="fields">
           <div className="segmented wrap" role="radiogroup">
             {WINDOW_OPS.map((w) => (
-              <button key={w.op} type="button" role="radio" aria-checked={action.op === w.op} className={action.op === w.op ? "on" : ""} onClick={() => onChange({ ...action, op: w.op as never })}>
+              <button key={w.op} disabled={isMac() && w.op === "toggle_topmost"} data-tip={isMac() && w.op === "toggle_topmost" ? t("mac.action.topmost_unsupported") : undefined} type="button" role="radio" aria-checked={action.op === w.op} className={action.op === w.op ? "on" : ""} onClick={() => onChange({ ...action, op: w.op as never })}>
                 {t(w.key)}
               </button>
             ))}
@@ -106,7 +111,7 @@ function ActionFields({ action, onChange, depth }: { action: Action; onChange: (
           <div className="field">
             <label className="field-label">{t("ui.action.exe_label")}</label>
             <div className="input-row">
-              <input value={action.exe} spellCheck={false} placeholder="C:\Program Files\…\app.exe" onChange={(e) => onChange({ ...action, exe: e.target.value }, "exe")} />
+              <input value={action.exe} spellCheck={false} placeholder={isMac() ? t("mac.ui.action.app_ph") : "C:\Program Files\…\app.exe"} onChange={(e) => onChange({ ...action, exe: e.target.value }, "exe")} />
               <button
                 type="button"
                 className="btn small"
@@ -138,10 +143,10 @@ function ActionFields({ action, onChange, depth }: { action: Action; onChange: (
               ))}
             </div>
           </div>
-          <label className="check">
+          {!isMac() && <label className="check">
             <input type="checkbox" checked={!!action.elevate} onChange={(e) => onChange({ ...action, elevate: e.target.checked })} />
             {t("ui.action.elevate")}
-          </label>
+          </label>}
         </div>
       );
     case "open_url":
@@ -168,7 +173,7 @@ function ActionFields({ action, onChange, depth }: { action: Action; onChange: (
             rows={4}
             spellCheck={false}
             value={action.script}
-            placeholder="taskkill /F /PID %MS_PID%"
+            placeholder={isMac() ? t("mac.ui.action.shell_ph") : "taskkill /F /PID %MS_PID%"}
             onChange={(e) => onChange({ ...action, script: e.target.value }, "script")}
           />
           <VarChips onInsert={(v) => onChange({ ...action, script: insertAt(textRef.current, action.script, v) })} />

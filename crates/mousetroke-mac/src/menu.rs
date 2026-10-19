@@ -18,6 +18,11 @@ use objc2_foundation::{
 use crate::permissions::Permissions;
 thread_local! { static DIRTY: Cell<bool> = const { Cell::new(true) }; }
 thread_local! { static SELECTED: Cell<Option<usize>> = const { Cell::new(None) }; }
+thread_local! { static VISIBLE: Cell<bool> = const { Cell::new(true) }; }
+pub fn set_visible(visible: bool) {
+    VISIBLE.with(|flag| flag.set(visible));
+    request_refresh();
+}
 pub fn request_refresh() {
     DIRTY.with(|flag| flag.set(true));
 }
@@ -61,6 +66,10 @@ define_class!(
         }
         #[unsafe(method(quit:))]
         fn quit(&self, _sender: Option<&NSObject>) { guard(|| crate::app::request_quit(0)); }
+        #[unsafe(method(openSettings:))]
+        fn open_settings(&self, _sender: Option<&NSObject>) { guard(|| crate::settings::open(false)); }
+        #[unsafe(method(openAbout:))]
+        fn open_about(&self, _sender: Option<&NSObject>) { guard(|| crate::settings::open(true)); }
     }
 );
 
@@ -144,6 +153,8 @@ pub struct Menu {
     accessibility: Retained<NSMenuItem>,
     input_monitoring: Retained<NSMenuItem>,
     open_log: Retained<NSMenuItem>,
+    settings: Retained<NSMenuItem>,
+    about: Retained<NSMenuItem>,
     quit: Retained<NSMenuItem>,
 }
 
@@ -179,6 +190,10 @@ impl Menu {
         let accessibility = entry(Some(sel!(grantAccessibility:)));
         let input_monitoring = entry(Some(sel!(grantInputMonitoring:)));
         let open_log = entry(Some(sel!(openLog:)));
+        let settings = entry(Some(sel!(openSettings:)));
+        settings.setKeyEquivalent(ns_string!(","));
+        settings.setKeyEquivalentModifierMask(NSEventModifierFlags::Command);
+        let about = entry(Some(sel!(openAbout:)));
         let quit = entry(Some(sel!(quit:)));
         let item = NSStatusBar::systemStatusBar().statusItemWithLength(24.0);
         let drawing = RcBlock::new(|rect: NSRect| -> Bool {
@@ -218,6 +233,8 @@ impl Menu {
             accessibility,
             input_monitoring,
             open_log,
+            settings,
+            about,
             quit,
         }
     }
@@ -229,6 +246,7 @@ impl Menu {
         active: bool,
         paused: bool,
     ) {
+        self.item.setVisible(VISIBLE.with(Cell::get));
         let key = if !permissions.ready() || !active {
             keys::MAC_STATUS_PERMISSION
         } else if paused {
@@ -248,6 +266,8 @@ impl Menu {
             .setHidden(permissions.input_monitoring);
         self.open_log
             .setTitle(&NSString::from_str(t(keys::MAC_OPEN_LOG)));
+        self.settings.setTitle(&NSString::from_str(t(keys::TRAY_MENU_SETTINGS)));
+        self.about.setTitle(&NSString::from_str(t(keys::MAC_MENU_ABOUT)));
         self.quit.setTitle(&NSString::from_str(t(keys::MAC_QUIT)));
         if let Some(button) = self.item.button(mtm) {
             button.setAppearsDisabled(paused || !permissions.ready() || !active);

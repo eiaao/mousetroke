@@ -7,7 +7,8 @@
     "dev": "vite",
     "prebuild": "python ../../../scripts/i18n_lint.py --check",
     "build": "vite build",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "test": "node --test tests/platform.test.mjs"
   },
   "dependencies": {
     "@tauri-apps/api": "2.12.4",

@@ -1,3 +1,4 @@
+import { initPlatform, primaryModifier, appIdentity } from "./platform";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { getCurrentWindow } from "@tauri-apps/api/window";
 import { getCurrentWebview } from "@tauri-apps/api/webview";
@@ -23,6 +24,8 @@ export function App() {
   useEffect(() => {
     api.initState().then(
       (s) => {
+        initPlatform(s.platform ?? "windows");
+        document.documentElement.dataset.platform = s.platform ?? "windows";
         initLang({ setting: s.config.settings.language, systemLangs: s.systemLangs });
         setInit(s);
       },
@@ -129,7 +132,7 @@ function Main({ init }: { init: InitState }) {
     const onKey = (e: KeyboardEvent) => {
       const el = e.target as HTMLElement;
       const typing = el.tagName === "INPUT" || el.tagName === "TEXTAREA";
-      if (e.ctrlKey && !typing) {
+      if (primaryModifier(e) && !typing) {
         const k = e.key.toLowerCase();
         if (k === "z" && !e.shiftKey) (e.preventDefault(), undo());
         else if (k === "y" || (k === "z" && e.shiftKey)) (e.preventDefault(), redo());
@@ -183,7 +186,7 @@ function Main({ init }: { init: InitState }) {
    */
   const addApps = (exes: string[], disable = false, navigate = true, names: Record<string, string> = {}) => {
     setPicking(false);
-    const same = (s: Scope, exe: string) => s.kind === "app" && fileName(s.app?.exe ?? "").toLowerCase() === fileName(exe).toLowerCase();
+    const same = (s: Scope, exe: string) => s.kind === "app" && appIdentity(s.app?.exe ?? "").toLowerCase() === appIdentity(exe).toLowerCase();
     const scopes = [...config.scopes];
     let first = -1;
     for (const exe of exes) {
@@ -197,7 +200,7 @@ function Main({ init }: { init: InitState }) {
           name,
           ...(nameKey ? { name_key: nameKey } : {}),
           kind: "app",
-          app: { exe: fileName(exe), regex: false },
+          app: { exe: appIdentity(exe), regex: false },
           bindings: [],
           ...(disable ? { disabled: true } : {}),
         });

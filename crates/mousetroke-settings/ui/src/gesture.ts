@@ -1,3 +1,4 @@
+import { isMac } from "./platform";
 import type { Action, Binding, KeyTag, MouseButton, Step } from "./types";
 import { t } from "./i18n";
 import type { MsgKey } from "./i18n";
@@ -29,6 +30,14 @@ export function buttonPhrase(b: MouseButton, action: "hold" | "click"): string {
 
 /** VK → 显示名。通用符号（Ctrl、F5、←…）不进词条；描述性的（空格、小键盘）要进。 */
 export function vkName(vk: number): string {
+  if (isMac()) {
+    if ([0x5b, 0x5c].includes(vk)) return t("mac.key.command");
+    if ([0x10, 0xa0, 0xa1].includes(vk)) return t("mac.key.shift");
+    if ([0x11, 0xa2, 0xa3].includes(vk)) return t("mac.key.control");
+    if ([0x12, 0xa4, 0xa5].includes(vk)) return t("mac.key.option");
+    const macNamed: Partial<Record<number, string>> = { 0x08: "⌫", 0x0d: "↩", 0x1b: "⎋", 0x25: "←", 0x26: "↑", 0x27: "→", 0x28: "↓", 0x2e: "⌦", 0x09: "⇥" };
+    if (macNamed[vk]) return macNamed[vk]!;
+  }
   const named: Partial<Record<number, MsgKey>> = {
     0x20: "key.space", 0x5c: "key.win_right", 0xa0: "key.shift_left", 0xa1: "key.shift_right",
     0xa2: "key.ctrl_left", 0xa3: "key.ctrl_right", 0xa4: "key.alt_left", 0xa5: "key.alt_right",
@@ -51,6 +60,7 @@ export function keyTagName(tag: KeyTag): string {
 /** KeyboardEvent.code → VK（录制"附加键"用）。 */
 export function codeToVk(e: KeyLike): number | null {
   const c = e.code;
+  if (isMac() && c === "NumpadEnter") return 0x0d;
   if (/^Key[A-Z]$/.test(c)) return c.charCodeAt(3);
   if (/^Digit[0-9]$/.test(c)) return c.charCodeAt(5);
   if (/^F([1-9]|1[0-9]|2[0-4])$/.test(c)) return 0x6f + Number(c.slice(1));
@@ -78,6 +88,7 @@ export function comboToKeyseq(e: KeyLike): string | null {
   else if (/^Digit[0-9]$/.test(c)) key = c.slice(5);
   else if (/^F([1-9]|1[0-9]|2[0-4])$/.test(c)) key = `{${c}}`;
   else if (/^Numpad[0-9]$/.test(c)) key = `{N${c.slice(6)}}`;
+  else if (isMac() && c === "NumpadEnter") key = "{ENTER}";
   else {
     const map: Record<string, string> = {
       Backspace: "{BACKSPACE}", Tab: "{TAB}", Enter: "{ENTER}", Escape: "{ESC}", Space: "{SPACE}",
@@ -98,7 +109,9 @@ export function comboToKeyseq(e: KeyLike): string | null {
 export function keyseqToCaps(keys: string): string[][] {
   const out: string[][] = [];
   let mods: string[] = [];
-  const modName: Record<string, string> = { "^": "Ctrl", "%": "Alt", "+": "Shift", "#": "Win" };
+  const modName: Record<string, string> = isMac()
+    ? { "^": t("mac.key.control"), "%": t("mac.key.option"), "+": t("mac.key.shift"), "#": t("mac.key.command") }
+    : { "^": "Ctrl", "%": "Alt", "+": "Shift", "#": "Win" };
   const nice = (k: string) => {
     const u = k.toUpperCase();
     const named: Partial<Record<string, MsgKey>> = {
@@ -108,6 +121,10 @@ export function keyseqToCaps(keys: string): string[][] {
       MEDIA_PLAY_PAUSE: "syskey.play_pause", MEDIA_PLAY: "syskey.play_pause",
       VOLUME_UP: "syskey.volume_up", VOLUME_DOWN: "syskey.volume_down", VOLUME_MUTE: "syskey.mute",
     };
+    if (isMac()) {
+      const macNames: Record<string, string> = { WIN: t("mac.key.command"), LWIN: t("mac.key.command"), RWIN: t("mac.key.command"), ALT: t("mac.key.option"), CTRL: t("mac.key.control"), SHIFT: t("mac.key.shift"), LEFT: "←", RIGHT: "→", UP: "↑", DOWN: "↓", BACKSPACE: "⌫", DEL: "⌦", DELETE: "⌦", ENTER: "↩", RETURN: "↩", TAB: "⇥", ESC: "⎋" };
+      if (macNames[u]) return macNames[u];
+    }
     if (named[u]) return t(named[u]!);
     if (u.startsWith("SLEEP")) return t("keyseq.wait_ms", { ms: u.slice(5).trim() });
     if (k === "\t") return "Tab";
@@ -319,7 +336,7 @@ export const SYSTEM_KEYS: { key: string; i18n: MsgKey }[] = [
 export function actionSummary(a: Action): string {
   switch (a.type) {
     case "key_sequence":
-      return a.keys;
+      return isMac() ? keyseqToCaps(a.keys).map((group) => group.join("+")).join(" ") : a.keys;
     case "window_op":
       return t(WINDOW_OPS.find((w) => w.op === a.op)?.key ?? "action.window_op");
     case "launch_app":

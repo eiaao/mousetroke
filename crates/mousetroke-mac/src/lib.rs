@@ -23,7 +23,7 @@ mod host;
 #[cfg(target_os = "macos")]
 mod input;
 #[cfg(target_os = "macos")]
-mod instance;
+pub mod instance;
 #[cfg(target_os = "macos")]
 pub mod log;
 #[cfg(target_os = "macos")]
@@ -39,6 +39,14 @@ mod selftest;
 pub use app::run;
 #[cfg(target_os = "macos")]
 pub use host::system_langs;
+#[cfg(target_os = "macos")]
+pub use mousetroke_core::schema::default_config_path;
+#[cfg(target_os = "macos")]
+pub use app::run_with_config;
+#[cfg(target_os = "macos")]
+pub use targeting::pick_app_at;
+#[cfg(target_os = "macos")]
+mod settings;
 
 #[cfg(all(test, not(target_os = "macos")))]
 #[path = "overlay/geometry.rs"]

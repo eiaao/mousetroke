@@ -105,11 +105,27 @@ pub fn ignored(target: &Target) -> bool {
             target.class.as_str(),
             "io.github.eiaao.mousetroke"
                 | "io.github.eiaao.mousetroke-settings"
+                | "dev.mousetroke.settings"
                 | "com.apple.dock"
                 | "com.apple.controlcenter"
                 | "com.apple.notificationcenterui"
                 | "com.apple.systemuiserver"
         )
+}
+
+/// 设置点选器只读所属应用与边界，不读取窗口标题，不需要屏幕录制权限。
+pub fn pick_app_at(x: f64, y: f64, excluded_pid: u32) -> Option<(String, String)> {
+    for window in list().iter().filter(|w| w.layer == 0 && w.pid != excluded_pid && w.bounds.contains(x, y)) {
+        let Some(app) = NSRunningApplication::runningApplicationWithProcessIdentifier(window.pid as i32) else { continue };
+        if app.activationPolicy() != objc2_app_kit::NSApplicationActivationPolicy::Regular { continue; }
+        let target = target(&app, window.wid);
+        if ignored(&target) { continue; }
+        if let Some(identity) = target.exe {
+            let name = app.localizedName().map(|s| s.to_string()).unwrap_or_else(|| identity.clone());
+            return Some((identity, name));
+        }
+    }
+    None
 }
 pub fn refresh(screens: &[Rect]) {
     SNAPSHOT.with(|slot| {

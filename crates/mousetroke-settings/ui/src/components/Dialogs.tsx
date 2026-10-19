@@ -1,3 +1,4 @@
+import { appIdentity, isMac } from "../platform";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { AppIcon, NavIcon } from "./Icons";
 import type { Config, PresetApp, RunningApp, Scope } from "../types";
@@ -68,7 +69,7 @@ export function AppPicker({
   };
   const k = q.trim().toLowerCase();
   const shown = useMemo(() => (apps ?? []).filter((a) => !k || a.exe.toLowerCase().includes(k) || a.title.toLowerCase().includes(k)), [apps, k]);
-  const scopeOf = (exe: string) => scopes.find((s) => s.kind === "app" && fileName(s.app?.exe ?? "").toLowerCase() === fileName(exe).toLowerCase());
+  const scopeOf = (exe: string) => scopes.find((s) => s.kind === "app" && appIdentity(s.app?.exe ?? "").toLowerCase() === appIdentity(exe).toLowerCase());
   const taken = (exe: string) => !!scopeOf(exe);
   const isOff = (exe: string) => !!scopeOf(exe)?.disabled;
   // 建议清单：已安装的在前；搜索时一起过滤
@@ -126,7 +127,7 @@ export function AppPicker({
             <li key={a.exe}>
               <button type="button" disabled={disable ? isOff(a.exe) : taken(a.exe)} onClick={() => onPick(a.exe, disable)}>
                 <AppIcon exe={a.exe} size={24} />
-                <strong>{fileName(a.exe)}</strong>
+                <strong>{isMac() ? a.title || a.exe : fileName(a.exe)}</strong>
                 <span className="muted">
                   {disable && isOff(a.exe) ? t("ui.picker.already_off") : taken(a.exe) ? (disable ? t("ui.picker.added_switch_off") : t("ui.picker.added")) : a.title}
                 </span>

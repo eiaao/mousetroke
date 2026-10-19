@@ -9,6 +9,7 @@ print_plist() { sed "s/@VERSION@/$version/g" "$root/scripts/mac/Info.plist.in"; 
 if [[ "${1:-}" == --print-plist ]]; then print_plist; exit 0; fi
 
 # 尊重调用者的构建目录，最终 app 固定放在仓库的 target/mac。
+# 先在 crates/mousetroke-settings/ui 执行 npm ci && npm run build；custom-protocol 将 ui/dist 内嵌进主程序。
 build_target="${CARGO_TARGET_DIR:-$root/target}"
 CARGO_TARGET_DIR="$build_target" CARGO_BUILD_JOBS=4 MACOSX_DEPLOYMENT_TARGET=11.0 cargo build --release -p mousetroke --locked
 bundle="$root/target/mac/Mousetroke.app"
