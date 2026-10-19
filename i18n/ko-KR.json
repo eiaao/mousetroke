@@ -554,5 +554,8 @@
   "mac.cert.exists": "기존 Mousetroke Dev 코드 서명 ID를 다시 사용합니다.",
   "mac.cert.instructions": "전용 키체인(~/Library/Keychains/mousetroke-dev.keychain-db)에 로컬 Mousetroke Dev 코드 서명 인증서를 만듭니다. SSH에서도 동작하며 암호를 묻지 않습니다. 다시 빌드해도 권한이 유지되도록 인증서를 보관하세요.",
   "mac.cert.created": "인증서가 준비되었습니다. bash scripts/mac/bundle.sh를 실행하세요. 빌드할 때마다 새로 만들지 말고 인증서를 보관하세요.",
-  "mac.action.topmost_unsupported": "macOS에서는 다른 앱의 윈도우를 항상 위에 고정할 수 없습니다"
+  "mac.action.topmost_unsupported": "macOS에서는 다른 앱의 윈도우를 항상 위에 고정할 수 없습니다",
+  "builtin.gesture.mission_control": "Mission Control",
+  "builtin.gesture.spotlight": "Spotlight",
+  "mac.hot_corner.conflict": "시스템 핫 코너가 Mousetroke와 충돌합니다: {corner}"
 }

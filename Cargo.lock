@@ -1921,12 +1921,21 @@ dependencies = [
 ]
 
 [[package]]
+name = "mousetroke-lua"
+version = "0.1.1"
+dependencies = [
+ "mlua",
+ "mousetroke-core",
+]
+
+[[package]]
 name = "mousetroke-mac"
 version = "0.1.1"
 dependencies = [
  "block2",
  "mousetroke-core",
  "mousetroke-engine",
+ "mousetroke-lua",
  "objc2",
  "objc2-app-kit",
  "objc2-core-foundation",
@@ -1957,6 +1966,7 @@ dependencies = [
  "mlua",
  "mousetroke-core",
  "mousetroke-engine",
+ "mousetroke-lua",
  "regex",
  "serde",
  "serde_json",

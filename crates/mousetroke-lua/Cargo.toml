@@ -1,0 +1,12 @@
+[package]
+name = "mousetroke-lua"
+description = "Mousetroke 共享 Lua 运行时与平台接口"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+homepage.workspace = true
+
+[dependencies]
+mousetroke-core = { path = "../mousetroke-core" }
+mlua = { version = "0.12.2", features = ["lua54", "vendored"] }

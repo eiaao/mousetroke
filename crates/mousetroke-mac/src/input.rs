@@ -20,10 +20,12 @@ thread_local! {
 
 #[derive(Default)]
 struct Executor {
-    queue: VecDeque<Action>,
+    queue: VecDeque<Queued>,
     active: Option<Job>,
     dry_run: bool,
 }
+
+enum Queued { Action(Action), Parsed(keyseq::KeySeq) }
 
 struct Repeat {
     vk: u16,
@@ -60,7 +62,20 @@ pub fn enqueue(action: Action) {
             crate::log!("按键序列过长，跳过动作");
             return;
         }
-        executor.queue.push_back(action);
+        executor.queue.push_back(Queued::Action(action));
+    });
+}
+
+/// Lua 已按 text_by_default 解析，不能再经过字符串重解析丢失文本语义。
+pub fn enqueue_parsed(sequence: keyseq::KeySeq) {
+    EXECUTOR.with(|slot| {
+        let mut executor = slot.borrow_mut();
+        if executor.queue.len() >= CAPACITY || sequence.actions.len() > MAX_KEYS_BYTES
+            || sequence.actions.iter().any(|s| matches!(s, Step::Text(t) if t.len() > MAX_KEYS_BYTES)) {
+            crate::log!("Lua 按键队列已满或序列过长，跳过调用");
+            return;
+        }
+        executor.queue.push_back(Queued::Parsed(sequence));
     });
 }
 
@@ -83,7 +98,10 @@ impl Executor {
                 let Some(action) = self.queue.pop_front() else {
                     break;
                 };
-                self.active = self.prepare(action, now);
+                self.active = match action {
+                    Queued::Action(action) => self.prepare(action, now),
+                    Queued::Parsed(sequence) => Some(Self::job(sequence, now)),
+                };
                 continue;
             }
             let job = self.active.as_mut().unwrap();
@@ -151,13 +169,17 @@ impl Executor {
         };
         crate::selftest::key_sequence_dispatched(&keys, self.dry_run);
         crate::log!("按键动作已派发: dry_run={}", self.dry_run);
-        Some(Job {
+        Some(Self::job(sequence, now))
+    }
+
+    fn job(sequence: keyseq::KeySeq, now: Instant) -> Job {
+        Job {
             steps: sequence.actions.into_iter(),
             repeat: None,
             text: Vec::new().into_iter(),
             resume: now,
             warned_unsupported: false,
-        })
+        }
     }
 }
 
@@ -181,6 +203,17 @@ fn key_modifier(vk: u16) -> Flags {
     }
 }
 
+/// 真实键盘上 F 键与导航键带 fn 位、方向键与小键盘另带 NumericPad 位；
+/// 缺这些位时系统快捷键（如 ⌃↑ 调度中心、F11 显示桌面）不会匹配。
+fn hardware_flags(vk: u16) -> Flags {
+    match vk {
+        0x25..=0x28 => Flags::MaskSecondaryFn | Flags::MaskNumericPad,
+        0x70..=0x83 | 0x21..=0x24 | 0x2E | 0x2F => Flags::MaskSecondaryFn,
+        0x60..=0x6F | 0x0C | 0x90 | 0x92 => Flags::MaskNumericPad,
+        _ => Flags::empty(),
+    }
+}
+
 /// 修饰键按下累加 flags，按相反顺序抬起时先去掉相应位；两侧通用键不重复注入。
 fn chord(vk: u16, mods: &[ModKey]) -> Option<Vec<(u16, bool, Flags)>> {
     let key = vk_to_kvk(vk)?;
@@ -195,8 +228,8 @@ fn chord(vk: u16, mods: &[ModKey]) -> Option<Vec<(u16, bool, Flags)>> {
             result.push((code, true, flags));
         }
     }
-    result.push((key, true, flags | key_modifier(vk)));
-    result.push((key, false, flags));
+    result.push((key, true, flags | key_modifier(vk) | hardware_flags(vk)));
+    result.push((key, false, flags | hardware_flags(vk)));
     for (code, flag) in held.into_iter().rev() {
         flags.remove(flag);
         result.push((code, false, flags));
@@ -343,6 +376,11 @@ mod tests {
             ]
         );
         assert_eq!(modifier(ModKey::Ctrl), (0x3B, Flags::MaskControl));
+        let up = chord(0x26, &[ModKey::Ctrl]).unwrap();
+        let arrow = Flags::MaskControl | Flags::MaskSecondaryFn | Flags::MaskNumericPad;
+        assert_eq!(up[1], (0x7E, true, arrow));
+        assert_eq!(up[2], (0x7E, false, arrow));
+        assert_eq!(chord(0x7A, &[]).unwrap()[0], (0x67, true, Flags::MaskSecondaryFn));
         assert_eq!(modifier(ModKey::Alt), (0x3A, Flags::MaskAlternate));
         assert!(chord(0xB3, &[]).is_none());
         assert_eq!(chord(0x11, &[ModKey::Ctrl]).unwrap().len(), 2);

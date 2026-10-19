@@ -1,4 +1,4 @@
-//! macOS M2 平台层：AppKit、输入 tap、覆盖层、按键执行与引擎均在主线程运行。
+//! macOS M3b 平台层：AppKit、tap、覆盖层与引擎在主线程，AX/进程/Lua 在工作线程。
 #![deny(unsafe_op_in_unsafe_fn)]
 
 #[cfg(target_os = "macos")]
@@ -7,6 +7,10 @@ mod actions;
 mod ax;
 #[cfg(any(target_os = "macos", test))]
 mod helpers;
+#[cfg(any(target_os = "macos", test))]
+mod hot_corners;
+#[cfg(target_os = "macos")]
+mod lua;
 #[cfg(target_os = "macos")]
 mod targeting;
 

@@ -275,6 +275,7 @@ impl Engine {
         self.tracker = PathTracker::new(cfg.settings.min_stroke_px as f64);
         self.overlay.set_color(&cfg.settings.trail.color_normal);
         self.overlay.set_width(cfg.settings.trail.width);
+        self.host.config_applied(&cfg);
         self.cfg = cfg;
     }
 
@@ -302,6 +303,20 @@ impl Engine {
 
     pub fn is_paused(&self) -> bool {
         self.paused
+    }
+
+    /// 平台在光标停稳后补一次驻留/摩擦识别；不追加轨迹点，不影响按键捕获。
+    pub fn settle_edges(&mut self, x: i32, y: i32) {
+        if self.paused || self.last_pos != (x, y) { return; }
+        match &self.capture {
+            None => self.detect_edge(x, y),
+            Some(cap) if cap.state == CaptureState::Active && matches!(cap.trigger, Trigger::Edge(_))
+                && cap.held.is_empty() && cap.presses.is_empty() && cap.trace_at.is_some() => {
+                // 分段数未变时末段仍可能从去噪短钩长成有效笔画；停稳后重新识别完整摩擦。
+                self.after_input();
+            }
+            _ => {}
+        }
     }
 
     /// 淡出动画一帧（overlay 窗口 WM_TIMER 驱动）。

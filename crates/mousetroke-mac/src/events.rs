@@ -3,6 +3,7 @@ use std::cell::{Cell, RefCell};
 use std::ffi::c_void;
 use std::panic::{catch_unwind, AssertUnwindSafe};
 use std::ptr::{self, NonNull};
+use std::time::{Duration, Instant};
 
 use mousetroke_core::{keymap::kvk_to_vk, schema::MouseButton};
 use mousetroke_engine::{InputEvent, Verdict};
@@ -18,6 +19,7 @@ thread_local! {
     static HOTKEY_HELD: Cell<bool> = const { Cell::new(false) };
     static FAULTED: Cell<bool> = const { Cell::new(false) };
     static SCROLL: Cell<f64> = const { Cell::new(0.0) };
+    static EDGE_SETTLE: Cell<Option<(i32, i32, Instant)>> = const { Cell::new(None) };
 }
 
 struct Tap {
@@ -107,6 +109,7 @@ pub fn active() -> bool {
     })
 }
 pub fn remove() {
+    EDGE_SETTLE.with(|slot| slot.set(None));
     TAP.with(|slot| {
         slot.borrow_mut().take();
     });
@@ -169,6 +172,7 @@ unsafe extern "C-unwind" fn callback(
         let button = CGEvent::integer_value_field(Some(event_ref), Field::MouseEventButtonNumber);
         if kind == Kind::MouseMoved {
             crate::selftest::moved();
+            EDGE_SETTLE.with(|slot| slot.set(Some((pos.x as i32, pos.y as i32, Instant::now()))));
         }
         if trace_events() && !matches!(kind, Kind::ScrollWheel | Kind::KeyDown | Kind::KeyUp | Kind::FlagsChanged) {
             crate::log!("tap 事件: {kind:?} 按钮={button} ({:.0},{:.0})", pos.x, pos.y);
@@ -211,6 +215,20 @@ unsafe extern "C-unwind" fn callback(
         crate::log!("事件回调发生 panic，已放行并请求暂停");
         event.as_ptr()
     })
+}
+
+/// 撞到物理边界后可能不再有移动事件；补一次驻留检查，不投递系统事件或重复执行动作。
+pub fn settle_edges(now: Instant) {
+    EDGE_SETTLE.with(|slot| {
+        let Some((x, y, since)) = slot.get() else { return };
+        if now.saturating_duration_since(since) >= Duration::from_millis(40) {
+            slot.set(None);
+            if active() && !FAULTED.with(Cell::get) && crate::host::cursor_pos()
+                .is_some_and(|p| (p.x as i32, p.y as i32) == (x, y)) {
+                crate::app::with_engine(|engine| engine.settle_edges(x, y));
+            }
+        }
+    });
 }
 
 pub fn pause_chord(flags: u64) -> bool {

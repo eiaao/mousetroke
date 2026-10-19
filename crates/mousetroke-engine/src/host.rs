@@ -1,4 +1,4 @@
-use mousetroke_core::schema::{Action, MouseButton};
+use mousetroke_core::schema::{Action, Config, MouseButton};
 use mousetroke_core::vars::Vars;
 
 /// 手势开始时锁定的目标数据；窗口标识由宿主解释，不携带平台句柄类型。
@@ -70,6 +70,8 @@ pub trait Host {
     fn system_langs(&self) -> Vec<String>;
     /// 语言变化后刷新平台菜单；仅启动/配置热加载调用。
     fn refresh_texts(&self);
+    /// 启动/成功重载时检查平台配置冲突；默认无需处理，不在输入回调调用。
+    fn config_applied(&self, _config: &Config) {}
     /// 空闲时归还工作集；仅提示定时器调用，默认无需处理。
     fn trim_memory(&self) {}
 }

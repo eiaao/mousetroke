@@ -598,6 +598,36 @@ mod builtin_tests {
         assert!(matches!(key("builtin.gesture.kill"), Action::Shell { script } if script == "/bin/kill -9 %MS_PID%"));
         assert!(matches!(key("builtin.gesture.task_manager"), Action::LaunchApp { exe, .. } if exe == "com.apple.ActivityMonitor"));
         assert!(matches!(key("builtin.gesture.system_settings"), Action::LaunchApp { exe, .. } if exe == "com.apple.systempreferences"));
+        let corner = |edge| cfg.all_bindings().find(|b| b.pattern == [Step::Edge { edge }]).unwrap();
+        for (edge, name, keys) in [
+            (crate::edge::LEFT_TOP, "builtin.gesture.mission_control", "^{UP}"),
+            (crate::edge::LEFT_BOTTOM, "builtin.gesture.spotlight", "#{SPACE}"),
+            (crate::edge::RIGHT_BOTTOM, "builtin.gesture.show_desktop", "{F11}"),
+        ] {
+            let binding = corner(edge);
+            assert!(!binding.disabled);
+            assert_eq!(binding.name_key.as_deref(), Some(name));
+            assert!(matches!(&binding.action, Action::KeySequence { keys: actual, .. } if actual == keys));
+        }
+        assert!(corner(crate::edge::RIGHT_TOP).disabled);
+        for (name, edge, modifier, system) in [
+            ("volume_up", crate::edge::TOP, PatternKey::Wheel(-1), "VOLUME_UP"),
+            ("volume_down", crate::edge::TOP, PatternKey::Wheel(1), "VOLUME_DOWN"),
+            ("mute", crate::edge::TOP, PatternKey::Mouse(MouseButton::Middle), "MUTE"),
+            ("play_pause", crate::edge::TOP, PatternKey::Mouse(MouseButton::Right), "PLAY_PAUSE"),
+            ("brighter", crate::edge::BOTTOM, PatternKey::Wheel(-1), "BRIGHTNESS_UP"),
+            ("darker", crate::edge::BOTTOM, PatternKey::Wheel(1), "BRIGHTNESS_DOWN"),
+        ] {
+            let name = format!("builtin.gesture.{name}");
+            let binding = cfg.all_bindings().find(|b| b.name_key.as_deref() == Some(&name)).unwrap();
+            assert_eq!(binding.pattern, [Step::Edge { edge }, Step::Press { key: modifier }]);
+            assert!(matches!(&binding.action, Action::SystemKey { key } if key == system));
+            assert_eq!(binding.disabled, edge == crate::edge::BOTTOM);
+        }
+        let rubbing = cfg.all_bindings().find(|b| b.name_key.as_deref() == Some("builtin.gesture.task_manager")).unwrap();
+        assert!(!rubbing.disabled);
+        assert!(rubbing.execute_on_match, "无按键的摩擦手势必须在匹配时执行");
+        assert_eq!(rubbing.pattern, [Step::Edge { edge: crate::edge::RIGHT }, Step::Trace { points: vec![50,50,50,0,50,50,50,0,50,50] }]);
     }
 
     #[test]
