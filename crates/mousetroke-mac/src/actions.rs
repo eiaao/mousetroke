@@ -529,7 +529,7 @@ pub(crate) fn launch(exe: &str, args: &str, if_running: IfRunning) {
                 return;
             }
         }
-        let app = (error.is_null()).then(|| unsafe { app.as_ref() }).flatten();
+        let app = if error.is_null() { unsafe { app.as_ref() } } else { None };
         crate::log!("NSWorkspace 启动完成: success={}", app.is_some());
         // 协作式激活下，后台菜单栏程序发起的启动常停在后台；交给 open 再激活一次。
         if let Some(path) = app
