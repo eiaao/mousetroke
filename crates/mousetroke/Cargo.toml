@@ -13,10 +13,15 @@ path = "src/main.rs"
 
 [dependencies]
 mousetroke-core = { path = "../mousetroke-core" }
+serde_json = { workspace = true }
+
+[target.'cfg(windows)'.dependencies]
 mousetroke-win = { path = "../mousetroke-win" }
 # 设置界面编进同一个 exe（`mousetroke settings` 启动独立的界面进程）
 mousetroke-settings = { path = "../mousetroke-settings" }
-serde_json = { workspace = true }
+
+[target.'cfg(target_os = "macos")'.dependencies]
+mousetroke-mac = { path = "../mousetroke-mac" }
 
 [build-dependencies]
 winresource = "0.1.34"

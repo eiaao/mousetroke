@@ -10,6 +10,8 @@
 //!
 //! 本 crate 刻意不依赖 WebView：常驻进程保持低占用。
 
+#![cfg(windows)]
+
 pub mod autostart;
 pub mod brightness;
 pub mod engine;

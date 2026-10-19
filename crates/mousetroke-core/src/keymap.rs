@@ -65,9 +65,37 @@ pub fn vk_to_kvk(vk: u16) -> Option<u16> {
     })
 }
 
+/// kVK → 配置中的 VK 逻辑键码；多对一映射取通用修饰键与 Clear。
+/// 小键盘 Enter 与主键盘 Enter 对应同一个 VK_RETURN；未知键不猜测映射。
+pub fn kvk_to_vk(kvk: u16) -> Option<u16> {
+    if kvk == 0x4C { return Some(0x0D); }
+    (0..=0xFE).find(|&vk| vk_to_kvk(vk) == Some(kvk))
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn reverse_mapping_round_trips_all_supported_positions() {
+        for kvk in 0..=0x7F {
+            if let Some(vk) = kvk_to_vk(kvk) {
+                assert_eq!(vk_to_kvk(vk), Some(if kvk == 0x4C { 0x24 } else { kvk }));
+            }
+        }
+        for vk in 0..=0xFE {
+            if let Some(kvk) = vk_to_kvk(vk) { assert!(kvk_to_vk(kvk).is_some()); }
+        }
+        assert_eq!(kvk_to_vk(0x38), Some(0x10));
+        assert_eq!(kvk_to_vk(0x3B), Some(0x11));
+        assert_eq!(kvk_to_vk(0x3A), Some(0x12));
+        assert_eq!(kvk_to_vk(0x3C), Some(0xA1));
+        assert_eq!(kvk_to_vk(0x36), Some(0x5C));
+        assert_eq!(kvk_to_vk(0x47), Some(0x0C));
+        assert_eq!(kvk_to_vk(0x4C), Some(0x0D));
+        assert_eq!(kvk_to_vk(0xFFFF), None);
+        assert_eq!(kvk_to_vk(0x7F), None);
+    }
 
     #[test]
     fn letters_and_digits_use_ansi_positions() {
