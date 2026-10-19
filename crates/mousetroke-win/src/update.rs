@@ -182,6 +182,8 @@ fn download_replace(source: &Source, release: &Release, exe: &Path) -> Result<Re
     use std::io::Write;
     // 先试写，无法原地更新时立即让界面提供发布页。
     let new_path = sidecar(exe, ".new");
+    // 上次更新中途断电或被结束时可能留下半个文件；不清掉会被误判为目录不可写。
+    let _ = std::fs::remove_file(&new_path);
     let mut file = std::fs::OpenOptions::new().write(true).create_new(true).open(&new_path).map_err(|_| Error::NotWritable)?;
     let new = Partial(new_path);
     let sums = http::get(source, &release.sums, false, 1024 * 1024)?;
