@@ -191,7 +191,7 @@ fn valid_encoding(encoded: &[i32]) -> bool {
 
 /// 解码一个归一化模板；错误长度或超出归一化值域的坐标返回 `None`。
 pub fn decode(encoded: &[i32]) -> Option<Vec<(f64, f64)>> {
-    valid_encoding(encoded).then(|| encoded.chunks_exact(2).map(|p| (p[0] as f64 / 1000.0, p[1] as f64 / 1000.0)).collect())
+    valid_encoding(encoded).then(|| encoded.as_chunks::<2>().0.iter().map(|p| (p[0] as f64 / 1000.0, p[1] as f64 / 1000.0)).collect())
 }
 
 fn energy(points: &[(f64, f64)]) -> Option<f64> {
@@ -234,7 +234,7 @@ fn encoded_similarity(path: &[(f64, f64)], path_energy: f64, template: &[i32]) -
         return 0.0;
     }
     let (mut dot, mut cross, mut template_energy) = (0.0, 0.0, 0.0);
-    for (&(ax, ay), p) in path.iter().zip(template.chunks_exact(2)) {
+    for (&(ax, ay), p) in path.iter().zip(template.as_chunks::<2>().0) {
         // 向量夹角不受统一倍数影响，因此无需解码或除以 1000。
         let (bx, by) = (p[0] as f64, p[1] as f64);
         dot += ax * bx + ay * by;
