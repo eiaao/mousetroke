@@ -152,6 +152,10 @@ pub fn run() -> Result<i32, String> {
     log::init().map_err(|error| error.to_string())?;
     mousetroke_engine::log::set_sink(log::write);
     let result = autoreleasepool(|_| run_main(mtm));
+    // 启动失败也写进日志：从 Finder/open 启动时看不到 stderr。
+    if let Err(error) = &result {
+        mousetroke_engine::log!("运行失败：{error}");
+    }
     log::shutdown();
     result
 }
@@ -189,8 +193,9 @@ fn run_main(mtm: MainThreadMarker) -> Result<i32, String> {
         .map(|binding| binding.name.clone())
         .unwrap_or_default();
     let app = NSApplication::sharedApplication(mtm);
+    // Info.plist 已声明 LSUIElement 时策略本来就是 Accessory，此调用可能返回 NO；不作为启动失败。
     if !app.setActivationPolicy(NSApplicationActivationPolicy::Accessory) {
-        return Err(t(keys::MAC_ERROR_ACTIVATION).into());
+        mousetroke_engine::log!("{}", t(keys::MAC_ERROR_ACTIVATION));
     }
     host::refresh_target();
     host::refresh_screen(mtm);
