@@ -64,4 +64,4 @@ Mousetroke（中文）：免费开源的 Windows 鼠标手势工具。按住右�
 - Will it misfire in games or remote desktop? Fullscreen apps pause gestures automatically; remote desktop and 3D/design apps can be excluded in one click during first run; Win+Esc pauses at any time.
 - How to uninstall? Turn off "start with Windows" in preferences, quit from the tray menu, then delete mousetroke.exe and the %APPDATA%\mousetroke folder.
 
-- Changelog: https://mousetroke.pages.dev/changelog.html (Chinese), https://mousetroke.pages.dev/en/changelog.html (English).
+- Changelog: https://mousetroke.pages.dev/changelog (Chinese), https://mousetroke.pages.dev/en/changelog (English).

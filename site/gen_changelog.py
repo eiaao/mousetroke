@@ -47,9 +47,9 @@ def render() -> dict[Path, str]:
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>{title} · Mousetroke</title>
   <meta name="description" content="{description}">
-  <link rel="canonical" href="{ORIGIN}{relative}">
-  <link rel="alternate" hreflang="zh-CN" href="{ORIGIN}changelog.html">
-  <link rel="alternate" hreflang="en" href="{ORIGIN}en/changelog.html">
+  <link rel="canonical" href="{ORIGIN}{relative.removesuffix('.html')}">
+  <link rel="alternate" hreflang="zh-CN" href="{ORIGIN}changelog">
+  <link rel="alternate" hreflang="en" href="{ORIGIN}en/changelog">
   <link rel="icon" type="image/svg+xml" href="{prefix}assets/icon.svg">
   <link rel="stylesheet" href="{prefix}assets/site.css">
 </head>

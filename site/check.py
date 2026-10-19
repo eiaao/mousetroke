@@ -69,7 +69,8 @@ try:
     for path, content in render_changelog().items():
         if not path.exists() or path.read_text(encoding="utf-8") != content:
             errors.append(f"{path.relative_to(ROOT)}: stale; run python site/gen_changelog.py")
-        if f"<loc>https://mousetroke.pages.dev/{path.relative_to(ROOT).as_posix()}</loc>" not in (ROOT / "sitemap.xml").read_text(encoding="utf-8"):
+        # Cloudflare Pages 会把 .html 308 到无后缀地址，对外 URL 一律不带后缀
+        if f"<loc>https://mousetroke.pages.dev/{path.relative_to(ROOT).as_posix().removesuffix('.html')}</loc>" not in (ROOT / "sitemap.xml").read_text(encoding="utf-8"):
             errors.append(f"{path.name}: missing from sitemap")
 except (ValueError, OSError) as error:
     errors.append(f"changelog: {error}")
