@@ -559,7 +559,6 @@
   "mac.bundle.adhoc_warning": "Warnung: Die Signieridentität {identity} ist nicht verfügbar; Ad-hoc-Signierung wird verwendet. Die Identität ändert sich bei jedem Build, daher fragt macOS erneut nach der Bedienungshilfen-Berechtigung.",
   "mac.bundle.done": "App erstellt: {path}",
   "mac.cert.exists": "Die Signieridentität Mousetroke Dev ist bereits vorhanden und wird wiederverwendet.",
-  "mac.cert.instructions": "Ein lokales Codesignaturzertifikat Mousetroke Dev wird im Anmeldeschlüsselbund erstellt und als vertrauenswürdig eingestuft. Bewahren Sie es auf, damit Berechtigungen nach Neubauten erhalten bleiben.",
-  "mac.cert.password": "Der private Schlüssel wird importiert. macOS fragt eventuell nach dem Schlüsselbundpasswort; erlauben Sie codesign den Zugriff.",
+  "mac.cert.instructions": "Ein lokales Codesignaturzertifikat Mousetroke Dev wird in einem eigenen Schlüsselbund (~/Library/Keychains/mousetroke-dev.keychain-db) erstellt. Es funktioniert auch über SSH und fragt nach keinem Passwort. Bewahren Sie es auf, damit Berechtigungen nach Neubauten erhalten bleiben.",
   "mac.cert.created": "Zertifikat bereit. Führen Sie bash scripts/mac/bundle.sh aus. Bewahren Sie das Zertifikat auf und erstellen Sie es nicht bei jedem Build neu."
 }

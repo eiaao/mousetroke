@@ -559,7 +559,6 @@
   "mac.bundle.adhoc_warning": "Warning: signing identity {identity} is unavailable; using ad-hoc signing. Identity changes every build, so macOS will ask for Accessibility permission again.",
   "mac.bundle.done": "Bundle created: {path}",
   "mac.cert.exists": "The Mousetroke Dev code-signing identity already exists and will be reused.",
-  "mac.cert.instructions": "Creating and trusting a local Mousetroke Dev code-signing certificate in the login keychain. Keep this certificate so permissions survive rebuilds.",
-  "mac.cert.password": "Importing the private key now. macOS may ask for the keychain password; allow codesign to use the key.",
+  "mac.cert.instructions": "Creating a local Mousetroke Dev code-signing certificate in a dedicated keychain (~/Library/Keychains/mousetroke-dev.keychain-db). It works over SSH and never asks for a password. Keep it so permissions survive rebuilds.",
   "mac.cert.created": "Certificate ready. Run bash scripts/mac/bundle.sh. Keep the certificate; do not regenerate it for each build."
 }

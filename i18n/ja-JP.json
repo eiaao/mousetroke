@@ -553,7 +553,6 @@
   "mac.bundle.adhoc_warning": "警告：署名 ID {identity} が見つからないため、アドホック署名を使用します。ビルドごとに ID が変わるため、macOS は再びアクセシビリティの許可を求めます。",
   "mac.bundle.done": "アプリを作成しました：{path}",
   "mac.cert.exists": "既存の Mousetroke Dev コード署名 ID を再利用します。",
-  "mac.cert.instructions": "ログインキーチェーンにローカルの Mousetroke Dev コード署名証明書を作成し、信頼を設定します。再ビルド後も権限を維持するため、証明書を保管してください。",
-  "mac.cert.password": "秘密鍵を読み込みます。キーチェーンのパスワードを求められた場合は入力し、codesign に鍵の使用を許可してください。",
+  "mac.cert.instructions": "専用キーチェーン（~/Library/Keychains/mousetroke-dev.keychain-db）にローカルの Mousetroke Dev コード署名証明書を作成します。SSH でも使え、パスワード入力は不要です。再ビルド後も権限を維持するため、証明書を保管してください。",
   "mac.cert.created": "証明書の準備ができました。bash scripts/mac/bundle.sh を実行してください。ビルドごとに証明書を作り直さず、保管してください。"
 }

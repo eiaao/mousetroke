@@ -553,7 +553,6 @@
   "mac.bundle.adhoc_warning": "경고: 서명 ID {identity}를 사용할 수 없어 임시 서명을 사용합니다. 빌드할 때마다 ID가 바뀌므로 macOS에서 손쉬운 사용 권한을 다시 요청합니다.",
   "mac.bundle.done": "앱 생성 완료: {path}",
   "mac.cert.exists": "기존 Mousetroke Dev 코드 서명 ID를 다시 사용합니다.",
-  "mac.cert.instructions": "로그인 키체인에 로컬 Mousetroke Dev 코드 서명 인증서를 생성하고 신뢰하도록 설정합니다. 다시 빌드해도 권한이 유지되도록 인증서를 보관하세요.",
-  "mac.cert.password": "개인 키를 가져옵니다. macOS에서 키체인 암호를 요청할 수 있습니다. codesign이 키를 사용하도록 허용하세요.",
+  "mac.cert.instructions": "전용 키체인(~/Library/Keychains/mousetroke-dev.keychain-db)에 로컬 Mousetroke Dev 코드 서명 인증서를 만듭니다. SSH에서도 동작하며 암호를 묻지 않습니다. 다시 빌드해도 권한이 유지되도록 인증서를 보관하세요.",
   "mac.cert.created": "인증서가 준비되었습니다. bash scripts/mac/bundle.sh를 실행하세요. 빌드할 때마다 새로 만들지 말고 인증서를 보관하세요."
 }

@@ -559,7 +559,6 @@
   "mac.bundle.adhoc_warning": "Attention : l’identité de signature {identity} est indisponible ; une signature ad hoc sera utilisée. L’identité change à chaque compilation et macOS redemandera l’autorisation d’accessibilité.",
   "mac.bundle.done": "Application créée : {path}",
   "mac.cert.exists": "L’identité de signature Mousetroke Dev existe déjà et sera réutilisée.",
-  "mac.cert.instructions": "Création et approbation d’un certificat local de signature Mousetroke Dev dans le trousseau de session. Conservez-le pour garder les autorisations après recompilation.",
-  "mac.cert.password": "Importation de la clé privée. macOS peut demander le mot de passe du trousseau ; autorisez codesign à utiliser la clé.",
+  "mac.cert.instructions": "Création d’un certificat local de signature de code Mousetroke Dev dans un trousseau dédié (~/Library/Keychains/mousetroke-dev.keychain-db). Il fonctionne via SSH et ne demande aucun mot de passe. Conservez-le pour que les autorisations survivent aux recompilations.",
   "mac.cert.created": "Certificat prêt. Exécutez bash scripts/mac/bundle.sh. Conservez le certificat sans le recréer à chaque compilation."
 }

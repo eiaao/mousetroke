@@ -17,13 +17,23 @@ cp "$build_target/release/mousetroke" "$bundle/Contents/MacOS/mousetroke"
 chmod +x "$bundle/Contents/MacOS/mousetroke"
 print_plist > "$bundle/Contents/Info.plist"
 plutil -lint "$bundle/Contents/Info.plist"
-identity="${MOUSETROKE_SIGN_ID:-Mousetroke Dev}"
-if [[ "$identity" == - ]] || ! security find-identity -v -p codesigning | grep -F -- "$identity" >/dev/null; then
+# 优先用 make-dev-cert.sh 建的专用钥匙串（SSH 下也能解锁）；也可用 MOUSETROKE_SIGN_ID 指定其他身份。
+keychain="$HOME/Library/Keychains/mousetroke-dev.keychain-db"
+secret="$HOME/.config/mousetroke-dev/keychain-password"
+sign_args=()
+identity="${MOUSETROKE_SIGN_ID:-}"
+if [[ -z "$identity" && -f "$keychain" && -f "$secret" ]]; then
+    security unlock-keychain -p "$(cat "$secret")" "$keychain"
+    identity=$(security find-certificate -c "Mousetroke Dev" -Z "$keychain" | awk '/SHA-1 hash:/ {print $NF; exit}')
+    sign_args=(--keychain "$keychain")
+fi
+identity="${identity:-Mousetroke Dev}"
+if [[ "$identity" != - && ${#sign_args[@]} -eq 0 ]] && ! security find-identity -p codesigning | grep -F -- "$identity" >/dev/null; then
     warning=$(mac_message mac.bundle.adhoc_warning)
     printf '%s\n' "${warning//\{identity\}/$identity}" >&2
     identity=-
 fi
-codesign --force --options runtime --sign "$identity" "$bundle"
+codesign --force --options runtime --sign "$identity" ${sign_args[@]+"${sign_args[@]}"} "$bundle"
 codesign --verify --strict --verbose=2 "$bundle"
 message=$(mac_message mac.bundle.done)
 printf '%s\n' "${message//\{path\}/$bundle}"

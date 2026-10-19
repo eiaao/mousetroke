@@ -559,7 +559,6 @@
   "mac.bundle.adhoc_warning": "Advertencia: la identidad de firma {identity} no está disponible; se usará una firma ad hoc. La identidad cambia con cada compilación y macOS volverá a pedir permiso de accesibilidad.",
   "mac.bundle.done": "Aplicación empaquetada: {path}",
   "mac.cert.exists": "La identidad de firma Mousetroke Dev ya existe y se reutilizará.",
-  "mac.cert.instructions": "Se creará y confiará un certificado local de firma Mousetroke Dev en el llavero de inicio de sesión. Consérvelo para mantener los permisos al recompilar.",
-  "mac.cert.password": "Importando la clave privada. macOS puede pedir la contraseña del llavero; permita que codesign use la clave.",
+  "mac.cert.instructions": "Se creará un certificado local de firma de código Mousetroke Dev en un llavero dedicado (~/Library/Keychains/mousetroke-dev.keychain-db). Funciona por SSH y no pide contraseña. Consérvalo para que los permisos se mantengan tras recompilar.",
   "mac.cert.created": "Certificado listo. Ejecute bash scripts/mac/bundle.sh. Conserve el certificado; no lo regenere en cada compilación."
 }

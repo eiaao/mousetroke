@@ -559,7 +559,6 @@
   "mac.bundle.adhoc_warning": "警告：找不到签名身份 {identity}，使用临时签名；每次构建身份都会改变，macOS 会再次要求辅助功能授权。",
   "mac.bundle.done": "应用已打包：{path}",
   "mac.cert.exists": "Mousetroke Dev 代码签名身份已存在，将继续使用。",
-  "mac.cert.instructions": "将在登录钥匙串创建并信任本地 Mousetroke Dev 代码签名证书，请保留此证书以便重建后继续使用原有权限。",
-  "mac.cert.password": "现在导入私钥，系统可能要求钥匙串密码；请允许 codesign 使用私钥。",
+  "mac.cert.instructions": "将在专用钥匙串（~/Library/Keychains/mousetroke-dev.keychain-db）中创建本地 Mousetroke Dev 代码签名证书，SSH 下也可使用，无需输入密码。请保留它，重建后权限才能继续有效。",
   "mac.cert.created": "证书已就绪。运行 bash scripts/mac/bundle.sh；请勿删除证书或每次重新生成。"
 }
