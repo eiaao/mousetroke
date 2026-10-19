@@ -525,11 +525,20 @@ impl Config {
     }
 }
 
-/// 默认配置文件路径：`%APPDATA%\mousetroke\config.json`（非 Windows 回退到 `$HOME/.config`）。
+/// 默认配置文件路径：Windows 使用 APPDATA；macOS 使用 Library/Application Support。
 pub fn default_config_path() -> std::path::PathBuf {
+    #[cfg(windows)]
     let base = std::env::var_os("APPDATA")
         .map(std::path::PathBuf::from)
         .or_else(|| std::env::var_os("HOME").map(|h| std::path::PathBuf::from(h).join(".config")))
+        .unwrap_or_else(|| ".".into());
+    #[cfg(target_os = "macos")]
+    let base = std::env::var_os("HOME")
+        .map(|h| std::path::PathBuf::from(h).join("Library/Application Support"))
+        .unwrap_or_else(|| ".".into());
+    #[cfg(not(any(windows, target_os = "macos")))]
+    let base = std::env::var_os("HOME")
+        .map(|h| std::path::PathBuf::from(h).join(".config"))
         .unwrap_or_else(|| ".".into());
     base.join("mousetroke").join("config.json")
 }
@@ -537,6 +546,22 @@ pub fn default_config_path() -> std::path::PathBuf {
 #[cfg(test)]
 mod builtin_tests {
     use super::*;
+
+    #[test]
+    fn config_path_uses_the_platform_directory() {
+        use std::path::PathBuf;
+        #[cfg(windows)]
+        let base = std::env::var_os("APPDATA").map(PathBuf::from)
+            .or_else(|| std::env::var_os("HOME").map(|h| PathBuf::from(h).join(".config")))
+            .unwrap_or_else(|| ".".into());
+        #[cfg(target_os = "macos")]
+        let base = std::env::var_os("HOME").map(|h| PathBuf::from(h).join("Library/Application Support"))
+            .unwrap_or_else(|| ".".into());
+        #[cfg(not(any(windows, target_os = "macos")))]
+        let base = std::env::var_os("HOME").map(|h| PathBuf::from(h).join(".config"))
+            .unwrap_or_else(|| ".".into());
+        assert_eq!(default_config_path(), base.join("mousetroke/config.json"));
+    }
 
     #[test]
     fn builtin_config_is_complete_and_valid() {

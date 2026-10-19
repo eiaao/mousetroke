@@ -1,0 +1,18 @@
+[package]
+name = "mousetroke-mac"
+description = "Mousetroke macOS 平台层"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+homepage.workspace = true
+
+[target.'cfg(target_os = "macos")'.dependencies]
+mousetroke-core = { path = "../mousetroke-core" }
+mousetroke-engine = { path = "../mousetroke-engine" }
+objc2 = "=0.6.4"
+objc2-foundation = { version = "=0.3.2", default-features = false, features = ["std", "NSArray", "NSEnumerator", "NSString", "NSURL", "NSLocale", "NSDate", "NSDateFormatter", "NSRunLoop", "NSTimer", "block2"] }
+objc2-app-kit = { version = "=0.3.2", default-features = false, features = ["std", "libc", "NSApplication", "NSCell", "NSGraphicsContext", "NSResponder", "NSStatusBar", "NSStatusItem", "NSStatusBarButton", "NSButton", "NSControl", "NSView", "NSMenu", "NSMenuItem", "NSImage", "NSBezierPath", "NSColor", "NSEvent", "NSScreen", "NSWorkspace", "NSRunningApplication", "block2", "objc2-core-foundation"] }
+objc2-core-foundation = { version = "=0.3.2", default-features = false, features = ["std", "CFMachPort", "CFRunLoop", "CFDictionary", "CFNumber", "CFString"] }
+objc2-core-graphics = { version = "=0.3.2", default-features = false, features = ["std", "CGEvent", "CGEventTypes", "CGEventSource", "CGDirectDisplay", "CGGeometry"] }
+block2 = "=0.6.2"
