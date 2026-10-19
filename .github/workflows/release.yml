@@ -60,6 +60,7 @@ jobs:
       CARGO_BUILD_JOBS: 4
       CARGO_TARGET_DIR: ${{ github.workspace }}/target
       MACOSX_DEPLOYMENT_TARGET: "11.0"
+      MOUSETROKE_REQUIRE_SIGNING: "1"
     steps:
       - uses: actions/checkout@v7
       - name: Require stable signing secrets
@@ -112,7 +113,6 @@ jobs:
           rm -f "$p12"
           echo "MOUSETROKE_SIGN_KEYCHAIN=$keychain" >> "$GITHUB_ENV"
           echo 'MOUSETROKE_SIGN_ID=Mousetroke Self-Signed' >> "$GITHUB_ENV"
-          echo 'MOUSETROKE_REQUIRE_SIGNING=1' >> "$GITHUB_ENV"
       - name: Universal signed bundle and DMG
         run: |
           bash scripts/mac/bundle.sh --universal

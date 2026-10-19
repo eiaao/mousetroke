@@ -258,8 +258,8 @@ cargo test -p mousetroke-core -p mousetroke-engine -p mousetroke-mac -p mousetro
 bash scripts/mac/make-dev-cert.sh
 bash scripts/mac/bundle.sh
 # CI 冒烟明确选择 ad-hoc，不能用于公开发布。
-MOUSETROKE_SIGN_ID=- bash scripts/mac/bundle.sh --universal
-MOUSETROKE_SIGN_ID=- bash scripts/mac/dmg.sh
+MOUSETROKE_SIGN_ID=- MOUSETROKE_REQUIRE_SIGNING=0 bash scripts/mac/bundle.sh --universal
+MOUSETROKE_SIGN_ID=- MOUSETROKE_REQUIRE_SIGNING=0 bash scripts/mac/dmg.sh
 ```
 
 Create the release certificate **once**, in a private directory outside every repository
@@ -328,6 +328,14 @@ the same identity. `release.yml` has `windows`, `macos` and `publish` jobs. The 
 upload `windows-release` (exe + notes) and `macos-release` (DMG) artifacts. Only `publish`
 has contents-write permission; it waits for both, generates and verifies one
 `SHA256SUMS.txt` listing `mousetroke.exe` and `Mousetroke.dmg`, then creates one release.
+
+`bundle.sh` removes the previous app before building and removes incomplete bundles on
+failure. `dmg.sh` deletes the previous DMG before checking its input, requires both arm64
+and x86_64 slices and verifies all code signatures before creating a fresh image. With
+`MOUSETROKE_REQUIRE_SIGNING=1` (set for the entire macOS release job), both slices must
+have a certificate signing identity; ad-hoc signatures are rejected. Failed image creation,
+signing or verification removes the incomplete DMG. The CI smoke test explicitly uses
+`MOUSETROKE_REQUIRE_SIGNING=0` to allow a universal ad-hoc bundle.
 
 ## First open, updates and uninstall
 
