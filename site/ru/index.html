@@ -58,9 +58,9 @@
       "applicationCategory": "UtilitiesApplication",
       "applicationSubCategory": "Жесты мышью",
       "operatingSystem": "Windows 10 1809+, Windows 11 (x64)",
-      "softwareVersion": "0.1.0",
+      "softwareVersion": "0.1.1",
       "sameAs": ["https://github.com/eiaao/mousetroke"],
-      "fileSize": "12.6 MB",
+      "fileSize": "13.2 MB",
       "memoryRequirements": "Около 19 МБ резидентной памяти",
       "softwareRequirements": "Microsoft Edge WebView2 (только окно настроек; встроен в Windows 11)",
       "license": "https://opensource.org/licenses/MIT",
@@ -94,7 +94,7 @@
         { "@type": "Question", "name": "Does the right-click menu still work with Mousetroke?", "acceptedAnswer": { "@type": "Answer", "text": "Yes. A right-click without dragging is passed back to Windows unchanged, so the context menu opens as usual. Holding still past the drag timeout (0.5 seconds by default, adjustable) also becomes a normal right-drag." } },
         { "@type": "Question", "name": "Will it misfire in games or remote desktop?", "acceptedAnswer": { "@type": "Answer", "text": "Fullscreen games, video and presentations pause gestures automatically. Programs that need right- or middle-drag themselves, such as Remote Desktop, AnyDesk, Blender or AutoCAD, can be excluded in one click on first run. Win+Esc pauses at any time." } },
         { "@type": "Question", "name": "Which versions of Windows are supported?", "acceptedAnswer": { "@type": "Answer", "text": "Windows 10 1809 or later and Windows 11, 64-bit. The gesture engine has no runtime dependencies; the settings window uses Microsoft Edge WebView2, which ships with Windows 11 and comes with Edge on most Windows 10 PCs." } },
-        { "@type": "Question", "name": "Mousetroke бесплатен?", "acceptedAnswer": { "@type": "Answer", "text": "Да. Это открытый код под лицензией MIT, без рекламы и аккаунта. Подключение к GitHub выполняется только при ручной проверке обновлений или включении необязательной ежедневной проверки. Телеметрия и личные данные не отправляются." } },
+        { "@type": "Question", "name": "Mousetroke бесплатен?", "acceptedAnswer": { "@type": "Answer", "text": "Да. Это открытый код под лицензией MIT, без рекламы и учётной записи. Раз в день GitHub получает запрос о наличии новой версии (можно отключить в настройках). Больше ничего не отправляется; телеметрии нет." } },
         { "@type": "Question", "name": "How much memory and CPU does it use?", "acceptedAnswer": { "@type": "Answer", "text": "The resident gesture engine uses about 19 MB working set (about 10 MB private) and no CPU when idle. The settings window is a separate process that only runs while it is open." } },
         { "@type": "Question", "name": "Can I make my own gestures?", "acceptedAnswer": { "@type": "Answer", "text": "Yes. Create a gesture in settings and draw it once on the pad in the editor. You can also combine mouse buttons, the wheel, keyboard keys and screen edges, and set gestures separately for each app." } },
         { "@type": "Question", "name": "Where are the settings stored, and how do I back them up?", "acceptedAnswer": { "@type": "Answer", "text": "In %APPDATA%\\mousetroke\\config.json. Settings has import and export. Saved changes take effect within about a second, without a restart." } },
@@ -148,7 +148,7 @@
         <h1 id="h-hero">Удерживайте правую кнопку.<br>Нарисуйте линию.</h1>
         <p class="lede">Mousetroke добавляет жесты мышью в каждое окно Windows. Удерживайте правую кнопку и ведите: <b>←</b> — назад, <b>↓→</b> закрывает вкладку, <b>↙</b> сворачивает окно. Обычный правый щелчок по-прежнему открывает меню.</p>
         <div class="cta">
-          <a class="btn primary" href="#download">Скачать для Windows <small>12,6 МБ</small></a>
+          <a class="btn primary" href="#download">Скачать для Windows <small>13,2 МБ</small></a>
           <a class="btn" href="#gestures">Посмотреть жесты</a>
         </div>
         <ul class="meta">
@@ -348,7 +348,7 @@
         <details open><summary>Меню правого щелчка с Mousetroke работает?</summary><div class="ans"><p>Да. Правый щелчок без перетаскивания возвращается Windows без изменений, и контекстное меню открывается как обычно. Если задержаться дольше таймаута (по умолчанию 0,5 с, настраивается), это тоже станет обычным перетаскиванием.</p></div></details>
         <details><summary>Не будет ли ложных срабатываний в играх или удалённом столе?</summary><div class="ans"><p>Полноэкранные игры, видео и презентации ставят жесты на паузу автоматически. Программы, которым самим нужны правое или среднее перетаскивание — удалённый стол, AnyDesk, Blender, AutoCAD — исключаются одним щелчком при первом запуске. Win+Esc ставит паузу в любой момент.</p></div></details>
         <details><summary>Какие версии Windows поддерживаются?</summary><div class="ans"><p>Windows 10 с 1809 и Windows 11, 64-бит. У движка жестов нет рантайм-зависимостей; окно настроек использует Microsoft Edge WebView2 — он встроен в Windows 11 и есть с Edge на большинстве ПК с Windows 10.</p></div></details>
-        <details><summary>Mousetroke бесплатен?</summary><div class="ans"><p>Да. Это открытый код под лицензией MIT, без рекламы и аккаунта. Подключение к GitHub выполняется только при ручной проверке обновлений или включении необязательной ежедневной проверки. Телеметрия и личные данные не отправляются.</p></div></details>
+        <details><summary>Mousetroke бесплатен?</summary><div class="ans"><p>Да. Это открытый код под лицензией MIT, без рекламы и учётной записи. Раз в день GitHub получает запрос о наличии новой версии (можно отключить в настройках). Больше ничего не отправляется; телеметрии нет.</p></div></details>
         <details><summary>Сколько памяти и CPU он занимает?</summary><div class="ans"><p>Резидентный движок занимает около 19 МБ рабочего набора (около 10 МБ приватных) и в простое не нагружает CPU. Окно настроек — отдельный процесс, работающий только пока открыто.</p></div></details>
         <details><summary>Можно создать свои жесты?</summary><div class="ans"><p>Да. Создайте жест в настройках и один раз нарисуйте его на планшете редактора. Можно также сочетать кнопки мыши, колесо, клавиши и кромки экрана, и назначать жесты отдельно для каждой программы.</p></div></details>
         <details><summary>Где хранятся настройки и как их сохранить?</summary><div class="ans"><p>В <code>%APPDATA%\mousetroke\config.json</code>. В настройках есть импорт и экспорт. Сохранённые изменения вступают в силу примерно за секунду, без перезапуска.</p></div></details>
@@ -365,9 +365,10 @@
         <p>Без установщика. В области уведомлений появляется значок: левый щелчок — настройки, правый — пауза или выход. Четырёхшаговое руководство проводит первый запуск.</p>
       </div>
       <div>
-        <a class="btn primary" href="https://github.com/eiaao/mousetroke/releases/latest/download/mousetroke.exe">Скачать mousetroke.exe <small>12,6 МБ · v0.1.0</small></a>
+        <a class="btn primary" href="https://github.com/eiaao/mousetroke/releases/latest/download/mousetroke.exe">Скачать mousetroke.exe <small>13,2 МБ · v0.1.1</small></a>
         <div class="sys">Windows 10 1809+ / 11, 64-бит</div>
         <a class="src" href="https://github.com/eiaao/mousetroke">github.com/eiaao/mousetroke</a>
+        <a class="src" href="../en/changelog.html">Что нового</a>
       </div>
     </div>
   </section>
@@ -387,6 +388,7 @@
       <a class="cur" href="index.html" hreflang="ru" lang="ru">Русский</a>
       <a href="../it/index.html" hreflang="it" lang="it">Italiano</a>
       <a href="../ko/index.html" hreflang="ko" lang="ko">한국어</a>
+      <a href="../en/changelog.html">История изменений</a>
       <a href="https://github.com/eiaao/mousetroke">GitHub</a>
       <a href="../llms.txt">llms.txt</a>
       <a href="#faq">Вопросы</a>

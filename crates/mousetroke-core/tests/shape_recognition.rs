@@ -767,17 +767,18 @@ fn shape_step_round_trips_and_helper_filters_degenerate_samples() {
 }
 
 #[test]
-fn existing_config_serialization_is_unchanged() {
+fn existing_config_serialization_includes_default_update_check() {
     let fixture = include_str!("../assets/default-config.json");
     let cfg = Config::from_json(fixture).unwrap();
+    assert!(cfg.settings.update_check);
     let json = cfg.to_json();
     let fingerprint = json.bytes().fold(0xcbf29ce484222325u64, |hash, byte| {
         (hash ^ byte as u64).wrapping_mul(0x100000001b3)
     });
     println!("existing config: {} bytes, FNV-1a {fingerprint:016x}", json.len());
-    // 在增加 Shape 之前用相同 fixture 和旧 Config::to_json 实测并冻结的字节基线。
-    assert_eq!(json.len(), 36_389);
-    assert_eq!(fingerprint, 0xf16db884db08d2ac);
+    // 默认开启更新后新增显式 update_check: true，冻结其余配置的序列化基线。
+    assert_eq!(json.len(), 36_415);
+    assert_eq!(fingerprint, 0x0f23e7e46b3bb572);
     assert_eq!(Config::from_json(&json).unwrap().to_json(), json);
 }
 

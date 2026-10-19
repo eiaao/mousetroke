@@ -42,8 +42,8 @@ REPL = base("pt", "pt-BR", "pt_BR", "Idioma", "Português (Brasil)") + [
     ('<h1 id="h-hero">Hold right-click.<br>Draw a line.</h1>', '<h1 id="h-hero">Segure o clique direito.<br>Desenhe uma linha.</h1>'),
     ('<p class="lede">Mousetroke adds mouse gestures to every window on Windows. Hold the right button and drag: <b>←</b> goes back, <b>↓→</b> closes the tab, <b>↙</b> minimizes the window. A plain right-click still opens the menu.</p>',
      '<p class="lede">O Mousetroke adiciona gestos de mouse a todas as janelas do Windows. Segure o botão direito e arraste: <b>←</b> volta, <b>↓→</b> fecha a aba, <b>↙</b> minimiza a janela. Um clique direito simples continua abrindo o menu.</p>'),
-    ('<a class="btn primary" href="#download">Download for Windows <small>12.6 MB</small></a>',
-     '<a class="btn primary" href="#download">Baixar para Windows <small>12,6 MB</small></a>'),
+    ('<a class="btn primary" href="#download">Download for Windows <small>13.2 MB</small></a>',
+     '<a class="btn primary" href="#download">Baixar para Windows <small>13,2 MB</small></a>'),
     ('<a class="btn" href="#gestures">See the gestures</a>', '<a class="btn" href="#gestures">Ver os gestos</a>'),
     ('<li>Free and open source (MIT)</li>', '<li>Gratuito e de código aberto (MIT)</li>'),
     ('<li>About 19 MB in memory</li>', '<li>Cerca de 19 MB em memória</li>'),
@@ -173,8 +173,8 @@ REPL = base("pt", "pt-BR", "pt_BR", "Idioma", "Português (Brasil)") + [
      '<details><summary>Vai disparar por engano em jogos ou área de trabalho remota?</summary><div class="ans"><p>Jogos, vídeos e apresentações em tela cheia pausam os gestos automaticamente. Programas que precisam do arrastar com o direito ou o do meio — como Área de Trabalho Remota, AnyDesk, Blender ou AutoCAD — podem ser excluídos com um clique no primeiro início. Win+Esc pausa a qualquer momento.</p></div></details>'),
     ('<details><summary>Which versions of Windows are supported?</summary><div class="ans"><p>Windows 10 1809 or later and Windows 11, 64-bit. The gesture engine has no runtime dependencies; the settings window uses Microsoft Edge WebView2, which ships with Windows 11 and comes with Edge on most Windows 10 PCs.</p></div></details>',
      '<details><summary>Quais versões do Windows são suportadas?</summary><div class="ans"><p>Windows 10 1809 ou posterior e Windows 11, 64 bits. O motor de gestos não tem dependências de runtime; a janela de configurações usa o Microsoft Edge WebView2, que vem com o Windows 11 e acompanha o Edge na maioria dos PCs com Windows 10.</p></div></details>'),
-    ('<details><summary>Is Mousetroke free?</summary><div class="ans"><p>Yes. It is open source under the MIT license, with no ads or account. It connects to GitHub only when you check for updates manually or enable the optional daily check. No telemetry or personal data is sent.</p></div></details>',
-     '<details><summary>O Mousetroke é gratuito?</summary><div class="ans"><p>Sim. É código aberto sob a licença MIT, sem anúncios nem conta. Só conecta ao GitHub ao verificar atualizações manualmente ou ativar a verificação diária opcional. Não envia telemetria nem dados pessoais.</p></div></details>'),
+    ('<details><summary>Is Mousetroke free?</summary><div class="ans"><p>Yes. It is open source under the MIT license, with no ads or account. Once a day it asks GitHub whether a newer version exists (turn it off in Preferences). Nothing else is sent; there is no telemetry.</p></div></details>',
+     '<details><summary>O Mousetroke é gratuito?</summary><div class="ans"><p>Sim. É de código aberto sob a licença MIT, sem anúncios nem conta. Uma vez por dia consulta o GitHub para saber se há uma versão nova (pode desativar em Preferências). Nada mais é enviado; não há telemetria.</p></div></details>'),
     ('<details><summary>How much memory and CPU does it use?</summary><div class="ans"><p>The resident gesture engine uses about 19 MB working set (about 10 MB private) and no CPU when idle. The settings window is a separate process that only runs while it is open.</p></div></details>',
      '<details><summary>Quanta memória e CPU ele usa?</summary><div class="ans"><p>O motor residente usa cerca de 19 MB de conjunto de trabalho (cerca de 10 MB privados) e zero CPU em repouso. A janela de configurações é um processo separado que só roda enquanto está aberta.</p></div></details>'),
     ('<details><summary>Can I make my own gestures?</summary><div class="ans"><p>Yes. Create a gesture in settings and draw it once on the pad in the editor. You can also combine mouse buttons, the wheel, keyboard keys and screen edges, and set gestures separately for each app.</p></div></details>',
@@ -186,7 +186,7 @@ REPL = base("pt", "pt-BR", "pt_BR", "Idioma", "Português (Brasil)") + [
     ('<h2 id="h-get">Download, double-click, done</h2>', '<h2 id="h-get">Baixe, dê dois cliques, pronto</h2>'),
     ('<p>No installer. An icon appears in the notification area: left-click it for settings, right-click to pause or quit. A four-step guide walks you through the first run.</p>',
      '<p>Sem instalador. Um ícone aparece na área de notificação: clique esquerdo abre as configurações, clique direito pausa ou sai. Um guia de quatro passos acompanha o primeiro início.</p>'),
-    ('>Download mousetroke.exe <small>12.6 MB · v0.1.0</small></a>', '>Baixar mousetroke.exe <small>12,6 MB · v0.1.0</small></a>'),
+    ('>Download mousetroke.exe <small>13.2 MB · v0.1.1</small></a>', '>Baixar mousetroke.exe <small>13,2 MB · v0.1.1</small></a>'),
     ('<div class="sys">Windows 10 1809+ / 11, 64-bit</div>', '<div class="sys">Windows 10 1809+ / 11, 64 bits</div>'),
     ('<span>Mousetroke · MIT license</span>', '<span>Mousetroke · Licença MIT</span>'),
     ('<nav aria-label="Footer">', '<nav aria-label="Rodapé">'),
@@ -210,4 +210,10 @@ REPL = base("pt", "pt-BR", "pt_BR", "Idioma", "Português (Brasil)") + [
      '"pageHint": "Segure o botão direito em qualquer lugar e desenhe: <b>↓</b> seção seguinte, <b>↑</b> anterior, <b>←↑</b> voltar ao topo"'),
     ('"hintClose": "Dismiss", "dots": "Sections", "heroDot": "Start"',
      '"hintClose": "Dispensar", "dots": "Seções", "heroDot": "Início"'),
+]
+
+# 更新日志共用英文内容，入口标签使用当前语言。
+REPL += [
+('<a href="../en/changelog.html">Changelog</a>', '<a href="../en/changelog.html">Histórico de versões</a>'),
+('<a class="src" href="../en/changelog.html">What’s new</a>', '<a class="src" href="../en/changelog.html">Novidades</a>'),
 ]

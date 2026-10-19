@@ -58,9 +58,9 @@
       "applicationCategory": "UtilitiesApplication",
       "applicationSubCategory": "Gestos de ratón",
       "operatingSystem": "Windows 10 1809+, Windows 11 (x64)",
-      "softwareVersion": "0.1.0",
+      "softwareVersion": "0.1.1",
       "sameAs": ["https://github.com/eiaao/mousetroke"],
-      "fileSize": "12.6 MB",
+      "fileSize": "13.2 MB",
       "memoryRequirements": "Unos 19 MB de memoria residente",
       "softwareRequirements": "Microsoft Edge WebView2 (solo la ventana de ajustes; incluido en Windows 11)",
       "license": "https://opensource.org/licenses/MIT",
@@ -94,7 +94,7 @@
         { "@type": "Question", "name": "Does the right-click menu still work with Mousetroke?", "acceptedAnswer": { "@type": "Answer", "text": "Yes. A right-click without dragging is passed back to Windows unchanged, so the context menu opens as usual. Holding still past the drag timeout (0.5 seconds by default, adjustable) also becomes a normal right-drag." } },
         { "@type": "Question", "name": "Will it misfire in games or remote desktop?", "acceptedAnswer": { "@type": "Answer", "text": "Fullscreen games, video and presentations pause gestures automatically. Programs that need right- or middle-drag themselves, such as Remote Desktop, AnyDesk, Blender or AutoCAD, can be excluded in one click on first run. Win+Esc pauses at any time." } },
         { "@type": "Question", "name": "Which versions of Windows are supported?", "acceptedAnswer": { "@type": "Answer", "text": "Windows 10 1809 or later and Windows 11, 64-bit. The gesture engine has no runtime dependencies; the settings window uses Microsoft Edge WebView2, which ships with Windows 11 and comes with Edge on most Windows 10 PCs." } },
-        { "@type": "Question", "name": "¿Mousetroke es gratis?", "acceptedAnswer": { "@type": "Answer", "text": "Sí. Es de código abierto bajo la licencia MIT, sin anuncios ni cuenta. Solo se conecta a GitHub al buscar actualizaciones manualmente o activar la comprobación diaria opcional. No envía telemetría ni datos personales." } },
+        { "@type": "Question", "name": "¿Mousetroke es gratis?", "acceptedAnswer": { "@type": "Answer", "text": "Sí. Es de código abierto bajo la licencia MIT, sin anuncios ni cuenta. Una vez al día consulta a GitHub si hay una versión nueva (se puede desactivar en Preferencias). No se envía nada más; no hay telemetría." } },
         { "@type": "Question", "name": "How much memory and CPU does it use?", "acceptedAnswer": { "@type": "Answer", "text": "The resident gesture engine uses about 19 MB working set (about 10 MB private) and no CPU when idle. The settings window is a separate process that only runs while it is open." } },
         { "@type": "Question", "name": "Can I make my own gestures?", "acceptedAnswer": { "@type": "Answer", "text": "Yes. Create a gesture in settings and draw it once on the pad in the editor. You can also combine mouse buttons, the wheel, keyboard keys and screen edges, and set gestures separately for each app." } },
         { "@type": "Question", "name": "Where are the settings stored, and how do I back them up?", "acceptedAnswer": { "@type": "Answer", "text": "In %APPDATA%\\mousetroke\\config.json. Settings has import and export. Saved changes take effect within about a second, without a restart." } },
@@ -148,7 +148,7 @@
         <h1 id="h-hero">Mantén el clic derecho.<br>Dibuja una línea.</h1>
         <p class="lede">Mousetroke añade gestos de ratón a todas las ventanas de Windows. Mantén pulsado el botón derecho y arrastra: <b>←</b> va atrás, <b>↓→</b> cierra la pestaña, <b>↙</b> minimiza la ventana. Un clic derecho normal sigue abriendo el menú.</p>
         <div class="cta">
-          <a class="btn primary" href="#download">Descargar para Windows <small>12.6 MB</small></a>
+          <a class="btn primary" href="#download">Descargar para Windows <small>13.2 MB</small></a>
           <a class="btn" href="#gestures">Ver los gestos</a>
         </div>
         <ul class="meta">
@@ -348,7 +348,7 @@
         <details open><summary>¿Sigue funcionando el menú del clic derecho con Mousetroke?</summary><div class="ans"><p>Sí. Un clic derecho sin arrastrar se devuelve a Windows sin cambios, así que el menú contextual se abre como siempre. Mantener pulsado sin moverse más allá del tiempo de espera (0,5 s por defecto, ajustable) también se convierte en un arrastre derecho normal.</p></div></details>
         <details><summary>¿Se dispara por error en juegos o escritorio remoto?</summary><div class="ans"><p>Los juegos, vídeos y presentaciones a pantalla completa pausan los gestos automáticamente. Los programas que necesitan el arrastre derecho o central para sí mismos, como Escritorio remoto, AnyDesk, Blender o AutoCAD, se pueden excluir con un clic en el primer arranque. Win+Esc pausa en cualquier momento.</p></div></details>
         <details><summary>¿Qué versiones de Windows son compatibles?</summary><div class="ans"><p>Windows 10 1809 o posterior y Windows 11, de 64 bits. El motor de gestos no tiene dependencias en tiempo de ejecución; la ventana de ajustes usa Microsoft Edge WebView2, incluido en Windows 11 y presente con Edge en la mayoría de equipos con Windows 10.</p></div></details>
-        <details><summary>¿Mousetroke es gratis?</summary><div class="ans"><p>Sí. Es de código abierto bajo la licencia MIT, sin anuncios ni cuenta. Solo se conecta a GitHub al buscar actualizaciones manualmente o activar la comprobación diaria opcional. No envía telemetría ni datos personales.</p></div></details>
+        <details><summary>¿Mousetroke es gratis?</summary><div class="ans"><p>Sí. Es de código abierto bajo la licencia MIT, sin anuncios ni cuenta. Una vez al día consulta a GitHub si hay una versión nueva (se puede desactivar en Preferencias). No se envía nada más; no hay telemetría.</p></div></details>
         <details><summary>¿Cuánta memoria y CPU usa?</summary><div class="ans"><p>El motor residente usa unos 19 MB de conjunto de trabajo (unos 10 MB privados) y nada de CPU en reposo. La ventana de ajustes es un proceso aparte que solo corre mientras está abierta.</p></div></details>
         <details><summary>¿Puedo crear mis propios gestos?</summary><div class="ans"><p>Sí. Crea un gesto en los ajustes y dibújalo una vez en el panel del editor. También puedes combinar botones del ratón, la rueda, teclas y bordes de la pantalla, y definir gestos por separado para cada aplicación.</p></div></details>
         <details><summary>¿Dónde se guardan los ajustes y cómo los copio?</summary><div class="ans"><p>En <code>%APPDATA%\mousetroke\config.json</code>. Los ajustes tienen importación y exportación. Los cambios guardados surten efecto en about un segundo, sin reiniciar.</p></div></details>
@@ -365,9 +365,10 @@
         <p>Sin instalador. Aparece un icono en el área de notificación: clic izquierdo abre los ajustes, clic derecho pausa o sale. Una guía de cuatro pasos te acompaña en el primer arranque.</p>
       </div>
       <div>
-        <a class="btn primary" href="https://github.com/eiaao/mousetroke/releases/latest/download/mousetroke.exe">Descargar mousetroke.exe <small>12.6 MB · v0.1.0</small></a>
+        <a class="btn primary" href="https://github.com/eiaao/mousetroke/releases/latest/download/mousetroke.exe">Descargar mousetroke.exe <small>13.2 MB · v0.1.1</small></a>
         <div class="sys">Windows 10 1809+ / 11, 64 bits</div>
         <a class="src" href="https://github.com/eiaao/mousetroke">github.com/eiaao/mousetroke</a>
+        <a class="src" href="../en/changelog.html">Novedades</a>
       </div>
     </div>
   </section>
@@ -387,6 +388,7 @@
       <a href="../ru/index.html" hreflang="ru" lang="ru">Русский</a>
       <a href="../it/index.html" hreflang="it" lang="it">Italiano</a>
       <a href="../ko/index.html" hreflang="ko" lang="ko">한국어</a>
+      <a href="../en/changelog.html">Registro de cambios</a>
       <a href="https://github.com/eiaao/mousetroke">GitHub</a>
       <a href="../llms.txt">llms.txt</a>
       <a href="#faq">Preguntas</a>

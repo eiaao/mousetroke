@@ -42,8 +42,8 @@ REPL = base("ko", "ko", "ko_KR", "언어", "한국어") + [
     ('<h1 id="h-hero">Hold right-click.<br>Draw a line.</h1>', '<h1 id="h-hero">오른쪽 버튼을 누르고.<br>한 획 그리세요.</h1>'),
     ('<p class="lede">Mousetroke adds mouse gestures to every window on Windows. Hold the right button and drag: <b>←</b> goes back, <b>↓→</b> closes the tab, <b>↙</b> minimizes the window. A plain right-click still opens the menu.</p>',
      '<p class="lede">Mousetroke는 Windows의 모든 창에 마우스 제스처를 더합니다. 오른쪽 버튼을 누른 채 끌면 <b>←</b>는 뒤로, <b>↓→</b>는 탭 닫기, <b>↙</b>는 창 최소화. 그냥 오른쪽 클릭은 여느 때처럼 메뉴를 엽니다.</p>'),
-    ('<a class="btn primary" href="#download">Download for Windows <small>12.6 MB</small></a>',
-     '<a class="btn primary" href="#download">Windows용 다운로드 <small>12.6 MB</small></a>'),
+    ('<a class="btn primary" href="#download">Download for Windows <small>13.2 MB</small></a>',
+     '<a class="btn primary" href="#download">Windows용 다운로드 <small>13.2 MB</small></a>'),
     ('<a class="btn" href="#gestures">See the gestures</a>', '<a class="btn" href="#gestures">제스처 보기</a>'),
     ('<li>Free and open source (MIT)</li>', '<li>무료·오픈 소스(MIT)</li>'),
     ('<li>About 19 MB in memory</li>', '<li>메모리 약 19 MB</li>'),
@@ -173,8 +173,8 @@ REPL = base("ko", "ko", "ko_KR", "언어", "한국어") + [
      '<details><summary>게임이나 원격 데스크톱에서 오작동하지 않나요?</summary><div class="ans"><p>전체 화면 게임·동영상·발표 중에는 제스처가 자동으로 일시 정지됩니다. 원격 데스크톱, AnyDesk, Blender, AutoCAD처럼 오른쪽·가운데 끌기를 직접 쓰는 프로그램은 처음 실행할 때 클릭 한 번으로 제외할 수 있습니다. Win+Esc로 언제든 정지할 수 있습니다.</p></div></details>'),
     ('<details><summary>Which versions of Windows are supported?</summary><div class="ans"><p>Windows 10 1809 or later and Windows 11, 64-bit. The gesture engine has no runtime dependencies; the settings window uses Microsoft Edge WebView2, which ships with Windows 11 and comes with Edge on most Windows 10 PCs.</p></div></details>',
      '<details><summary>어떤 Windows 버전을 지원하나요?</summary><div class="ans"><p>Windows 10 1809 이상과 Windows 11, 64비트입니다. 제스처 엔진은 런타임 의존성이 없고, 설정 창은 Microsoft Edge WebView2를 사용합니다(Windows 11에 기본 포함, 대부분의 Windows 10 PC에는 Edge와 함께 있음).</p></div></details>'),
-    ('<details><summary>Is Mousetroke free?</summary><div class="ans"><p>Yes. It is open source under the MIT license, with no ads or account. It connects to GitHub only when you check for updates manually or enable the optional daily check. No telemetry or personal data is sent.</p></div></details>',
-     '<details><summary>Mousetroke는 무료인가요?</summary><div class="ans"><p>네. MIT 라이선스의 오픈 소스로, 광고나 계정이 없습니다. 수동으로 업데이트를 확인하거나 선택 사항인 일일 확인을 켤 때만 GitHub에 연결합니다. 원격 분석이나 개인 데이터는 전송하지 않습니다.</p></div></details>'),
+    ('<details><summary>Is Mousetroke free?</summary><div class="ans"><p>Yes. It is open source under the MIT license, with no ads or account. Once a day it asks GitHub whether a newer version exists (turn it off in Preferences). Nothing else is sent; there is no telemetry.</p></div></details>',
+     '<details><summary>Mousetroke는 무료인가요?</summary><div class="ans"><p>네. MIT 라이선스의 오픈 소스이며 광고나 계정이 없습니다. 하루에 한 번 GitHub에 새 버전이 있는지 확인합니다(환경 설정에서 끌 수 있음). 그 외에는 아무 정보도 보내지 않으며 텔레메트리도 없습니다.</p></div></details>'),
     ('<details><summary>How much memory and CPU does it use?</summary><div class="ans"><p>The resident gesture engine uses about 19 MB working set (about 10 MB private) and no CPU when idle. The settings window is a separate process that only runs while it is open.</p></div></details>',
      '<details><summary>메모리와 CPU를 얼마나 쓰나요?</summary><div class="ans"><p>상주 엔진은 작업 집합 약 19 MB(전용 약 10 MB)를 쓰고 유휴 시 CPU는 쓰지 않습니다. 설정 창은 열려 있는 동안만 도는 별도 프로세스입니다.</p></div></details>'),
     ('<details><summary>Can I make my own gestures?</summary><div class="ans"><p>Yes. Create a gesture in settings and draw it once on the pad in the editor. You can also combine mouse buttons, the wheel, keyboard keys and screen edges, and set gestures separately for each app.</p></div></details>',
@@ -186,7 +186,7 @@ REPL = base("ko", "ko", "ko_KR", "언어", "한국어") + [
     ('<h2 id="h-get">Download, double-click, done</h2>', '<h2 id="h-get">다운로드, 더블 클릭, 끝</h2>'),
     ('<p>No installer. An icon appears in the notification area: left-click it for settings, right-click to pause or quit. A four-step guide walks you through the first run.</p>',
      '<p>설치 프로그램이 없습니다. 알림 영역에 아이콘이 나타나며, 왼쪽 클릭은 설정, 오른쪽 클릭은 일시 정지나 종료입니다. 처음 실행할 때 4단계 안내가 함께합니다.</p>'),
-    ('>Download mousetroke.exe <small>12.6 MB · v0.1.0</small></a>', '>mousetroke.exe 다운로드 <small>12.6 MB · v0.1.0</small></a>'),
+    ('>Download mousetroke.exe <small>13.2 MB · v0.1.1</small></a>', '>mousetroke.exe 다운로드 <small>13.2 MB · v0.1.1</small></a>'),
     ('<div class="sys">Windows 10 1809+ / 11, 64-bit</div>', '<div class="sys">Windows 10 1809+ / 11, 64비트</div>'),
     ('<span>Mousetroke · MIT license</span>', '<span>Mousetroke · MIT 라이선스</span>'),
     ('<nav aria-label="Footer">', '<nav aria-label="바닥글">'),
@@ -210,4 +210,10 @@ REPL = base("ko", "ko", "ko_KR", "언어", "한국어") + [
      '"pageHint": "어디서든 오른쪽 버튼을 누르고 그리세요: <b>↓</b> 다음 섹션, <b>↑</b> 이전, <b>←↑</b> 맨 위로"'),
     ('"hintClose": "Dismiss", "dots": "Sections", "heroDot": "Start"',
      '"hintClose": "닫기", "dots": "섹션", "heroDot": "시작"'),
+]
+
+# 更新日志共用英文内容，入口标签使用当前语言。
+REPL += [
+('<a href="../en/changelog.html">Changelog</a>', '<a href="../en/changelog.html">변경 기록</a>'),
+('<a class="src" href="../en/changelog.html">What’s new</a>', '<a class="src" href="../en/changelog.html">업데이트 내용</a>'),
 ]

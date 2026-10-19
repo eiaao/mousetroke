@@ -529,7 +529,7 @@
   "ui.update.retry": "再試行",
   "ui.update.download": "ダウンロードページを開く",
   "ui.prefs.update_check": "更新を自動的に確認",
-  "ui.prefs.update_check_help": "有効にすると、1 日 1 回 GitHub に接続して更新を確認します。",
+  "ui.prefs.update_check_help": "1 日 1 回 GitHub で新しいバージョンを確認します。ここでオフにできます。それ以外の情報は送信しません。",
   "update.error.network": "更新の確認またはダウンロードに失敗しました。接続を確認して再試行してください。",
   "update.error.checksum": "更新ファイルのチェックサムが一致しません。更新を中止しました。",
   "update.error.not_writable": "このフォルダーでは更新できません。リリースページからダウンロードしてください。",

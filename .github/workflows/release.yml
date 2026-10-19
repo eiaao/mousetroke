@@ -28,6 +28,11 @@ jobs:
         run: |
           $v = (Select-String -Path Cargo.toml -Pattern '^version = "(.+)"').Matches[0].Groups[1].Value
           if ("v$v" -ne "${{ github.ref_name }}") { throw "Tag ${{ github.ref_name }} does not match Cargo version $v" }
+      - name: Prepare release notes
+        shell: pwsh
+        run: |
+          python scripts/changelog.py notes ("${{ github.ref_name }}" -replace '^v', '') --out release-notes.md
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
       # 设置界面的 crate 编译时要内嵌 ui/dist，测试前必须先构建前端
       - name: Build settings UI
         working-directory: crates/mousetroke-settings/ui
@@ -49,4 +54,4 @@ jobs:
         shell: pwsh
         env:
           GH_TOKEN: ${{ github.token }}
-        run: gh release create "${{ github.ref_name }}" dist\mousetroke.exe dist\SHA256SUMS.txt --title "Mousetroke ${{ github.ref_name }}" --generate-notes
+        run: gh release create "${{ github.ref_name }}" dist\mousetroke.exe dist\SHA256SUMS.txt --title "Mousetroke ${{ github.ref_name }}" --notes-file release-notes.md

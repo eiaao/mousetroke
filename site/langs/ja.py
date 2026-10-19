@@ -42,8 +42,8 @@ REPL = base("ja", "ja", "ja_JP", "言語", "日本語") + [
     ('<h1 id="h-hero">Hold right-click.<br>Draw a line.</h1>', '<h1 id="h-hero">右ボタンを押して。<br>一筆描く。</h1>'),
     ('<p class="lede">Mousetroke adds mouse gestures to every window on Windows. Hold the right button and drag: <b>←</b> goes back, <b>↓→</b> closes the tab, <b>↙</b> minimizes the window. A plain right-click still opens the menu.</p>',
      '<p class="lede">Mousetroke は Windows のすべてのウィンドウにマウスジェスチャを加えます。右ボタンを押したまま動かす：<b>←</b> で戻る、<b>↓→</b> でタブを閉じる、<b>↙</b> で最小化。ただの右クリックなら、これまでどおりメニューが出ます。</p>'),
-    ('<a class="btn primary" href="#download">Download for Windows <small>12.6 MB</small></a>',
-     '<a class="btn primary" href="#download">Windows 版をダウンロード <small>12.6 MB</small></a>'),
+    ('<a class="btn primary" href="#download">Download for Windows <small>13.2 MB</small></a>',
+     '<a class="btn primary" href="#download">Windows 版をダウンロード <small>13.2 MB</small></a>'),
     ('<a class="btn" href="#gestures">See the gestures</a>', '<a class="btn" href="#gestures">ジェスチャを見る</a>'),
     ('<li>Free and open source (MIT)</li>', '<li>無料・オープンソース（MIT）</li>'),
     ('<li>About 19 MB in memory</li>', '<li>メモリ約 19 MB</li>'),
@@ -173,8 +173,8 @@ REPL = base("ja", "ja", "ja_JP", "言語", "日本語") + [
      '<details><summary>ゲームやリモートデスクトップで誤発動しませんか？</summary><div class="ans"><p>全画面のゲーム・動画・プレゼンではジェスチャが自動で一時停止します。リモートデスクトップ、AnyDesk、Blender、AutoCAD など右・中ドラッグを自分で使うプログラムは、初回起動にワンクリックで除外できます。Win+Esc でいつでも停止できます。</p></div></details>'),
     ('<details><summary>Which versions of Windows are supported?</summary><div class="ans"><p>Windows 10 1809 or later and Windows 11, 64-bit. The gesture engine has no runtime dependencies; the settings window uses Microsoft Edge WebView2, which ships with Windows 11 and comes with Edge on most Windows 10 PCs.</p></div></details>',
      '<details><summary>対応する Windows のバージョンは？</summary><div class="ans"><p>Windows 10 1809 以降と Windows 11 の 64 ビットです。ジェスチャエンジンにランタイム依存はありません。設定画面は Microsoft Edge WebView2 を使います（Windows 11 に標準搭載、ほとんどの Windows 10 には Edge と共にあります）。</p></div></details>'),
-    ('<details><summary>Is Mousetroke free?</summary><div class="ans"><p>Yes. It is open source under the MIT license, with no ads or account. It connects to GitHub only when you check for updates manually or enable the optional daily check. No telemetry or personal data is sent.</p></div></details>',
-     '<details><summary>Mousetroke は無料ですか？</summary><div class="ans"><p>はい。MIT ライセンスのオープンソースで、広告やアカウントはありません。手動で更新を確認した場合、または任意の毎日確認を有効にした場合のみ GitHub に接続します。テレメトリや個人データは送信しません。</p></div></details>'),
+    ('<details><summary>Is Mousetroke free?</summary><div class="ans"><p>Yes. It is open source under the MIT license, with no ads or account. Once a day it asks GitHub whether a newer version exists (turn it off in Preferences). Nothing else is sent; there is no telemetry.</p></div></details>',
+     '<details><summary>Mousetroke は無料ですか？</summary><div class="ans"><p>はい。MIT ライセンスのオープンソースで、広告やアカウントはありません。1 日 1 回 GitHub に新しいバージョンがあるか確認します（環境設定でオフにできます）。それ以外の情報は送信せず、テレメトリもありません。</p></div></details>'),
     ('<details><summary>How much memory and CPU does it use?</summary><div class="ans"><p>The resident gesture engine uses about 19 MB working set (about 10 MB private) and no CPU when idle. The settings window is a separate process that only runs while it is open.</p></div></details>',
      '<details><summary>メモリと CPU の使用量は？</summary><div class="ans"><p>常駐エンジンはワーキングセット約 19 MB（プライベート約 10 MB）、アイドル時の CPU はゼロです。設定画面は開いている間だけ動く別プロセスです。</p></div></details>'),
     ('<details><summary>Can I make my own gestures?</summary><div class="ans"><p>Yes. Create a gesture in settings and draw it once on the pad in the editor. You can also combine mouse buttons, the wheel, keyboard keys and screen edges, and set gestures separately for each app.</p></div></details>',
@@ -186,7 +186,7 @@ REPL = base("ja", "ja", "ja_JP", "言語", "日本語") + [
     ('<h2 id="h-get">Download, double-click, done</h2>', '<h2 id="h-get">ダウンロードして、ダブルクリック、以上</h2>'),
     ('<p>No installer. An icon appears in the notification area: left-click it for settings, right-click to pause or quit. A four-step guide walks you through the first run.</p>',
      '<p>インストーラー不要。通知領域にアイコンが現れます：左クリックで設定、右クリックで一時停止や終了。初回は 4 ステップのガイドが付いてきます。</p>'),
-    ('>Download mousetroke.exe <small>12.6 MB · v0.1.0</small></a>', '>mousetroke.exe をダウンロード <small>12.6 MB · v0.1.0</small></a>'),
+    ('>Download mousetroke.exe <small>13.2 MB · v0.1.1</small></a>', '>mousetroke.exe をダウンロード <small>13.2 MB · v0.1.1</small></a>'),
     ('<div class="sys">Windows 10 1809+ / 11, 64-bit</div>', '<div class="sys">Windows 10 1809+ / 11、64 ビット</div>'),
     ('<span>Mousetroke · MIT license</span>', '<span>Mousetroke · MIT ライセンス</span>'),
     ('<nav aria-label="Footer">', '<nav aria-label="フッター">'),
@@ -210,4 +210,10 @@ REPL = base("ja", "ja", "ja_JP", "言語", "日本語") + [
      '"pageHint": "どこでも右ボタンを押して描く：<b>↓</b> 次のセクション、<b>↑</b> 前、<b>←↑</b> 先頭へ"'),
     ('"hintClose": "Dismiss", "dots": "Sections", "heroDot": "Start"',
      '"hintClose": "閉じる", "dots": "セクション", "heroDot": "開始"'),
+]
+
+# 更新日志共用英文内容，入口标签使用当前语言。
+REPL += [
+('<a href="../en/changelog.html">Changelog</a>', '<a href="../en/changelog.html">更新履歴</a>'),
+('<a class="src" href="../en/changelog.html">What’s new</a>', '<a class="src" href="../en/changelog.html">更新内容</a>'),
 ]

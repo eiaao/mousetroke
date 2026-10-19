@@ -5,6 +5,7 @@
 ```
 index.html          中文页（默认）
 en/index.html       英文页（其余 8 种语言页面的模板）
+changelog.html / en/changelog.html  由 gen_changelog.py 从根目录 CHANGELOG.md 生成
 es fr de ja pt ru it ko/index.html   由 gen.py 从英文页生成，不要手改
 404.html            中英双语错误页，兼容主站与镜像的路径
 gen.py langs/*.py   生成器与各语言替换表（原文行 → 译文行）
@@ -44,7 +45,7 @@ robots.txt sitemap.xml
 
 ## 改内容时注意
 
-- 中文页手写；英文页是其余 8 种语言的模板。改英文页后跑 `python gen.py`，有 `MISS` 说明对应语言的替换表要补译文，再跑 `python check.py`。
+- 中文页手写；英文页是其余 8 种语言的模板。改英文页后跑 `python gen.py`，有 `MISS` 说明对应语言的替换表要补译文，再跑 `python check.py`。`gen.py` 也会生成双语更新日志；只改根目录 `CHANGELOG.md` 时可单独跑 `python site/gen_changelog.py`。发布正文与网站共用 `scripts/changelog.py`，`check.py` 会检查日志页是否过期。
 - 改中文页时同步英文页；FAQ 同时出现在页面正文和 `<script type="application/ld+json">` 里，两处都要改（替换表里也是两处）。
 - 语言菜单（页头 `details.langmenu`）和页脚语言列表在 10 个页面里都有，新增语言时 hreflang 块、`sitemap.xml`、两个列表都要加。
 - 手势表每行的 `data-p` 是手势折线编码（与引擎配置相同），`data-act` 决定首屏演示里模拟浏览器的反应；带 `data-mod`/`data-btn` 的行只展示、不参与演示识别。

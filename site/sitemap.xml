@@ -140,4 +140,14 @@
     <xhtml:link rel="alternate" hreflang="it" href="https://mousetroke.pages.dev/it/"/>
     <xhtml:link rel="alternate" hreflang="ko" href="https://mousetroke.pages.dev/ko/"/>
   </url>
+  <url>
+    <loc>https://mousetroke.pages.dev/changelog.html</loc>
+    <xhtml:link rel="alternate" hreflang="zh-CN" href="https://mousetroke.pages.dev/changelog.html"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://mousetroke.pages.dev/en/changelog.html"/>
+  </url>
+  <url>
+    <loc>https://mousetroke.pages.dev/en/changelog.html</loc>
+    <xhtml:link rel="alternate" hreflang="zh-CN" href="https://mousetroke.pages.dev/changelog.html"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://mousetroke.pages.dev/en/changelog.html"/>
+  </url>
 </urlset>

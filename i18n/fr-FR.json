@@ -535,7 +535,7 @@
   "ui.update.retry": "Réessayer",
   "ui.update.download": "Ouvrir la page de téléchargement",
   "ui.prefs.update_check": "Rechercher les mises à jour automatiquement",
-  "ui.prefs.update_check_help": "Une fois activé, se connecte à GitHub une fois par jour pour rechercher des mises à jour.",
+  "ui.prefs.update_check_help": "Vérifie sur GitHub une fois par jour si une nouvelle version existe. Vous pouvez désactiver cette option ici ; rien d’autre n’est envoyé.",
   "update.error.network": "Impossible de rechercher ou télécharger la mise à jour. Vérifier la connexion et réessayer.",
   "update.error.checksum": "La somme de contrôle ne correspond pas. Mise à jour annulée.",
   "update.error.not_writable": "Impossible de mettre à jour dans ce dossier. Télécharger depuis la page des versions.",

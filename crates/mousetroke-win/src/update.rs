@@ -1,4 +1,4 @@
-//! 显式或自愿开启的更新检查；网络、校验、文件替换均不在钩子路径运行。
+//! 默认每日及手动更新检查；网络、校验、文件替换均不在钩子路径运行。
 
 mod http;
 
@@ -80,7 +80,7 @@ impl Source {
 }
 
 #[derive(Debug)]
-struct Release { latest: String, notes_url: String, exe: String, sums: String }
+struct Release { latest: String, notes_url: String, body: String, exe: String, sums: String }
 
 fn select_release(data: &[u8], source: &Source) -> Result<Release, Error> {
     let v: serde_json::Value = serde_json::from_slice(data).map_err(|_| Error::Network)?;
@@ -95,7 +95,89 @@ fn select_release(data: &[u8], source: &Source) -> Result<Release, Error> {
         if found.next().is_some() || !source.allowed(url, false) { return Err(Error::Network); }
         Ok(url.into())
     };
-    Ok(Release { latest: tag.trim_start_matches('v').into(), notes_url: notes.into(), exe: asset("mousetroke.exe")?, sums: asset("SHA256SUMS.txt")? })
+    Ok(Release { latest: tag.trim_start_matches('v').into(), notes_url: notes.into(), body: v["body"].as_str().unwrap_or_default().into(), exe: asset("mousetroke.exe")?, sums: asset("SHA256SUMS.txt")? })
+}
+
+/// 发布正文只转成纯文本，不渲染远程 HTML 或 Markdown。
+fn plain_note(input: &str) -> String {
+    let mut text = String::new();
+    let mut rest = input;
+    while let Some(start) = rest.find('<') {
+        text.push_str(&rest[..start]);
+        let tag = &rest[start..];
+        if tag.starts_with("<!--") {
+            rest = tag.find("-->").map(|end| &tag[end + 3..]).unwrap_or_default();
+            continue;
+        }
+        let Some(end) = tag.find('>') else { rest = ""; break };
+        let name = tag[1..end].split_whitespace().next().unwrap_or_default().to_ascii_lowercase();
+        rest = &tag[end + 1..];
+        if name == "script" || name == "style" {
+            let closing = format!("</{name}>");
+            rest = rest.to_ascii_lowercase().find(&closing).map(|end| &rest[end + closing.len()..]).unwrap_or_default();
+        }
+    }
+    text.push_str(rest);
+    let chars: Vec<_> = text.chars().collect();
+    let mut out = String::new();
+    let mut i = 0;
+    while i < chars.len() {
+        let c = chars[i];
+        if c == '\\' && i + 1 < chars.len() && chars[i + 1].is_ascii_punctuation() {
+            out.push(chars[i + 1]);
+            i += 2;
+            continue;
+        }
+        if c == '!' && chars.get(i + 1) == Some(&'[') { i += 1; continue; }
+        if c == '[' {
+            if let Some(end) = (i + 1..chars.len()).find(|&j| chars[j] == ']') {
+                if let Some(&open @ ('(' | '[')) = chars.get(end + 1) {
+                    let close = if open == '(' { ')' } else { ']' };
+                    let mut depth = 1;
+                    let mut next = end + 2;
+                    while next < chars.len() && depth > 0 {
+                        if chars[next] == open { depth += 1; }
+                        if chars[next] == close { depth -= 1; }
+                        next += 1;
+                    }
+                    if depth == 0 {
+                        out.extend(chars[i + 1..end].iter().filter(|c| !matches!(c, '*' | '_' | '`' | '~')));
+                        i = next;
+                        continue;
+                    }
+                }
+            }
+        }
+        if !matches!(c, '*' | '_' | '`' | '~') { out.push(c); }
+        i += 1;
+    }
+    let out = out.split_whitespace().collect::<Vec<_>>().join(" ");
+    if out.chars().count() > 300 { out.chars().take(299).chain(['…']).collect() } else { out }
+}
+
+fn release_notes(body: &str, language: &str) -> Vec<String> {
+    let section = |heading: &str| {
+        let mut active = false;
+        let mut bullets: Vec<String> = Vec::new();
+        for line in body.lines() {
+            let trimmed = line.trim();
+            if trimmed.starts_with('#') {
+                active = trimmed == heading;
+            } else if active {
+                if let Some(bullet) = ["- ", "* ", "+ "].iter().find_map(|prefix| trimmed.strip_prefix(prefix)) {
+                    bullets.push(bullet.into());
+                } else if line.starts_with("  ") && !trimmed.is_empty() {
+                    if let Some(last) = bullets.last_mut() { last.push(' '); last.push_str(trimmed); }
+                }
+            }
+        }
+        bullets.iter().map(|bullet| plain_note(bullet)).filter(|bullet| !bullet.is_empty()).take(12).collect::<Vec<_>>()
+    };
+    if language.to_ascii_lowercase().split('-').next() == Some("zh") {
+        let notes = section("### 中文"); // i18n:allow 更新日志格式标记，非界面文案。
+        if !notes.is_empty() { return notes; }
+    }
+    section("### English")
 }
 
 #[derive(Serialize)]
@@ -104,6 +186,7 @@ pub struct Check {
     pub latest: String,
     pub newer: bool,
     pub notes_url: String,
+    pub notes: Vec<String>,
 }
 
 fn fetch_release(source: &Source) -> Result<Release, Error> {
@@ -114,6 +197,7 @@ pub fn check() -> Result<Check, Error> {
     crate::log::init();
     crate::log!("检查更新：当前 {}", env!("CARGO_PKG_VERSION"));
     let result = fetch_release(&Source::configured()).map(|r| Check {
+        notes: release_notes(&r.body, mousetroke_core::i18n::lang().tag()),
         current: env!("CARGO_PKG_VERSION"), newer: version(&r.latest) > version(env!("CARGO_PKG_VERSION")), latest: r.latest, notes_url: r.notes_url,
     });
     match &result {

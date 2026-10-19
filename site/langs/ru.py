@@ -42,8 +42,8 @@ REPL = base("ru", "ru", "ru_RU", "Язык", "Русский") + [
     ('<h1 id="h-hero">Hold right-click.<br>Draw a line.</h1>', '<h1 id="h-hero">Удерживайте правую кнопку.<br>Нарисуйте линию.</h1>'),
     ('<p class="lede">Mousetroke adds mouse gestures to every window on Windows. Hold the right button and drag: <b>←</b> goes back, <b>↓→</b> closes the tab, <b>↙</b> minimizes the window. A plain right-click still opens the menu.</p>',
      '<p class="lede">Mousetroke добавляет жесты мышью в каждое окно Windows. Удерживайте правую кнопку и ведите: <b>←</b> — назад, <b>↓→</b> закрывает вкладку, <b>↙</b> сворачивает окно. Обычный правый щелчок по-прежнему открывает меню.</p>'),
-    ('<a class="btn primary" href="#download">Download for Windows <small>12.6 MB</small></a>',
-     '<a class="btn primary" href="#download">Скачать для Windows <small>12,6 МБ</small></a>'),
+    ('<a class="btn primary" href="#download">Download for Windows <small>13.2 MB</small></a>',
+     '<a class="btn primary" href="#download">Скачать для Windows <small>13,2 МБ</small></a>'),
     ('<a class="btn" href="#gestures">See the gestures</a>', '<a class="btn" href="#gestures">Посмотреть жесты</a>'),
     ('<li>Free and open source (MIT)</li>', '<li>Бесплатно, открытый код (MIT)</li>'),
     ('<li>About 19 MB in memory</li>', '<li>Около 19 МБ в памяти</li>'),
@@ -173,8 +173,8 @@ REPL = base("ru", "ru", "ru_RU", "Язык", "Русский") + [
      '<details><summary>Не будет ли ложных срабатываний в играх или удалённом столе?</summary><div class="ans"><p>Полноэкранные игры, видео и презентации ставят жесты на паузу автоматически. Программы, которым самим нужны правое или среднее перетаскивание — удалённый стол, AnyDesk, Blender, AutoCAD — исключаются одним щелчком при первом запуске. Win+Esc ставит паузу в любой момент.</p></div></details>'),
     ('<details><summary>Which versions of Windows are supported?</summary><div class="ans"><p>Windows 10 1809 or later and Windows 11, 64-bit. The gesture engine has no runtime dependencies; the settings window uses Microsoft Edge WebView2, which ships with Windows 11 and comes with Edge on most Windows 10 PCs.</p></div></details>',
      '<details><summary>Какие версии Windows поддерживаются?</summary><div class="ans"><p>Windows 10 с 1809 и Windows 11, 64-бит. У движка жестов нет рантайм-зависимостей; окно настроек использует Microsoft Edge WebView2 — он встроен в Windows 11 и есть с Edge на большинстве ПК с Windows 10.</p></div></details>'),
-    ('<details><summary>Is Mousetroke free?</summary><div class="ans"><p>Yes. It is open source under the MIT license, with no ads or account. It connects to GitHub only when you check for updates manually or enable the optional daily check. No telemetry or personal data is sent.</p></div></details>',
-     '<details><summary>Mousetroke бесплатен?</summary><div class="ans"><p>Да. Это открытый код под лицензией MIT, без рекламы и аккаунта. Подключение к GitHub выполняется только при ручной проверке обновлений или включении необязательной ежедневной проверки. Телеметрия и личные данные не отправляются.</p></div></details>'),
+    ('<details><summary>Is Mousetroke free?</summary><div class="ans"><p>Yes. It is open source under the MIT license, with no ads or account. Once a day it asks GitHub whether a newer version exists (turn it off in Preferences). Nothing else is sent; there is no telemetry.</p></div></details>',
+     '<details><summary>Mousetroke бесплатен?</summary><div class="ans"><p>Да. Это открытый код под лицензией MIT, без рекламы и учётной записи. Раз в день GitHub получает запрос о наличии новой версии (можно отключить в настройках). Больше ничего не отправляется; телеметрии нет.</p></div></details>'),
     ('<details><summary>How much memory and CPU does it use?</summary><div class="ans"><p>The resident gesture engine uses about 19 MB working set (about 10 MB private) and no CPU when idle. The settings window is a separate process that only runs while it is open.</p></div></details>',
      '<details><summary>Сколько памяти и CPU он занимает?</summary><div class="ans"><p>Резидентный движок занимает около 19 МБ рабочего набора (около 10 МБ приватных) и в простое не нагружает CPU. Окно настроек — отдельный процесс, работающий только пока открыто.</p></div></details>'),
     ('<details><summary>Can I make my own gestures?</summary><div class="ans"><p>Yes. Create a gesture in settings and draw it once on the pad in the editor. You can also combine mouse buttons, the wheel, keyboard keys and screen edges, and set gestures separately for each app.</p></div></details>',
@@ -186,7 +186,7 @@ REPL = base("ru", "ru", "ru_RU", "Язык", "Русский") + [
     ('<h2 id="h-get">Download, double-click, done</h2>', '<h2 id="h-get">Скачали, два щелчка, готово</h2>'),
     ('<p>No installer. An icon appears in the notification area: left-click it for settings, right-click to pause or quit. A four-step guide walks you through the first run.</p>',
      '<p>Без установщика. В области уведомлений появляется значок: левый щелчок — настройки, правый — пауза или выход. Четырёхшаговое руководство проводит первый запуск.</p>'),
-    ('>Download mousetroke.exe <small>12.6 MB · v0.1.0</small></a>', '>Скачать mousetroke.exe <small>12,6 МБ · v0.1.0</small></a>'),
+    ('>Download mousetroke.exe <small>13.2 MB · v0.1.1</small></a>', '>Скачать mousetroke.exe <small>13,2 МБ · v0.1.1</small></a>'),
     ('<div class="sys">Windows 10 1809+ / 11, 64-bit</div>', '<div class="sys">Windows 10 1809+ / 11, 64-бит</div>'),
     ('<span>Mousetroke · MIT license</span>', '<span>Mousetroke · Лицензия MIT</span>'),
     ('<nav aria-label="Footer">', '<nav aria-label="Нижний колонтитул">'),
@@ -210,4 +210,10 @@ REPL = base("ru", "ru", "ru_RU", "Язык", "Русский") + [
      '"pageHint": "Удерживайте правую кнопку где угодно и рисуйте: <b>↓</b> следующий раздел, <b>↑</b> предыдущий, <b>←↑</b> наверх"'),
     ('"hintClose": "Dismiss", "dots": "Sections", "heroDot": "Start"',
      '"hintClose": "Скрыть", "dots": "Разделы", "heroDot": "Старт"'),
+]
+
+# 更新日志共用英文内容，入口标签使用当前语言。
+REPL += [
+('<a href="../en/changelog.html">Changelog</a>', '<a href="../en/changelog.html">История изменений</a>'),
+('<a class="src" href="../en/changelog.html">What’s new</a>', '<a class="src" href="../en/changelog.html">Что нового</a>'),
 ]

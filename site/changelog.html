@@ -1,0 +1,59 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>更新日志 · Mousetroke</title>
+  <meta name="description" content="Mousetroke 各版本的新功能、改进和修复。">
+  <link rel="canonical" href="https://mousetroke.pages.dev/changelog.html">
+  <link rel="alternate" hreflang="zh-CN" href="https://mousetroke.pages.dev/changelog.html">
+  <link rel="alternate" hreflang="en" href="https://mousetroke.pages.dev/en/changelog.html">
+  <link rel="icon" type="image/svg+xml" href="assets/icon.svg">
+  <link rel="stylesheet" href="assets/site.css">
+</head>
+<body class="changelog-page">
+<header class="top">
+  <div class="wrap">
+    <a class="brand" href="index.html" aria-label="Mousetroke 首页">
+      <svg width="28" height="28" viewBox="0 0 32 32" aria-hidden="true"><rect width="32" height="32" rx="8" fill="#0098d9"/><polyline points="7,11 13.5,21 19,13 25,21" fill="none" stroke="#fff" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      Mousetroke
+    </a>
+    <a class="gh" href="https://github.com/eiaao/mousetroke">GitHub</a>
+    <a class="btn primary small" href="https://github.com/eiaao/mousetroke/releases/latest/download/mousetroke.exe">下载</a>
+  </div>
+</header>
+<main class="wrap changelog-main">
+  <h1>更新日志</h1>
+  <p class="changelog-intro">Mousetroke 各版本的新功能、改进和修复。</p>
+    <article class="changelog-release" aria-labelledby="v0.1.1">
+      <h2 id="v0.1.1">v0.1.1 <time datetime="2026-10-19">2026-10-19</time></h2>
+      <ul>
+        <li>形状手势：画 G、C、O、S、6 这类曲线来执行动作。同一个形状录 2–5 次，Mousetroke 会记住你的画法。</li>
+        <li>录制时自动区分直线和曲线：直的录成轨迹，弯的录成形状；判断错了点一下就能切换。</li>
+        <li>识别阈值用真实手绘样本校准：画得随意、有点抖的曲线也能认出来，直线手势不会被误认成形状。</li>
+        <li>乱画不再无限持续：方向变化超过 100 次会自动取消并给个提示，不执行任何动作。</li>
+        <li>检查更新：默认每天自动检查一次（可在偏好设置里关闭），也可以在“关于”里手动检查。一键更新：自动下载、校验 SHA-256、替换并重启。</li>
+        <li>“关于”页加入主页、源代码和反馈入口。</li>
+      </ul>
+      <a class="changelog-release-link" href="https://github.com/eiaao/mousetroke/releases/tag/v0.1.1">在 GitHub 查看此版本 →</a>
+    </article>
+    <article class="changelog-release" aria-labelledby="v0.1.0">
+      <h2 id="v0.1.0">v0.1.0 <time datetime="2026-10-18">2026-10-18</time></h2>
+      <ul>
+        <li>首个公开版本：右键、中键、侧键手势，约 50 个内置手势，屏幕边角触发，八类动作，按程序区分手势，界面支持十种语言。</li>
+      </ul>
+      <a class="changelog-release-link" href="https://github.com/eiaao/mousetroke/releases/tag/v0.1.0">在 GitHub 查看此版本 →</a>
+    </article>
+</main>
+<footer>
+  <div class="wrap">
+    <span>Mousetroke · MIT 许可证</span>
+    <nav aria-label="页脚">
+      <a href="changelog.html" hreflang="zh-CN" lang="zh-CN">简体中文</a>
+      <a href="en/changelog.html" hreflang="en" lang="en">English</a>
+      <a href="https://github.com/eiaao/mousetroke">GitHub</a>
+    </nav>
+  </div>
+</footer>
+</body>
+</html>

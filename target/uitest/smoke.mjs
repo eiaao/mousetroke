@@ -80,7 +80,15 @@ const hasCJK = (s) => /[一-鿿　-〿＀-￯]/.test(s);
 const EXCEPT = ["简体中文", "日本語"];
 
 const check = async (where) => {
-  const text = await page.evaluate(() => document.body.innerText);
+  const text = await page.evaluate(() => {
+    // 发布正文是远程内容，不参与伪语言词条检查。
+    const notes = document.querySelector(".update-note-list");
+    const saved = notes?.style.display;
+    if (notes) notes.style.display = "none";
+    const text = document.body.innerText;
+    if (notes) notes.style.display = saved;
+    return text;
+  });
   const lines = text.split("\n");
   if (lang === "en-US") {
     const bad = lines.filter((l) => hasCJK(l) && !EXCEPT.some((x) => l.includes(x)));
@@ -290,11 +298,11 @@ await clickAll(".tab", 1); await sleep(200); await shot("03-edges");
 // 偏好设置（语言下拉）、导入导出、关于
 const navCount = await page.evaluate(() => document.querySelectorAll(".nav-group:not(.nav-bottom) .nav-item").length);
 await clickAll(".nav-bottom .nav-item", 0); await check("prefs"); await shot("04-prefs");
-if (await page.$eval(".update-preference input", (el) => el.checked)) errors.push("automatic updates must default off");
-await click(".update-preference input"); await sleep(450);
-if (!await page.evaluate(() => window.__saved?.settings.update_check)) errors.push("automatic update preference must save true");
+if (!await page.$eval(".update-preference input", (el) => el.checked)) errors.push("automatic updates must default on");
 await click(".update-preference input"); await sleep(450);
 if (await page.evaluate(() => window.__saved?.settings.update_check) !== false) errors.push("automatic update preference must save false");
+await click(".update-preference input"); await sleep(450);
+if (!await page.evaluate(() => window.__saved?.settings.update_check)) errors.push("automatic update preference must save true");
 await clickAll(".nav-bottom .nav-item", 1); await check("data"); await shot("05-data");
 await clickAll(".nav-bottom .nav-item", 2); await check("about"); await shot("06-about");
 
@@ -329,9 +337,20 @@ for (const outcome of ["current", "newer", "error"]) {
     if (!text.includes(expected)) errors.push(`incorrect update state: ${outcome}`);
   }
   if (outcome === "newer") {
+    const notes = await page.$$eval(".update-note-list li", (items) => items.map((item) => item.textContent));
+    if (notes.length !== 6 || !notes[0].includes(lang.startsWith("zh") ? "形状手势" : "Shape gestures")) errors.push("newer release must render note bullets");
+    const scrolls = await page.$eval(".update-note-list", (el) => {
+      if (getComputedStyle(el).overflowY !== "auto" || el.clientHeight > 180) return false;
+      el.scrollTop = el.scrollHeight;
+      const works = el.scrollHeight <= el.clientHeight || el.scrollTop > 0;
+      el.scrollTop = 0;
+      return works;
+    });
+    if (!scrolls) errors.push("long release notes must scroll");
     if (!await page.$(".update-install.primary")) errors.push("newer release needs primary install action");
     await click(".update-notes");
   }
+  if (outcome !== "newer" && await page.$(".update-note-list")) errors.push("notes must only render for a newer release");
   if (outcome === "error") await click(".update-download");
   await page.$eval(".update-group", (el) => el.scrollIntoView({ block: "start" }));
   await check(`update-${outcome}`); await shot(`06-update-${outcome}`);

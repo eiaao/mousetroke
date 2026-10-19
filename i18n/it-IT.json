@@ -535,7 +535,7 @@
   "ui.update.retry": "Riprova",
   "ui.update.download": "Apri la pagina di download",
   "ui.prefs.update_check": "Cerca aggiornamenti automaticamente",
-  "ui.prefs.update_check_help": "Se attivo, si connette a GitHub una volta al giorno per cercare aggiornamenti.",
+  "ui.prefs.update_check_help": "Controlla su GitHub una volta al giorno se esiste una nuova versione. Puoi disattivarlo qui; non viene inviato altro.",
   "update.error.network": "Impossibile cercare o scaricare aggiornamenti. Controllare la connessione e riprovare.",
   "update.error.checksum": "La somma di controllo non corrisponde. Aggiornamento annullato.",
   "update.error.not_writable": "Impossibile aggiornare in questa cartella. Scaricare dalla pagina delle versioni.",
