@@ -647,7 +647,7 @@ mod tests {
         let lua = Lua::new();
         install_ms_table(&lua, &context(), &platform()).unwrap();
         let paused: bool = lua.load("return ms.is_paused()").eval().unwrap();
-        assert_eq!(paused, false);
+        assert!(!paused);
 
         let read: Function = lua
             .globals()
