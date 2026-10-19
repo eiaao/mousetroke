@@ -317,7 +317,32 @@ fn app_info(paths: State<AppPaths>) -> AppInfo {
     }
 }
 
-/// 用默认程序打开日志（`log`）或在资源管理器中打开配置所在文件夹（`config_dir`）。
+const HOMEPAGES: [(&str, &str); 10] = [
+    ("zh-CN", "https://mousetroke.pages.dev/"),
+    ("en-US", "https://mousetroke.pages.dev/en/"),
+    ("es-ES", "https://mousetroke.pages.dev/es/"),
+    ("fr-FR", "https://mousetroke.pages.dev/fr/"),
+    ("de-DE", "https://mousetroke.pages.dev/de/"),
+    ("ja-JP", "https://mousetroke.pages.dev/ja/"),
+    ("pt-BR", "https://mousetroke.pages.dev/pt/"),
+    ("ru-RU", "https://mousetroke.pages.dev/ru/"),
+    ("it-IT", "https://mousetroke.pages.dev/it/"),
+    ("ko-KR", "https://mousetroke.pages.dev/ko/"),
+];
+const GITHUB_URL: &str = "https://github.com/eiaao/mousetroke";
+const ISSUES_URL: &str = "https://github.com/eiaao/mousetroke/issues";
+
+/// 链接仅由后端白名单决定；没有对应首页的语言回退到英文。
+fn project_url(what: &str, lang: &str) -> Option<&'static str> {
+    match what {
+        "homepage" => Some(HOMEPAGES.iter().find(|(tag, _)| *tag == lang).unwrap_or(&HOMEPAGES[1]).1),
+        "github" => Some(GITHUB_URL),
+        "issues" => Some(ISSUES_URL),
+        _ => None,
+    }
+}
+
+/// 用默认程序打开日志、配置文件夹或白名单中的项目链接。
 #[tauri::command]
 fn open_path(what: String, paths: State<AppPaths>) -> MsgResult<()> {
     match what.as_str() {
@@ -332,7 +357,12 @@ fn open_path(what: String, paths: State<AppPaths>) -> MsgResult<()> {
             let dir = paths.config.parent().map(Path::to_path_buf).unwrap_or_default();
             let _ = std::process::Command::new(mousetroke_win::input::system_exe("explorer.exe")).arg(dir).spawn();
         }
-        _ => return Err(Msg::new(keys::ERROR_UNKNOWN_LOCATION, &[("what", what)])),
+        _ => {
+            let Some(url) = project_url(&what, mousetroke_core::i18n::lang().tag()) else {
+                return Err(Msg::new(keys::ERROR_UNKNOWN_LOCATION, &[("what", what)]));
+            };
+            mousetroke_win::input::shell_execute("open", url, "");
+        }
     }
     Ok(())
 }
@@ -473,6 +503,22 @@ pub fn run(config: Option<PathBuf>) {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn project_urls_follow_ui_language_and_only_allow_fixed_destinations() {
+        for (tag, suffix) in [
+            ("zh-CN", ""), ("en-US", "en/"), ("es-ES", "es/"), ("fr-FR", "fr/"),
+            ("de-DE", "de/"), ("ja-JP", "ja/"), ("pt-BR", "pt/"), ("ru-RU", "ru/"),
+            ("it-IT", "it/"), ("ko-KR", "ko/"), ("qps-ploc", "en/"), ("unknown", "en/"),
+        ] {
+            assert_eq!(project_url("homepage", tag), Some(format!("https://mousetroke.pages.dev/{suffix}").as_str()));
+            assert_eq!(project_url("github", tag), Some("https://github.com/eiaao/mousetroke"));
+            assert_eq!(project_url("issues", tag), Some("https://github.com/eiaao/mousetroke/issues"));
+        }
+        for what in ["", "https://example.com", "file:///C:/Windows", "Homepage", "github/issues"] {
+            assert_eq!(project_url(what, "en-US"), None);
+        }
+    }
 
     #[test]
     fn shape_commands_use_core_and_reject_degenerate_drawings() {

@@ -2695,6 +2695,7 @@ select.lang-select {
 
 .about-hero {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
   gap: 18px;
   max-width: 720px;
@@ -2715,6 +2716,38 @@ select.lang-select {
 
 .about-guide {
   margin-left: auto;
+}
+
+/* 项目文案自然换行，按钮保持完整；窄窗口中卡片按钮可独占一行。 */
+.about .pref-label {
+  min-width: 0;
+}
+
+.about .btn {
+  flex-shrink: 0;
+  white-space: nowrap;
+}
+
+.about-star {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px 20px;
+  margin: 8px 0 14px;
+  padding: 16px;
+  border-radius: var(--radius-m);
+  background: var(--trail-soft);
+}
+
+.about-star p {
+  flex: 1 1 280px;
+  margin: 0;
+}
+
+.about-star .btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
 }
 
 .about-logo {
