@@ -47,15 +47,7 @@ pub(super) fn main() {
 
 /// 命令行输出语言：配置里的设置优先，否则跟随系统（不阻塞：读不到配置就用系统语言）。
 fn init_lang() {
-    let setting = std::fs::read_to_string(default_config_path())
-        .ok()
-        .and_then(|text| serde_json::from_str::<serde_json::Value>(text.trim_start_matches('\u{feff}')).ok())
-        .and_then(|v| {
-            v.get("settings").and_then(|s| s.get("language")).and_then(|l| l.as_str()).map(str::to_string)
-        })
-        .unwrap_or_default();
-    let langs = mousetroke_win::system_langs();
-    mousetroke_core::i18n::set_lang(mousetroke_core::i18n::resolve(&setting, &langs));
+    mousetroke_core::i18n::init_from_config(&default_config_path(), &mousetroke_win::system_langs());
 }
 
 fn print_help() {
@@ -168,12 +160,9 @@ fn cmd_run(args: &[String]) {
         }
         i += 1;
     }
-    let cfg = match Config::load_existing(&path) {
-        Ok(Some(cfg)) => cfg,
-        // 首次运行：写入内置默认手势，设置界面打开时读到的也是这一份
-        Ok(None) => {
-            let cfg = Config::builtin();
-            if let Err(e) = cfg.save(&path) {
+    let cfg = match Config::load_or_init(&path) {
+        Ok((cfg, saved)) => {
+            if let Some(e) = saved {
                 eprintln!("{}", tf(keys::CLI_RUN_LOAD_FAILED, &[("err", &e)]));
             }
             cfg

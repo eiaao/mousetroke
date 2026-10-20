@@ -283,7 +283,7 @@ pub fn run() -> Result<i32, String> {
 pub fn run_with_config(config: Option<std::path::PathBuf>) -> Result<i32, String> {
     let mtm = MainThreadMarker::new().ok_or_else(|| t(keys::MAC_ERROR_MAIN_THREAD).to_string())?;
     log::init().map_err(|error| error.to_string())?;
-    mousetroke_engine::log::set_sink(log::write);
+    mousetroke_engine::log::set_observer(crate::selftest::observe);
     let result = autoreleasepool(|_| run_main(mtm, config));
     // 启动失败也写进日志：从 Finder/open 启动时看不到 stderr。
     if let Err(error) = &result {
@@ -314,14 +314,11 @@ fn run_main(mtm: MainThreadMarker, config_path: Option<std::path::PathBuf>) -> R
         }
         config
     } else {
-        match Config::load_existing(&path)? {
-            Some(config) => config,
-            None => {
-                let config = Config::builtin();
-                config.save(&path)?;
-                config
-            }
+        let (config, saved) = Config::load_or_init(&path)?;
+        if let Some(error) = saved {
+            crate::log!("首次写入默认配置失败: {error}");
         }
+        config
     };
     let expected = config
         .all_bindings()

@@ -70,7 +70,6 @@ impl Host for FakeHost {
     fn window_title(&self, _: usize) -> String {
         String::new()
     }
-    fn init_shape_samples(&self) {}
     fn cursor_pos(&self) -> (i32, i32) {
         (960, 540)
     }

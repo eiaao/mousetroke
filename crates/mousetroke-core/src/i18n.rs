@@ -112,6 +112,18 @@ impl Lang {
     }
 }
 
+/// 按配置文件里的语言设置（读不到就跟随系统）切换界面语言；启动早期使用，不校验整份配置。
+pub fn init_from_config(path: &std::path::Path, system: &[String]) -> Lang {
+    let setting = std::fs::read_to_string(path)
+        .ok()
+        .and_then(|text| serde_json::from_str::<serde_json::Value>(text.trim_start_matches('\u{feff}')).ok())
+        .and_then(|v| v.get("settings")?.get("language")?.as_str().map(str::to_string))
+        .unwrap_or_default();
+    let lang = resolve(&setting, system);
+    set_lang(lang);
+    lang
+}
+
 /// 语言设置（`settings.language`）+ 系统首选界面语言列表 → 实际语言。纯函数，便于测试。
 /// 设置值不是 `auto` 且认识就用它；否则依次看系统列表；都不认识回退 en-US。
 pub fn resolve(setting: &str, system: &[String]) -> Lang {

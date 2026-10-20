@@ -1,101 +1,26 @@
 //! 运行日志：`%APPDATA%\mousetroke\mousetroke.log`（超过 1MB 轮转为 `.log.old`）。
-//!
-//! 钩子回调里只投递到通道，由后台线程写盘——绝不在回调里做文件 IO。
-//! 从终端启动时同时输出到控制台。
-
-use std::io::Write;
-use std::sync::mpsc::{channel, sync_channel, Sender, SyncSender};
-use std::sync::OnceLock;
-
-/// (控制台文本, 文件行)。控制台也由写日志线程输出：附着到终端时同步写控制台会阻塞钩子线程。
-static TX: OnceLock<Sender<(String, String)>> = OnceLock::new();
-static SHAPE_TX: OnceLock<SyncSender<Vec<i32>>> = OnceLock::new();
-const MAX_BYTES: u64 = 1 << 20;
-
-/// 仅在启动时开启校准开关后调用；格式化和控制台输出均在后台进行。
-pub(crate) fn init_shape_samples() {
-    SHAPE_TX.get_or_init(|| {
-        let (tx, rx) = sync_channel::<Vec<i32>>(16);
-        std::thread::Builder::new().name("mousetroke-shape-samples".into()).spawn(move || {
-            use std::fmt::Write as _;
-            for sample in rx {
-                let mut json = String::with_capacity(768);
-                json.push('[');
-                for (i, value) in sample.iter().enumerate() {
-                    if i != 0 {
-                        json.push(',');
-                    }
-                    let _ = write!(json, "{value}");
-                }
-                json.push(']');
-                crate::log!("形状样本: {json}");
-            }
-        }).ok();
-        tx
-    });
-}
-
-/// 钩子只投递固定大小的样本；队列满或线程退出时丢弃，绝不等待写盘。
-pub(crate) fn shape_sample(encoded: Vec<i32>) {
-    if let Some(tx) = SHAPE_TX.get() {
-        let _ = tx.try_send(encoded);
-    }
-}
+//! 队列、写盘与控制台输出见 `mousetroke_engine::log`；这里只提供路径和本地时间格式。
 
 /// 日志文件路径（与配置同目录）。
 pub fn path() -> std::path::PathBuf {
     mousetroke_core::schema::default_config_path().with_file_name("mousetroke.log")
 }
 
-/// 启动写日志线程（重复调用无效果）。
-pub fn init() {
-    TX.get_or_init(|| {
-        let (tx, rx) = channel::<(String, String)>();
-        let path = path();
-        std::thread::Builder::new()
-            .name("mousetroke-log".into())
-            .spawn(move || {
-                if let Some(dir) = path.parent() {
-                    let _ = std::fs::create_dir_all(dir);
-                }
-                let open = || std::fs::OpenOptions::new().create(true).append(true).open(&path).ok();
-                let mut file = open();
-                for (console, line) in rx {
-                    println!("[mousetroke] {console}");
-                    if file.as_ref().and_then(|f| f.metadata().ok()).is_some_and(|m| m.len() > MAX_BYTES) {
-                        drop(file.take());
-                        let _ = std::fs::rename(&path, path.with_extension("log.old"));
-                        file = open();
-                    }
-                    if let Some(f) = file.as_mut() {
-                        let _ = writeln!(f, "{line}");
-                    }
-                }
-            })
-            .ok();
-        tx
-    });
-}
-
-/// 写一行（带本地时间戳）。未 init 时只输出到控制台。
-pub fn write(msg: &str) {
+fn timestamp() -> String {
     let t = unsafe { windows::Win32::System::SystemInformation::GetLocalTime() };
-    let line = format!(
-        "{:04}-{:02}-{:02} {:02}:{:02}:{:02}.{:03} {msg}",
+    format!(
+        "{:04}-{:02}-{:02} {:02}:{:02}:{:02}.{:03}",
         t.wYear, t.wMonth, t.wDay, t.wHour, t.wMinute, t.wSecond, t.wMilliseconds
-    );
-    match TX.get() {
-        Some(tx) => {
-            let _ = tx.send((msg.to_owned(), line));
-        }
-        None => println!("[mousetroke] {msg}"),
-    }
+    )
 }
 
-/// `log!("格式", 参数…)`：写入运行日志。
+/// 启动写日志线程（重复调用无效果；失败时日志只输出到控制台）。
+pub fn init() {
+    let _ = mousetroke_engine::log::init(path(), timestamp);
+}
+
+/// `log!("格式", 参数…)`：写入运行日志（不分配，钩子回调可用）。
 #[macro_export]
 macro_rules! log {
-    ($($arg:tt)*) => {
-        $crate::log::write(&format!($($arg)*))
-    };
+    ($($arg:tt)*) => { $crate::__engine::log::write_args(format_args!($($arg)*)) };
 }

@@ -18,7 +18,6 @@ const LABEL_Y: f64 = 0.8;
 
 /// 初始化共享引擎；宿主与日志接收器均由 Windows 层提供。
 pub fn new(cfg: Config, cfg_path: Option<PathBuf>) -> Option<Engine> {
-    mousetroke_engine::log::set_sink(crate::log::write);
     Engine::new(cfg, cfg_path, Box::new(SystemHost))
 }
 
@@ -97,9 +96,6 @@ impl Host for SystemHost {
             let _ = SetProcessWorkingSetSize(GetCurrentProcess(), usize::MAX, usize::MAX);
         }
     }
-    fn init_shape_samples(&self) {
-        crate::log::init_shape_samples();
-    }
     fn cursor_pos(&self) -> (i32, i32) {
         input::get_cursor_pos()
     }
@@ -110,7 +106,7 @@ impl Host for SystemHost {
         crate::tray::refresh_texts();
     }
     fn shape_sample(&self, encoded: Vec<i32>) {
-        crate::log::shape_sample(encoded);
+        mousetroke_engine::log::shape_sample(encoded);
     }
 }
 
