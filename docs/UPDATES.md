@@ -36,7 +36,7 @@ API 只连接 HTTPS 的 `api.github.com`；下载及其每次跳转只允许 HTT
 release 完全忽略它。测试服务只接受 `http://127.0.0.1:<端口>`，请求与跳转必须留在同一源。
 
 ```powershell
-$env:CARGO_TARGET_DIR='D:\project\reaWGestures2\.claude\worktrees\target-update'
+$env:CARGO_TARGET_DIR='D:\project\mousetroke\.claude\worktrees\target-update'
 $env:CARGO_BUILD_JOBS='2'
 cargo build -p mousetroke --locked
 New-Item -ItemType Directory -Force target/update-e2e | Out-Null
@@ -67,7 +67,7 @@ $env:MOUSETROKE_UPDATE_BASE='http://127.0.0.1:8770'
 不依赖桌面的文件替换回归：
 
 ```powershell
-$env:CARGO_TARGET_DIR='D:\project\reaWGestures2\.claude\worktrees\target-update'
+$env:CARGO_TARGET_DIR='D:\project\mousetroke\.claude\worktrees\target-update'
 $env:CARGO_BUILD_JOBS='2'
 cargo test -p mousetroke-win --release -- --include-ignored --skip new_session_clears_interrupted_fade
 ```

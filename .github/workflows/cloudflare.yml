@@ -41,7 +41,7 @@ jobs:
         run: python3 site/check.py
       - name: Prepare
         # 生成器、校验脚本和替换表不属于网站内容
-        run: rm -rf site/gen.py site/gen_changelog.py site/check.py site/langs site/README.md site/__pycache__
+        run: rm -rf site/gen.py site/gen_changelog.py site/gen_alternatives.py site/alternatives_data.py site/alternatives_template.html site/check.py site/langs site/README.md site/__pycache__
       - name: Create project if missing
         run: |
           projects=$(npx --yes wrangler@4 pages project list) || exit 1

@@ -4,6 +4,7 @@ from html import escape
 from pathlib import Path
 import re
 import sys
+sys.dont_write_bytecode = True
 
 ROOT = Path(__file__).resolve().parent
 sys.path.insert(0, str(ROOT.parent / "scripts"))

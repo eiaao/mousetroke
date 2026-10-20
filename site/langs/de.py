@@ -1,5 +1,6 @@
 # 德语页面替换表（gen.py 加载；模板 site/en/index.html）
 REPL = base("de", "de", "de_DE", "Sprache", "Deutsch") + [
+    ('<a href="../en/alternatives/">Compare alternatives</a>', '<a href="../en/alternatives/">Alternativen vergleichen</a>'),
     ('<a href="../en/changelog.html">Changelog</a>', '<a href="../en/changelog.html">Änderungsprotokoll</a>'),
     ('<a class="src" href="../en/changelog.html">What’s new</a>', '<a class="src" href="../en/changelog.html">Neuerungen</a>'),
     ('<meta property="og:title" content="Mousetroke: hold right-click, draw a line">',

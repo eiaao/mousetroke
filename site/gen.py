@@ -6,6 +6,7 @@
 用法：python gen.py es fr …（缺省生成全部已定义语言）
 """
 import sys, pathlib, re, json, html
+sys.dont_write_bytecode = True
 
 ROOT = pathlib.Path(__file__).resolve().parent.parent
 TPL = (ROOT / "site/en/index.html").read_text(encoding="utf-8")
@@ -115,3 +116,5 @@ if __name__ == "__main__":
         gen(tag, LANGS[tag])
     from gen_changelog import main as gen_changelog
     gen_changelog()
+    from gen_alternatives import main as gen_alternatives
+    gen_alternatives()

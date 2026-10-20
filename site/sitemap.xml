@@ -2,7 +2,7 @@
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9" xmlns:xhtml="http://www.w3.org/1999/xhtml">
   <url>
     <loc>https://mousetroke.pages.dev/</loc>
-    <lastmod>2026-10-20</lastmod>
+    <lastmod>2026-10-21</lastmod>
     <xhtml:link rel="alternate" hreflang="zh-CN" href="https://mousetroke.pages.dev/"/>
     <xhtml:link rel="alternate" hreflang="en" href="https://mousetroke.pages.dev/en/"/>
     <xhtml:link rel="alternate" hreflang="es" href="https://mousetroke.pages.dev/es/"/>
@@ -16,7 +16,7 @@
   </url>
   <url>
     <loc>https://mousetroke.pages.dev/en/</loc>
-    <lastmod>2026-10-20</lastmod>
+    <lastmod>2026-10-21</lastmod>
     <xhtml:link rel="alternate" hreflang="zh-CN" href="https://mousetroke.pages.dev/"/>
     <xhtml:link rel="alternate" hreflang="en" href="https://mousetroke.pages.dev/en/"/>
     <xhtml:link rel="alternate" hreflang="es" href="https://mousetroke.pages.dev/es/"/>
@@ -30,7 +30,7 @@
   </url>
   <url>
     <loc>https://mousetroke.pages.dev/es/</loc>
-    <lastmod>2026-10-20</lastmod>
+    <lastmod>2026-10-21</lastmod>
     <xhtml:link rel="alternate" hreflang="zh-CN" href="https://mousetroke.pages.dev/"/>
     <xhtml:link rel="alternate" hreflang="en" href="https://mousetroke.pages.dev/en/"/>
     <xhtml:link rel="alternate" hreflang="es" href="https://mousetroke.pages.dev/es/"/>
@@ -44,7 +44,7 @@
   </url>
   <url>
     <loc>https://mousetroke.pages.dev/fr/</loc>
-    <lastmod>2026-10-20</lastmod>
+    <lastmod>2026-10-21</lastmod>
     <xhtml:link rel="alternate" hreflang="zh-CN" href="https://mousetroke.pages.dev/"/>
     <xhtml:link rel="alternate" hreflang="en" href="https://mousetroke.pages.dev/en/"/>
     <xhtml:link rel="alternate" hreflang="es" href="https://mousetroke.pages.dev/es/"/>
@@ -58,7 +58,7 @@
   </url>
   <url>
     <loc>https://mousetroke.pages.dev/de/</loc>
-    <lastmod>2026-10-20</lastmod>
+    <lastmod>2026-10-21</lastmod>
     <xhtml:link rel="alternate" hreflang="zh-CN" href="https://mousetroke.pages.dev/"/>
     <xhtml:link rel="alternate" hreflang="en" href="https://mousetroke.pages.dev/en/"/>
     <xhtml:link rel="alternate" hreflang="es" href="https://mousetroke.pages.dev/es/"/>
@@ -72,7 +72,7 @@
   </url>
   <url>
     <loc>https://mousetroke.pages.dev/ja/</loc>
-    <lastmod>2026-10-20</lastmod>
+    <lastmod>2026-10-21</lastmod>
     <xhtml:link rel="alternate" hreflang="zh-CN" href="https://mousetroke.pages.dev/"/>
     <xhtml:link rel="alternate" hreflang="en" href="https://mousetroke.pages.dev/en/"/>
     <xhtml:link rel="alternate" hreflang="es" href="https://mousetroke.pages.dev/es/"/>
@@ -86,7 +86,7 @@
   </url>
   <url>
     <loc>https://mousetroke.pages.dev/pt/</loc>
-    <lastmod>2026-10-20</lastmod>
+    <lastmod>2026-10-21</lastmod>
     <xhtml:link rel="alternate" hreflang="zh-CN" href="https://mousetroke.pages.dev/"/>
     <xhtml:link rel="alternate" hreflang="en" href="https://mousetroke.pages.dev/en/"/>
     <xhtml:link rel="alternate" hreflang="es" href="https://mousetroke.pages.dev/es/"/>
@@ -100,7 +100,7 @@
   </url>
   <url>
     <loc>https://mousetroke.pages.dev/ru/</loc>
-    <lastmod>2026-10-20</lastmod>
+    <lastmod>2026-10-21</lastmod>
     <xhtml:link rel="alternate" hreflang="zh-CN" href="https://mousetroke.pages.dev/"/>
     <xhtml:link rel="alternate" hreflang="en" href="https://mousetroke.pages.dev/en/"/>
     <xhtml:link rel="alternate" hreflang="es" href="https://mousetroke.pages.dev/es/"/>
@@ -114,7 +114,7 @@
   </url>
   <url>
     <loc>https://mousetroke.pages.dev/it/</loc>
-    <lastmod>2026-10-20</lastmod>
+    <lastmod>2026-10-21</lastmod>
     <xhtml:link rel="alternate" hreflang="zh-CN" href="https://mousetroke.pages.dev/"/>
     <xhtml:link rel="alternate" hreflang="en" href="https://mousetroke.pages.dev/en/"/>
     <xhtml:link rel="alternate" hreflang="es" href="https://mousetroke.pages.dev/es/"/>
@@ -128,7 +128,7 @@
   </url>
   <url>
     <loc>https://mousetroke.pages.dev/ko/</loc>
-    <lastmod>2026-10-20</lastmod>
+    <lastmod>2026-10-21</lastmod>
     <xhtml:link rel="alternate" hreflang="zh-CN" href="https://mousetroke.pages.dev/"/>
     <xhtml:link rel="alternate" hreflang="en" href="https://mousetroke.pages.dev/en/"/>
     <xhtml:link rel="alternate" hreflang="es" href="https://mousetroke.pages.dev/es/"/>
@@ -149,5 +149,103 @@
     <loc>https://mousetroke.pages.dev/en/changelog</loc>
     <xhtml:link rel="alternate" hreflang="zh-CN" href="https://mousetroke.pages.dev/changelog"/>
     <xhtml:link rel="alternate" hreflang="en" href="https://mousetroke.pages.dev/en/changelog"/>
+  </url>
+  <url>
+    <loc>https://mousetroke.pages.dev/alternatives/</loc>
+    <lastmod>2026-10-21</lastmod>
+    <xhtml:link rel="alternate" hreflang="zh-CN" href="https://mousetroke.pages.dev/alternatives/"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://mousetroke.pages.dev/en/alternatives/"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://mousetroke.pages.dev/en/alternatives/"/>
+  </url>
+  <url>
+    <loc>https://mousetroke.pages.dev/en/alternatives/</loc>
+    <lastmod>2026-10-21</lastmod>
+    <xhtml:link rel="alternate" hreflang="zh-CN" href="https://mousetroke.pages.dev/alternatives/"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://mousetroke.pages.dev/en/alternatives/"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://mousetroke.pages.dev/en/alternatives/"/>
+  </url>
+  <url>
+    <loc>https://mousetroke.pages.dev/alternatives/strokeit/</loc>
+    <lastmod>2026-10-21</lastmod>
+    <xhtml:link rel="alternate" hreflang="zh-CN" href="https://mousetroke.pages.dev/alternatives/strokeit/"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://mousetroke.pages.dev/en/alternatives/strokeit/"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://mousetroke.pages.dev/en/alternatives/strokeit/"/>
+  </url>
+  <url>
+    <loc>https://mousetroke.pages.dev/en/alternatives/strokeit/</loc>
+    <lastmod>2026-10-21</lastmod>
+    <xhtml:link rel="alternate" hreflang="zh-CN" href="https://mousetroke.pages.dev/alternatives/strokeit/"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://mousetroke.pages.dev/en/alternatives/strokeit/"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://mousetroke.pages.dev/en/alternatives/strokeit/"/>
+  </url>
+  <url>
+    <loc>https://mousetroke.pages.dev/alternatives/strokesplus/</loc>
+    <lastmod>2026-10-21</lastmod>
+    <xhtml:link rel="alternate" hreflang="zh-CN" href="https://mousetroke.pages.dev/alternatives/strokesplus/"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://mousetroke.pages.dev/en/alternatives/strokesplus/"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://mousetroke.pages.dev/en/alternatives/strokesplus/"/>
+  </url>
+  <url>
+    <loc>https://mousetroke.pages.dev/en/alternatives/strokesplus/</loc>
+    <lastmod>2026-10-21</lastmod>
+    <xhtml:link rel="alternate" hreflang="zh-CN" href="https://mousetroke.pages.dev/alternatives/strokesplus/"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://mousetroke.pages.dev/en/alternatives/strokesplus/"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://mousetroke.pages.dev/en/alternatives/strokesplus/"/>
+  </url>
+  <url>
+    <loc>https://mousetroke.pages.dev/alternatives/gesturesign/</loc>
+    <lastmod>2026-10-21</lastmod>
+    <xhtml:link rel="alternate" hreflang="zh-CN" href="https://mousetroke.pages.dev/alternatives/gesturesign/"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://mousetroke.pages.dev/en/alternatives/gesturesign/"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://mousetroke.pages.dev/en/alternatives/gesturesign/"/>
+  </url>
+  <url>
+    <loc>https://mousetroke.pages.dev/en/alternatives/gesturesign/</loc>
+    <lastmod>2026-10-21</lastmod>
+    <xhtml:link rel="alternate" hreflang="zh-CN" href="https://mousetroke.pages.dev/alternatives/gesturesign/"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://mousetroke.pages.dev/en/alternatives/gesturesign/"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://mousetroke.pages.dev/en/alternatives/gesturesign/"/>
+  </url>
+  <url>
+    <loc>https://mousetroke.pages.dev/alternatives/fastgestures/</loc>
+    <lastmod>2026-10-21</lastmod>
+    <xhtml:link rel="alternate" hreflang="zh-CN" href="https://mousetroke.pages.dev/alternatives/fastgestures/"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://mousetroke.pages.dev/en/alternatives/fastgestures/"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://mousetroke.pages.dev/en/alternatives/fastgestures/"/>
+  </url>
+  <url>
+    <loc>https://mousetroke.pages.dev/en/alternatives/fastgestures/</loc>
+    <lastmod>2026-10-21</lastmod>
+    <xhtml:link rel="alternate" hreflang="zh-CN" href="https://mousetroke.pages.dev/alternatives/fastgestures/"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://mousetroke.pages.dev/en/alternatives/fastgestures/"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://mousetroke.pages.dev/en/alternatives/fastgestures/"/>
+  </url>
+  <url>
+    <loc>https://mousetroke.pages.dev/alternatives/mouseinc/</loc>
+    <lastmod>2026-10-21</lastmod>
+    <xhtml:link rel="alternate" hreflang="zh-CN" href="https://mousetroke.pages.dev/alternatives/mouseinc/"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://mousetroke.pages.dev/en/alternatives/mouseinc/"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://mousetroke.pages.dev/en/alternatives/mouseinc/"/>
+  </url>
+  <url>
+    <loc>https://mousetroke.pages.dev/en/alternatives/mouseinc/</loc>
+    <lastmod>2026-10-21</lastmod>
+    <xhtml:link rel="alternate" hreflang="zh-CN" href="https://mousetroke.pages.dev/alternatives/mouseinc/"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://mousetroke.pages.dev/en/alternatives/mouseinc/"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://mousetroke.pages.dev/en/alternatives/mouseinc/"/>
+  </url>
+  <url>
+    <loc>https://mousetroke.pages.dev/alternatives/browser-extensions/</loc>
+    <lastmod>2026-10-21</lastmod>
+    <xhtml:link rel="alternate" hreflang="zh-CN" href="https://mousetroke.pages.dev/alternatives/browser-extensions/"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://mousetroke.pages.dev/en/alternatives/browser-extensions/"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://mousetroke.pages.dev/en/alternatives/browser-extensions/"/>
+  </url>
+  <url>
+    <loc>https://mousetroke.pages.dev/en/alternatives/browser-extensions/</loc>
+    <lastmod>2026-10-21</lastmod>
+    <xhtml:link rel="alternate" hreflang="zh-CN" href="https://mousetroke.pages.dev/alternatives/browser-extensions/"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://mousetroke.pages.dev/en/alternatives/browser-extensions/"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://mousetroke.pages.dev/en/alternatives/browser-extensions/"/>
   </url>
 </urlset>

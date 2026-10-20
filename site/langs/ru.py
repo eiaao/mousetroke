@@ -1,5 +1,6 @@
 # 俄语页面替换表（gen.py 加载；模板 site/en/index.html）
 REPL = base("ru", "ru", "ru_RU", "Язык", "Русский") + [
+    ('<a href="../en/alternatives/">Compare alternatives</a>', '<a href="../en/alternatives/">Сравнить альтернативы</a>'),
     ('<a href="../en/changelog.html">Changelog</a>', '<a href="../en/changelog.html">История изменений</a>'),
     ('<a class="src" href="../en/changelog.html">What’s new</a>', '<a class="src" href="../en/changelog.html">Что нового</a>'),
     ('<meta property="og:title" content="Mousetroke: hold right-click, draw a line">',

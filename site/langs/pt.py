@@ -1,5 +1,6 @@
 # 巴西葡语页面替换表（gen.py 加载；模板 site/en/index.html）
 REPL = base("pt", "pt-BR", "pt_BR", "Idioma", "Português (Brasil)") + [
+    ('<a href="../en/alternatives/">Compare alternatives</a>', '<a href="../en/alternatives/">Comparar alternativas</a>'),
     ('<a href="../en/changelog.html">Changelog</a>', '<a href="../en/changelog.html">Histórico de versões</a>'),
     ('<a class="src" href="../en/changelog.html">What’s new</a>', '<a class="src" href="../en/changelog.html">Novidades</a>'),
     ('<meta property="og:title" content="Mousetroke: hold right-click, draw a line">',

@@ -28,6 +28,10 @@
       const d = $(".split-more", split);
       let timer = 0;
       d.addEventListener("pointerenter", () => { clearTimeout(timer); d.open = true; });
+      // 悬停已展开时，鼠标再点击箭头应保持展开；键盘仍保留原生切换。
+      $("summary", d).addEventListener("click", (e) => {
+        if (e.detail > 0) { e.preventDefault(); d.open = true; }
+      });
       split.addEventListener("pointerenter", () => clearTimeout(timer));
       split.addEventListener("pointerleave", () => { timer = setTimeout(() => { d.open = false; }, 200); });
     });
@@ -49,6 +53,14 @@
   $$(".langdrop a[hreflang]").forEach((a) => a.addEventListener("click", () => {
     document.cookie = `mt_lang=${encodeURIComponent(a.hreflang)}; path=/; max-age=31536000; SameSite=Lax`;
   }));
+  // 对比页共用系统下载和语言选择；无需启动首页的画板与章节演示。
+  if (document.body.classList.contains("alternatives-page")) {
+    const top = $(".top");
+    const updateHeader = () => top?.classList.toggle("scrolled", scrollY > 8);
+    addEventListener("scroll", updateHeader, { passive: true });
+    updateHeader();
+    return;
+  }
   // 锚点滚动由脚本接管（自定义缓动），关掉 CSS 的 smooth 避免逐帧叠加
   document.documentElement.style.scrollBehavior = "auto";
 

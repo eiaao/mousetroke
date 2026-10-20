@@ -1,5 +1,6 @@
 # 西语页面替换表，与英文模板逐项匹配。
 REPL = base("es", "es", "es_ES", "Idioma", "español") + [
+    ('<a href="../en/alternatives/">Compare alternatives</a>', '<a href="../en/alternatives/">Comparar alternativas</a>'),
     ('<a href="../en/changelog.html">Changelog</a>', '<a href="../en/changelog.html">Registro de cambios</a>'),
     ('<a class="src" href="../en/changelog.html">What’s new</a>', '<a class="src" href="../en/changelog.html">Novedades</a>'),
     ('<meta property="og:title" content="Mousetroke: hold right-click, draw a line">',

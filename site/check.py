@@ -1,9 +1,14 @@
 #!/usr/bin/env python3
 """校验 10 个语言页面：结构与英文模板一致、JSON 合法、元数据自指、无英文残留。"""
 import json, re, sys, pathlib
+sys.dont_write_bytecode = True
 from gen_changelog import render as render_changelog
 from gen import faq_entities
 from html.parser import HTMLParser
+from urllib.parse import unquote, urljoin, urlsplit
+import xml.etree.ElementTree as ET
+from gen_alternatives import render as render_alternatives, directory, ORIGIN
+from alternatives_data import CHECKED, PAGES as ALTERNATIVES
 ROOT = pathlib.Path(__file__).resolve().parent
 PAGES = {"zh-CN": "index.html", "en": "en/index.html", "es": "es/index.html", "fr": "fr/index.html",
          "de": "de/index.html", "ja": "ja/index.html", "pt-BR": "pt/index.html", "ru": "ru/index.html",
@@ -108,6 +113,9 @@ for lang, rel in PAGES.items():
     target = "changelog.html" if lang == "zh-CN" else "../en/changelog.html"
     if len(re.findall(rf'<a[^>]*href="{re.escape(target)}"', s)) != 2:
         errors.append(f"{lang}: expected download and footer changelog links")
+    alternative_target = "alternatives/" if lang == "zh-CN" else "../en/alternatives/"
+    if f'href="{alternative_target}"' not in s:
+        errors.append(f"{lang}: missing alternatives footer link")
     # FAQ 的 JSON-LD 包含两个平台；每个可见分支都必须原样覆盖。
     visible_faq = faq_entities(s)
     schema_faq = next((item.get('mainEntity') for item in (ld or {}).get('@graph', [])
@@ -125,5 +133,162 @@ try:
             errors.append(f"{path.name}: missing from sitemap")
 except (ValueError, OSError) as error:
     errors.append(f"changelog: {error}")
-print("\n".join(errors) if errors else f"OK: {len(PAGES)} pages consistent")
+
+
+class PageMetadata(HTMLParser):
+    """收集实际属性，避免校验依赖属性顺序或 HTML 的缩进。"""
+    def __init__(self, source):
+        super().__init__(convert_charrefs=True)
+        self.tags = []
+        self.feed(source)
+
+    def handle_starttag(self, tag, attrs):
+        self.tags.append((tag, dict(attrs)))
+
+    handle_startendtag = handle_starttag
+
+    def attrs(self, tag, **match):
+        return [attrs for name, attrs in self.tags if name == tag and all(attrs.get(k) == v for k, v in match.items())]
+
+
+def public_url(path):
+    rel = path.relative_to(ROOT).as_posix()
+    return ORIGIN + "/" + (rel.removesuffix("index.html") if rel.endswith("index.html") else rel.removesuffix(".html"))
+
+
+def resolve_url(url):
+    """静态目录、实际文件及托管平台的无后缀 HTML 路径都要存在。"""
+    path = ROOT / unquote(urlsplit(url).path).lstrip("/")
+    if path.is_dir():
+        path /= "index.html"
+    elif not path.suffix and path.with_suffix(".html").is_file():
+        path = path.with_suffix(".html")
+    return path
+
+
+# 禁用名称拆成字符码，保证校验器自身和字节码也不含目标串。
+forbidden = bytes([119, 103, 101, 115, 116, 117, 114, 101, 115])
+for path in ROOT.rglob("*"):
+    if path.is_file() and forbidden in path.read_bytes().lower():
+        errors.append(f"{path.relative_to(ROOT)}: forbidden product name")
+
+html_pages = sorted(path for path in ROOT.rglob("*.html") if path.name != "alternatives_template.html")
+metadata = {}
+titles, descriptions = {}, {}
+for path in html_pages:
+    rel = path.relative_to(ROOT).as_posix()
+    source = path.read_text(encoding="utf-8")
+    parsed = PageMetadata(source)
+    metadata[public_url(path)] = parsed
+    title = re.search(r"<title>(.*?)</title>", source, re.S)
+    description = parsed.attrs("meta", name="description")
+    for label, value, seen in [("title", title[1].strip() if title else "", titles),
+                               ("description", description[0].get("content", "") if len(description) == 1 else "", descriptions)]:
+        if not value and path.name == "404.html" and label == "description":
+            continue
+        if not value:
+            errors.append(f"{rel}: missing or repeated {label}")
+        elif value in seen:
+            errors.append(f"{rel}: duplicate {label} with {seen[value]}")
+        seen[value] = rel
+    if path.name != "404.html":
+        if parsed.attrs("link", rel="canonical") != [{"rel": "canonical", "href": public_url(path)}]:
+            errors.append(f"{rel}: canonical is not the public self URL")
+    for raw in re.findall(r'<script\b[^>]*type="application/ld\+json"[^>]*>(.*?)</script>', source, re.S):
+        try:
+            json.loads(raw)
+        except ValueError as error:
+            errors.append(f"{rel}: invalid JSON-LD: {error}")
+    for tag, attrs in parsed.tags:
+        if tag == "img":
+            if not attrs.get("alt", "").strip() or not all(attrs.get(key, "").isdigit() and int(attrs[key]) > 0 for key in ("width", "height")):
+                errors.append(f"{rel}: image needs descriptive alt and positive width/height")
+        for attr in (["href"] if tag in ("a", "link") else ["src"] if tag in ("img", "script") else []):
+            href = attrs.get(attr, "")
+            absolute = urljoin(public_url(path), href)
+            parts = urlsplit(absolute)
+            if parts.scheme not in ("http", "https") or parts.netloc != urlsplit(ORIGIN).netloc:
+                continue
+            target = resolve_url(absolute)
+            if not target.is_file() or not target.resolve().is_relative_to(ROOT):
+                errors.append(f"{rel}: unresolved internal {attr}: {href}")
+            elif parts.fragment and target.suffix == ".html":
+                # 404 的首页片段指向生成页，其余静态链接也要能定位。
+                target_source = target.read_text(encoding="utf-8")
+                if not re.search(r'\bid=[\"\']' + re.escape(unquote(parts.fragment)) + r'[\"\']', target_source):
+                    errors.append(f"{rel}: missing fragment target: {href}")
+
+try:
+    generated = render_alternatives()
+    for path, expected in generated.items():
+        rel = path.relative_to(ROOT).as_posix()
+        if not path.exists():
+            errors.append(f"{rel}: stale; run python site/gen_alternatives.py")
+            continue
+        source = path.read_text(encoding="utf-8")
+        if source != expected:
+            errors.append(f"{rel}: stale; run python site/gen_alternatives.py")
+        parsed = metadata[public_url(path)]
+        lang = "en" if rel.startswith("en/") else "zh-CN"
+        slug = path.parent.name if path.parent.name != "alternatives" else ""
+        want = {key: ORIGIN + directory("en" if key == "x-default" else key, slug) for key in ("zh-CN", "en", "x-default")}
+        alternates = parsed.attrs("link", rel="alternate")
+        if len(alternates) != 3 or {a.get("hreflang"): a.get("href") for a in alternates} != want:
+            errors.append(f"{rel}: hreflang pair or x-default incorrect")
+        for key in ("zh-CN", "en"):
+            other = metadata.get(want[key])
+            if not other or not any(a.get("hreflang") == lang and a.get("href") == public_url(path) for a in other.attrs("link", rel="alternate")):
+                errors.append(f"{rel}: non-reciprocal hreflang {key}")
+        menus = re.findall(r'<div class="langdrop">(.*?)</div>', source, re.S)
+        if len(menus) != 1 or len(PageMetadata(menus[0]).attrs("a")) != 2:
+            errors.append(f"{rel}: expected a two-language menu")
+        else:
+            links = PageMetadata(menus[0]).attrs("a")
+            if {a.get("hreflang"): urljoin(public_url(path), a.get("href", "")) for a in links} != {k: want[k] for k in ("zh-CN", "en")}:
+                errors.append(f"{rel}: language switch does not target counterpart")
+        schema = json.loads(re.search(r'<script type="application/ld\+json">(.*?)</script>', source, re.S)[1])
+        graph = {item["@type"]: item for item in schema["@graph"]}
+        visible = faq_entities(source)
+        if len(visible) < 3 or graph.get("FAQPage", {}).get("mainEntity") != visible:
+            errors.append(f"{rel}: visible FAQ differs from JSON-LD")
+        webpage = graph.get("WebPage", {})
+        if len(webpage.get("name", "")) > 60 or not 150 <= len(webpage.get("description", "")) <= 160:
+            errors.append(f"{rel}: title exceeds 60 characters or description is outside 150–160")
+        if webpage.get("dateModified") != CHECKED or webpage.get("inLanguage") != lang or webpage.get("url") != public_url(path) or not webpage.get("isPartOf"):
+            errors.append(f"{rel}: incorrect WebPage metadata")
+        if "BreadcrumbList" not in graph or "AggregateRating" in source or '"Review"' in source:
+            errors.append(f"{rel}: missing breadcrumb or unsupported review schema")
+        for key, expected_value in [("og:url", public_url(path)), ("og:title", webpage["name"]), ("og:description", webpage["description"]), ("og:image", ORIGIN + ("/og-en.png" if lang == "en" else "/og.png"))]:
+            if [item.get("content") for item in parsed.attrs("meta", property=key)] != [expected_value]:
+                errors.append(f"{rel}: incorrect {key}")
+        defaults = PlatformDefaults()
+        defaults.feed(source)
+        errors.extend(f"{rel}: {problem}" for problem in defaults.problems)
+        if defaults.counts != {"os-win": 4, "os-mac": 4}:
+            errors.append(f"{rel}: expected hero and bottom download split buttons")
+        if not parsed.attrs("time", datetime=CHECKED):
+            errors.append(f"{rel}: missing visible checked date")
+except (ValueError, OSError, KeyError, AttributeError) as error:
+    errors.append(f"alternatives: {error}")
+
+try:
+    ns = {"s": "http://www.sitemaps.org/schemas/sitemap/0.9", "x": "http://www.w3.org/1999/xhtml"}
+    tree = ET.parse(ROOT / "sitemap.xml")
+    entries = tree.findall("s:url", ns)
+    locations = [entry.findtext("s:loc", namespaces=ns) for entry in entries]
+    expected_urls = {public_url(path) for path in html_pages if path.name != "404.html"}
+    if len(set(locations)) != len(locations) or set(locations) != expected_urls:
+        errors.append(f"sitemap: pages differ; missing={sorted(expected_urls - set(locations))}, extra={sorted(set(locations) - expected_urls)}")
+    for entry in entries:
+        url = entry.findtext("s:loc", namespaces=ns)
+        if not resolve_url(url).is_file():
+            errors.append(f"sitemap: nonexistent URL {url}")
+        if "/alternatives/" in url:
+            parsed = metadata.get(url)
+            links = {a.get("hreflang"): a.get("href") for a in entry.findall("x:link", ns)}
+            if entry.findtext("s:lastmod", namespaces=ns) != CHECKED or not parsed or links != {a["hreflang"]: a["href"] for a in parsed.attrs("link", rel="alternate")}:
+                errors.append(f"sitemap: incorrect alternatives date or hreflang {url}")
+except (ET.ParseError, OSError) as error:
+    errors.append(f"sitemap: {error}")
+print("\n".join(errors) if errors else f"OK: {len(PAGES)} home pages, {len(ALTERNATIVES) * 2 + 2} alternatives pages, changelogs, links, images and sitemap consistent")
 sys.exit(1 if errors else 0)

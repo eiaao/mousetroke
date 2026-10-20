@@ -1,0 +1,77 @@
+<!doctype html>
+<html lang="$lang">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>$title</title>
+  <meta name="description" content="$description">
+  <link rel="canonical" href="$canonical">
+  <link rel="alternate" hreflang="zh-CN" href="$zh_url">
+  <link rel="alternate" hreflang="en" href="$en_url">
+  <link rel="alternate" hreflang="x-default" href="$en_url">
+  <link rel="icon" type="image/svg+xml" href="${assets}icon.svg">
+  <link rel="stylesheet" href="${assets}site.css">
+  <meta name="theme-color" content="#e9edf2" media="(prefers-color-scheme: light)">
+  <meta name="theme-color" content="#0f141c" media="(prefers-color-scheme: dark)">
+  <meta property="og:type" content="website">
+  <meta property="og:site_name" content="Mousetroke">
+  <meta property="og:locale" content="$locale">
+  <meta property="og:title" content="$title">
+  <meta property="og:description" content="$description">
+  <meta property="og:url" content="$canonical">
+  <meta property="og:image" content="$og_image">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="$title">
+  <meta name="twitter:description" content="$description">
+  <meta name="twitter:image" content="$og_image">
+  <script type="application/ld+json">$structured_data</script>
+  <script src="${assets}site.js" defer></script>
+</head>
+<body class="alternatives-page">
+<a class="skip" href="#main">$skip</a>
+<header class="top">
+  <div class="wrap">
+    $brand
+    <a class="gh" href="https://github.com/eiaao/mousetroke">GitHub</a>
+    <details class="langmenu">
+      <summary aria-label="$language_label">$language ▾</summary>
+      <div class="langdrop">$languages</div>
+    </details>
+  </div>
+</header>
+<main id="main" class="wrap alt-main">
+  <nav class="alt-breadcrumb" aria-label="$breadcrumb_label">$breadcrumbs</nav>
+  <section class="alt-hero" aria-labelledby="h-title">
+    <p class="alt-eyebrow">Mousetroke · $guide_label</p>
+    <h1 id="h-title">$h1</h1>
+    <p class="alt-lede">$intro</p>
+    <div class="cta">$download <a class="alt-text-link" href="$secondary_url">$secondary_label →</a></div>
+    <p class="alt-meta">$meta</p>
+  </section>
+  $content
+  <section class="alt-section" aria-labelledby="h-faq">
+    <h2 id="h-faq">$faq_label</h2>
+    <div class="faq">$faq</div>
+  </section>
+  <section id="download" class="alt-bottom" aria-labelledby="h-download">
+    <h2 id="h-download">$bottom_title</h2>
+    <p>$bottom_text</p>
+    <div class="cta">$download</div>
+    <p class="alt-note">$first_open</p>
+  </section>
+  <section class="alt-section alt-sources" aria-labelledby="h-sources">
+    <h2 id="h-sources">$sources_label</h2>
+    <p>$checked_label <time datetime="$checked">$checked</time> · $source_note</p>
+    <ol>$sources</ol>
+  </section>
+</main>
+<footer>
+  <div class="wrap">
+    <span>Mousetroke · $license_label</span>
+    <nav aria-label="$footer_label"><a href="$home_url">$home_label</a><a href="$hub_url">$hub_label</a><a href="https://github.com/eiaao/mousetroke">GitHub</a><a href="$llms_url">llms.txt</a></nav>
+  </div>
+</footer>
+</body>
+</html>

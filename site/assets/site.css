@@ -608,3 +608,67 @@ body { position: relative; }
 .get .split { justify-content: flex-end; }
 .get .split-menu { text-align: left; }
 @media (max-width: 760px) { .get .split-menu { right: auto; left: 0; } }
+
+/* 对比页沿用公共色彩、页头、下载与 FAQ；表格只在自己的容器内滚动。 */
+.alternatives-page .top .gh { margin-left: auto; }
+.alternatives-page .top .langmenu { margin-left: 0; }
+.alt-main { padding-top: 24px; padding-bottom: 24px; }
+.alt-breadcrumb { display: flex; flex-wrap: wrap; gap: 4px 10px; font-size: 14px; color: var(--muted); }
+.alt-breadcrumb a, .alt-text-link, .alt-related a, .alt-scenarios a { text-underline-offset: 4px; }
+.alt-hero { padding: clamp(32px, 6vw, 72px) 0 24px; }
+.alt-eyebrow { color: var(--trail-ink); font-size: 14px; font-weight: 600; margin: 0 0 16px; }
+.alt-hero h1 { max-width: 20ch; font-size: clamp(34px, 4.5vw, 58px); line-height: 1.14; letter-spacing: -0.035em; margin: 0 0 24px; overflow-wrap: break-word; }
+:lang(zh-CN) .alt-hero h1 { max-width: 19em; }
+.alt-lede { max-width: 45em; font-size: 20px; color: var(--ink-2); margin: 0 0 28px; }
+.alt-meta, .alt-note { font-size: 14px; color: var(--muted); }
+.alt-meta { margin-top: 20px; }
+.alt-hero .cta, .alt-bottom .cta { position: relative; z-index: 6; }
+.alt-section { margin-top: clamp(40px, 6vw, 72px); }
+.alt-section h2, .alt-bottom h2 { font-size: clamp(25px, 3vw, 36px); line-height: 1.25; letter-spacing: -0.025em; margin: 0 0 20px; }
+.alt-section > p { max-width: 52em; color: var(--ink-2); }
+.alt-table-scroll { overflow-x: auto; border: 1px solid var(--rule); border-radius: 14px; background: var(--surface); }
+.alt-table-scroll table { border-collapse: collapse; width: 100%; font-size: 15px; line-height: 1.55; }
+.alt-table-scroll caption { text-align: left; padding: 16px 20px; font-size: 14px; color: var(--muted); border-bottom: 1px solid var(--rule); }
+.alt-table-scroll th, .alt-table-scroll td { padding: 16px 18px; border-bottom: 1px solid var(--rule); text-align: left; vertical-align: top; min-width: 200px; overflow-wrap: anywhere; }
+.alt-table-scroll th:first-child { min-width: 150px; }
+.alt-table-scroll thead { background: var(--trail-soft); }
+.alt-table-scroll tbody th { color: var(--ink-2); font-weight: 600; }
+.alt-table-scroll tbody tr:last-child > * { border-bottom: 0; }
+.alt-table-scroll sup { margin-left: 3px; font-size: 11px; color: var(--trail-ink); }
+.alt-choices, .alt-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 20px; }
+.alt-choices > div, .alt-card { padding: 24px; border: 1px solid var(--rule); border-radius: 14px; }
+.alt-choices h3, .alt-card h3, .alt-scenarios h3 { font-size: 19px; line-height: 1.4; margin: 0 0 12px; }
+.alt-choices p, .alt-card p, .alt-scenarios p { margin: 0; color: var(--ink-2); }
+.alt-card { background: var(--surface); text-decoration: none; display: flex; flex-direction: column; align-items: start; gap: 10px; }
+.alt-card h3 { color: var(--trail-ink); margin: 0; overflow-wrap: anywhere; }
+.alt-card span { color: var(--trail-ink); font-size: 14px; font-weight: 600; margin-top: auto; padding-top: 10px; }
+.alt-card:hover { border-color: var(--trail-ink); }
+.alt-scenarios { list-style: none; padding: 0; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 28px 40px; counter-reset: scenario; }
+.alt-scenarios li { border-top: 1px solid var(--rule); padding-top: 20px; counter-increment: scenario; }
+.alt-scenarios h3::before { content: "0" counter(scenario) " / "; color: var(--trail-ink); font-size: 14px; }
+.alt-scenarios p { margin-bottom: 12px; }
+.alt-scenarios a { font-size: 15px; }
+.alt-screenshot { margin: 48px 0 0; max-width: 920px; }
+.alt-screenshot img { width: 100%; height: auto; border-radius: 14px; border: 1px solid var(--rule); }
+.alt-screenshot figcaption { margin-top: 12px; font-size: 14px; color: var(--muted); }
+.alt-related { padding-left: 22px; }
+.alt-related li { margin: 8px 0; }
+.alt-bottom { padding: clamp(24px, 4vw, 44px); margin-top: 64px; background: var(--surface); border: 1px solid var(--rule); border-radius: 16px; }
+.alt-bottom p { max-width: 48em; }
+.alt-bottom .alt-note { margin-bottom: 0; }
+.alt-sources { font-size: 14px; color: var(--muted); }
+.alt-sources h2 { font-size: 23px; }
+.alt-sources ol { padding-left: 24px; columns: 2; column-gap: 40px; }
+.alt-sources li { padding: 5px 0; break-inside: avoid; overflow-wrap: anywhere; scroll-margin-top: 80px; }
+.alt-sources a { text-underline-offset: 3px; }
+@media (max-width: 600px) {
+  .alt-choices, .alt-grid, .alt-scenarios { grid-template-columns: 1fr; }
+  .alt-sources ol { columns: 1; }
+  .alt-choices > div, .alt-card { padding: 20px; }
+  .alt-lede { font-size: 18px; }
+  .alt-main { --gutter: 16px; }
+  .alt-bottom { padding: 24px 16px; }
+  .alternatives-page .top .wrap { gap: 8px; }
+  .alternatives-page .langmenu { margin-left: auto; }
+  .alt-bottom .btn { padding: 14px 12px; gap: 8px; font-size: 15px; }
+}

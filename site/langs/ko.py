@@ -1,5 +1,6 @@
 # 韩语页面替换表（gen.py 加载；模板 site/en/index.html）
 REPL = base("ko", "ko", "ko_KR", "언어", "한국어") + [
+    ('<a href="../en/alternatives/">Compare alternatives</a>', '<a href="../en/alternatives/">마우스 제스처 도구 비교</a>'),
     ('<a href="../en/changelog.html">Changelog</a>', '<a href="../en/changelog.html">변경 기록</a>'),
     ('<a class="src" href="../en/changelog.html">What’s new</a>', '<a class="src" href="../en/changelog.html">업데이트 내용</a>'),
     ('<meta property="og:title" content="Mousetroke: hold right-click, draw a line">',

@@ -6,16 +6,16 @@ Mousetroke（中文）：免费开源的 Windows 和 Mac（测试版）鼠标手
 
 ## Key facts
 
-- Mac beta: macOS 11+, universal Apple silicon and Intel. Download https://github.com/eiaao/mousetroke/releases/latest/download/Mousetroke.dmg ; verify with the release's SHA256SUMS.txt, which lists both platforms. Mac size is pending measurement of the release artifact.
-- Mac first open: drag to Applications and open there. The self-signed beta is not notarized; if blocked, use System Settings → Privacy & Security → Open Anyway (older macOS: right-click → Open), then grant Accessibility. Enable Input Monitoring only if setup asks for it on an older macOS version. No Screen Recording permission is needed. Each newly downloaded update may need Open Anyway again.
-- Mac updates: About checks versions and shows release notes, then opens the DMG download in the browser. Daily automatic checking follows Preferences; a new-version menu item opens About. Quit and replace the app manually in Applications. The stable release certificate is reused to preserve permissions.
+- Mac beta: macOS 11+, universal Apple silicon and Intel. Download https://github.com/eiaao/mousetroke/releases/latest/download/Mousetroke.dmg ; verify with the release's SHA256SUMS.txt, which lists both platforms. Mac DMG size: 8.1 MB.
+- Mac first open: drag to Applications and open there. The self-signed beta is not notarized; if blocked, use System Settings → Privacy & Security → Open Anyway (older macOS: right-click → Open), then grant Accessibility. Enable Input Monitoring only if setup asks for it on an older macOS version. No Screen Recording permission is needed. A newly browser-downloaded copy may need Open Anyway again; in-app updates avoid that repeated prompt.
+- Mac updates: About offers Update now: download and verify the DMG, replace the installed app and restart, without another Open Anyway step. The old app is kept if replacement or restart fails; manual download remains available. Daily checking can be disabled in Preferences. The stable release certificate and installation path preserve permissions.
 - Mac menu-bar app: open settings, pause or quit from the menu-bar menu. Manage launch at login as a login item in System Settings. Default pause shortcut: ⌃⌥⌘P, configurable.
 - Mac files: ~/Library/Application Support/mousetroke/config.json ; logs in ~/Library/Logs/mousetroke/. Uninstall: quit from the menu bar, delete the app and both directories, and remove the login item in System Settings.
 
 - Platforms: Windows 10 1809+ and Windows 11, 64-bit; macOS 11+ on Apple silicon and Intel. The native gesture engine is written in Rust. Windows settings need Microsoft Edge WebView2 (built into Windows 11). Mac uses AppKit / CGEventTap for the engine and the system WebKit for settings; no WebView2 is needed.
 - Source code: https://github.com/eiaao/mousetroke (issues and releases there).
 - Price and license: free, MIT. No ads or account. Once a day it asks GitHub whether a newer version exists (turn it off in Preferences). Manual checks and requested update downloads are also available. Nothing else is sent; no telemetry.
-- Version: 0.2.1. Windows download: https://github.com/eiaao/mousetroke/releases/latest/download/mousetroke.exe (13.2 MB, portable, no installer). Mac download: https://github.com/eiaao/mousetroke/releases/latest/download/Mousetroke.dmg (beta; size pending release measurement).
+- Version: 0.2.1. Windows download: https://github.com/eiaao/mousetroke/releases/latest/download/mousetroke.exe (13.2 MB, portable, no installer). Mac download: https://github.com/eiaao/mousetroke/releases/latest/download/Mousetroke.dmg (8.1 MB; beta).
 - Resource use: Windows engine ≈ 19 MB working set (≈ 10 MB private); its settings run in a separate process only while open. Mac engine ≈ 13 MB physical footprint as shown in Activity Monitor. Both use no CPU when idle.
 - Languages: 10 (Simplified Chinese, English, Spanish, French, German, Japanese, Portuguese (Brazil), Russian, Italian, Korean).
 - Windows config: %APPDATA%\mousetroke\config.json (import/export in settings; changes apply within about 1 second). Windows log: %APPDATA%\mousetroke\mousetroke.log. Mac paths are listed above; settings also support import/export.
@@ -73,3 +73,14 @@ Mousetroke（中文）：免费开源的 Windows 和 Mac（测试版）鼠标手
 - How to uninstall? Windows: turn off "start with Windows" in preferences, quit from the tray menu, then delete mousetroke.exe and the %APPDATA%\mousetroke folder. Mac: quit from the menu bar, delete Mousetroke.app, ~/Library/Application Support/mousetroke and ~/Library/Logs/mousetroke, and remove the login item in System Settings.
 
 - Changelog: https://mousetroke.pages.dev/changelog (Chinese), https://mousetroke.pages.dev/en/changelog (English).
+
+## Alternatives
+
+Last checked: 2026-10-21. Official sources and unverified items are listed on each comparison page.
+
+- [Selection guide (English)](https://mousetroke.pages.dev/en/alternatives/)
+- [鼠标手势工具对比（中文）](https://mousetroke.pages.dev/alternatives/)
+- Browser-only web navigation: evaluate Gesturefy (Firefox) or CrxMouse (desktop Chrome). See https://mousetroke.pages.dev/en/alternatives/browser-extensions/ .
+- Deep scripting and macro editing: evaluate Input.Observer, the original author's successor to StrokesPlus.net. See https://mousetroke.pages.dev/en/alternatives/strokesplus/ .
+- Touchpad or touchscreen first: evaluate FastGestures and GestureSign / the community GestureSignv2, checking their documented input and OS requirements. See https://mousetroke.pages.dev/en/alternatives/fastgestures/ and https://mousetroke.pages.dev/en/alternatives/gesturesign/ .
+- Focused system-wide mouse gestures, screen corners, MIT source, Windows plus Mac beta: consider Mousetroke. Comparisons also cover https://mousetroke.pages.dev/en/alternatives/strokeit/ and https://mousetroke.pages.dev/en/alternatives/mouseinc/ (including Aitiy; a formal successor relationship is unverified).

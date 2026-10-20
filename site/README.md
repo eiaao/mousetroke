@@ -9,7 +9,9 @@ changelog.html / en/changelog.html  由 gen_changelog.py 从根目录 CHANGELOG.
 es fr de ja pt ru it ko/index.html   由 gen.py 从英文页生成，不要手改
 404.html            中英双语错误页，兼容主站与镜像的路径
 gen.py langs/*.py   生成器与各语言替换表（原文行 → 译文行）
-check.py            校验 10 个页面：结构与英文页一致、JSON 合法、canonical/hreflang/语言菜单自指
+alternatives/ / en/alternatives/  中英选择指南与六组工具对比（共 14 页）
+gen_alternatives.py / alternatives_data.py / alternatives_template.html  对比页生成器、事实/双语文案、共用模板
+check.py            校验首页、对比页、日志页、元数据、链接、图片、FAQ 与 sitemap；扫描 site/ 所有文件的禁用名称
 _worker.js          Cloudflare 入口：访问首页 / 时按 mt_lang cookie（语言菜单点选写入）或浏览器语言 302 到对应语言版本；GitHub Pages 部署时删除
 assets/site.css     10 种语言共用的样式
 assets/site.js      共用交互与系统检测（文案都在 HTML 里，脚本只管行为）
@@ -40,7 +42,7 @@ robots.txt sitemap.xml
 
   替换时域名末尾不带 `/`，保留原有路径；每种语言必须显示 `0 missed`，校验必须通过。
   新域名需先在托管平台配置好，GitHub Pages 镜像地址保留不变。
-- 产品页面内链接都是相对路径，部署在根目录或子目录、或直接双击打开 HTML 都能正常显示。
+- 产品页面内链接使用相对路径，部署在根目录或子目录都能正常显示；对比页的目录链接请通过本地 HTTP 服务预览。
   `404.html` 使用内联最小样式，并按请求路径是否以 `/mousetroke/` 开头设置首页和图标的基准路径，兼容两个站点。
 
 ## 改内容时注意
@@ -50,6 +52,26 @@ robots.txt sitemap.xml
 - 语言菜单（页头 `details.langmenu`）和页脚语言列表在 10 个页面里都有，新增语言时 hreflang 块、`sitemap.xml`、两个列表都要加。
 - 手势表每行的 `data-p` 是手势折线编码（与引擎配置相同），`data-act` 决定首屏演示里模拟浏览器的反应；带 `data-mod`/`data-btn` 的行只展示、不参与演示识别。
 - 产品数据（内存、大小、默认手势、边角规则）要和真实程序一致，改了程序行为记得回来改这里。
+
+## 工具对比页
+
+- `/alternatives/` 和 `/en/alternatives/` 是选择指南；各自下设 `strokeit/`、`strokesplus/`、`gesturesign/`、`fastgestures/`、`mouseinc/`、`browser-extensions/`。每个目录提交 `index.html`，页面互链使用带尾斜杠的相对目录 URL，兼容镜像子路径。
+- 只维护 `alternatives_data.py` 中的双语内容和逐项官方来源，以及 `alternatives_template.html`。不要直接改生成页。新增事实必须打开官方页面核实；未知项留空，生成器显示“未验证 / Unverified”。不收录竞品图像、热度指标或资源占用。
+- `python site/gen.py` 会生成首页、日志与全部对比页；也可单独运行 `python site/gen_alternatives.py`。后者同步 sitemap 的新增条目及本次有改动的首页日期；既有日志日期保留。两者均不在构建时联网。
+- FAQ 先生成可见 HTML，再通过首页共用的 `faq_entities` 提取同一份文字形成 JSON-LD。每页包含 WebPage、FAQPage、BreadcrumbList、官方来源和核查日期。中英 hreflang 互指，x-default 指向对应英文页；canonical 保持主站。
+- 站点检查会比较生成结果、元数据唯一性、自指 canonical、双向语言链接、FAQ 一致性、所有 JSON-LD、内部链接及片段、图片尺寸属性、sitemap 完整性和禁用名称。生成器关闭字节码写入，避免本机路径混入网站文件。部署工作流清理生成器、数据、模板与缓存。
+- 两张设置截图从 `docs/images/settings-zh.png` / `settings-en.png` 无损转为 WebP（2360 × 1520，分别 245698 / 237014 字节），保存在 `assets/`。更换图片时同步实际尺寸、描述性 alt 和 300 KB 限额。
+- 十种首页的页脚都有对比入口；中文进入中文指南，其他语言进入英文指南，八种翻译由 `langs/*.py` 维护。`_worker.js` 仍只按首页入口处理语言跳转，对比目录保持静态。
+
+```powershell
+cd site
+python gen.py
+python gen_alternatives.py
+python check.py
+node --check assets/site.js
+```
+
+浏览器验收使用仓库外临时站点副本，显式运行 `python -m http.server <port> --directory <copy>`。用 `tools/uitest` 的 puppeteer-core 和 Edge 检查中英指南、StrokeIt 与浏览器扩展页，覆盖 1440/390 宽、明暗主题及 Windows/Mac；在脚本加载前覆盖 platform、userAgentData 和 maxTouchPoints（两系统均设为 0）。检查溢出、布局和下载菜单，结束后只停止自己启动的服务器并清理临时文件。
 
 ## 平台文案与下载
 
@@ -69,7 +91,7 @@ Windows 资源示意图保留实测 WebView2 数据，只在 Windows 显示；Ma
 
 下载区同时提供 Windows exe 与 `releases/latest/download/Mousetroke.dmg`。Mac 最低 11，通用包包含 Apple silicon / Intel；首次打开的共用译文在 `langs/*.py` 的 `MAC` 中维护，其他平台文案在 `REPL` 中维护。卸载已合并为一个 FAQ，JSON-LD 自动包含两平台的完整回答。
 
-`@@MAC_DMG_SIZE@@` 是尚未测量的 DMG 大小，不能估计。审查期间运行 `python site/check.py --allow-mac-size-placeholder`；发布者测量最终签名 DMG 后，在中文页、英文模板和 `gen.py`（如有大小引用）填入实际大小，再运行 `python site/gen.py`、`python site/check.py`。默认检查必须通过后才能部署站点，部署工作流不允许占位符。
+v0.2.1 的 Mac DMG 已测量为 8.1 MB。发新版时核对实际产物，再同步中文页、英文模板、对比数据与 `llms.txt`。运行 `python site/gen.py`、`python site/check.py`，默认严格检查必须通过后才能部署。
 
 ## 本地预览与检查
 
