@@ -1,16 +1,10 @@
 //! 系统 curl 只获取 GitHub API；下载交给浏览器，不在应用内安装。
 use std::io::Read;
-use std::path::{Path, PathBuf};
+use std::path::PathBuf;
 use std::process::{Command, Stdio};
-use std::sync::{
-    atomic::{AtomicBool, Ordering},
-    mpsc, Mutex, OnceLock,
-};
-use std::time::Duration;
+use std::sync::mpsc;
 
-use mousetroke_core::update::{
-    now, release_notes, select_release_for, version, Source, UpdateState, API,
-};
+use mousetroke_core::update::{select_release_for, Automatic, Source, API};
 pub use mousetroke_core::update::{Check, Error, RELEASES_URL};
 
 const CAP: usize = 1024 * 1024;
@@ -74,18 +68,12 @@ fn fetch_api(url: &str) -> Result<Vec<u8>, Error> {
 pub fn check() -> Result<Check, Error> {
     let _ = crate::log::init();
     crate::log!("检查更新：当前 {}", env!("CARGO_PKG_VERSION"));
-    let result = (|| {
-        let release =
-            select_release_for(&fetch_api(API)?, &Source::production(), "Mousetroke.dmg")?;
-        Ok(Check {
-            current: env!("CARGO_PKG_VERSION"),
-            newer: version(&release.latest) > version(env!("CARGO_PKG_VERSION")),
-            latest: release.latest,
-            notes: release_notes(&release.body, mousetroke_core::i18n::lang().tag()),
-            notes_url: release.notes_url,
-            download_url: Some(release.exe),
-        })
-    })();
+    let result = fetch_api(API)
+        .and_then(|data| select_release_for(&data, &Source::production(), "Mousetroke.dmg"))
+        .map(|release| {
+            let dmg = release.exe.clone();
+            Check::from_release(release, Some(dmg))
+        });
     match &result {
         Ok(value) => crate::log!("检查更新成功：最新 {}", value.latest),
         Err(_) => crate::log!("检查更新失败"),
@@ -98,66 +86,16 @@ pub fn download() -> Result<String, Error> {
     check()?.download_url.ok_or(Error::Network)
 }
 
-pub fn install(_exe: &Path, _config: &Path) -> Result<(), Error> {
-    Err(Error::Current)
-}
-
-static ENABLED: AtomicBool = AtomicBool::new(false);
-static WORKER: OnceLock<std::thread::Thread> = OnceLock::new();
-static NOTICE: Mutex<Option<(String, mpsc::Sender<bool>)>> = Mutex::new(None);
+static AUTOMATIC: Automatic = Automatic::new();
 
 pub fn set_automatic(enabled: bool) {
-    ENABLED.store(enabled, Ordering::Release);
-    if let Some(thread) = WORKER.get() {
-        thread.unpark();
-    }
+    AUTOMATIC.set(enabled);
 }
 
 pub fn start_automatic(config: PathBuf, enabled: bool) {
-    set_automatic(enabled);
-    let _ = std::thread::Builder::new()
-        .name("mousetroke-update".into())
-        .spawn(move || {
-            let _ = WORKER.set(std::thread::current());
-            let path = config.with_file_name("update-state.json");
-            loop {
-                if ENABLED.load(Ordering::Acquire) {
-                    let mut state = UpdateState::load(&path);
-                    if state.due(now()) {
-                        state.last_check = Some(now());
-                        // 请求前持久化尝试时间；失败和重启同样受每日限制。
-                        if state.save(&path).is_ok() {
-                            if let Ok(result) = check() {
-                                if result.newer
-                                    && state.last_notified.as_ref() != Some(&result.latest)
-                                    && ENABLED.load(Ordering::Acquire)
-                                {
-                                    let (tx, rx) = mpsc::channel();
-                                    if let Ok(mut notice) = NOTICE.lock() {
-                                        *notice = Some((result.latest.clone(), tx));
-                                    }
-                                    if rx.recv_timeout(Duration::from_secs(5)) == Ok(true) {
-                                        state.last_notified = Some(result.latest);
-                                        let _ = state.save(&path);
-                                    }
-                                }
-                            }
-                        } else {
-                            crate::log!("更新检查状态写入失败，跳过自动检查");
-                        }
-                    }
-                }
-                std::thread::park_timeout(Duration::from_secs(60));
-            }
-        });
+    AUTOMATIC.start(config, enabled, check, |message| crate::log!("{message}"));
 }
 
 pub fn take_notice() -> Option<(String, mpsc::Sender<bool>)> {
-    let notice = NOTICE.lock().ok()?.take()?;
-    if ENABLED.load(Ordering::Acquire) {
-        Some(notice)
-    } else {
-        let _ = notice.1.send(false);
-        None
-    }
+    AUTOMATIC.take_notice()
 }

@@ -176,6 +176,7 @@ impl Host for SystemHost {
     }
     fn config_applied(&self, config: &mousetroke_core::schema::Config) {
         crate::menu::set_visible(config.settings.show_tray);
+        crate::events::set_pause_hotkey(&config.settings.pause_hotkey);
         if std::env::var_os("MOUSETROKE_SELFTEST").as_deref() != Some(std::ffi::OsStr::new("1")) {
             crate::hot_corners::check(config);
         }

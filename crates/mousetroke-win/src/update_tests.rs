@@ -1,37 +1,6 @@
 use super::*;
 
 #[test]
-fn notes_select_language_and_fall_back_only_to_english() {
-    let body = "Intro\n### English\n- First\n  continued\n- Second\n\n### 中文\n- 第一项\n### Other\n- Ignore";
-    for language in ["zh-CN", "zh-TW", "ZH-hans"] { assert_eq!(release_notes(body, language), ["第一项"]); }
-    for language in ["en-US", "de-DE", "qps-ploc"] { assert_eq!(release_notes(body, language), ["First continued", "Second"]); }
-    assert_eq!(release_notes("### English\n- Fallback", "zh-CN"), ["Fallback"]);
-    assert_eq!(release_notes("### 中文\n- <b></b>\n### English\n- Fallback", "zh-CN"), ["Fallback"]);
-    assert!(release_notes("### 中文\n- 中文", "en-US").is_empty());
-    assert!(release_notes("No sections", "zh-CN").is_empty());
-}
-
-#[test]
-fn notes_strip_markdown_html_and_cap_unicode_text() {
-    let body = "### English\n- **Bold**, _emphasis_, ~~old~~ and `code`: [a link](https://example.com/a_(b)) and [reference][id].\n- <b>Text</b><script>alert(1)</script><style>hidden</style><!-- secret --> stays.\n- ![Alt](image.png) and \\*literal\\*\n- <img src=x>";
-    assert_eq!(release_notes(body, "en"), ["Bold, emphasis, old and code: a link and reference.", "Text stays.", "Alt and *literal*"]);
-    let body = format!("### English\n{}", (0..20).map(|_| format!("- {}\n", "中".repeat(400))).collect::<String>());
-    let notes = release_notes(&body, "en-US");
-    assert_eq!(notes.len(), 12);
-    assert!(notes.iter().all(|note| note.chars().count() == 300 && note.ends_with('…')));
-}
-
-#[test]
-fn versions_are_numeric_and_malformed_tags_are_rejected() {
-    let tags = ["0.1.0", "v0.1.1", "0.2.0", "v1.0.0", "1.10.0"];
-    for pair in tags.windows(2) { assert!(version(pair[0]).unwrap() < version(pair[1]).unwrap()); }
-    assert_eq!(version("v0.1.0"), version("0.1.0"));
-    for tag in ["", "v", "1", "1.2", "1.2.3.4", "1.2.x", "1.2.3-rc1", "1.2.3+build", " 1.2.3", "vv1.2.3", "+1.2.3", "1.2.18446744073709551616"] {
-        assert_eq!(version(tag), None, "{tag}");
-    }
-}
-
-#[test]
 fn hashes_and_sums_support_standard_text_and_binary_lines() {
     let digest = "ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad";
     assert_eq!(sha256(b"abc").unwrap(), digest);
@@ -41,23 +10,6 @@ fn hashes_and_sums_support_standard_text_and_binary_lines() {
     for text in [String::new(), format!("{digest}  ./mousetroke.exe"), "xyz  mousetroke.exe".into(), format!("{digest}  mousetroke.exe\n{digest} *mousetroke.exe")] {
         assert_eq!(checksum_line(&text), Err(Error::Checksum));
     }
-}
-
-#[test]
-fn download_hosts_are_exact_https_and_local_override_is_loopback_only() {
-    let source = Source::production();
-    for host in ["github.com", "objects.githubusercontent.com", "release-assets.githubusercontent.com", "GITHUB.COM"] {
-        assert!(source.allowed(&format!("https://{host}/a?signature=test"), false));
-    }
-    for url in ["http://github.com/a", "https://github.com.evil.test/a", "https://evil.test/github.com/a", "https://github.com@evil.test/a", "https://evil.test@github.com/a", "https://github.com:444/a", "https://github.com\\evil/a", "https://github.com/%0a#a", "https://github.com/a\r\nb", "file:///tmp/a", "http://127.0.0.1:8080/a", "https://api.github.com/a"] {
-        assert!(!source.allowed(url, false), "{url}");
-    }
-    assert!(source.allowed(API, true));
-    for base in ["http://localhost:8080", "http://127.0.0.2:8080", "https://127.0.0.1:8080", "http://127.0.0.1", "http://127.0.0.1:80@evil.test"] { assert!(Source::local(base).is_none()); }
-    let local = Source::local("http://127.0.0.1:8080/test").unwrap();
-    assert!(local.allowed("http://127.0.0.1:8080/test/exe", false));
-    assert!(!local.allowed("http://127.0.0.1:80801/exe", false));
-    assert!(!local.allowed("https://github.com/exe", false));
 }
 
 fn sample(origin: &str) -> serde_json::Value {
@@ -88,20 +40,6 @@ fn release_requires_stable_version_and_both_exact_assets() {
     let mut v = valid.clone(); v["assets"][1]["browser_download_url"] = "https://evil.test/a".into(); assert!(parse(&v).is_err());
     let mut v = valid.clone(); v["html_url"] = "http://github.com/a".into(); assert!(parse(&v).is_err());
     let mut v = valid.clone(); let duplicate = v["assets"][1].clone(); v["assets"].as_array_mut().unwrap().push(duplicate); assert!(parse(&v).is_err());
-}
-
-#[test]
-fn state_waits_twenty_four_hours_and_handles_clock_rollback() {
-    let mut state = UpdateState::default();
-    assert!(state.due(0));
-    state.last_check = Some(DAY);
-    assert!(!state.due(DAY - 1));
-    assert!(!state.due(DAY));
-    assert!(!state.due(2 * DAY - 1));
-    assert!(state.due(2 * DAY));
-    state.last_notified = Some("1.2.3".into());
-    let copy: UpdateState = serde_json::from_slice(&serde_json::to_vec(&state).unwrap()).unwrap();
-    assert_eq!(copy.last_notified, state.last_notified);
 }
 
 #[test]

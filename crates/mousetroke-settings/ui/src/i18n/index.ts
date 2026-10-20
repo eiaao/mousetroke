@@ -115,11 +115,6 @@ export function currentLang(): Lang {
   return resolved;
 }
 
-/** 当前设置值（auto 或具体语言），写回 config.settings.language 用。 */
-export function langSetting(): LangSetting {
-  return setting;
-}
-
 /** 订阅当前语言。放在界面根组件：语言切换时整棵树重渲染。 */
 export function useLang(): [Lang, (l: LangSetting) => void] {
   const lang = useSyncExternalStore(subscribe, currentLang);
@@ -183,11 +178,6 @@ export function T({ k, params }: { k: MsgKey; params?: Record<string, string | n
     null,
     ...parts.map((p, i) => (i % 2 ? createElement("b", { key: i }, p) : p)),
   );
-}
-
-/** 取词条，缺失（或不是合法键）时返回原值。 */
-export function tryT(key: string): string {
-  return key in zh ? t(key as MsgKey) : key;
 }
 
 /** 内置名称的显示名：有 name_key 且词条存在 → 当前语言译文；否则用户起的名字。

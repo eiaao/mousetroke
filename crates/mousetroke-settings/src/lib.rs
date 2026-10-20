@@ -422,6 +422,7 @@ async fn check_update() -> MsgResult<platform::update::Check> {
         .map_err(|e| Msg::new(e.key(), &[]))
 }
 
+/// 只有 macOS 走浏览器下载；Windows 原地安装。
 #[tauri::command]
 async fn download_update() -> MsgResult<()> {
     #[cfg(target_os = "macos")]
@@ -435,16 +436,25 @@ async fn download_update() -> MsgResult<()> {
     Err(Msg::new(keys::UPDATE_ERROR_NETWORK, &[]))
 }
 
+/// 只有 Windows 原地安装；macOS 走浏览器下载。
 #[tauri::command]
 async fn install_update(paths: State<'_, AppPaths>, app: tauri::AppHandle) -> MsgResult<()> {
-    let exe = engine_exe().ok_or_else(|| Msg::new(keys::ERROR_ENGINE_NOT_FOUND, &[]))?;
-    let config = paths.config.clone();
-    tauri::async_runtime::spawn_blocking(move || platform::update::install(&exe, &config)).await
-        .map_err(|_| Msg::new(keys::UPDATE_ERROR_REPLACE, &[]))?
-        .map_err(|e| Msg::new(e.key(), &[]))?;
-    // 新进程等待本 PID 退出；引擎也通过托盘同一退出路径停止。
-    app.exit(0);
-    Ok(())
+    #[cfg(windows)]
+    {
+        let exe = engine_exe().ok_or_else(|| Msg::new(keys::ERROR_ENGINE_NOT_FOUND, &[]))?;
+        let config = paths.config.clone();
+        tauri::async_runtime::spawn_blocking(move || platform::update::install(&exe, &config)).await
+            .map_err(|_| Msg::new(keys::UPDATE_ERROR_REPLACE, &[]))?
+            .map_err(|e| Msg::new(e.key(), &[]))?;
+        // 新进程等待本 PID 退出；引擎也通过托盘同一退出路径停止。
+        app.exit(0);
+        Ok(())
+    }
+    #[cfg(not(windows))]
+    {
+        let _ = (paths, app);
+        Err(Msg::new(keys::UPDATE_ERROR_REPLACE, &[]))
+    }
 }
 
 /// 运行设置界面（阻塞到窗口关闭）。`config` 缺省为默认配置路径。已有设置窗口时把它带到前台后返回。

@@ -166,20 +166,7 @@ fn execute(action: Action, target: Option<targeting::Target>, vars: Vars, pos: (
         Action::OpenUrl { url_template, browser } => {
             let mut v = vars.clone();
             fill_lazy_vars(&url_template, &mut v);
-            // 选中文字本身是网址 → 直接打开（旧格式语义）
-            if let Some(text) = v.get("MS_SELECTED_TEXT") {
-                if vars::looks_like_url(text) {
-                    input::open_url(text, browser.as_deref());
-                    return;
-                }
-            }
-            // 查询词做 URL 编码后替换
-            let mut url = url_template.clone();
-            if let Some(text) = v.get("MS_SELECTED_TEXT") {
-                url = url.replace("%MS_SELECTED_TEXT%", &vars::url_encode(text));
-            }
-            let url = vars::expand(&url, &v);
-            input::open_url(&url, browser.as_deref());
+            input::open_url(&vars::expand_url(&url_template, &v), browser.as_deref());
         }
         Action::LaunchApp { exe, args, elevate, win_class, win_title, regex, if_running } => {
             let mut v = vars.clone();
@@ -197,25 +184,20 @@ fn execute(action: Action, target: Option<targeting::Target>, vars: Vars, pos: (
         }
         Action::Menu { items, .. } => {
             // 模态菜单须在专用线程（不能阻塞钩子，也不占引擎线程）
-            let target2 = target.clone();
-            let vars2 = vars.clone();
-            let pos2 = pos;
             std::thread::spawn(move || {
-                if let Some(item) = input::show_context_menu(&items, pos2.0, pos2.1) {
-                    execute(item.action, target2, vars2, pos2);
+                if let Some(item) = input::show_context_menu(&items, pos.0, pos.1) {
+                    execute(item.action, target, vars, pos);
                 }
             });
         }
         Action::SystemKey { key } => input::inject_system_key(&key),
         Action::Lua { code } => {
-            let ctx = crate::lua::LuaCtx {
+            let ctx = crate::lua::LuaCtx::from_vars(
                 pos,
-                wid: target.as_ref().map(|t| t.hwnd.0 as usize).unwrap_or(0),
-                pid: target.as_ref().map(|t| t.pid).unwrap_or(0),
-                exe: vars.get("MS_EXE").cloned().unwrap_or_default(),
-                title: vars.get("MS_WIN_NAME").cloned().unwrap_or_default(),
-                mode: vars.get("MS_TARGET_MODE").cloned().unwrap_or_default(),
-            };
+                target.as_ref().map_or(0, |t| t.hwnd.0 as usize),
+                target.as_ref().map_or(0, |t| t.pid),
+                &vars,
+            );
             std::thread::spawn(move || crate::lua::run_lua(&code, &ctx));
         }
     }
@@ -224,11 +206,7 @@ fn execute(action: Action, target: Option<targeting::Target>, vars: Vars, pos: (
 /// 惰性变量：模板引用了但上下文没有 → 现场采集。
 fn fill_lazy_vars(template: &str, vars: &mut Vars) {
     if template.contains("%MS_SELECTED_TEXT%") && !vars.contains_key("MS_SELECTED_TEXT") {
-        if let Some(text) = input::capture_selected_text() {
-            vars.insert("MS_SELECTED_TEXT".into(), text);
-        } else {
-            vars.insert("MS_SELECTED_TEXT".into(), String::new());
-        }
+        vars.insert("MS_SELECTED_TEXT".into(), input::capture_selected_text().unwrap_or_default());
     }
     if template.contains("%MS_CLIPBOARD_TEXT%") && !vars.contains_key("MS_CLIPBOARD_TEXT") {
         let text = input::get_clipboard_text().unwrap_or_default();
