@@ -1,8 +1,8 @@
 # Mousetroke
 
-> Mousetroke is a free, open-source (MIT) mouse gesture tool for Windows 10 (1809+) and Windows 11, x64, and macOS 11+ (beta, Apple silicon and Intel). Hold the right mouse button and draw a stroke anywhere to run an action — ← goes back, ↓→ closes the tab, ↙ minimizes the window. Screen corners and edges trigger actions too, such as showing the desktop or adjusting volume. A plain right-click still opens the context menu. Windows uses about 19 MB resident memory and ships as a portable 13.1 MB exe; Mac uses about 13 MB physical footprint and ships as a DMG.
+> Mousetroke is a free, open-source (MIT) mouse gesture tool for Windows 10 (1809+) and Windows 11, x64, and macOS 11+ (beta, Apple silicon and Intel). Hold the right mouse button and draw a stroke anywhere to run an action — ← goes back, ↓→ closes the tab, ↙ minimizes the window. Screen corners and edges trigger actions too, such as showing the desktop or adjusting volume. A plain right-click still opens the context menu. Windows uses about 19 MB resident memory and ships as a portable 13.2 MB exe; Mac uses about 13 MB physical footprint and ships as a DMG.
 
-Mousetroke（中文）：免费开源的 Windows 和 Mac（测试版）鼠标手势工具。按住右键画一笔执行操作，也可从屏幕边角触发动作；单击右键菜单照常弹出。Windows 常驻内存约 19 MB，13.1 MB 的单个 exe 免安装；Mac 物理内存占用约 13 MB，通过 DMG 拖入“应用程序”。
+Mousetroke（中文）：免费开源的 Windows 和 Mac（测试版）鼠标手势工具。按住右键画一笔执行操作，也可从屏幕边角触发动作；单击右键菜单照常弹出。Windows 常驻内存约 19 MB，13.2 MB 的单个 exe 免安装；Mac 物理内存占用约 13 MB，通过 DMG 拖入“应用程序”。
 
 ## Key facts
 
@@ -15,7 +15,7 @@ Mousetroke（中文）：免费开源的 Windows 和 Mac（测试版）鼠标手
 - Platforms: Windows 10 1809+ and Windows 11, 64-bit; macOS 11+ on Apple silicon and Intel. The native gesture engine is written in Rust. Windows settings need Microsoft Edge WebView2 (built into Windows 11). Mac uses AppKit / CGEventTap for the engine and the system WebKit for settings; no WebView2 is needed.
 - Source code: https://github.com/eiaao/mousetroke (issues and releases there).
 - Price and license: free, MIT. No ads or account. Once a day it asks GitHub whether a newer version exists (turn it off in Preferences). Manual checks and requested update downloads are also available. Nothing else is sent; no telemetry.
-- Version: 0.2.0. Windows download: https://github.com/eiaao/mousetroke/releases/latest/download/mousetroke.exe (13.1 MB, portable, no installer). Mac download: https://github.com/eiaao/mousetroke/releases/latest/download/Mousetroke.dmg (beta; size pending release measurement).
+- Version: 0.2.1. Windows download: https://github.com/eiaao/mousetroke/releases/latest/download/mousetroke.exe (13.2 MB, portable, no installer). Mac download: https://github.com/eiaao/mousetroke/releases/latest/download/Mousetroke.dmg (beta; size pending release measurement).
 - Resource use: Windows engine ≈ 19 MB working set (≈ 10 MB private); its settings run in a separate process only while open. Mac engine ≈ 13 MB physical footprint as shown in Activity Monitor. Both use no CPU when idle.
 - Languages: 10 (Simplified Chinese, English, Spanish, French, German, Japanese, Portuguese (Brazil), Russian, Italian, Korean).
 - Windows config: %APPDATA%\mousetroke\config.json (import/export in settings; changes apply within about 1 second). Windows log: %APPDATA%\mousetroke\mousetroke.log. Mac paths are listed above; settings also support import/export.
