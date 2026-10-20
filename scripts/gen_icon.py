@@ -1,6 +1,7 @@
 """生成 Mousetroke 图标（与托盘图标同一字形：圆角方块 + 白色手势折线）。
 
-用法: python scripts/gen_icon.py <输出.ico>
+用法: python scripts/gen_icon.py <输出.ico|输出.icns>
+.icns 按 macOS 图标规范四周留白（1024 画布里主体 824），与系统其他应用图标大小一致。
 纯标准库实现（zlib + struct），不依赖 PIL。
 """
 import math, struct, sys, zlib
@@ -16,10 +17,13 @@ def seg_dist(p, a, b):
     return math.hypot(p[0] - qx, p[1] - qy)
 
 
-def render(n):
-    k = n / 32.0
+def render(n, inset=0.0):
+    # inset：四周留白占边长的比例；圆角方块与折线都在留白内的主体里绘制
+    o = n * inset
+    body = n - 2 * o
+    k = body / 32.0
     r = 7.0 * k
-    path = [(x * k, y * k) for x, y in PATH]
+    path = [(o + x * k, o + y * k) for x, y in PATH]
     half = 1.8 * k
     rows = []
     for y in range(n):
@@ -30,7 +34,9 @@ def render(n):
             for sy in range(4):
                 for sx in range(4):
                     fx, fy = x + (sx + 0.5) / 4, y + (sy + 0.5) / 4
-                    cx, cy = min(max(fx, r), n - r), min(max(fy, r), n - r)
+                    if not (o <= fx <= n - o and o <= fy <= n - o):
+                        continue
+                    cx, cy = min(max(fx, o + r), n - o - r), min(max(fy, o + r), n - o - r)
                     inside = math.hypot(fx - cx, fy - cy) <= r
                     if not inside:
                         continue
@@ -47,8 +53,8 @@ def render(n):
     return b"".join(rows)
 
 
-def png(n):
-    raw = render(n)
+def png(n, inset=0.0):
+    raw = render(n, inset)
     def chunk(t, d):
         c = struct.pack(">I", len(d)) + t + d
         return c + struct.pack(">I", zlib.crc32(t + d) & 0xFFFFFFFF)
@@ -66,8 +72,24 @@ def ico(sizes):
     return out + b"".join(imgs)
 
 
+# macOS 图标：每种 OSType 存一张 PNG（macOS 11 起都支持 PNG 数据）
+ICNS_TYPES = [(b"icp4", 16), (b"icp5", 32), (b"icp6", 64), (b"ic07", 128), (b"ic08", 256),
+              (b"ic09", 512), (b"ic10", 1024), (b"ic11", 32), (b"ic12", 64), (b"ic13", 256), (b"ic14", 512)]
+MAC_INSET = 100 / 1024
+
+
+def icns():
+    cache = {}
+    body = b""
+    for kind, size in ICNS_TYPES:
+        if size not in cache:
+            cache[size] = png(size, MAC_INSET)
+        body += kind + struct.pack(">I", 8 + len(cache[size])) + cache[size]
+    return b"icns" + struct.pack(">I", 8 + len(body)) + body
+
+
 if __name__ == "__main__":
     dst = sys.argv[1]
     with open(dst, "wb") as f:
-        f.write(ico([16, 24, 32, 48, 64, 128, 256]))
+        f.write(icns() if dst.endswith(".icns") else ico([16, 24, 32, 48, 64, 128, 256]))
     print("written", dst)

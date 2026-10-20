@@ -223,6 +223,9 @@ class MacPackagingTests(unittest.TestCase):
         self.root = Path(temporary.name)
         shutil.copytree(ROOT / "scripts/mac", self.root / "scripts/mac")
         shutil.copyfile(ROOT / "Cargo.toml", self.root / "Cargo.toml")
+        icons = self.root / "crates/mousetroke-settings/icons"
+        icons.mkdir(parents=True)
+        shutil.copyfile(ROOT / "crates/mousetroke-settings/icons/icon.icns", icons / "icon.icns")
         (self.root / "i18n").mkdir()
         shutil.copyfile(ROOT / "i18n/en-US.json", self.root / "i18n/en-US.json")
         commands = self.root / "commands"
