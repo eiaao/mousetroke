@@ -15,6 +15,10 @@
     get(k) { try { return localStorage.getItem(k); } catch { return null; } },
     set(k, v) { try { localStorage.setItem(k, v); } catch { /* 隐私模式等 */ } },
   };
+  // 在语言菜单里手动选过语言后记住选择，首页不再按浏览器语言自动跳转（见 _worker.js）
+  $$(".langdrop a[hreflang]").forEach((a) => a.addEventListener("click", () => {
+    document.cookie = `mt_lang=${encodeURIComponent(a.hreflang)}; path=/; max-age=31536000; SameSite=Lax`;
+  }));
   // 锚点滚动由脚本接管（自定义缓动），关掉 CSS 的 smooth 避免逐帧叠加
   document.documentElement.style.scrollBehavior = "auto";
 

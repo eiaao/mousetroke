@@ -29,7 +29,8 @@ jobs:
         run: python3 site/check.py
       - name: Prepare
         # 生成器、校验脚本和替换表不属于网站内容
-        run: rm -rf site/gen.py site/check.py site/langs site/README.md
+        # _worker.js 只在 Cloudflare 上生效（首页按语言跳转），GitHub Pages 镜像不需要
+        run: rm -rf site/gen.py site/gen_changelog.py site/check.py site/langs site/README.md site/__pycache__ site/_worker.js
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v5
         with:

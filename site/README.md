@@ -10,6 +10,7 @@ es fr de ja pt ru it ko/index.html   由 gen.py 从英文页生成，不要手�
 404.html            中英双语错误页，兼容主站与镜像的路径
 gen.py langs/*.py   生成器与各语言替换表（原文行 → 译文行）
 check.py            校验 10 个页面：结构与英文页一致、JSON 合法、canonical/hreflang/语言菜单自指
+_worker.js          Cloudflare 入口：访问首页 / 时按 mt_lang cookie（语言菜单点选写入）或浏览器语言 302 到对应语言版本；GitHub Pages 部署时删除
 assets/site.css     两页共用的样式
 assets/site.js      两页共用的交互（文案都在 HTML 里，脚本只管行为）
 assets/icon.svg     站点图标
