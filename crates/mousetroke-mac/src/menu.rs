@@ -51,11 +51,11 @@ define_class!(
         fn toggle_pause(&self, _sender: Option<&NSObject>) { guard(crate::app::toggle_pause); }
         #[unsafe(method(grantAccessibility:))]
         fn grant_accessibility(&self, _sender: Option<&NSObject>) {
-            guard(|| open_url("x-apple.systempreferences:com.apple.preference.security?Privacy_Accessibility"));
+            guard(|| grant_permission(true));
         }
         #[unsafe(method(grantInputMonitoring:))]
         fn grant_input_monitoring(&self, _sender: Option<&NSObject>) {
-            guard(|| open_url("x-apple.systempreferences:com.apple.preference.security?Privacy_ListenEvent"));
+            guard(|| grant_permission(false));
         }
         #[unsafe(method(openLog:))]
         fn open_log(&self, _sender: Option<&NSObject>) {
@@ -136,11 +136,9 @@ pub fn popup(
         .and_then(|i| actions.get(i).cloned())
 }
 
-fn open_url(text: &str) {
-    if !NSURL::URLWithString(&NSString::from_str(text))
-        .is_some_and(|url| NSWorkspace::sharedWorkspace().openURL(&url))
-    {
-        crate::log!("打开系统权限设置失败");
+fn grant_permission(accessibility: bool) {
+    if let Err(error) = crate::permissions::request(accessibility) {
+        crate::log!("打开系统权限设置失败: {error}");
     }
 }
 

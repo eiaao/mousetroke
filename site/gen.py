@@ -37,9 +37,7 @@ LANGS = {}
 # Mac 下载与首次打开说明共用译文；FAQ 统一从可见正文生成 JSON-LD。
 MAC_EN = {'download': 'Download Mac version (beta)',
  'first_title': 'First open on Mac',
- 'first_text': 'Drag Mousetroke into Applications and open it there. This beta is not notarized: if macOS blocks it, '
-               'go to System Settings → Privacy & Security → Open Anyway (on older macOS, right-click → Open). Then '
-               'grant Accessibility and Input Monitoring.'}
+ 'first_text': 'Drag Mousetroke to Applications and open it. If blocked: System Settings → Privacy & Security → Open Anyway (beta not notarized). Follow setup to grant permissions and reach Ready.'}
 
 def mac_replacements(text):
     pairs = []

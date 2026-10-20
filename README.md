@@ -57,15 +57,23 @@ cargo test --workspace       :: engine, importer, i18n and settings tests
 macOS 11+, Apple silicon and Intel in one universal app. Compare its SHA-256 with the
 same release's `SHA256SUMS.txt` (which also lists the Windows exe).
 
-1. Open the DMG, drag **Mousetroke** into **Applications**, then open it from there.
+1. Open the DMG, drag **Mousetroke** into **Applications**, then open it. If opened from the
+   DMG, choose **Move to Applications** to install and reopen it there (or in `~/Applications`
+   if the shared folder is not writable). Quit an older copy before replacing it.
 2. The beta is self-signed and **not notarized**. If macOS blocks it, use **System Settings →
    Privacy & Security → Open Anyway**; on older macOS, **right-click → Open**. A newly
    downloaded update may need this step again.
-3. Grant **Accessibility** and **Input Monitoring**. **Screen Recording is not required**.
+3. Follow setup: each permission explains why it is needed and has a **Grant…** button.
+   Allow **Accessibility** and **Input Monitoring**; setup shows **Ready**, then a short guide.
+   Try holding the right button and drawing `←` in a window. You can skip and grant later
+   from the menu bar. **Screen Recording is not required**.
+
+The engine retries permissions every two seconds. If Input Monitoring still has not taken
+effect after granting, setup offers **Restart Mousetroke**, keeping settings open.
 
 About supports manual update checks, shared release notes and a **Download new version**
 button that opens the DMG in your browser. Preferences controls the daily automatic check;
-a new-version menu item opens About. Installation remains a manual drag into Applications.
+a new-version menu item opens About. Install the downloaded DMG in the same Applications folder.
 Quit before replacing the app. Releases reuse one signing certificate to retain permissions;
 changing the certificate or installation path can require granting them again.
 

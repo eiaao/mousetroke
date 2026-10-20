@@ -1,7 +1,6 @@
 //! 唯一的主线程状态；输入回调只借用 ENGINE，不借用包含 AppKit 对象的 Runtime。
 use std::cell::{Cell, RefCell};
 use std::ffi::OsStr;
-use std::fs::OpenOptions;
 use std::panic::{catch_unwind, AssertUnwindSafe};
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::time::{Duration, Instant};
@@ -95,6 +94,7 @@ fn settle_rhythm(now: Instant, busy: bool) {
 }
 
 static DISPLAY_CHANGED: AtomicBool = AtomicBool::new(false);
+static RESTART: AtomicBool = AtomicBool::new(false);
 
 struct DisplayObserver(Retained<ProtocolObject<dyn NSObjectProtocol>>);
 impl DisplayObserver {
@@ -181,7 +181,7 @@ impl Runtime {
         }
         if now >= self.next_permissions {
             self.next_permissions = now + Duration::from_secs(2);
-            let permissions = permissions::check(false);
+            let permissions = permissions::check();
             if permissions != self.permissions {
                 if !permissions.ready() {
                     // 系统可能先禁用 tap 再让轮询发现撤权；无论 tap 是否仍 enabled 都取消旧捕获。
@@ -205,6 +205,7 @@ impl Runtime {
                 self.tap_failed = !installed;
                 menu::request_refresh();
             }
+            instance::publish_input_state(events::active());
             if host::refresh_screen(mtm) {
                 with_engine(Engine::on_display_change);
             }
@@ -223,6 +224,11 @@ impl Runtime {
                         mousetroke_engine::push_toast(t(keys::TRAY_RELOAD_FAILED).into(), 3000);
                     }
                 }
+            }
+            if instance::take_restart_request() {
+                crate::log!("设置页请求重启引擎");
+                RESTART.store(true, Ordering::Relaxed);
+                request_quit(0);
             }
         }
         if let Some(test) = self.selftest.as_mut() {
@@ -295,6 +301,10 @@ pub fn run_with_config(config: Option<std::path::PathBuf>) -> Result<i32, String
 
 fn run_main(mtm: MainThreadMarker, config_path: Option<std::path::PathBuf>) -> Result<i32, String> {
     let selftest = std::env::var_os("MOUSETROKE_SELFTEST").as_deref() == Some(OsStr::new("1"));
+    // 安装对话框先于锁、配置写盘和任何权限相关初始化；重启的已安装副本不会被本实例阻挡。
+    if !selftest && crate::first_run::handle_install(mtm) {
+        return Ok(0);
+    }
     let path = config_path.unwrap_or_else(default_config_path);
     crate::settings::initialize(path.clone());
     // 引擎单实例锁固定在应用目录，设置中的自定义配置不会绕过检测。
@@ -307,6 +317,7 @@ fn run_main(mtm: MainThreadMarker, config_path: Option<std::path::PathBuf>) -> R
         crate::log!("已有实例运行，退出第二个实例");
         return Ok(if selftest { 1 } else { 0 });
     };
+    let first_run = !path.exists();
     let config = if selftest {
         let config = Config::builtin();
         if !path.exists() {
@@ -342,6 +353,7 @@ fn run_main(mtm: MainThreadMarker, config_path: Option<std::path::PathBuf>) -> R
     crate::lua::initialize();
     let displays = DisplayObserver::new();
     let automatic_updates = config.settings.update_check;
+    let restart_path = path.clone();
     let update_path = path.clone();
     let engine = Engine::new(
         config,
@@ -353,24 +365,11 @@ fn run_main(mtm: MainThreadMarker, config_path: Option<std::path::PathBuf>) -> R
     mousetroke_engine::install(engine);
     if !selftest {
         crate::update::start_automatic(update_path, automatic_updates);
-        if std::env::current_exe().is_ok_and(|path| crate::first_run::needs_install(&path)) {
-            crate::log!("从 AppTranslocation 或 DMG 启动，请拖入 Applications 后再打开");
-            mousetroke_engine::push_toast(t(keys::MAC_FIRST_RUN_INSTALL).into(), 8000);
-        }
     }
-    let prompt = match OpenOptions::new()
-        .write(true)
-        .create_new(true)
-        .open(dir.join("permission-prompted"))
-    {
-        Ok(_) => true,
-        Err(error) if error.kind() == std::io::ErrorKind::AlreadyExists => false,
-        Err(error) => {
-            crate::log!("无法记录首次权限请求: {error}");
-            false
-        }
-    };
-    let permissions = permissions::check(prompt);
+    let permissions = permissions::check();
+    if !selftest && (first_run || !permissions.ready()) {
+        crate::settings::open_setup();
+    }
     crate::log!(
         "权限状态: 辅助功能={}, 输入监控={}",
         permissions.accessibility,
@@ -431,5 +430,12 @@ fn run_main(mtm: MainThreadMarker, config_path: Option<std::path::PathBuf>) -> R
     drop(mousetroke_engine::uninstall());
     let code = QUIT.with(|slot| slot.take()).unwrap_or(0);
     crate::log!("Mousetroke 退出: {code}");
+    if RESTART.swap(false, Ordering::Relaxed) {
+        // 清理完成并显式释放 flock 后再启动；新进程运行引擎，设置窗口继续保留。
+        drop(_lock);
+        let exe = std::env::current_exe().map_err(|error| error.to_string())?;
+        std::process::Command::new(exe).arg("run").arg("--config").arg(restart_path)
+            .spawn().map_err(|error| error.to_string())?;
+    }
     Ok(code)
 }

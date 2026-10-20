@@ -6,6 +6,12 @@ pub fn initialize(config: PathBuf) {
     let _ = CONFIG.set(config);
 }
 pub fn open(about: bool) {
+    spawn(if about { Some("--about") } else { None });
+}
+pub fn open_setup() {
+    spawn(Some("--setup"));
+}
+fn spawn(mode: Option<&'static str>) {
     let config = CONFIG
         .get()
         .cloned()
@@ -14,8 +20,8 @@ pub fn open(about: bool) {
         let result = std::env::current_exe().and_then(|exe| {
             let mut cmd = std::process::Command::new(exe);
             cmd.arg("settings").arg(config);
-            if about {
-                cmd.arg("--about");
+            if let Some(mode) = mode {
+                cmd.arg(mode);
             }
             cmd.spawn()?.wait()
         });

@@ -16,7 +16,7 @@ open target/mac/Mousetroke.app
 
 The certificate script creates a **Mousetroke Dev** signing identity in a dedicated keychain. Follow its trust instructions and keep the identity and app path stable across rebuilds. Set `MOUSETROKE_SIGN_ID` for another identity. Without a matching identity, bundling warns and uses ad-hoc signing; rebuilding can then require Accessibility permission again. This development bundle is not notarized.
 
-**Screen Recording is not required**: titles are obtained through Accessibility, never `kCGWindowName`. Grant **Accessibility** and **Input Monitoring** to `Mousetroke.app` in System Settings → Privacy & Security. The menu links to missing permissions. Permissions are checked every two seconds and the tap starts without restarting. Prompts are requested only on first launch, tracked by `permission-prompted` in Application Support. SSH tests require an active graphical login for the same user. Use the signed bundle for repeatable permission tests.
+**Screen Recording is not required**: titles are obtained through Accessibility, never `kCGWindowName`. First launch, or a launch with missing permissions, opens `mousetroke settings <config> --setup`. Setup explains **Accessibility** and **Input Monitoring** separately; only clicking **Grant…** requests that permission and opens its System Settings pane. The menu provides the same fallback. The settings process uses the same signed executable and bundle identity as the engine. Setup polls every second and displays Ready when both are granted; the engine checks every two seconds and retries the tap without restarting. If the tap is still inactive eight seconds after granting, setup offers to restart the engine while keeping settings open. No `permission-prompted` file is used. SSH tests require an active graphical login for the same user. Use the signed bundle for repeatable permission tests.
 
 The menu icon dims while paused or awaiting permission. Toggle pause from the menu or with **⌃⌥⌘P**. Ordinary right clicks are replayed. Right-button drags recognize shared-engine gestures and send configured keys to the focused application. Window targeting and fullscreen pause use a roughly 250 ms snapshot. Target activation is supported. Settings run in a separate process; manual and daily update checks are supported; downloads open in the browser and installation is manual.
 
@@ -253,6 +253,7 @@ There is no Node dependency in these scripts: copy the already built
 ```bash
 export CARGO_BUILD_JOBS=4 CARGO_TARGET_DIR="$PWD/target" MACOSX_DEPLOYMENT_TARGET=11.0
 rustup target add aarch64-apple-darwin x86_64-apple-darwin
+python3 -m pip install dmgbuild==1.6.5
 cargo test -p mousetroke-core -p mousetroke-engine -p mousetroke-mac -p mousetroke-settings --locked
 # 快速主机架构开发包；开发证书缺失时有明确警告并回退 ad-hoc。
 bash scripts/mac/make-dev-cert.sh
@@ -322,9 +323,14 @@ binary's changing code hash. SHA-1 here identifies the certificate, not the asse
 Keep the app in the same Applications path. Certificate changes, moving the app or macOS
 policy changes may still require granting permissions again; verify on both macOS 27 and 11.
 
-`dmg.sh` creates `target/mac/Mousetroke.dmg` with `hdiutil` UDZO, volume name
-**Mousetroke**, the signed app and an `/Applications` symlink, and signs the DMG with
-the same identity. `release.yml` has `windows`, `macos` and `publish` jobs. The first two
+`dmg.sh` uses **dmgbuild 1.6.5** (Python 3.9+) to create `target/mac/Mousetroke.dmg` in
+UDZO format, volume name **Mousetroke**. Its 640×400 Finder window has 128-point app and
+Applications icons, a drag arrow, hidden background resources and no toolbar or sidebar.
+The committed 1x/2x PNGs are combined by `tiffutil` for Retina; regenerate with
+`python scripts/gen_dmg_background.py` (development only: `python -m pip install Pillow`,
+optionally `--font <font.ttf>`). The image repeats the Gatekeeper first-open instruction.
+The image’s app copy is verified before finalizing, and the DMG is signed with the same
+identity. `release.yml` has `windows`, `macos` and `publish` jobs. The first two
 upload `windows-release` (exe + notes) and `macos-release` (DMG) artifacts. Only `publish`
 has contents-write permission; it waits for both, generates and verifies one
 `SHA256SUMS.txt` listing `mousetroke.exe` and `Mousetroke.dmg`, then creates one release.
@@ -342,9 +348,14 @@ signing or verification removes the incomplete DMG. The CI smoke test explicitly
 Open the DMG, drag Mousetroke to **Applications**, then launch it there. The beta is
 self-signed and **not notarized**: if blocked, go to **System Settings → Privacy & Security →
 Open Anyway** (older macOS: **right-click → Open**). Each newly downloaded version may
-need this again. Grant **Accessibility** and **Input Monitoring**; no Screen Recording.
-Launching from `/Volumes/` or `/AppTranslocation/` logs the location problem and queues one
-translated eight-second notice per engine launch. It does not modify quarantine attributes.
+need this again. Follow the setup window to grant **Accessibility** and **Input Monitoring**;
+no Screen Recording. Setup can be skipped and reopened from About, or with `--setup`.
+Launching from `/Volumes/` or `/AppTranslocation/` first shows a native Move to Applications
+or Quit alert. Installation uses `ditto`, falling back to `~/Applications` if `/Applications`
+is not writable. A running destination copy must be quit first; an older copy goes to Trash.
+Only the staged new copy has quarantine removed. The installed app is opened with `open -n`
+before any engine lock is taken, and a directly mounted DMG is ejected after a short delay.
+Errors explain the manual drag-and-open path. Every installation step is logged.
 
 About reuses the Windows version comparison and plain-text, language-selected release-note
 renderer. The transport is `/usr/bin/curl`, already present on macOS 11, avoiding another

@@ -2,6 +2,20 @@
 
 Each version lists its highlights in English, then in Chinese. The release page, the in-app update notes and the website changelog are all generated from this file.
 
+## Unreleased
+
+### English
+
+- Mac: first launch opens a setup guide with separate Accessibility and Input Monitoring controls, live permission status and a ready confirmation, instead of two immediate system prompts.
+- Mac: opening from a DMG or App Translocation offers to install in Applications and relaunch. An older copy is moved to Trash; a running copy must be quit first.
+- Mac: the DMG now has a Retina background, a clear drag-to-Applications layout and a short first-open reminder.
+
+### 中文
+
+- Mac：首次启动打开设置引导，分别说明并申请辅助功能和输入监控权限，实时显示授权状态和就绪提示，不再连续弹出两个系统授权框。
+- Mac：从 DMG 或 App Translocation 打开时，可安装到“应用程序”并重新启动；旧副本移到废纸篓，运行中的副本需先退出。
+- Mac：DMG 加入 Retina 背景、拖入“应用程序”的固定布局和首次打开提示。
+
 ## 0.2.0 — 2026-10-20
 
 ### English

@@ -231,7 +231,4 @@ REPL = base("pt", "pt-BR", "pt_BR", "Idioma", "Português (Brasil)") + [
 
 MAC = {'download': 'Baixar para Mac (beta)',
  'first_title': 'Primeira abertura no Mac',
- 'first_text': 'Arraste Mousetroke para Aplicativos e abra-o de lá. Esta beta não é autenticada '
-               'pela Apple: se o macOS bloquear, vá a Ajustes do Sistema → Privacidade e Segurança '
-               '→ Abrir Mesmo Assim (no macOS antigo, clique direito → Abrir). Depois permita '
-               'Acessibilidade e Monitoramento de Entrada.'}
+ 'first_text': 'Arraste o Mousetroke para Aplicativos e abra-o. Se for bloqueado: Ajustes do Sistema → Privacidade e Segurança → Abrir Mesmo Assim (beta não autenticada). Siga o guia para conceder as permissões e confirmar que está tudo pronto.'}

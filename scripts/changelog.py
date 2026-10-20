@@ -23,8 +23,17 @@ def parse(text: str) -> list[Release]:
     current = None
     language = None
     previous = None
+    unreleased = False
     for number, line in enumerate(text.splitlines(), 1):
         if line.startswith("## "):
+            if line == "## Unreleased":
+                if unreleased or releases:
+                    raise ValueError(f"line {number}: Unreleased must appear once, before releases")
+                unreleased = True
+                current = Release("Unreleased", "")
+                releases.append(current)
+                language = None
+                continue
             match = re.fullmatch(r"## (\d+\.\d+\.\d+) — (\d{4}-\d{2}-\d{2})", line)
             if not match:
                 raise ValueError(f"line {number}: expected '## <version> — <YYYY-MM-DD>'")
@@ -57,7 +66,11 @@ def parse(text: str) -> list[Release]:
         for language in LANGUAGES:
             if not release.sections.get(language):
                 raise ValueError(f"{release.version}: missing or empty {language} section")
-    return releases
+    # 未发布条目也校验双语，但站点、更新检查与 Release 只使用有版本号的条目。
+    published = [release for release in releases if release.version != "Unreleased"]
+    if not published:
+        raise ValueError("no releases found")
+    return published
 
 
 def load(path: Path = ROOT / "CHANGELOG.md") -> list[Release]:

@@ -231,7 +231,4 @@ REPL = base("de", "de", "de_DE", "Sprache", "Deutsch") + [
 
 MAC = {'download': 'Mac-Version herunterladen (Beta)',
  'first_title': 'Erster Start auf dem Mac',
- 'first_text': 'Ziehe Mousetroke in Programme und öffne es dort. Diese Beta ist nicht notarisiert: '
-               'Wenn macOS sie blockiert, wähle Systemeinstellungen → Datenschutz & Sicherheit → '
-               'Dennoch öffnen (unter älterem macOS: Rechtsklick → Öffnen). Erlaube dann '
-               'Bedienungshilfen und Eingabeüberwachung.'}
+ 'first_text': 'Ziehe Mousetroke in „Programme“ und öffne es. Bei einer Sperre: Systemeinstellungen → Datenschutz & Sicherheit → Dennoch öffnen (Beta nicht notarisiert). Der Einrichtungsassistent führt durch die Berechtigungen und bestätigt, wenn alles bereit ist.'}

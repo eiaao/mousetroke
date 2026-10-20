@@ -53,6 +53,68 @@ pub fn engine_running() -> bool {
         .is_some_and(|dir| matches!(acquire(dir), Ok(None)))
 }
 
+/// 极小的状态快照供设置页判断事件 tap 是否已生效；临时文件 + rename 保证读不到半行。
+pub(crate) fn publish_input_state(active: bool) {
+    let path = crate::default_config_path();
+    let Some(dir) = path.parent() else { return };
+    let temporary = dir.join("input-state.tmp");
+    let result = std::fs::write(
+        &temporary,
+        format!("{} {}\n", std::process::id(), u8::from(active)),
+    )
+    .and_then(|()| std::fs::rename(&temporary, dir.join("input-state")));
+    if let Err(error) = result {
+        crate::log!("写入输入状态失败: {error}");
+    }
+}
+
+/// 同一用户的本机进程通信；过期快照不能让设置页把已退出的引擎显示为就绪。
+pub fn input_state() -> Option<(u32, bool)> {
+    if !engine_running() {
+        return None;
+    }
+    let path = crate::default_config_path().parent()?.join("input-state");
+    let age = std::fs::metadata(&path)
+        .ok()?
+        .modified()
+        .ok()?
+        .elapsed()
+        .ok()?;
+    if age > std::time::Duration::from_secs(6) {
+        return None;
+    }
+    let text = std::fs::read_to_string(path).ok()?;
+    let mut parts = text.split_whitespace();
+    let pid = parts.next()?.parse().ok()?;
+    let active = match parts.next()? {
+        "1" => true,
+        "0" => false,
+        _ => return None,
+    };
+    Some((pid, active))
+}
+
+pub fn request_restart() -> io::Result<()> {
+    let (pid, _) = input_state().ok_or_else(|| io::Error::from(io::ErrorKind::NotConnected))?;
+    let path = crate::default_config_path();
+    let dir = path
+        .parent()
+        .ok_or_else(|| io::Error::from(io::ErrorKind::NotFound))?;
+    std::fs::write(dir.join("restart-request"), pid.to_string())
+}
+
+pub(crate) fn take_restart_request() -> bool {
+    let path = crate::default_config_path();
+    let Some(dir) = path.parent() else {
+        return false;
+    };
+    let request = dir.join("restart-request");
+    if std::fs::read_to_string(&request).is_ok_and(|pid| pid == std::process::id().to_string()) {
+        return std::fs::remove_file(request).is_ok();
+    }
+    false
+}
+
 #[cfg(test)]
 mod tests {
     use std::os::{fd::AsRawFd, unix::fs::MetadataExt};

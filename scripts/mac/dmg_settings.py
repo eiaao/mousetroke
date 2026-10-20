@@ -1,0 +1,20 @@
+"""dmgbuild 1.6.5 布局；兼容 Mac mini 的 Python 3.9。"""
+format = "UDZO"
+filesystem = "HFS+"
+files = [defines["app"], (defines["art"], ".background")]
+symlinks = {"Applications": "/Applications"}
+background = defines["art"] + "/background.png"
+window_rect = ((120, 120), (640, 400))
+icon_size = 128
+text_size = 14
+icon_locations = {"Mousetroke.app": (160, 200), "Applications": (480, 200)}
+default_view = "icon-view"
+arrange_by = None
+show_toolbar = False
+show_sidebar = False
+show_status_bar = False
+show_pathbar = False
+show_tab_view = False
+include_icon_view_settings = True
+include_list_view_settings = False
+hide_extensions = ["Mousetroke.app"]

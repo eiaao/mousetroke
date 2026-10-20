@@ -13,6 +13,7 @@ const keys = await server.ssrLoadModule("/src/gesture.ts");
 const { t } = await server.ssrLoadModule("/src/i18n/index.ts");
 const { About } = await server.ssrLoadModule("/src/components/About.tsx");
 const { ActionEditor } = await server.ssrLoadModule("/src/components/ActionEditor.tsx");
+const { Guide, PermissionRows, permissionsReady } = await server.ssrLoadModule("/src/components/Guide.tsx");
 const event = (code, mods = {}) => ({ code, ctrlKey: false, altKey: false, shiftKey: false, metaKey: false, ...mods });
 
 test("Windows display and identities retain their existing behavior", () => {
@@ -84,4 +85,36 @@ test("macOS editor hides elevation and disables topmost without altering Windows
   assert.ok(!render({ type: "launch_app", exe: "" }).includes(t("ui.action.elevate")));
   assert.match(render({ type: "window_op", op: "minimize" }), /disabled=""/);
   assert.ok(render({ type: "launch_app", exe: "com.apple.Safari", elevate: true }).includes(t("mac.ui.action.repair")));
+});
+
+test("permission setup adds a Mac step and preserves the four Windows steps", () => {
+  const props = { pauseHotkey: "^%#p", onDisableApps() {}, onClose() {} };
+  const render = (extra) => renderToStaticMarkup(createElement(Guide, { ...props, ...extra }));
+  platform.initPlatform("windows");
+  const windows = render({});
+  assert.equal(render({ setup: true, initialPermissions: { accessibility: false, input_monitoring: false } }), windows);
+  assert.equal((windows.match(/role="tab"/g) ?? []).length, 4);
+  platform.initPlatform("macos");
+  const missing = render({ initialPermissions: { accessibility: true, input_monitoring: false } });
+  assert.ok(missing.includes(t("mac.setup.permissions")));
+  assert.equal((missing.match(/role="tab"/g) ?? []).length, 5);
+  const granted = { accessibility: true, input_monitoring: true };
+  assert.equal((render({ initialPermissions: granted }).match(/role="tab"/g) ?? []).length, 4);
+  const setup = render({ setup: true, initialPermissions: granted });
+  assert.ok(setup.includes(t("mac.setup.ready")));
+  assert.equal((setup.match(/role="tab"/g) ?? []).length, 5);
+});
+
+test("permission rows distinguish each grant and require both before advancing", () => {
+  platform.initPlatform("macos");
+  const status = { accessibility: true, input_monitoring: false };
+  const html = renderToStaticMarkup(createElement(PermissionRows, { status, requesting: null, onGrant() {} }));
+  assert.ok(html.includes(t("mac.setup.accessibility_why")));
+  assert.ok(html.includes(t("mac.setup.input_monitoring_why")));
+  assert.ok(html.includes(t("mac.setup.granted")));
+  assert.ok(html.includes(t("mac.setup.pending")));
+  assert.equal((html.match(/disabled=""/g) ?? []).length, 1);
+  for (const [accessibility, input_monitoring, ready] of [[false, false, false], [true, false, false], [false, true, false], [true, true, true]]) {
+    assert.equal(permissionsReady({ accessibility, input_monitoring }), ready);
+  }
 });

@@ -36,7 +36,7 @@ mod menu;
 #[cfg(target_os = "macos")]
 mod overlay;
 #[cfg(target_os = "macos")]
-mod permissions;
+pub mod permissions;
 #[cfg(target_os = "macos")]
 mod selftest;
 

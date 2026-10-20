@@ -2,11 +2,16 @@
 import os
 from pathlib import Path
 import re
+import runpy
 import shutil
 import subprocess
 import tempfile
 import textwrap
 import unittest
+from unittest.mock import Mock, patch
+import types
+import struct
+import sys
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -112,6 +117,15 @@ case "$tool" in
         [[ $# -eq 3 && "$1" == -s && "$2" == /Applications ]] || exit 1
         printf '/Applications\n' > "$3"
         ;;
+    python3)
+        [[ $# -eq 4 && "$1" == */build_dmg.py && "$2" == */dmg_settings.py ]] || exit 1
+        test -f "$2" || exit 1
+        test -f "$(dirname "$2")/background/background.png" || exit 1
+        test -f "$(dirname "$2")/background/background@2x.png" || exit 1
+        test -f "$3/Contents/MacOS/mousetroke" || exit 1
+        hdiutil create "$4" || exit 1
+        [[ "${FAIL_DMGBUILD:-0}" != 1 ]] || exit 1
+        ;;
     hdiutil)
         if [[ "$1" == create ]]; then
             image="$2"
@@ -181,6 +195,42 @@ def workflow_bash_blocks():
                 yield f"{path.name}: {step}", value, macos
 
 
+class DmgLayoutTests(unittest.TestCase):
+    def test_layout_loads_like_dmgbuild_and_includes_retina_art(self):
+        # dmgbuild 用 exec 加载设置，不提供 __file__。
+        settings = {"defines": {"app": "/tmp/staged/Mousetroke.app", "art": str(ROOT / "scripts/mac/background")}}
+        exec(compile((ROOT / "scripts/mac/dmg_settings.py").read_text(encoding="utf-8"), "dmg_settings.py", "exec"), settings)
+        self.assertEqual(settings["window_rect"][1], (640, 400))
+        self.assertEqual(settings["icon_locations"], {"Mousetroke.app": (160, 200), "Applications": (480, 200)})
+        self.assertEqual(settings["symlinks"], {"Applications": "/Applications"})
+        self.assertEqual(settings["files"][1][1], ".background")
+        self.assertEqual(settings["icon_size"], 128)
+        self.assertEqual(settings["format"], "UDZO")
+        for key in ["show_toolbar", "show_sidebar", "show_status_bar", "show_pathbar", "show_tab_view"]:
+            self.assertFalse(settings[key], key)
+        for suffix, size in [("", (640, 400)), ("@2x", (1280, 800))]:
+            data = (ROOT / f"scripts/mac/background/background{suffix}.png").read_bytes()
+            self.assertEqual(data[:8], b"\x89PNG\r\n\x1a\n")
+            self.assertEqual(struct.unpack(">II", data[16:24]), size)
+
+    def test_image_copy_is_verified_even_if_dmgbuild_ignores_ditto_status(self):
+        module = types.ModuleType("dmgbuild")
+        module.build_dmg = Mock()
+        with patch.dict(sys.modules, {"dmgbuild": module}):
+            source = runpy.run_path(str(ROOT / "scripts/mac/build_dmg.py"))
+        event = {"type": "operation::finished", "operation": "file::add", "file": "/Volumes/test/Mousetroke.app"}
+        with patch("subprocess.run") as run:
+            source["verify_copy"](event)
+            self.assertEqual(run.call_args.args[0], ["codesign", "--verify", "--strict", "--all-architectures", str(Path(event["file"]))])
+            self.assertTrue(run.call_args.kwargs["check"])
+        with patch("subprocess.run", side_effect=subprocess.CalledProcessError(1, "codesign")):
+            with self.assertRaises(subprocess.CalledProcessError):
+                source["verify_copy"](event)
+        # 隐藏背景目录复制失败也不能生成可发布镜像。
+        with self.assertRaises(FileNotFoundError):
+            source["verify_copy"]({**event, "file": str(ROOT / "target/missing-dmg-art/.background")})
+
+
 class MacShellCompatibilityTests(unittest.TestCase):
     def test_compatibility_guard_detects_bash4_and_masked_failures(self):
         for source in ["declare -A items", "local -n reference=items", "mapfile -t items",
@@ -230,7 +280,7 @@ class MacPackagingTests(unittest.TestCase):
         shutil.copyfile(ROOT / "i18n/en-US.json", self.root / "i18n/en-US.json")
         commands = self.root / "commands"
         commands.mkdir()
-        for name in ["cargo", "lipo", "codesign", "security", "openssl", "git", "base64", "plutil", "ditto", "ln", "hdiutil"]:
+        for name in ["cargo", "lipo", "codesign", "security", "openssl", "git", "base64", "plutil", "ditto", "ln", "hdiutil", "python3"]:
             executable = commands / name
             with executable.open("w", encoding="utf-8", newline="\n") as stream:
                 stream.write(MOCK_TOOL)
@@ -542,6 +592,7 @@ if message=$(mac_message mac.bundle.done); then exit 0; else exit 1; fi
         for failure, stage in [
             (dict(FAIL_DITTO="1"), "ditto <"),
             (dict(FAIL_CREATE="1"), "hdiutil <create>"),
+            (dict(FAIL_DMGBUILD="1"), "python3 <"),
             (dict(FAIL_SIGN_SUFFIX=".dmg"), "codesign <--force>"),
             (dict(FAIL_IMAGE_VERIFY="1"), "hdiutil <verify>"),
         ]:

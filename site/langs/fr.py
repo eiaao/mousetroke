@@ -232,7 +232,4 @@ REPL = base("fr", "fr", "fr_FR", "Langue", "Français") + [
 
 MAC = {'download': 'Télécharger pour Mac (bêta)',
  'first_title': 'Premier lancement sur Mac',
- 'first_text': 'Glissez Mousetroke dans Applications et ouvrez-le depuis ce dossier. Cette bêta '
-               'n’est pas notariée : si macOS la bloque, allez dans Réglages Système → '
-               'Confidentialité et sécurité → Ouvrir quand même (sur un ancien macOS, clic droit → '
-               'Ouvrir). Autorisez ensuite Accessibilité et Surveillance de l’entrée.'}
+ 'first_text': 'Glissez Mousetroke dans Applications et ouvrez-le. En cas de blocage : Réglages Système → Confidentialité et sécurité → Ouvrir quand même (bêta non notariée). Le guide vous aide à accorder les autorisations et confirme que tout est prêt.'}

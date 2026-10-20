@@ -25,8 +25,8 @@ fi
 temporary=$(mktemp -d) || exit 1
 trap 'status=$?; rm -rf "$temporary" || status=1; rm -f "$image" || status=1; exit "$status"' EXIT
 ditto "$bundle" "$temporary/Mousetroke.app" || exit 1
-ln -s /Applications "$temporary/Applications" || exit 1
-hdiutil create "$image" -format UDZO -volname Mousetroke -srcfolder "$temporary" || exit 1
+# dmgbuild 创建固定布局、Applications 链接和隐藏的 Retina 背景；先暂存一次以保留原包。
+python3 "$root/scripts/mac/build_dmg.py" "$root/scripts/mac/dmg_settings.py" "$temporary/Mousetroke.app" "$image" || exit 1
 sign_mac "$image" || exit 1
 hdiutil verify "$image" || exit 1
 trap 'status=$?; rm -rf "$temporary" || status=1; exit "$status"' EXIT

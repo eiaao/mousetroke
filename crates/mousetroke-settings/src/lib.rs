@@ -8,6 +8,8 @@
 //! 只发布一个主程序，但界面仍是独立进程——常驻的引擎进程里没有 WebView。
 
 mod platform;
+#[cfg(target_os = "macos")]
+mod mac_permissions;
 use platform::{engine_exe, engine_status, icons, picker};
 
 use std::collections::BTreeMap;
@@ -23,13 +25,22 @@ use tauri::{Emitter, Manager, State, WebviewWindow};
 
 /// 启动参数或其他实例请求打开关于页；界面初始化时取一次，之后改用 show-about 事件。
 static ABOUT: AtomicBool = AtomicBool::new(false);
+#[cfg(target_os = "macos")]
+static SETUP: AtomicBool = AtomicBool::new(false);
 
 /// 打开关于页并把窗口带到前台（第二次启动、Mac 应用菜单共用）。
 pub(crate) fn show_window(app: &tauri::AppHandle, about: bool) {
     if about {
         ABOUT.store(true, Ordering::Release);
         let _ = app.emit("show-about", ());
+    } else {
+        #[cfg(target_os = "macos")]
+        let _ = app.emit("show-settings", ());
     }
+    focus_window(app);
+}
+
+fn focus_window(app: &tauri::AppHandle) {
     if let Some(window) = app.get_webview_window("main") {
         let _ = window.unminimize();
         let _ = window.show();
@@ -63,6 +74,10 @@ struct AppPaths {
 #[serde(rename_all = "camelCase")]
 struct InitState {
     about: bool,
+    #[cfg(target_os = "macos")]
+    setup: bool,
+    #[cfg(target_os = "macos")]
+    permissions: mac_permissions::PermissionStatus,
     platform: &'static str,
     config_path: String,
     /// 文件不存在时为默认配置，`config_exists = false`。
@@ -109,6 +124,10 @@ fn init_state(paths: State<AppPaths>) -> InitState {
     i18n::set_lang(resolved);
     InitState {
         about: take_about_request(),
+        #[cfg(target_os = "macos")]
+        setup: take_setup_request(),
+        #[cfg(target_os = "macos")]
+        permissions: mac_permissions::get_permissions(),
         platform: if cfg!(target_os = "macos") { "macos" } else { "windows" },
         config_path: path.to_string_lossy().into_owned(),
         config,
@@ -434,6 +453,17 @@ fn reveal_config(paths: State<AppPaths>) {
 #[tauri::command]
 fn take_about_request() -> bool { ABOUT.swap(false, Ordering::AcqRel) }
 
+#[cfg(target_os = "macos")]
+#[tauri::command]
+fn take_setup_request() -> bool { SETUP.swap(false, Ordering::AcqRel) }
+
+#[cfg(target_os = "macos")]
+fn show_setup(app: &tauri::AppHandle) {
+    SETUP.store(true, Ordering::Release);
+    let _ = app.emit("show-setup", ());
+    focus_window(app);
+}
+
 #[tauri::command]
 async fn check_update() -> MsgResult<platform::update::Check> {
     tauri::async_runtime::spawn_blocking(platform::update::check).await
@@ -482,9 +512,16 @@ pub fn run(config: Option<PathBuf>) {
     let config = config.unwrap_or_else(platform::default_config_path);
     mousetroke_core::i18n::init_from_config(&config, &platform::system_langs());
     ABOUT.store(std::env::args().any(|s| s == "--about"), Ordering::Release);
+    #[cfg(target_os = "macos")]
+    SETUP.store(std::env::args().any(|s| s == "--setup"), Ordering::Release);
     tauri::Builder::default()
         // 必须最先注册：已有实例时把参数转交过去并立即退出，不再创建窗口
         .plugin(tauri_plugin_single_instance::init(|app, argv, _cwd| {
+            #[cfg(target_os = "macos")]
+            if argv.iter().any(|a| a == "--setup") {
+                show_setup(app);
+                return;
+            }
             show_window(app, argv.iter().any(|a| a == "--about"));
         }))
         .manage(AppPaths { config })
@@ -512,6 +549,14 @@ pub fn run(config: Option<PathBuf>) {
             install_update,
             download_update,
             take_about_request,
+            #[cfg(target_os = "macos")]
+            take_setup_request,
+            #[cfg(target_os = "macos")]
+            mac_permissions::get_permissions,
+            #[cfg(target_os = "macos")]
+            mac_permissions::request_permission,
+            #[cfg(target_os = "macos")]
+            mac_permissions::restart_engine,
             open_path,
             pick_window,
             set_autostart,

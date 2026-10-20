@@ -6,6 +6,14 @@ ENTRY = "## 0.1.1 — 2026-10-19\n\n### English\n\n- A change\n\n### 中文\n\n-
 
 
 class ChangelogTests(unittest.TestCase):
+    def test_unreleased_is_validated_but_not_published(self):
+        unreleased = "## Unreleased\n\n### English\n\n- Next change\n\n### 中文\n\n- 下次更新\n\n"
+        self.assertEqual([r.version for r in parse(unreleased + ENTRY)], ["0.1.1"])
+        for text in [unreleased, unreleased + unreleased + ENTRY, ENTRY + unreleased,
+                     unreleased.replace("- 下次更新", "") + ENTRY]:
+            with self.subTest(text=text), self.assertRaises(ValueError):
+                parse(text)
+
     def test_workspace_version_is_scoped_to_workspace_package(self):
         self.assertEqual(workspace_version('''[package]
 version = "9.9.9"

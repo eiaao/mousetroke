@@ -1,7 +1,7 @@
 import { isMac } from "../platform";
 import { useEffect, useState } from "react";
-import type { PresetApp } from "../types";
-import { api } from "../api";
+import type { PermissionName, PermissionStatus, PresetApp } from "../types";
+import { api, errText } from "../api";
 import { T, displayName, t } from "../i18n";
 import { AppIcon } from "./Icons";
 import { Caps } from "./KeysInput";
@@ -29,11 +29,79 @@ function markSeen() {
  * 使用引导：四步，每步一个循环播放的小动画。
  * 第三步列出本机找到的"建议禁用"程序（默认勾选），完成时一并禁用。
  */
-export function Guide({ pauseHotkey, onDisableApps, onClose }: { pauseHotkey: string; onDisableApps: (apps: PresetApp[]) => void; onClose: () => void }) {
+export function Guide({ pauseHotkey, setup = false, initialPermissions, onDisableApps, onClose }: { pauseHotkey: string; setup?: boolean; initialPermissions?: PermissionStatus; onDisableApps: (apps: PresetApp[]) => void; onClose: () => void }) {
   const [step, setStep] = useState(0);
   const [dir, setDir] = useState<1 | -1>(1);
   const [presets, setPresets] = useState<PresetApp[] | null>(null);
   const [chosen, setChosen] = useState<Set<string>>(new Set());
+  const [permissions, setPermissions] = useState(initialPermissions);
+  const [permissionStep, setPermissionStep] = useState(() => isMac() && (setup || !!initialPermissions && !permissionsReady(initialPermissions)));
+  const [permissionError, setPermissionError] = useState<string | null>(null);
+  const [pollError, setPollError] = useState<string | null>(null);
+  const [inputRequested, setInputRequested] = useState(false);
+  const [requesting, setRequesting] = useState<PermissionName | null>(null);
+  const [restartOffered, setRestartOffered] = useState(false);
+  const [restarting, setRestarting] = useState(false);
+  const ready = !!permissions && permissionsReady(permissions);
+
+  useEffect(() => {
+    if (!isMac()) return;
+    let disposed = false;
+    api.getPermissions().then((status) => {
+      if (disposed) return;
+      setPermissions(status);
+      if (!permissionsReady(status)) { setPermissionStep(true); setStep(0); }
+    }, (error) => { if (!disposed) setPermissionError(errText(error)); });
+    return () => { disposed = true; };
+  }, []);
+
+  useEffect(() => {
+    if (!permissionStep) return;
+    let disposed = false;
+    let timer: ReturnType<typeof setTimeout>;
+    // 前一次查询结束后再计时，避免原生调用较慢时并发堆积；关闭引导即停止。
+    const poll = async () => {
+      try {
+        const status = await api.getPermissions();
+        if (!disposed) { setPermissions(status); setPollError(null); }
+      } catch (error) {
+        if (!disposed) setPollError(errText(error));
+      }
+      if (!disposed) timer = setTimeout(poll, 1000);
+    };
+    void poll();
+    return () => { disposed = true; clearTimeout(timer); };
+  }, [permissionStep]);
+
+  useEffect(() => {
+    setRestartOffered(false);
+    if (!permissionStep || (!ready && !inputRequested) || permissions?.engine_ready !== false) return;
+    // 引擎两秒一轮安装 tap；给足恢复时间，只有仍未生效时才提供重启兜底。
+    const timer = setTimeout(() => setRestartOffered(true), 8000);
+    return () => clearTimeout(timer);
+  }, [permissionStep, ready, inputRequested, permissions?.engine_ready]);
+
+  useEffect(() => {
+    if (!permissionStep || step !== 0 || !ready) return;
+    // 留出读到“准备就绪”的时间，再自动进入原有使用引导。
+    const timer = setTimeout(() => { setDir(1); setStep(1); }, 1800);
+    return () => clearTimeout(timer);
+  }, [permissionStep, step, ready]);
+
+  const grant = async (permission: PermissionName) => {
+    if (permission === "input_monitoring") setInputRequested(true);
+    setRequesting(permission);
+    setPermissionError(null);
+    try { await api.requestPermission(permission); }
+    catch (error) { setPermissionError(errText(error)); }
+    finally { setRequesting(null); }
+  };
+  const restart = async () => {
+    setRestarting(true);
+    try { await api.restartEngine(); setRestartOffered(false); }
+    catch (error) { setPermissionError(errText(error)); }
+    finally { setRestarting(false); }
+  };
 
   useEffect(() => {
     api.presetApps().then(
@@ -122,23 +190,37 @@ export function Guide({ pauseHotkey, onDisableApps, onClose }: { pauseHotkey: st
             <Caps keys={pauseHotkey} />
           </div>
           <p className="muted">{t("ui.guide.p4_note")}</p>
+          {isMac() && <p className="guide-try">{t("mac.setup.try")}</p>}
         </>
       ),
     },
   ];
+  if (permissionStep) pages.unshift({
+    art: <div className="permission-symbol" aria-hidden>{ready ? "✓" : "⚿"}</div>,
+    title: t("mac.setup.permissions"),
+    body: <>
+      <p className="permission-intro">{t("mac.setup.intro")}</p>
+      <PermissionRows status={permissions} requesting={requesting} onGrant={(permission) => void grant(permission)} />
+      {(permissionError || pollError) && <p className="error" role="alert">{permissionError || pollError}</p>}
+      <p className="muted permission-later">{t("mac.setup.later")}</p>
+    </>,
+  });
   const STEPS = pages.length;
   const page = pages[step];
   const last = step === STEPS - 1;
 
   return (
     <div className="modal-backdrop guide-backdrop">
-      <div className="guide" role="dialog" aria-modal aria-label={t("ui.guide.aria")}>
+      <div className={`guide${permissionStep && step === 0 ? " guide-permissions" : ""}`} role="dialog" aria-modal aria-label={t("ui.guide.aria")}>
         <div className="guide-art" key={`art-${step}`}>
           {page.art}
         </div>
         <div className={`guide-text ${dir > 0 ? "fwd" : "back"}`} key={`text-${step}`}>
           <div className="guide-step">{t("ui.guide.step", { step: step + 1, total: STEPS })}</div>
           <h2>{page.title}</h2>
+          {permissionStep && ready && <p className="permission-ready" role="status">✓ {t(permissions?.engine_ready === false ? "mac.setup.starting" : "mac.setup.ready")}</p>}
+          {restartOffered && <div className="permission-restart"><p>{t("mac.setup.restart_hint")}</p><button type="button" className="btn" disabled={restarting} onClick={() => void restart()}>{t("mac.setup.restart")}</button></div>}
+          {(permissionError || pollError) && step !== 0 && <p className="error" role="alert">{permissionError || pollError}</p>}
           {page.body}
         </div>
         <footer className="guide-foot">
@@ -157,6 +239,28 @@ export function Guide({ pauseHotkey, onDisableApps, onClose }: { pauseHotkey: st
       </div>
     </div>
   );
+}
+
+export function permissionsReady(status: PermissionStatus): boolean {
+  return status.accessibility && status.input_monitoring;
+}
+
+/** 独立呈现两项状态，授权按钮的可访问名称包含对应权限。 */
+export function PermissionRows({ status, requesting, onGrant }: { status?: PermissionStatus; requesting: PermissionName | null; onGrant: (permission: PermissionName) => void }) {
+  return <div className="permission-rows">
+    {(["accessibility", "input_monitoring"] as const).map((permission) => {
+      const granted = status?.[permission] ?? false;
+      const name = t(permission === "accessibility" ? "mac.setup.accessibility" : "mac.setup.input_monitoring");
+      return <div className="permission-row" key={permission}>
+        <div>
+          <strong>{name}</strong>
+          <p>{t(permission === "accessibility" ? "mac.setup.accessibility_why" : "mac.setup.input_monitoring_why")}</p>
+          <span className={granted ? "permission-granted" : "muted"} role="status">{granted ? `✓ ${t("mac.setup.granted")}` : t(status ? "mac.setup.pending" : "mac.setup.checking")}</span>
+        </div>
+        <button type="button" className="btn" disabled={granted || requesting !== null} aria-label={t("mac.setup.grant_named", { permission: name })} onClick={() => onGrant(permission)}>{t("mac.setup.grant")}</button>
+      </div>;
+    })}
+  </div>;
 }
 
 // ---------------------------------------------------------------- 插图（纯 SVG + CSS 动画，循环播放）
