@@ -563,7 +563,6 @@
   "mac.hot_corner.conflict": "O canto de acesso rápido do sistema conflita com o Mousetroke: {corner}",
   "mac.menu.about": "Sobre o Mousetroke",
   "mac.settings.open_failed": "Não foi possível abrir este local.",
-  "mac.settings.instance_failed": "Não foi possível contatar o processo de ajustes. Tente novamente.",
   "mac.settings.not_app": "“{file}” não é um app ou executável válido.",
   "mac.settings.windows_only": "Este recurso está disponível apenas no Windows no momento.",
   "mac.autostart.bundle_required": "Abra os ajustes pelo Mousetroke.app para configurar a inicialização ao iniciar sessão.",

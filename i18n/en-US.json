@@ -563,7 +563,6 @@
   "mac.hot_corner.conflict": "System Hot Corner conflicts with Mousetroke: {corner}",
   "mac.menu.about": "About Mousetroke",
   "mac.settings.open_failed": "Could not open this location.",
-  "mac.settings.instance_failed": "Could not contact the settings process. Please retry.",
   "mac.settings.not_app": "“{file}” is not a valid .app or executable.",
   "mac.settings.windows_only": "This feature currently supports Windows only.",
   "mac.autostart.bundle_required": "Open settings from Mousetroke.app to configure login launch.",

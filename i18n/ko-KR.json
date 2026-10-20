@@ -557,7 +557,6 @@
   "mac.hot_corner.conflict": "시스템 핫 코너가 Mousetroke와 충돌합니다: {corner}",
   "mac.menu.about": "Mousetroke에 관하여",
   "mac.settings.open_failed": "이 위치를 열 수 없습니다.",
-  "mac.settings.instance_failed": "설정 프로세스에 연결할 수 없습니다. 다시 시도하세요.",
   "mac.settings.not_app": "“{file}”은(는) 유효한 .app 또는 실행 파일이 아닙니다.",
   "mac.settings.windows_only": "이 기능은 현재 Windows에서만 지원됩니다.",
   "mac.autostart.bundle_required": "로그인 시 실행을 설정하려면 Mousetroke.app에서 설정을 여세요.",

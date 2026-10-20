@@ -563,7 +563,6 @@
   "mac.hot_corner.conflict": "La esquina activa del sistema entra en conflicto con Mousetroke: {corner}",
   "mac.menu.about": "Acerca de Mousetroke",
   "mac.settings.open_failed": "No se pudo abrir esta ubicación.",
-  "mac.settings.instance_failed": "No se pudo contactar con el proceso de ajustes. Inténtalo de nuevo.",
   "mac.settings.not_app": "«{file}» no es una app o un ejecutable válido.",
   "mac.settings.windows_only": "Esta función solo está disponible en Windows por ahora.",
   "mac.autostart.bundle_required": "Abre los ajustes desde Mousetroke.app para configurar el inicio de sesión.",

@@ -1,20 +1,12 @@
 //! 覆盖 Tauri 默认英文菜单，保留 WKWebView 原生文本编辑与应用快捷键。
 use crate::{keys, t};
-use tauri::{
-    menu::{Menu, MenuItem, PredefinedMenuItem as Item, Submenu},
-    Manager,
-};
+use tauri::menu::{Menu, MenuItem, PredefinedMenuItem as Item, Submenu};
 
 pub fn install(app: &tauri::App) {
     refresh(app.handle());
     app.on_menu_event(|app, event| {
         if event.id().as_ref() == "settings-about" {
-            super::instance::request_about();
-            if let Some(window) = app.get_webview_window("main") {
-                let _ = window.unminimize();
-                let _ = window.show();
-                let _ = window.set_focus();
-            }
+            crate::show_window(app, true);
         }
     });
 }

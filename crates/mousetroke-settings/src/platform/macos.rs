@@ -10,10 +10,8 @@ use crate::{keys, EngineStatus, Msg, MsgResult, RunningApp};
 
 mod autostart;
 pub mod icons;
-mod instance;
 mod menu;
 pub mod picker;
-pub use instance::{enter_instance, take_about_request};
 pub use mousetroke_mac::log::path as log_path;
 pub use mousetroke_mac::{default_config_path, system_langs};
 
@@ -42,8 +40,15 @@ pub fn setup(app: &tauri::App) {
         #[allow(deprecated)]
         native.activateIgnoringOtherApps(true);
     }
-    instance::listen(app.handle().clone());
     menu::install(app);
+}
+
+/// 被第二次启动唤醒时应用可能在后台；LSUIElement 引擎同 bundle，需要显式激活。
+pub fn bring_to_front() {
+    if let Some(mtm) = MainThreadMarker::new() {
+        #[allow(deprecated)]
+        NSApplication::sharedApplication(mtm).activateIgnoringOtherApps(true);
+    }
 }
 
 pub fn refresh_texts(window: &tauri::WebviewWindow) {

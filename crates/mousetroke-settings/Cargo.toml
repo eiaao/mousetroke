@@ -21,6 +21,8 @@ tauri-build = { version = "2.7.3", features = [] }
 [dependencies]
 mousetroke-core = { path = "../mousetroke-core" }
 tauri = { version = "2.12.4", features = [] }
+# 设置窗口单实例：第二次打开把参数（如 --about）转交给已有窗口
+tauri-plugin-single-instance = "2.5.4"
 rfd = "0.17.2"
 png = "0.18.1"
 serde = { workspace = true }

@@ -26,48 +26,7 @@ pub fn engine_status() -> EngineStatus {
     }
 }
 
-pub fn about_event() -> windows::Win32::Foundation::HANDLE {
-    static EVENT: std::sync::OnceLock<isize> = std::sync::OnceLock::new();
-    let value = *EVENT.get_or_init(|| unsafe {
-        windows::Win32::System::Threading::CreateEventW(None, false, false, windows::core::w!("Mousetroke::settings-about"))
-            .map(|h| h.0 as isize).unwrap_or(0)
-    });
-    windows::Win32::Foundation::HANDLE(value as *mut core::ffi::c_void)
-}
-
-pub fn take_about_request() -> bool {
-    unsafe { windows::Win32::System::Threading::WaitForSingleObject(about_event(), 0) == windows::Win32::Foundation::WAIT_OBJECT_0 }
-}
-
-pub fn focus_existing() -> bool {
-    use windows::core::PCWSTR;
-    use windows::Win32::System::Threading::CreateMutexW;
-    use windows::Win32::UI::WindowsAndMessaging::{FindWindowW, IsIconic, SetForegroundWindow, ShowWindow, SW_RESTORE};
-    let name: Vec<u16> = "Mousetroke::settings".encode_utf16().chain([0]).collect();
-    unsafe {
-        let _ = CreateMutexW(None, false, PCWSTR(name.as_ptr()));
-        if windows::Win32::Foundation::GetLastError() != windows::Win32::Foundation::ERROR_ALREADY_EXISTS {
-            return false;
-        }
-        for title in ["Mousetroke 设置", "Mousetroke Settings", t(keys::UI_WINDOW_TITLE)] { /* i18n:allow 已知语言的窗口标题兜底匹配 */
-            let wide: Vec<u16> = title.encode_utf16().chain([0]).collect();
-            if let Ok(h) = FindWindowW(PCWSTR::null(), PCWSTR(wide.as_ptr())) {
-                if IsIconic(h).as_bool() {
-                    let _ = ShowWindow(h, SW_RESTORE);
-                }
-                let _ = SetForegroundWindow(h);
-                break;
-            }
-        }
-    }
-    true
-}
-
-pub fn enter_instance(about: bool) -> MsgResult<bool> {
-    let event = about_event();
-    if about { unsafe { let _ = windows::Win32::System::Threading::SetEvent(event); } }
-    Ok(focus_existing())
-}
+pub fn bring_to_front() {}
 pub fn setup(_app: &tauri::App) {}
 pub fn refresh_texts(_window: &tauri::WebviewWindow) {}
 pub fn running_apps() -> Vec<RunningApp> {

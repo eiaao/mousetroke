@@ -575,7 +575,6 @@
   "mac.hot_corner.conflict": "Активный угол системы конфликтует с Mousetroke: {corner}",
   "mac.menu.about": "О Mousetroke",
   "mac.settings.open_failed": "Не удалось открыть это расположение.",
-  "mac.settings.instance_failed": "Не удалось связаться с процессом настроек. Повторите попытку.",
   "mac.settings.not_app": "«{file}» — недопустимое приложение .app или исполняемый файл.",
   "mac.settings.windows_only": "Эта функция пока доступна только в Windows.",
   "mac.autostart.bundle_required": "Откройте настройки из Mousetroke.app для запуска при входе.",
