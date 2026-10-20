@@ -645,7 +645,7 @@ mod tests {
             }
         }).collect();
         let expected = shape_sample(raw).unwrap();
-        for text in [include_str!("../../../target/uitest/config.json"), include_str!("../../../target/uitest/config-en.json")] {
+        for text in [include_str!("../../../tools/uitest/config.json"), include_str!("../../../tools/uitest/config-en.json")] {
             let mut config: Config = serde_json::from_str(text).unwrap();
             assert!(validate_strokes(&config).is_ok());
             let step = config.scopes[0].bindings.iter_mut().flat_map(|b| &mut b.pattern).find(|s| matches!(s, Step::Shape { .. })).unwrap();
