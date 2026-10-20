@@ -28,15 +28,7 @@ if [[ "${1:-}" == --universal ]]; then
     binary="$build_target/universal/release/mousetroke"
     lipo "$build_target/aarch64-apple-darwin/release/mousetroke" \
         "$build_target/x86_64-apple-darwin/release/mousetroke" -create -output "$binary" || exit 1
-    # CommandLineTools 的 -verify_arch 每次只接受一个架构。
-    for architecture in arm64 x86_64; do
-        lipo "$binary" -verify_arch "$architecture" || exit 1
-    done
-    architectures=$(lipo "$binary" -archs) || exit 1
-    [[ "$architectures" =~ ^[[:space:]]*(arm64[[:space:]]+x86_64|x86_64[[:space:]]+arm64)[[:space:]]*$ ]] || {
-        printf 'Expected exactly arm64 and x86_64; got: %s\n' "$architectures" >&2
-        exit 1
-    }
+    verify_universal "$binary" || exit 1
 else
     cargo build --release -p mousetroke --locked || exit 1
     binary="$build_target/release/mousetroke"

@@ -126,7 +126,6 @@ fn install_legacy(lua: &Lua, ms: &Table) -> mlua::Result<()> {
         ("SetPaused", "set_paused"),
         ("ShowSettings", "show_settings"),
         ("ShowToast", "show_toast"),
-        ("IsWinTop", "is_win_top"),
         ("SetWinTop", "set_win_top"),
         ("ReadText", "read_text"),
         ("Keys", "keys"),
@@ -194,12 +193,12 @@ fn install_legacy(lua: &Lua, ms: &Table) -> mlua::Result<()> {
     }
     let _ = lua.globals().set("User32", user32);
     let luanet = lua.create_table()?;
-    let _ = luanet.set(
+    luanet.set(
         "enum",
         lua.create_function(|_l, (_t, name): (Value, String)| Ok(name))?,
     )?;
     let _ = lua.globals().set("luanet", luanet);
-    let _ = lua
+    lua
         .globals()
         .set("import", lua.create_function(|_l, _m: String| Ok(()))?)?;
     Ok(())
@@ -211,14 +210,7 @@ mod tests {
     #[test]
     fn read_only_ms_helpers_use_the_windows_backend() {
         let lua = Lua::new();
-        let ctx = LuaCtx {
-            pos: (0, 0),
-            wid: 0,
-            pid: 0,
-            exe: String::new(),
-            title: String::new(),
-            mode: String::new(),
-        };
+        let ctx = LuaCtx::default();
         let platform: std::sync::Arc<dyn LuaPlatform> = std::sync::Arc::new(WindowsPlatform);
         mousetroke_lua::install_ms_table(&lua, &ctx, &platform).unwrap();
         let paused: bool = lua.load("return ms.is_paused()").eval().unwrap();
@@ -246,14 +238,7 @@ mod tests {
     #[test]
     fn legacy_aliases_share_functions_without_calling_them() {
         let lua = Lua::new();
-        let ctx = LuaCtx {
-            pos: (0, 0),
-            wid: 0,
-            pid: 0,
-            exe: String::new(),
-            title: String::new(),
-            mode: String::new(),
-        };
+        let ctx = LuaCtx::default();
         let platform: std::sync::Arc<dyn LuaPlatform> = std::sync::Arc::new(WindowsPlatform);
         mousetroke_lua::install_ms_table(&lua, &ctx, &platform).unwrap();
         lua.load(

@@ -77,6 +77,22 @@ pub fn looks_like_url(s: &str) -> bool {
     s.starts_with("http://") || s.starts_with("https://") || s.starts_with("www.")
 }
 
+/// 网址动作：选中文字本身是网址就直接打开（`www.` 补 https://），否则把它编码后代入模板。
+pub fn expand_url(template: &str, vars: &Vars) -> String {
+    if let Some(text) = vars.get("MS_SELECTED_TEXT") {
+        if looks_like_url(text) {
+            let text = text.trim();
+            return if text.starts_with("www.") {
+                format!("https://{text}")
+            } else {
+                text.into()
+            };
+        }
+        return expand(&template.replace("%MS_SELECTED_TEXT%", &url_encode(text)), vars);
+    }
+    expand(template, vars)
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -113,6 +129,24 @@ mod tests {
     fn url_encodes_utf8() {
         assert_eq!(url_encode("a b"), "a%20b");
         assert_eq!(url_encode("手势"), "%E6%89%8B%E5%8A%BF");
+    }
+
+    #[test]
+    fn url_actions_encode_queries_and_open_selected_urls() {
+        let mut values: Vars = [
+            ("MS_SELECTED_TEXT".to_string(), "a b&中文".to_string()),
+            ("MS_PID".to_string(), "42".to_string()),
+        ]
+        .into_iter()
+        .collect();
+        assert_eq!(
+            expand_url("https://example.com?q=%MS_SELECTED_TEXT%&pid=%MS_PID%", &values),
+            "https://example.com?q=a%20b%26%E4%B8%AD%E6%96%87&pid=42"
+        );
+        values.insert("MS_SELECTED_TEXT".into(), " https://example.com/?x=1 ".into());
+        assert_eq!(expand_url("unused", &values), "https://example.com/?x=1");
+        values.insert("MS_SELECTED_TEXT".into(), "www.example.com".into());
+        assert_eq!(expand_url("unused", &values), "https://www.example.com");
     }
 
     #[test]

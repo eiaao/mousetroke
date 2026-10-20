@@ -10,14 +10,7 @@ image="$root/target/mac/Mousetroke.dmg"
 rm -f "$image" || exit 1
 [[ -d "$bundle" ]] || { printf 'Missing bundle: %s\n' "$bundle" >&2; exit 1; }
 binary="$bundle/Contents/MacOS/mousetroke"
-for architecture in arm64 x86_64; do
-    lipo "$binary" -verify_arch "$architecture" || exit 1
-done
-architectures=$(lipo "$binary" -archs) || exit 1
-[[ "$architectures" =~ ^[[:space:]]*(arm64[[:space:]]+x86_64|x86_64[[:space:]]+arm64)[[:space:]]*$ ]] || {
-    printf 'Expected exactly arm64 and x86_64; got: %s\n' "$architectures" >&2
-    exit 1
-}
+verify_universal "$binary" || exit 1
 codesign --verify --strict --all-architectures "$bundle" || exit 1
 if [[ "${MOUSETROKE_REQUIRE_SIGNING:-0}" == 1 ]]; then
     # display 默认只看宿主架构；两片都必须包含证书身份，ad-hoc 没有 Authority。

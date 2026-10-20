@@ -67,7 +67,7 @@ fn acceptance_candidate_table() {
     // Rank once, then scan thresholds without changing the fixtures or random streams.
     let row = |sample: &[i32], training: &[Vec<Vec<i32>>]| {
         // Re-enter through normalization, as match_chain_path does for actual mouse input.
-        let raw: Vec<_> = sample.chunks_exact(2).map(|p| (p[0] as f64, p[1] as f64)).collect();
+        let raw: Vec<_> = sample.as_chunks::<2>().0.iter().map(|&[x, y]| (x as f64, y as f64)).collect();
         let path = shape::normalize(&raw).unwrap();
         (classify_normalized_stroke(&path), ranked(&path, training))
     };
@@ -281,7 +281,7 @@ fn templates() -> Vec<Vec<Vec<i32>>> {
 
 // 在每个拐角切去一小段，用二次曲线连起来，再加入尺寸、速度和手抖变化。
 fn hand_drawn_trace(encoded: &[i32], rng: &mut Xorshift) -> Vec<Point> {
-    let vertices: Vec<_> = encoded.chunks_exact(2).map(|p| (p[0] as f64, p[1] as f64)).collect();
+    let vertices: Vec<_> = encoded.as_chunks::<2>().0.iter().map(|&[x, y]| (x as f64, y as f64)).collect();
     let mut path = vec![vertices[0]];
     for i in 1..vertices.len() {
         let a = *path.last().unwrap();
@@ -351,7 +351,7 @@ fn stroke_classification_default_traces_and_curves() {
     for (name, samples) in data.classes.iter().map(|(k, v)| (k.as_str(), v)).chain(std::iter::once(("engine G", &data.engine_g))) {
         let mut correct = 0;
         for sample in samples {
-            let raw: Vec<_> = sample.chunks_exact(2).map(|p| (p[0] as f64, p[1] as f64)).collect();
+            let raw: Vec<_> = sample.as_chunks::<2>().0.iter().map(|&[x, y]| (x as f64, y as f64)).collect();
             correct += usize::from(classify_stroke(&raw) == StrokeKind::Shape);
         }
         println!("real curve {name}: {correct}/{}", samples.len());
@@ -400,7 +400,7 @@ fn normalized_classification_agrees_with_raw() {
     let data = real_shapes();
     let mut real = 0;
     for sample in data.classes.values().flatten().chain(&data.engine_g).chain(&data.engine_straight) {
-        let raw: Vec<_> = sample.chunks_exact(2).map(|p| (p[0] as f64, p[1] as f64)).collect();
+        let raw: Vec<_> = sample.as_chunks::<2>().0.iter().map(|&[x, y]| (x as f64, y as f64)).collect();
         check("real", &raw);
         // Stored fixture coordinates are already normalized but quantized: test them directly too.
         assert_eq!(classify_stroke(&raw), classify_normalized_stroke(&shape::decode(sample).unwrap()));
@@ -581,7 +581,7 @@ fn samples_compete_only_across_bindings() {
     let reversed: Vec<_> = path.iter().rev().copied().collect();
     let mixed = vec![shape::encode(&reversed), shape::encode(&path)];
     assert_eq!(shape::best_match(&path, &[(1, &mixed)]).unwrap().0, 1);
-    assert!(ACCEPT > 0.0 && ACCEPT <= 1.0 && MARGIN > 0.0);
+    const { assert!(ACCEPT > 0.0 && ACCEPT <= 1.0 && MARGIN > 0.0) };
 }
 
 fn binding(name: &str, pattern: Vec<Step>) -> Binding {
@@ -610,11 +610,11 @@ fn real_engine_strokes_use_tiered_acceptance_through_match_chain() {
     let scope = scope(data.classes.iter().map(|(name, templates)| binding(name, vec![RIGHT, Step::Shape { templates: templates.clone() }])).collect());
     let built = matcher::build_steps(Trigger::Button(MouseButton::Right), &[], Some(0));
     for sample in &data.engine_g {
-        let raw: Vec<_> = sample.chunks_exact(2).map(|p| (p[0] as f64, p[1] as f64)).collect();
+        let raw: Vec<_> = sample.as_chunks::<2>().0.iter().map(|&[x, y]| (x as f64, y as f64)).collect();
         assert_eq!(matcher::match_chain_path(&[&scope], &built, &segments(&raw), Some(&raw)).unwrap().0.name, "G");
     }
     for sample in &data.engine_straight {
-        let raw: Vec<_> = sample.chunks_exact(2).map(|p| (p[0] as f64, p[1] as f64)).collect();
+        let raw: Vec<_> = sample.as_chunks::<2>().0.iter().map(|&[x, y]| (x as f64, y as f64)).collect();
         assert!(matcher::match_chain_path(&[&scope], &built, &segments(&raw), Some(&raw)).is_none());
     }
 }
@@ -624,8 +624,8 @@ fn matcher_prefers_trace_then_shape_and_rejects_scribbles() {
     let g = clean(Drawing::G, 0.0);
     let down_right = clean(Drawing::DownRight, 0.0);
     let scope = scope(vec![
-        binding("g", vec![RIGHT, Step::shape_from_samples(&[g.clone()]).unwrap()]),
-        binding("corner-shape", vec![RIGHT, Step::shape_from_samples(&[down_right.clone()]).unwrap()]),
+        binding("g", vec![RIGHT, Step::shape_from_samples(std::slice::from_ref(&g)).unwrap()]),
+        binding("corner-shape", vec![RIGHT, Step::shape_from_samples(std::slice::from_ref(&down_right)).unwrap()]),
         binding("trace", vec![RIGHT, Step::Trace { points: vec![0, 0, 0, 50, 50, 50] }]),
     ]);
     let built = matcher::build_steps(Trigger::Button(MouseButton::Right), &[], Some(0));
@@ -642,7 +642,7 @@ fn matcher_prefers_trace_then_shape_and_rejects_scribbles() {
 #[test]
 fn shape_steps_obey_position_presses_wheels_and_disabled_bindings() {
     let g = clean(Drawing::G, 0.0);
-    let step = Step::shape_from_samples(&[g.clone()]).unwrap();
+    let step = Step::shape_from_samples(std::slice::from_ref(&g)).unwrap();
     let edge = Step::Edge { edge: mousetroke_core::edge::TOP };
     let wheel = Step::Press { key: PatternKey::Wheel(-1) };
     let scope = scope(vec![binding("shape", vec![edge.clone(), RIGHT, step.clone(), Step::Wheel { horizontal: false }])]);
@@ -659,7 +659,7 @@ fn shape_steps_obey_position_presses_wheels_and_disabled_bindings() {
     assert!(!matcher::is_feasible_prefix(&disabled, &built));
     assert!(matcher::match_binding_path(&disabled, &built, &[], Some(&g)).is_none());
     for pattern in [vec![edge.clone(), RIGHT, step.clone(), step], vec![edge, RIGHT, Step::Trace { points: vec![] },
-        Step::shape_from_samples(&[g.clone()]).unwrap()]] {
+        Step::shape_from_samples(std::slice::from_ref(&g)).unwrap()]] {
         let invalid = self::scope(vec![binding("two-strokes", pattern)]);
         let built = vec![built[0].clone(), RIGHT, Step::Trace { points: vec![] }, Step::Trace { points: vec![] }];
         assert!(matcher::match_binding_path(&invalid, &built, &[], Some(&g)).is_none());
@@ -674,7 +674,7 @@ fn chain_prefers_specific_scope_before_trace_priority() {
     app.kind = ScopeKind::App;
     let global = scope(vec![
         binding("global-trace", vec![RIGHT, Step::Trace { points: vec![0, 0, 0, 50, 50, 50] }]),
-        binding("global-shape", vec![RIGHT, Step::shape_from_samples(&[g.clone()]).unwrap()]),
+        binding("global-shape", vec![RIGHT, Step::shape_from_samples(std::slice::from_ref(&g)).unwrap()]),
     ]);
     let built = matcher::build_steps(Trigger::Button(MouseButton::Right), &[], Some(0));
     let chain = [&app, &global];
@@ -692,7 +692,7 @@ fn chain_prefers_specific_scope_before_trace_priority() {
 fn app_shape_allows_global_straight_fallback() {
     let g = clean(Drawing::G, 0.0);
     let straight = clean(Drawing::Right, 0.0);
-    let mut app = scope(vec![binding("app-g", vec![RIGHT, Step::shape_from_samples(&[g.clone()]).unwrap()])]);
+    let mut app = scope(vec![binding("app-g", vec![RIGHT, Step::shape_from_samples(std::slice::from_ref(&g)).unwrap()])]);
     app.kind = ScopeKind::App;
     let global = scope(vec![binding("global-straight", vec![RIGHT, Step::Trace { points: vec![0, 0, 50, 0] }])]);
     let built = matcher::build_steps(Trigger::Button(MouseButton::Right), &[], Some(0));
@@ -717,7 +717,7 @@ fn path_matching_prefers_exact_trace_then_shape_then_fuzzy_trace() {
     assert!(best_score(&[(&exact, &segs)]).unwrap().1 < EXACT_EPS);
     let mut scope = scope(vec![
         binding("fuzzy", vec![RIGHT, Step::Trace { points: fuzzy }]),
-        binding("shape", vec![RIGHT, Step::shape_from_samples(&[path.clone()]).unwrap()]),
+        binding("shape", vec![RIGHT, Step::shape_from_samples(std::slice::from_ref(&path)).unwrap()]),
     ]);
     let built = matcher::build_steps(Trigger::Button(MouseButton::Right), &[], Some(0));
     assert_eq!(matcher::match_binding(&scope, &built, &segs).unwrap().name, "fuzzy");

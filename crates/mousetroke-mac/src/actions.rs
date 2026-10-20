@@ -114,6 +114,14 @@ impl Drop for BusyGuard {
         BUSY.with(|b| b.set(false));
     }
 }
+/// 仍有排队动作或等待中的后台结果时，主循环保持快节奏。
+pub fn busy() -> bool {
+    STATE.with(|s| {
+        let s = s.borrow();
+        !s.queue.is_empty() || s.pending.is_some()
+    })
+}
+
 pub fn tick() {
     if BUSY.with(|b| b.replace(true)) {
         return;
@@ -442,7 +450,7 @@ fn dispatch(request: Request) {
         Action::OpenUrl {
             url_template,
             browser,
-        } => open_url(&helpers::expand_url(url_template, vars), browser.as_deref()),
+        } => open_url(&vars::expand_url(url_template, vars), browser.as_deref()),
         Action::SystemKey { key } => system_key(key),
         Action::Menu { items, .. } => {
             if let Some(mtm) = MainThreadMarker::new() {
@@ -452,14 +460,12 @@ fn dispatch(request: Request) {
             }
         }
         Action::Lua { code } => {
-            let ctx = mousetroke_lua::LuaCtx {
-                pos: *pos,
-                wid: target.as_ref().map_or(0, |t| t.wid),
-                pid: target.as_ref().map_or(0, |t| t.pid),
-                exe: vars.get("MS_EXE").cloned().unwrap_or_default(),
-                title: vars.get("MS_WIN_NAME").cloned().unwrap_or_default(),
-                mode: vars.get("MS_TARGET_MODE").cloned().unwrap_or_default(),
-            };
+            let ctx = mousetroke_lua::LuaCtx::from_vars(
+                *pos,
+                target.as_ref().map_or(0, |t| t.wid),
+                target.as_ref().map_or(0, |t| t.pid),
+                vars,
+            );
             // AX 标题只在工作线程读取；主线程不会等待 Lua 完成。
             let (code, window) = (code.clone(), window.clone());
             std::thread::spawn(move || {

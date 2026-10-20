@@ -44,7 +44,7 @@ pub use mousetroke_core::schema::default_config_path;
 #[cfg(target_os = "macos")]
 pub use app::run_with_config;
 #[cfg(target_os = "macos")]
-pub use targeting::pick_app_at;
+pub use targeting::{ignored_bundle, pick_app_at};
 #[cfg(target_os = "macos")]
 mod settings;
 

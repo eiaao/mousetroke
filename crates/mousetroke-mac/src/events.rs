@@ -17,6 +17,8 @@ pub const INJECT_TAG: i64 = 0x4D53_5452;
 thread_local! {
     static TAP: RefCell<Option<Tap>> = const { RefCell::new(None) };
     static HOTKEY_HELD: Cell<bool> = const { Cell::new(false) };
+    /// 暂停热键：(kVK, 必须恰好按下的修饰键位)；来自 settings.pause_hotkey。
+    static PAUSE_KEY: Cell<Option<(u16, u64)>> = const { Cell::new(None) };
     static FAULTED: Cell<bool> = const { Cell::new(false) };
     static SCROLL: Cell<f64> = const { Cell::new(0.0) };
     static EDGE_SETTLE: Cell<Option<(i32, i32, Instant)>> = const { Cell::new(None) };
@@ -146,6 +148,7 @@ unsafe extern "C-unwind" fn callback(
             reenable(kind);
             return event.as_ptr();
         }
+        crate::app::wake();
         let event_ref = unsafe { event.as_ref() };
         if is_tagged(CGEvent::integer_value_field(
             Some(event_ref),
@@ -158,11 +161,14 @@ unsafe extern "C-unwind" fn callback(
             return event.as_ptr();
         }
         let key = CGEvent::integer_value_field(Some(event_ref), Field::KeyboardEventKeycode) as u16;
-        if kind == Kind::KeyUp && key == 0x23 && HOTKEY_HELD.with(|held| held.replace(false)) {
+        let pause = PAUSE_KEY.with(Cell::get).filter(|(code, _)| *code == key);
+        if kind == Kind::KeyUp && pause.is_some() && HOTKEY_HELD.with(|held| held.replace(false)) {
             return ptr::null_mut();
         }
         let flags = CGEvent::flags(Some(event_ref)).bits();
-        if kind == Kind::KeyDown && key == 0x23 && (HOTKEY_HELD.with(Cell::get) || pause_chord(flags)) {
+        if kind == Kind::KeyDown
+            && pause.is_some_and(|(_, mods)| HOTKEY_HELD.with(Cell::get) || pause_chord(flags, mods))
+        {
             if !HOTKEY_HELD.with(|held| held.replace(true)) {
                 crate::app::toggle_pause();
             }
@@ -231,9 +237,43 @@ pub fn settle_edges(now: Instant) {
     });
 }
 
-pub fn pause_chord(flags: u64) -> bool {
-    let modifiers = flags & ((1 << 17) | (1 << 18) | (1 << 19) | (1 << 20));
-    modifiers == (1 << 18) | (1 << 19) | (1 << 20)
+const SHIFT: u64 = 1 << 17;
+const CONTROL: u64 = 1 << 18;
+const OPTION: u64 = 1 << 19;
+const COMMAND: u64 = 1 << 20;
+
+/// 修饰键必须恰好一致（多按 Shift 不算），与 Windows RegisterHotKey 的语义相同。
+pub fn settle_pending() -> bool {
+    EDGE_SETTLE.with(|slot| slot.get().is_some())
+}
+
+pub fn pause_chord(flags: u64, required: u64) -> bool {
+    flags & (SHIFT | CONTROL | OPTION | COMMAND) == required
+}
+
+/// 解析设置里的暂停热键（Win 对应 ⌘）；无法映射到 Mac 按键时禁用热键。
+pub fn hotkey(text: &str) -> Option<(u16, u64)> {
+    use mousetroke_core::keyseq::ModKey;
+    let (mods, vk) = mousetroke_core::keyseq::parse_hotkey(text)?;
+    let key = mousetroke_core::keymap::vk_to_kvk(vk)?;
+    let mask = mods.iter().fold(0, |mask, m| {
+        mask | match m {
+            ModKey::Shift => SHIFT,
+            ModKey::Ctrl => CONTROL,
+            ModKey::Alt => OPTION,
+            ModKey::Win => COMMAND,
+        }
+    });
+    Some((key, mask))
+}
+
+pub fn set_pause_hotkey(text: &str) {
+    let parsed = hotkey(text);
+    if parsed.is_none() && !text.is_empty() {
+        crate::log!("暂停热键无法解析: {text:?}");
+    }
+    PAUSE_KEY.with(|slot| slot.set(parsed));
+    HOTKEY_HELD.with(|held| held.set(false));
 }
 
 /// Apple 正值向上；16.16 像素先按 source 的 pixels-per-line 换成行，再累计小数。
@@ -341,9 +381,12 @@ mod tests {
         assert!(is_tagged(INJECT_TAG));
         assert!(!is_tagged(INJECT_TAG + 1));
         assert!(!is_tagged(0));
-        let chord = (1 << 18) | (1 << 19) | (1 << 20);
-        assert!(pause_chord(chord));
-        assert!(!pause_chord(chord | (1 << 17)));
-        assert!(!pause_chord(chord & !(1 << 18)));
+        let (key, chord) = hotkey("^%#p").unwrap();
+        assert_eq!((key, chord), (0x23, CONTROL | OPTION | COMMAND));
+        assert!(pause_chord(chord, chord));
+        assert!(!pause_chord(chord | SHIFT, chord));
+        assert!(!pause_chord(chord & !CONTROL, chord));
+        assert_eq!(hotkey("+{F5}").map(|(_, m)| m), Some(SHIFT));
+        assert_eq!(hotkey(""), None);
     }
 }

@@ -54,7 +54,6 @@ export type Action =
   | { type: "window_op"; op: WindowOpKind; allow_child?: boolean }
   | { type: "system_key"; key: string };
 
-export type ActionType = Action["type"];
 
 export interface MenuItem {
   label: string;

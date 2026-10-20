@@ -69,7 +69,11 @@ pub fn running_apps() -> Vec<RunningApp> {
         .runningApplications()
         .iter()
         .filter(|app| {
-            app.activationPolicy() == NSApplicationActivationPolicy::Regular && !app.isTerminated()
+            app.activationPolicy() == NSApplicationActivationPolicy::Regular
+                && !app.isTerminated()
+                && !app.bundleIdentifier().is_some_and(|id| {
+                    mousetroke_mac::ignored_bundle(&id.to_string())
+                })
         })
         .filter_map(|app| {
             let exe = app

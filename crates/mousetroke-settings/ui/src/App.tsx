@@ -65,7 +65,10 @@ function Main({ init }: { init: InitState }) {
   const globalIdx = Math.max(0, config.scopes.findIndex((s) => s.kind === "global"));
   const [view, setView] = useState<View>(init.about ? { kind: "about" } : { kind: "scope", index: globalIdx });
   useEffect(() => {
-    const timer = setInterval(() => { api.takeAboutRequest().then((about) => { if (about) setView({ kind: "about" }); }, () => {}); }, 1000);
+    const timer = setInterval(() => {
+      if (document.hidden) return;
+      api.takeAboutRequest().then((about) => { if (about) setView({ kind: "about" }); }, () => {});
+    }, 1000);
     return () => clearInterval(timer);
   }, []);
   const [selected, setSelected] = useState<number | null>(null);
@@ -123,7 +126,14 @@ function Main({ init }: { init: InitState }) {
 
   // ---- 引擎状态轮询
   useEffect(() => {
-    const t0 = setInterval(() => api.engineStatus().then(setEngine, () => {}), 3000);
+    // 窗口隐藏时不轮询；状态未变时保持同一对象，避免整棵树每 3 秒重渲染
+    const t0 = setInterval(() => {
+      if (document.hidden) return;
+      api.engineStatus().then(
+        (next) => setEngine((prev) => (prev.running === next.running && prev.autostart === next.autostart && prev.exeFound === next.exeFound ? prev : next)),
+        () => {},
+      );
+    }, 3000);
     return () => clearInterval(t0);
   }, []);
 
@@ -318,6 +328,7 @@ function Main({ init }: { init: InitState }) {
             onToggle={toggleBinding}
             onScopeChange={(f, k) => edit((c) => updateScope(c, scopeIdx, f), k)}
             onDeleteScope={deleteScope}
+            clash={clash}
           />
         )}
         {view.kind === "prefs" && (

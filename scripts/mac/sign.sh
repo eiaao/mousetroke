@@ -1,5 +1,19 @@
 #!/bin/bash
-# bundle 与 DMG 共用签名规则；发布模式不允许回退到临时身份。
+# bundle 与 DMG 共用签名与架构校验规则；发布模式不允许回退到临时身份。
+
+# 通用程序必须恰好包含 arm64 与 x86_64；CommandLineTools 的 -verify_arch 每次只接受一个架构。
+verify_universal() {
+    local binary="$1" architecture architectures
+    for architecture in arm64 x86_64; do
+        lipo "$binary" -verify_arch "$architecture" || return 1
+    done
+    architectures=$(lipo "$binary" -archs) || return 1
+    [[ "$architectures" =~ ^[[:space:]]*(arm64[[:space:]]+x86_64|x86_64[[:space:]]+arm64)[[:space:]]*$ ]] || {
+        printf 'Expected exactly arm64 and x86_64; got: %s\n' "$architectures" >&2
+        return 1
+    }
+}
+
 sign_mac() {
     local path="$1" identity="${MOUSETROKE_SIGN_ID:-}" keychain="${MOUSETROKE_SIGN_KEYCHAIN:-}"
     local secret="$HOME/.config/mousetroke-dev/keychain-password"

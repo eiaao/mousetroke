@@ -85,8 +85,6 @@ export function useConfigStore(initial: Config) {
   };
 }
 
-export type ConfigStore = ReturnType<typeof useConfigStore>;
-
 /** 浅拷贝修改某个作用域的某条绑定。 */
 export function updateBinding(c: Config, scopeIdx: number, bindingIdx: number, f: (b: Config["scopes"][0]["bindings"][0]) => Config["scopes"][0]["bindings"][0]): Config {
   return updateScope(c, scopeIdx, (s) => ({ ...s, bindings: s.bindings.map((b, i) => (i === bindingIdx ? f(b) : b)) }));

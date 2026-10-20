@@ -41,6 +41,7 @@ fn on_main<R: Send + 'static>(f: impl FnOnce() -> R + Send + 'static) -> Option<
         crate::log!("Lua 主线程请求队列已满或关闭，跳过调用");
         return None;
     }
+    crate::app::wake_from_worker();
     // 仅 Lua 工作线程等待；主线程继续处理输入、计时器和动作队列。
     rx.recv().ok()
 }

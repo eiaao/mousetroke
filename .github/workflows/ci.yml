@@ -20,6 +20,7 @@ jobs:
       MACOSX_DEPLOYMENT_TARGET: "11.0"
     steps:
       - uses: actions/checkout@v7
+      - uses: Swatinem/rust-cache@v2
       - uses: actions/setup-node@v7
         with:
           node-version: 22
@@ -28,19 +29,14 @@ jobs:
       - uses: actions/setup-python@v7
         with:
           python-version: "3.12"
-      - name: Build and test settings UI
+      # 前端类型检查与单测在 Windows 任务里跑；这里只构建供 Tauri 内嵌
+      - name: Build settings UI
         working-directory: crates/mousetroke-settings/ui
         run: |
-          npm ci || exit 1
-          npm run typecheck || exit 1
-          npm test || exit 1
-          npm run build || exit 1
-      - name: Build macOS application
-        run: cargo build -p mousetroke -p mousetroke-settings --locked
-      - name: Test shared core, engine and macOS platform
-        run: cargo test -p mousetroke-core -p mousetroke-engine -p mousetroke-mac --locked
-      - name: Test settings commands and headless config round-trip smoke
-        run: cargo test -p mousetroke-settings --locked
+          npm ci
+          npm run build
+      - name: Test macOS crates and application
+        run: cargo test -p mousetroke-core -p mousetroke-engine -p mousetroke-lua -p mousetroke-mac -p mousetroke-settings -p mousetroke --locked
 
       - name: Test macOS packaging gates
         run: python -m unittest discover -s scripts -p test_mac_packaging.py
@@ -49,9 +45,9 @@ jobs:
           MOUSETROKE_SIGN_ID: "-"
           MOUSETROKE_REQUIRE_SIGNING: "0"
         run: |
-          rustup target add aarch64-apple-darwin x86_64-apple-darwin || exit 1
-          /bin/bash scripts/mac/bundle.sh --universal || exit 1
-          /bin/bash scripts/mac/dmg.sh || exit 1
+          rustup target add aarch64-apple-darwin x86_64-apple-darwin
+          /bin/bash scripts/mac/bundle.sh --universal
+          /bin/bash scripts/mac/dmg.sh
 
   test:
     runs-on: windows-latest
@@ -60,6 +56,7 @@ jobs:
       CARGO_TARGET_DIR: ${{ github.workspace }}/target
     steps:
       - uses: actions/checkout@v7
+      - uses: Swatinem/rust-cache@v2
       - uses: actions/setup-node@v7
         with:
           node-version: 22

@@ -301,11 +301,6 @@ pub fn focus_window(hwnd: HWND) {
     }
 }
 
-/// 句柄检查（编译期占位，避免未使用告警）。
-#[allow(dead_code)]
-fn _handle_type_check(h: HANDLE) -> HANDLE {
-    h
-}
 
 
 // ================================================================ M4：剪贴板 / URL / 应用 / 菜单
@@ -645,11 +640,6 @@ unsafe fn build_menu(menu: HMENU_W, items: &[MenuItem], collected: &mut Vec<Menu
     }
 }
 
-/// 编译期句柄类型引用（HMENU 别名检查）。
-#[allow(dead_code)]
-fn _menu_handle(h: HMENU_W) -> HMENU_W {
-    h
-}
 
 
 // ---------------------------------------------------------------- Lua API 支撑

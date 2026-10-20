@@ -33,7 +33,7 @@ const FADE_INTERVAL_MS: u32 = 16;
 /// 6 位 "#RRGGBB" 视为不透明。
 pub fn parse_argb(s: &str) -> (u8, u8, u8, u8) {
     let hex = s.trim_start_matches('#');
-    let v = u64::from_str_radix(hex, 16).unwrap_or(0x000000_30);
+    let v = u64::from_str_radix(hex, 16).unwrap_or(0x0000_0030);
     match hex.len() {
         8 => (
             (v & 0xff) as u8,
@@ -172,8 +172,8 @@ impl Overlay {
             if bits.is_null() {
                 return None;
             }
+            // DIB 段内存由系统按需零填充；不再整屏写零，避免启动即提交整块工作集。
             let _old = SelectObject(mem_dc, HGDIOBJ(dib.0));
-            std::ptr::write_bytes(bits as *mut u8, 0, (vw * vh * 4) as usize);
 
             Some(Self {
                 hwnd,
@@ -277,7 +277,7 @@ impl Overlay {
         self.prev = None;
         self.mid = None;
         self.stop_fade();
-        let bounds = self.content_bounds.map(|b| b);
+        let bounds = self.content_bounds;
         self.zero_content();
         if let Some(b) = bounds {
             if self.visible {
@@ -320,9 +320,9 @@ impl Overlay {
                         for x in l..r {
                             let p = row.add(x as usize);
                             let v = *p;
-                            *p = (((v >> 24) & 0xff) * 13 / 18 << 24)
-                                | (((v >> 16) & 0xff) * 13 / 18 << 16)
-                                | (((v >> 8) & 0xff) * 13 / 18 << 8)
+                            *p = ((((v >> 24) & 0xff) * 13 / 18) << 24)
+                                | ((((v >> 16) & 0xff) * 13 / 18) << 16)
+                                | ((((v >> 8) & 0xff) * 13 / 18) << 8)
                                 | ((v & 0xff) * 13 / 18);
                         }
                     }
@@ -815,7 +815,7 @@ mod tests {
         let mut o = Overlay::new("#00C2FFE0", 2.0).expect("overlay");
         let (w, h) = (640i32, 400i32);
         let (vx, vy) = (o.vx, o.vy);
-        let jitter = |i: i32| ((i * 7919) % 5 - 2) as i32;
+        let jitter = |i: i32| (i * 7919) % 5 - 2;
         let mut pts = Vec::new();
         for i in 0..40 { pts.push((60 + i * 6, 60 + jitter(i) / 2 + i / 8)); }
         for i in 0..45 { pts.push((300 + jitter(i) - i / 6, 65 + i * 6)); }

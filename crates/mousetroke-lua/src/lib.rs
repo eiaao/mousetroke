@@ -15,7 +15,7 @@ fn callback<A: mlua::FromLuaMulti, R: mlua::IntoLuaMulti>(
 }
 
 /// 脚本执行上下文（来自手势目标与变量）。
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Default)]
 pub struct LuaCtx {
     pub pos: (i32, i32),
     pub wid: usize,
@@ -23,6 +23,14 @@ pub struct LuaCtx {
     pub exe: String,
     pub title: String,
     pub mode: String,
+}
+
+impl LuaCtx {
+    /// 由手势目标与动作变量组装；缺失的变量取空串。
+    pub fn from_vars(pos: (i32, i32), wid: usize, pid: u32, vars: &mousetroke_core::vars::Vars) -> Self {
+        let get = |key: &str| vars.get(key).cloned().unwrap_or_default();
+        LuaCtx { pos, wid, pid, exe: get("MS_EXE"), title: get("MS_WIN_NAME"), mode: get("MS_TARGET_MODE") }
+    }
 }
 
 /// 运行一段 Lua 手势脚本（阻塞，在工作线程调用）。

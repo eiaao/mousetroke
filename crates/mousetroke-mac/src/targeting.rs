@@ -100,17 +100,21 @@ fn target(app: &NSRunningApplication, wid: usize) -> Target {
     }
 }
 pub fn ignored(target: &Target) -> bool {
-    target.pid == std::process::id()
-        || matches!(
-            target.class.as_str(),
-            "io.github.eiaao.mousetroke"
-                | "io.github.eiaao.mousetroke-settings"
-                | "dev.mousetroke.settings"
-                | "com.apple.dock"
-                | "com.apple.controlcenter"
-                | "com.apple.notificationcenterui"
-                | "com.apple.systemuiserver"
-        )
+    target.pid == std::process::id() || ignored_bundle(&target.class)
+}
+
+/// 自身与系统外壳不作为手势目标，也不出现在设置的作用域候选里。
+pub fn ignored_bundle(id: &str) -> bool {
+    matches!(
+        id,
+        "io.github.eiaao.mousetroke"
+            | "io.github.eiaao.mousetroke-settings"
+            | "dev.mousetroke.settings"
+            | "com.apple.dock"
+            | "com.apple.controlcenter"
+            | "com.apple.notificationcenterui"
+            | "com.apple.systemuiserver"
+    )
 }
 
 /// 设置点选器只读所属应用与边界，不读取窗口标题，不需要屏幕录制权限。
@@ -127,11 +131,24 @@ pub fn pick_app_at(x: f64, y: f64, excluded_pid: u32) -> Option<(String, String)
     }
     None
 }
+/// 从空闲恢复时调用：快照可能已过期，下一拍立即重新查询。
+pub fn invalidate() {
+    SNAPSHOT.with(|slot| {
+        if let Ok(mut snapshot) = slot.try_borrow_mut() {
+            snapshot.next_query = None;
+        }
+    });
+}
+
 pub fn refresh(screens: &[Rect]) {
     SNAPSHOT.with(|slot| {
         let mut snapshot = slot.borrow_mut();
         if snapshot.screens != screens {
             snapshot.screens = screens.to_vec();
+        }
+        // 空闲时不查询窗口列表；下一次输入唤醒后立即刷新（见 invalidate）。
+        if !crate::app::awake() && snapshot.pending.is_none() {
+            return;
         }
         let received = snapshot.pending.as_ref().map(|rx| rx.try_recv());
         let now = Instant::now();
