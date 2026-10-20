@@ -289,6 +289,9 @@ fn poll_config(hwnd: HWND) {
     match with_engine(|e| e.poll_config()).flatten() {
         Some(Reload::Applied { scopes, bindings, hotkey_changed }) => {
             crate::log!("配置已热加载: {scopes} 作用域 / {bindings} 绑定");
+            if let Some(enabled) = with_engine(|e| e.config().settings.update_check) {
+                crate::update::set_automatic(enabled);
+            }
             crate::engine::push_toast(t(keys::TOAST_CONFIG_UPDATED).into(), 1200);
             if let Some(hk) = hotkey_changed {
                 register_pause_hotkey(hwnd, &hk);

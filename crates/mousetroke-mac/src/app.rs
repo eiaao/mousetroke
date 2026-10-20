@@ -34,7 +34,6 @@ use crate::{
 };
 
 thread_local! {
-    static ENGINE: RefCell<Option<Engine>> = const { RefCell::new(None) };
     static RUNTIME: RefCell<Option<Runtime>> = const { RefCell::new(None) };
     static QUIT: Cell<Option<i32>> = const { Cell::new(None) };
     static TIMER: RefCell<Option<Retained<NSTimer>>> = const { RefCell::new(None) };
@@ -125,13 +124,17 @@ impl Drop for DisplayObserver {
     }
 }
 
-pub(crate) fn with_engine<R>(f: impl FnOnce(&mut Engine) -> R) -> Option<R> {
-    ENGINE.with(|slot| {
-        slot.try_borrow_mut()
-            .ok()
-            .and_then(|mut slot| slot.as_mut().map(f))
-    })
+pub(crate) use mousetroke_engine::with_engine;
+/// 启动与热加载成功后同步平台侧设置：菜单栏、暂停热键、自动更新、触发角冲突提示。
+fn apply_settings(config: &Config, selftest: bool) {
+    menu::set_visible(config.settings.show_tray);
+    events::set_pause_hotkey(&config.settings.pause_hotkey);
+    crate::update::set_automatic(config.settings.update_check);
+    if !selftest {
+        crate::hot_corners::check(config);
+    }
 }
+
 pub(crate) fn toggle_pause() {
     if let Some(paused) = with_engine(|engine| {
         engine.toggle_paused();
@@ -182,11 +185,7 @@ impl Runtime {
             if permissions != self.permissions {
                 if !permissions.ready() {
                     // 系统可能先禁用 tap 再让轮询发现撤权；无论 tap 是否仍 enabled 都取消旧捕获。
-                    with_engine(|engine| {
-                        let paused = engine.is_paused();
-                        engine.set_paused(true);
-                        engine.set_paused(paused);
-                    });
+                    with_engine(Engine::cancel_capture);
                     events::remove();
                     self.tap_failed = false;
                 }
@@ -214,9 +213,15 @@ impl Runtime {
                     Reload::Applied {
                         scopes, bindings, ..
                     } => {
-                        crate::log!("配置已更新: scopes={scopes}, bindings={bindings}")
+                        crate::log!("配置已更新: scopes={scopes}, bindings={bindings}");
+                        let selftest = self.selftest.is_some();
+                        with_engine(|engine| apply_settings(engine.config(), selftest));
+                        mousetroke_engine::push_toast(t(keys::TOAST_CONFIG_UPDATED).into(), 1200);
                     }
-                    Reload::Failed(error) => crate::log!("配置更新失败: {error}"),
+                    Reload::Failed(error) => {
+                        crate::log!("配置更新失败: {error}");
+                        mousetroke_engine::push_toast(t(keys::TRAY_RELOAD_FAILED).into(), 3000);
+                    }
                 }
             }
         }
@@ -347,7 +352,8 @@ fn run_main(mtm: MainThreadMarker, config_path: Option<std::path::PathBuf>) -> R
         Box::new(host::SystemHost),
     )
     .ok_or_else(|| t(keys::MAC_ERROR_ENGINE).to_string())?;
-    ENGINE.with(|slot| *slot.borrow_mut() = Some(engine));
+    apply_settings(engine.config(), selftest);
+    mousetroke_engine::install(engine);
     if !selftest {
         crate::update::start_automatic(update_path, automatic_updates);
         if std::env::current_exe().is_ok_and(|path| crate::first_run::needs_install(&path)) {
@@ -425,9 +431,7 @@ fn run_main(mtm: MainThreadMarker, config_path: Option<std::path::PathBuf>) -> R
     RUNTIME.with(|slot| {
         slot.borrow_mut().take();
     });
-    ENGINE.with(|slot| {
-        slot.borrow_mut().take();
-    });
+    drop(mousetroke_engine::uninstall());
     let code = QUIT.with(|slot| slot.take()).unwrap_or(0);
     crate::log!("Mousetroke 退出: {code}");
     Ok(code)

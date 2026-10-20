@@ -74,7 +74,6 @@ impl Host for FakeHost {
     fn cursor_pos(&self) -> (i32, i32) {
         (960, 540)
     }
-    fn set_automatic_updates(&self, _: bool) {}
     fn system_langs(&self) -> Vec<String> {
         Vec::new()
     }

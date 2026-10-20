@@ -167,19 +167,11 @@ impl Host for SystemHost {
             .map(|p| (p.x as i32, p.y as i32))
             .unwrap_or((0, 0))
     }
-    fn set_automatic_updates(&self, enabled: bool) { crate::update::set_automatic(enabled); }
     fn system_langs(&self) -> Vec<String> {
         system_langs()
     }
     fn refresh_texts(&self) {
         crate::menu::request_refresh();
-    }
-    fn config_applied(&self, config: &mousetroke_core::schema::Config) {
-        crate::menu::set_visible(config.settings.show_tray);
-        crate::events::set_pause_hotkey(&config.settings.pause_hotkey);
-        if std::env::var_os("MOUSETROKE_SELFTEST").as_deref() != Some(std::ffi::OsStr::new("1")) {
-            crate::hot_corners::check(config);
-        }
     }
 }
 
