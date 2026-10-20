@@ -12,12 +12,12 @@ def verify_copy(event):
     path = Path(event["file"])
     if path.suffix == ".app":
         subprocess.run(["codesign", "--verify", "--strict", "--all-architectures", str(path)], check=True)
-    elif path.name == ".background":
-        for name in ("background.png", "background@2x.png"):
-            # 上游 ditto 返回码未检查；缺图时也必须终止打包。
-            with (path / name).open("rb") as stream:
-                if stream.read(8) != b"\x89PNG\r\n\x1a\n":
-                    raise ValueError(str(path / name))
+        # 1.6.5 在 file::add 之前完成 background::create；其回调不携带文件路径。
+        # 校验自动合成的 Retina TIFF，不再要求镜像内存在原始 PNG 目录。
+        background = path.with_name(".background.tiff")
+        with background.open("rb") as stream:
+            if stream.read(4) not in (b"II*\x00", b"MM\x00*"):
+                raise ValueError(str(background))
 
 
 if __name__ == "__main__":

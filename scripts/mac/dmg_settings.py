@@ -1,8 +1,11 @@
 """dmgbuild 1.6.5 布局；兼容 Mac mini 的 Python 3.9。"""
 format = "UDZO"
 filesystem = "HFS+"
-files = [defines["app"], (defines["art"], ".background")]
+files = [defines["app"]]
 symlinks = {"Applications": "/Applications"}
+# dmgbuild 1.6.5 默认 lookForHiDPI=True；自动发现同目录的 @2x，
+# 用 tiffutil -cathidpicheck 合成镜像内唯一的 .background.tiff，无需另复制 PNG 目录。
+# 源码：https://github.com/dmgbuild/dmgbuild/blob/v1.6.5/src/dmgbuild/core.py
 background = defines["art"] + "/background.png"
 window_rect = ((120, 120), (640, 400))
 icon_size = 128

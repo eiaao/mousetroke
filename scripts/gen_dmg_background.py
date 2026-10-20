@@ -25,8 +25,10 @@ def render(scale, font_path):
     text(45, "Drag Mousetroke to Applications", 26, colors["ink"])
     draw.rounded_rectangle((32 * scale, 110 * scale, 608 * scale, 308 * scale), radius=24 * scale, fill=colors["surface"])
     # 访达图标由 dmgbuild 放到 (160, 200) 和 (480, 200)，背景只画两者之间的箭头。
-    draw.line([(286 * scale, 200 * scale), (352 * scale, 200 * scale)], fill=colors["trail"], width=5 * scale)
-    draw.line([(336 * scale, 184 * scale), (352 * scale, 200 * scale), (336 * scale, 216 * scale)], fill=colors["trail"], width=5 * scale, joint="curve")
+    # 箭身与实心箭头共用一条轮廓，避免两条粗线交叠时箭身伸出尖端。
+    arrow = [(286, 197.5), (336, 197.5), (336, 184), (352, 200),
+             (336, 216), (336, 202.5), (286, 202.5)]
+    draw.polygon([(x * scale, y * scale) for x, y in arrow], fill=colors["trail"])
     text(344, "First open blocked? System Settings → Privacy & Security → Open Anyway", 12, colors["muted"])
     # 固定逻辑尺寸，dmgbuild 用 tiffutil 将两张图合成 Retina TIFF。
     output = ROOT / "scripts/mac/background" / ("background@2x.png" if scale == 2 else "background.png")

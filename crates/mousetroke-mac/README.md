@@ -325,8 +325,10 @@ policy changes may still require granting permissions again; verify on both macO
 
 `dmg.sh` uses **dmgbuild 1.6.5** (Python 3.9+) to create `target/mac/Mousetroke.dmg` in
 UDZO format, volume name **Mousetroke**. Its 640×400 Finder window has 128-point app and
-Applications icons, a drag arrow, hidden background resources and no toolbar or sidebar.
-The committed 1x/2x PNGs are combined by `tiffutil` for Retina; regenerate with
+Applications icons, a drag arrow, a hidden `.background.tiff` and no toolbar or sidebar.
+Only `background` specifies the artwork: dmgbuild 1.6.5 automatically discovers the adjacent
+`background@2x.png` and combines both PNGs with `tiffutil -cathidpicheck` for Retina.
+The source PNG directory is not copied into the image. Regenerate the committed PNGs with
 `python scripts/gen_dmg_background.py` (development only: `python -m pip install Pillow`,
 optionally `--font <font.ttf>`). The image repeats the Gatekeeper first-open instruction.
 The image’s app copy is verified before finalizing, and the DMG is signed with the same
@@ -351,10 +353,19 @@ Open Anyway** (older macOS: **right-click → Open**). Browser-downloaded copies
 no Screen Recording. Setup can be skipped and reopened from About, or with `--setup`.
 Launching from `/Volumes/` or `/AppTranslocation/` first shows a native Move to Applications
 or Quit alert. Installation uses `ditto`, falling back to `~/Applications` if `/Applications`
-is not writable. A running destination copy must be quit first; an older copy goes to Trash.
+is not writable. If another copy with the same bundle ID or destination path is running,
+**Quit and Replace / Cancel** asks for confirmation. Confirming sends a normal AppKit quit
+request to both the engine and settings processes and waits up to 10 seconds; cancelling
+leaves them running. Refusal or timeout preserves the old bundle and shows the existing
+manual-quit error. No process is force-killed. The replaced copy goes to Trash.
 Only the staged new copy has quarantine removed. The installed app is opened with `open -n`
 before any engine lock is taken, and a directly mounted DMG is ejected after a short delay.
 Errors explain the manual drag-and-open path. Every installation step is logged.
+
+The engine publishes `input-state` once at startup and only when its PID or event tap state
+changes. There is no heartbeat write or snapshot expiry. Settings accepts a snapshot only
+while the engine lock is held and its recorded owner PID matches the snapshot, so an old
+file is ignored after exit or before a new engine publishes its state.
 
 About reuses the Windows version comparison, plain-text release notes, progress and error
 states. **Update now** re-resolves the API in native code, downloads `Mousetroke.dmg` and
@@ -524,7 +535,18 @@ update, and quit the review app before removing the disposable checkout via git 
   Rosetta on Apple silicon). Run natively on the Intel macOS 11 machine too.
 - Mount the DMG read-only, verify volume name, app and Applications symlink; launch there
   and from a quarantined/translocated downloaded copy and confirm one installation notice
-  plus log. Copy to Applications and confirm no notice.
+  plus log. Copy to Applications and confirm no notice. Show hidden files: only
+  `.background.tiff` should contain artwork, with both 640×400 and 1280×800 representations
+  (`tiffutil -info`); there should be no `.background` source directory. Check the arrow at 1x/2x.
+- Keep an older copy's engine and settings window open, then install from a new DMG.
+  Cancel must leave both processes and the installed bundle unchanged. Confirm must quit
+  both processes and open the replaced copy. Suspend one old process with `kill -STOP`
+  before confirming: after about 10 seconds, installation must fail without replacing or
+  force-killing it; resume it with `kill -CONT` afterwards.
+- With setup showing Ready, leave the engine idle for more than 6 seconds: `input-state`
+  modification time must not change and setup must stay Ready. Toggle the tap permissions
+  and check the snapshot changes. Quit the engine and leave the snapshot in place:
+  setup must show it stopped. Restart it and confirm the snapshot PID matches the lock PID.
 - Download through a browser to test real quarantine/Gatekeeper; follow Open Anyway,
   grant both permissions, verify gestures/settings and then replace with the second signed
   build at the same path. Confirm grants and gestures survive and login launch still works.

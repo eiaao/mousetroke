@@ -207,7 +207,8 @@ class DmgLayoutTests(unittest.TestCase):
         self.assertEqual(settings["window_rect"][1], (640, 400))
         self.assertEqual(settings["icon_locations"], {"Mousetroke.app": (160, 200), "Applications": (480, 200)})
         self.assertEqual(settings["symlinks"], {"Applications": "/Applications"})
-        self.assertEqual(settings["files"][1][1], ".background")
+        self.assertEqual(settings["files"], ["/tmp/staged/Mousetroke.app"])
+        self.assertEqual(settings["background"], str(ROOT / "scripts/mac/background") + "/background.png")
         self.assertEqual(settings["icon_size"], 128)
         self.assertEqual(settings["format"], "UDZO")
         for key in ["show_toolbar", "show_sidebar", "show_status_bar", "show_pathbar", "show_tab_view"]:
@@ -222,17 +223,27 @@ class DmgLayoutTests(unittest.TestCase):
         module.build_dmg = Mock()
         with patch.dict(sys.modules, {"dmgbuild": module}):
             source = runpy.run_path(str(ROOT / "scripts/mac/build_dmg.py"))
-        event = {"type": "operation::finished", "operation": "file::add", "file": "/Volumes/test/Mousetroke.app"}
-        with patch("subprocess.run") as run:
-            source["verify_copy"](event)
-            self.assertEqual(run.call_args.args[0], ["codesign", "--verify", "--strict", "--all-architectures", str(Path(event["file"]))])
-            self.assertTrue(run.call_args.kwargs["check"])
-        with patch("subprocess.run", side_effect=subprocess.CalledProcessError(1, "codesign")):
-            with self.assertRaises(subprocess.CalledProcessError):
-                source["verify_copy"](event)
-        # 隐藏背景目录复制失败也不能生成可发布镜像。
-        with self.assertRaises(FileNotFoundError):
-            source["verify_copy"]({**event, "file": str(ROOT / "target/missing-dmg-art/.background")})
+        with tempfile.TemporaryDirectory() as directory:
+            app = Path(directory) / "Mousetroke.app"
+            background = app.with_name(".background.tiff")
+            event = {"type": "operation::finished", "operation": "file::add", "file": str(app)}
+            for header in (b"II*\x00", b"MM\x00*"):
+                background.write_bytes(header)
+                with patch("subprocess.run") as run:
+                    source["verify_copy"](event)
+                    self.assertEqual(run.call_args.args[0], ["codesign", "--verify", "--strict", "--all-architectures", str(app)])
+                    self.assertTrue(run.call_args.kwargs["check"])
+            with patch("subprocess.run", side_effect=subprocess.CalledProcessError(1, "codesign")):
+                with self.assertRaises(subprocess.CalledProcessError):
+                    source["verify_copy"](event)
+            # dmgbuild 自动生成的 TIFF 缺失或损坏时也必须终止打包。
+            with patch("subprocess.run"):
+                background.write_bytes(b"invalid TIFF")
+                with self.assertRaises(ValueError):
+                    source["verify_copy"](event)
+                background.unlink()
+                with self.assertRaises(FileNotFoundError):
+                    source["verify_copy"](event)
 
 
 class MacShellCompatibilityTests(unittest.TestCase):

@@ -1,6 +1,6 @@
 //! 锁守卫显式解锁；不删除文件，避免不同 inode 同时上锁。
 use std::fs::{File, OpenOptions};
-use std::io;
+use std::io::{self, Read, Write};
 use std::os::fd::AsRawFd;
 use std::path::Path;
 
@@ -21,7 +21,13 @@ impl Drop for InstanceLock {
 }
 
 pub fn acquire(dir: &Path) -> io::Result<Option<InstanceLock>> {
-    acquire_named(dir, "mousetroke.lock")
+    let Some(mut lock) = acquire_named(dir, "mousetroke.lock")? else {
+        return Ok(None);
+    };
+    // 锁文件不能替换 inode；只在取得锁时记录 PID，供设置页排除上个实例的快照。
+    lock.0.set_len(0)?;
+    write!(lock.0, "{}", std::process::id())?;
+    Ok(Some(lock))
 }
 
 /// 两种进程各持有自己的锁文件，绝不删除或替换已经上锁的 inode。
@@ -50,48 +56,43 @@ pub fn acquire_named(dir: &Path, name: &str) -> io::Result<Option<InstanceLock>>
 pub fn engine_running() -> bool {
     let path = crate::default_config_path();
     path.parent()
-        .is_some_and(|dir| matches!(acquire(dir), Ok(None)))
+        .is_some_and(|dir| held_engine_lock(dir).is_some())
+}
+
+/// 只读探测现有锁，不创建目录、锁文件或改写 PID。
+fn held_engine_lock(dir: &Path) -> Option<File> {
+    let file = File::open(dir.join("mousetroke.lock")).ok()?;
+    // 安全：fd 在调用期间有效；与 acquire_named 使用同一种非阻塞 flock。
+    if unsafe { flock(file.as_raw_fd(), 2 | 4) } == 0 {
+        // 取得锁意味着引擎已退出；关闭这个独立 fd 即释放探测锁。
+        return None;
+    }
+    (io::Error::last_os_error().kind() == io::ErrorKind::WouldBlock).then_some(file)
 }
 
 /// 极小的状态快照供设置页判断事件 tap 是否已生效；临时文件 + rename 保证读不到半行。
 pub(crate) fn publish_input_state(active: bool) {
+    static PUBLISHER: std::sync::Mutex<crate::instance_state::Publisher> =
+        std::sync::Mutex::new(crate::instance_state::Publisher::new());
     let path = crate::default_config_path();
     let Some(dir) = path.parent() else { return };
-    let temporary = dir.join("input-state.tmp");
-    let result = std::fs::write(
-        &temporary,
-        format!("{} {}\n", std::process::id(), u8::from(active)),
-    )
-    .and_then(|()| std::fs::rename(&temporary, dir.join("input-state")));
-    if let Err(error) = result {
+    let mut publisher = PUBLISHER.lock().unwrap_or_else(|error| error.into_inner());
+    if let Err(error) = publisher.publish(dir, std::process::id(), active) {
         crate::log!("写入输入状态失败: {error}");
     }
 }
 
-/// 同一用户的本机进程通信；过期快照不能让设置页把已退出的引擎显示为就绪。
+/// 同一用户的本机进程通信；只接受当前锁持有者的快照，不需要定期写入心跳。
 pub fn input_state() -> Option<(u32, bool)> {
-    if !engine_running() {
-        return None;
-    }
-    let path = crate::default_config_path().parent()?.join("input-state");
-    let age = std::fs::metadata(&path)
-        .ok()?
-        .modified()
-        .ok()?
-        .elapsed()
-        .ok()?;
-    if age > std::time::Duration::from_secs(6) {
-        return None;
-    }
-    let text = std::fs::read_to_string(path).ok()?;
-    let mut parts = text.split_whitespace();
-    let pid = parts.next()?.parse().ok()?;
-    let active = match parts.next()? {
-        "1" => true,
-        "0" => false,
-        _ => return None,
-    };
-    Some((pid, active))
+    let path = crate::default_config_path();
+    input_state_in(path.parent()?)
+}
+
+fn input_state_in(dir: &Path) -> Option<(u32, bool)> {
+    let mut lock = held_engine_lock(dir)?;
+    let mut owner = String::new();
+    lock.read_to_string(&mut owner).ok()?;
+    crate::instance_state::read(dir, owner.parse().ok())
 }
 
 pub fn request_restart() -> io::Result<()> {
@@ -109,14 +110,19 @@ pub fn request_quit(pid: u32) -> io::Result<()> {
         return Err(io::Error::from(io::ErrorKind::NotConnected));
     }
     let path = crate::default_config_path();
-    let dir = path.parent().ok_or_else(|| io::Error::from(io::ErrorKind::NotFound))?;
+    let dir = path
+        .parent()
+        .ok_or_else(|| io::Error::from(io::ErrorKind::NotFound))?;
     let temporary = dir.join("quit-request.tmp");
-    std::fs::write(&temporary, pid.to_string()).and_then(|()| std::fs::rename(&temporary, dir.join("quit-request")))
+    std::fs::write(&temporary, pid.to_string())
+        .and_then(|()| std::fs::rename(&temporary, dir.join("quit-request")))
 }
 
 pub(crate) fn take_quit_request() -> bool {
     let path = crate::default_config_path();
-    let Some(dir) = path.parent() else { return false };
+    let Some(dir) = path.parent() else {
+        return false;
+    };
     let request = dir.join("quit-request");
     if std::fs::read_to_string(&request).is_ok_and(|pid| pid == std::process::id().to_string()) {
         return std::fs::remove_file(request).is_ok();
@@ -142,6 +148,35 @@ mod tests {
 
     extern "C" {
         fn fcntl(fd: i32, command: i32, ...) -> i32;
+    }
+
+    #[test]
+    fn snapshots_require_the_current_lock_owner_without_probe_writes() {
+        let dir =
+            std::env::temp_dir().join(format!("mousetroke-state-lock-{}", std::process::id()));
+        assert!(super::held_engine_lock(&dir).is_none());
+        assert!(!dir.exists());
+        let engine = super::acquire(&dir).unwrap().unwrap();
+        let pid = std::process::id();
+        let lock_path = dir.join("mousetroke.lock");
+        assert_eq!(
+            std::fs::read_to_string(&lock_path).unwrap(),
+            pid.to_string()
+        );
+        let mut publisher = crate::instance_state::Publisher::new();
+        publisher.publish(&dir, pid.wrapping_add(1), true).unwrap();
+        assert_eq!(super::input_state_in(&dir), None);
+        publisher.publish(&dir, pid, true).unwrap();
+        assert_eq!(super::input_state_in(&dir), Some((pid, true)));
+        let modified = std::fs::metadata(&lock_path).unwrap().modified().unwrap();
+        drop(engine);
+        assert_eq!(super::input_state_in(&dir), None);
+        assert!(super::held_engine_lock(&dir).is_none());
+        assert_eq!(
+            std::fs::metadata(&lock_path).unwrap().modified().unwrap(),
+            modified
+        );
+        std::fs::remove_dir_all(dir).unwrap();
     }
 
     #[test]

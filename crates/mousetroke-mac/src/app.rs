@@ -320,6 +320,7 @@ fn run_main(mtm: MainThreadMarker, config_path: Option<std::path::PathBuf>) -> R
         crate::log!("已有实例运行，退出第二个实例");
         return Ok(if selftest { 1 } else { 0 });
     };
+    instance::publish_input_state(false);
     let first_run = !path.exists();
     let config = if selftest {
         let config = Config::builtin();

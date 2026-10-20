@@ -29,6 +29,8 @@ mod host;
 mod input;
 #[cfg(target_os = "macos")]
 pub mod instance;
+#[cfg(any(target_os = "macos", test))]
+mod instance_state;
 #[cfg(target_os = "macos")]
 pub mod log;
 #[cfg(target_os = "macos")]
