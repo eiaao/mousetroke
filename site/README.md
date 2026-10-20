@@ -13,7 +13,7 @@ check.py            校验 10 个页面：结构与英文页一致、JSON 合法
 assets/site.css     两页共用的样式
 assets/site.js      两页共用的交互（文案都在 HTML 里，脚本只管行为）
 assets/icon.svg     站点图标
-og.png / og-en.png  社交分享图（target/uitest/og.mjs 生成）
+og.png / og-en.png  社交分享图（tools/uitest/og.mjs 生成）
 llms.txt            给 AI 搜索 / Agent 读的纯文本摘要
 robots.txt sitemap.xml
 ```
@@ -61,7 +61,7 @@ robots.txt sitemap.xml
 
 ```
 cd site && python3 -m http.server 8790
-cd target/uitest && node site.mjs http://localhost:8790/ ../siteshots      # 中文：真实鼠标画手势、推边角、手机宽度无横向滚动
+cd tools/uitest && node site.mjs http://localhost:8790/ ../siteshots      # 中文：真实鼠标画手势、推边角、手机宽度无横向滚动
 node site.mjs http://localhost:8790/en/ ../siteshots/en                   # 英文
 node site-sec.mjs http://localhost:8790/ ../siteshots [dark]              # 分节截图（等出场动画结束）
 node site-frames.mjs http://localhost:8790/ ../siteshots/frames            # 首屏入场、章节切换过程抽帧

@@ -1,5 +1,5 @@
 // 双语更新日志：file:// 下的桌面/手机截图、资源错误与横向溢出检查。
-// 用法：在 target/uitest 运行 node changelog.mjs。
+// 用法：在 tools/uitest 运行 node changelog.mjs。
 import puppeteer from "puppeteer-core";
 import { mkdir } from "node:fs/promises";
 import { resolve } from "node:path";

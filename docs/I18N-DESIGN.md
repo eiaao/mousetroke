@@ -316,7 +316,7 @@ pub struct Binding {
 | **P2 后端错误结构化** | `Msg` 结构体；`validate_keys`、`resolve_app`、`open_path`、`start_engine`、`set_autostart`、导入相关命令全部改造；`keyseq` 的错误改成 `reason` 键 | `settings/src/lib.rs`、`picker.rs`、`core/src/keyseq.rs`、`ui/src/api.ts` | 界面里切换语言后，错误提示也随之切换 |
 | **P3 引擎、托盘、命令行** | 托盘菜单、托盘提示、托盘气泡；覆盖层的「未识别」、各种 toast；亮度提示；`diag` 与帮助；按语言选择覆盖层字体 | `win/src/tray.rs`、`engine.rs`、`input.rs`、`overlay.rs`、`picker.rs`、`mousetroke/src/main.rs` | 引擎测试分别断言 zh 与 en 下的「未识别」文字；改配置里的语言后 1 秒内托盘菜单变成新语言（手动验证，写进交接文档） |
 | **P4 内置名称** | `name_key`（Binding、Scope）；导入时设置；加载时补上；改名时清掉；`display_name` 两端实现；内置建议清单改造 | `core/src/schema.rs`、`legacy.rs`、`names.rs`、`presets.rs`、`ui/src/components/Editor.tsx`、`BindingList.tsx`、`Sidebar.tsx`、`App.tsx` | 导入测试：en-US 下默认名显示英文，zh-CN 下显示中文；用户改过的名字不受语言影响；旧配置（已改写成中文名）加载后能补上 `name_key` |
-| **P5 英文翻译与验收** | 补全 `en-US.json`（按第 8 节的术语表）；伪语言；三种语言的冒烟测试与截图；lint 改为拦截 | `i18n/en-US.json`、`target/uitest/*` | 伪语言截图里没有溢出或截断；lint 在 `cargo test` 中执行，有违规就失败 |
+| **P5 英文翻译与验收** | 补全 `en-US.json`（按第 8 节的术语表）；伪语言；三种语言的冒烟测试与截图；lint 改为拦截 | `i18n/en-US.json`、`tools/uitest/*` | 伪语言截图里没有溢出或截断；lint 在 `cargo test` 中执行，有违规就失败 |
 
 ---
 
@@ -353,7 +353,7 @@ pub struct Binding {
 
 ### 7.4 UI 冒烟测试
 
-- `target/uitest/ui.mjs` 增加 `--lang <tag>` 参数，模拟后端在 `init_state` 里返回对应的 `resolvedLang`。
+- `tools/uitest/ui.mjs` 增加 `--lang <tag>` 参数，模拟后端在 `init_state` 里返回对应的 `resolvedLang`。
 - zh-CN、en-US、qps-ploc 各跑一遍，截图分别保存到 `uishots/<lang>/`。
 - en-US 运行时追加一条断言：`document.body.innerText` 里不含 CJK 字符。
   - 例外：用户数据里的中文名可以出现，测试用的配置文件也要准备一份英文版。

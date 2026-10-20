@@ -1,8 +1,12 @@
-# Rust 构建产物（整个 target 忽略，但保留其中的 UI 冒烟测试脚本）
-target/*
-!target/uitest/
-target/uitest/node_modules/
-target/uitest/*.png
+# Rust 构建产物
+target/
+
+# 设置界面的浏览器冒烟脚本（tools/uitest）及其输出
+tools/uitest/node_modules/
+tools/uitest/*.png
+tools/uishots/
+tools/uibrowsers/
+tools/siteshots/
 
 # 前端
 crates/mousetroke-settings/ui/node_modules/
