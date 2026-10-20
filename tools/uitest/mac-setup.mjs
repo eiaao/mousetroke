@@ -60,7 +60,10 @@ async function open(options = {}) {
             return null;
           case "take_setup_request": { const request = window.__setupRequest; window.__setupRequest = false; return request; }
           case "take_about_request": return false;
-          case "restart_engine": status.engine_ready = true; return null;
+          case "restart_engine":
+            if (options.restartError) throw { key: "error.start_engine", params: { err: "test" } };
+            status.engine_ready = options.failAutomatic && calls.filter((call) => call.command === "restart_engine").length === 1 ? (options.emptyDuringRestart ? null : false) : true;
+            return null;
           case "get_engine_status": return { running: true, exeFound: true, autostart: false };
           case "preset_apps": return [];
           case "app_icons": return {};
@@ -138,12 +141,49 @@ try {
   assert.notEqual(await skip.$(".guide [role=alert]"), null);
   await skip.close();
 
-  const fallback = await open({ setup: true, permissions: { ...ready, engine_ready: false } });
-  await fallback.waitForSelector(".permission-restart", { timeout: 12000 });
-  await fallback.click(".permission-restart button");
-  assert.equal(await count(fallback, "restart_engine"), 1);
-  await fallback.waitForFunction(() => !document.querySelector(".permission-restart"));
-  await fallback.close();
+  const automatic = await open({ permissions: { ...ready, engine_ready: false } });
+  await automatic.waitForFunction(() => window.__calls.some((call) => call.command === "restart_engine"));
+  await automatic.waitForFunction(() => !document.querySelector(".guide-permissions"));
+  assert.equal(await count(automatic, "restart_engine"), 1);
+  assert.equal(await automatic.$(".permission-restart"), null);
+  await automatic.close();
+
+  const recovered = await open({ setup: true, permissions: { ...ready, engine_ready: false } });
+  await recovered.evaluate(() => { window.__status.engine_ready = true; });
+  await recovered.waitForFunction(() => !document.querySelector(".guide-permissions"));
+  assert.equal(await count(recovered, "restart_engine"), 0);
+  await recovered.close();
+
+  for (const emptyDuringRestart of [false, true]) {
+    const fallback = await open({ setup: true, permissions: { ...ready, engine_ready: false }, failAutomatic: true, emptyDuringRestart });
+    await fallback.waitForSelector(".permission-restart", { timeout: 14000 });
+    assert.notEqual(await fallback.$(".guide-permissions"), null);
+    assert.equal(await count(fallback, "restart_engine"), 1);
+    await delay(2400);
+    assert.equal(await count(fallback, "restart_engine"), 1);
+    await fallback.click(".permission-restart button");
+    assert.equal(await count(fallback, "restart_engine"), 2);
+    await fallback.waitForFunction(() => !document.querySelector(".permission-restart"));
+    await fallback.close();
+  }
+
+  const failed = await open({ setup: true, permissions: { ...ready, engine_ready: false }, restartError: true });
+  await failed.waitForSelector(".guide [role=alert]", { timeout: 7000 });
+  await failed.waitForSelector(".permission-restart", { timeout: 9000 });
+  assert.equal(await count(failed, "restart_engine"), 1);
+  await failed.close();
+
+  const partial = await open({ setup: true, permissions: { ...missing, accessibility: true } });
+  await delay(2700);
+  assert.equal(await count(partial, "restart_engine"), 0);
+  await partial.close();
+
+  const cancelled = await open({ setup: true, permissions: { ...ready, engine_ready: false } });
+  await cancelled.click(".guide-foot .btn.subtle");
+  await delay(2700);
+  assert.equal(await count(cancelled, "restart_engine"), 0);
+  await expectStopped(cancelled);
+  await cancelled.close();
 
   for (const lang of ["zh-CN", "en-US", "es-ES", "fr-FR", "de-DE", "ja-JP", "pt-BR", "ru-RU", "it-IT", "ko-KR"]) {
     const localized = await open({ setup: true, permissions: missing, lang });
@@ -155,7 +195,7 @@ try {
     await localized.close();
   }
   assert.deepEqual(errors, []);
-  console.log("OK: live grants, polling cleanup, auto-advance, skip, setup routing/race, restart fallback, Windows isolation, 10-language layout");
+  console.log("OK: live grants, polling cleanup, auto-advance, skip, setup routing/race, automatic restart, one-shot/error/empty-snapshot/manual fallback, Windows isolation, 10-language layout");
 } finally {
   await browser.close();
   await new Promise((resolve) => server.close(resolve));

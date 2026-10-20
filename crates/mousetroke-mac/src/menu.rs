@@ -48,7 +48,9 @@ define_class!(
             guard(|| SELECTED.with(|s| s.set(usize::try_from(sender.tag()).ok())));
         }
         #[unsafe(method(togglePause:))]
-        fn toggle_pause(&self, _sender: Option<&NSObject>) { guard(crate::app::toggle_pause); }
+        fn toggle_pause(&self, _sender: Option<&NSObject>) {
+            guard(|| { crate::app::request_toggle_pause(); crate::app::wake(); });
+        }
         #[unsafe(method(grantAccessibility:))]
         fn grant_accessibility(&self, _sender: Option<&NSObject>) {
             guard(|| grant_permission(true));

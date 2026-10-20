@@ -8,6 +8,8 @@ fn main() { windows::main(); }
 
 #[cfg(target_os = "macos")]
 fn main() {
+    // 内部静默探针先于配置、日志和 AppKit 初始化；退出码是两项权限位。
+    mousetroke_mac::permissions::exit_if_probe();
     use mousetroke_core::i18n::{self, keys, t, tf};
     i18n::init_from_config(&mousetroke_core::schema::default_config_path(), &mousetroke_mac::system_langs());
     let args: Vec<_> = std::env::args().skip(1).collect();

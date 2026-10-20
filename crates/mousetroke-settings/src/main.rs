@@ -4,5 +4,7 @@
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
 fn main() {
+    #[cfg(target_os = "macos")]
+    mousetroke_mac::permissions::exit_if_probe();
     mousetroke_settings::run(std::env::args().nth(1).map(Into::into));
 }

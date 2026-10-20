@@ -1,5 +1,5 @@
 import { isMac } from "../platform";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import type { PermissionName, PermissionStatus, PresetApp } from "../types";
 import { api, errText } from "../api";
 import { T, displayName, t } from "../i18n";
@@ -35,14 +35,22 @@ export function Guide({ pauseHotkey, setup = false, initialPermissions, onDisabl
   const [presets, setPresets] = useState<PresetApp[] | null>(null);
   const [chosen, setChosen] = useState<Set<string>>(new Set());
   const [permissions, setPermissions] = useState(initialPermissions);
-  const [permissionStep, setPermissionStep] = useState(() => isMac() && (setup || !!initialPermissions && !permissionsReady(initialPermissions)));
+  const [permissionStep, setPermissionStep] = useState(() => isMac() && (setup || !!initialPermissions && (!permissionsReady(initialPermissions) || initialPermissions.engine_ready === false)));
   const [permissionError, setPermissionError] = useState<string | null>(null);
   const [pollError, setPollError] = useState<string | null>(null);
-  const [inputRequested, setInputRequested] = useState(false);
+  const autoRestarted = useRef(false);
+  const mounted = useRef(true);
+  const [restartAttempted, setRestartAttempted] = useState(false);
   const [requesting, setRequesting] = useState<PermissionName | null>(null);
   const [restartOffered, setRestartOffered] = useState(false);
   const [restarting, setRestarting] = useState(false);
-  const ready = !!permissions && permissionsReady(permissions);
+  const granted = !!permissions && permissionsReady(permissions);
+  const ready = granted && !restarting && (permissions?.engine_ready === true || !restartAttempted && permissions?.engine_ready == null);
+
+  useEffect(() => {
+    mounted.current = true;
+    return () => { mounted.current = false; };
+  }, []);
 
   useEffect(() => {
     if (!isMac()) return;
@@ -50,7 +58,7 @@ export function Guide({ pauseHotkey, setup = false, initialPermissions, onDisabl
     api.getPermissions().then((status) => {
       if (disposed) return;
       setPermissions(status);
-      if (!permissionsReady(status)) { setPermissionStep(true); setStep(0); }
+      if (!permissionsReady(status) || status.engine_ready === false) { setPermissionStep(true); setStep(0); }
     }, (error) => { if (!disposed) setPermissionError(errText(error)); });
     return () => { disposed = true; };
   }, []);
@@ -74,12 +82,26 @@ export function Guide({ pauseHotkey, setup = false, initialPermissions, onDisabl
   }, [permissionStep]);
 
   useEffect(() => {
-    setRestartOffered(false);
-    if (!permissionStep || (!ready && !inputRequested) || permissions?.engine_ready !== false) return;
-    // 引擎两秒一轮安装 tap；给足恢复时间，只有仍未生效时才提供重启兜底。
-    const timer = setTimeout(() => setRestartOffered(true), 8000);
+    if (!permissionStep || !granted || permissions?.engine_ready !== false || autoRestarted.current) return;
+    // 先留一轮正常安装机会；负预检缓存仍未解除时，每次打开引导只自动重启一次。
+    const timer = setTimeout(async () => {
+      autoRestarted.current = true;
+      setRestartAttempted(true);
+      setRestarting(true);
+      try { await api.restartEngine(); }
+      catch (error) { if (mounted.current) setPermissionError(errText(error)); }
+      finally { if (mounted.current) setRestarting(false); }
+    }, 2300);
     return () => clearTimeout(timer);
-  }, [permissionStep, ready, inputRequested, permissions?.engine_ready]);
+  }, [permissionStep, granted, permissions?.engine_ready]);
+
+  useEffect(() => {
+    setRestartOffered(false);
+    if (!permissionStep || !restartAttempted || restarting || permissions?.engine_ready === true) return;
+    // 自动重启后仍未装好 tap 才提供手动兜底；重启空档的空快照也不能当作成功。
+    const timer = setTimeout(() => setRestartOffered(true), 6000);
+    return () => clearTimeout(timer);
+  }, [permissionStep, restartAttempted, restarting, permissions?.engine_ready]);
 
   useEffect(() => {
     if (!permissionStep || step !== 0 || !ready) return;
@@ -89,7 +111,6 @@ export function Guide({ pauseHotkey, setup = false, initialPermissions, onDisabl
   }, [permissionStep, step, ready]);
 
   const grant = async (permission: PermissionName) => {
-    if (permission === "input_monitoring") setInputRequested(true);
     setRequesting(permission);
     setPermissionError(null);
     try { await api.requestPermission(permission); }
@@ -218,7 +239,7 @@ export function Guide({ pauseHotkey, setup = false, initialPermissions, onDisabl
         <div className={`guide-text ${dir > 0 ? "fwd" : "back"}`} key={`text-${step}`}>
           <div className="guide-step">{t("ui.guide.step", { step: step + 1, total: STEPS })}</div>
           <h2>{page.title}</h2>
-          {permissionStep && ready && <p className="permission-ready" role="status">✓ {t(permissions?.engine_ready === false ? "mac.setup.starting" : "mac.setup.ready")}</p>}
+          {permissionStep && granted && <p className="permission-ready" role="status">✓ {t(!ready ? "mac.setup.starting" : "mac.setup.ready")}</p>}
           {restartOffered && <div className="permission-restart"><p>{t("mac.setup.restart_hint")}</p><button type="button" className="btn" disabled={restarting} onClick={() => void restart()}>{t("mac.setup.restart")}</button></div>}
           {(permissionError || pollError) && step !== 0 && <p className="error" role="alert">{permissionError || pollError}</p>}
           {page.body}

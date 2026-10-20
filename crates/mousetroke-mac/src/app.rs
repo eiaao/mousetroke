@@ -39,6 +39,7 @@ thread_local! {
     /// 最近一次输入或后台结果后保持 10ms 节奏的截止时间。
     static AWAKE_UNTIL: Cell<Option<Instant>> = const { Cell::new(None) };
     static SLOW: Cell<bool> = const { Cell::new(false) };
+    static TOGGLE_PAUSE: Cell<bool> = const { Cell::new(false) };
 }
 
 /// 有活动时 10ms 一拍；空闲后每 250ms 一拍，只做权限、配置、提示等低频工作。
@@ -57,6 +58,16 @@ pub(crate) fn wake() {
             }
         });
     }
+}
+
+/// tap 内仅更新线程本地状态；不调用 AppKit、调度器或共享队列，最迟下一空闲拍处理。
+pub(crate) fn note_input() {
+    AWAKE_UNTIL.with(|until| until.set(Some(Instant::now() + LINGER)));
+    if SLOW.with(|slow| slow.replace(false)) { crate::targeting::invalidate(); }
+}
+
+pub(crate) fn request_toggle_pause() {
+    TOGGLE_PAUSE.with(|pending| pending.set(!pending.get()));
 }
 
 /// 任意线程：把 wake 交给主队列执行，不直接触碰主线程状态。
@@ -154,6 +165,7 @@ struct Runtime {
     next_permissions: Instant,
     next_engine_tick: Instant,
     tap_failed: bool,
+    fault_pause: Option<bool>,
     selftest: Option<SelfTest>,
     _displays: DisplayObserver,
     update_version: Option<String>,
@@ -162,9 +174,45 @@ struct Runtime {
 impl Runtime {
     fn tick(&mut self, mtm: MainThreadMarker) {
         let now = Instant::now();
-        if events::take_fault() {
-            with_engine(|engine| engine.set_paused(true));
+        if let Some(permissions) = events::service_disabled() {
+            with_engine(Engine::cancel_capture);
+            host::clear_replays();
+            self.permissions = permissions;
+            instance::publish_input_state(events::active());
             menu::request_refresh();
+        }
+        if events::take_fault() {
+            events::remove();
+            host::clear_replays();
+            with_engine(|engine| {
+                self.fault_pause.get_or_insert(engine.is_paused());
+                engine.cancel_capture();
+                engine.set_paused(true);
+            });
+            instance::publish_input_state(false);
+            crate::log!("输入故障：已取消捕获并暂停，等待正常权限轮询恢复");
+            menu::request_refresh();
+        }
+        mousetroke_engine::log::flush_deferred();
+        if TOGGLE_PAUSE.with(|pending| pending.replace(false)) {
+            toggle_pause();
+            // 故障期间用户主动切换暂停时，恢复后保留这个选择。
+            if self.fault_pause.is_some() { self.fault_pause = with_engine(|engine| engine.is_paused()); }
+        }
+        for (request, accessibility) in [(crate::control::Request::Accessibility, true), (crate::control::Request::InputMonitoring, false)] {
+            if crate::control::take(request) {
+                crate::log!("引擎处理权限请求: pid={}, 辅助功能={accessibility}", std::process::id());
+                if let Err(error) = permissions::request(accessibility) { crate::log!("引擎请求权限失败: {error}"); }
+                self.next_permissions = now;
+            }
+        }
+        if crate::control::take(crate::control::Request::Quit) {
+            crate::log!("设置页请求更新退出引擎");
+            request_quit(0);
+        } else if crate::control::take(crate::control::Request::Restart) {
+            crate::log!("设置页请求重启引擎");
+            RESTART.store(true, Ordering::Relaxed);
+            request_quit(0);
         }
         if DISPLAY_CHANGED.swap(false, Ordering::Relaxed) {
             host::refresh_screen(mtm);
@@ -181,28 +229,31 @@ impl Runtime {
         }
         if now >= self.next_permissions {
             self.next_permissions = now + Duration::from_secs(2);
-            let permissions = permissions::check();
-            if permissions != self.permissions {
-                if !permissions.ready() {
-                    // 系统可能先禁用 tap 再让轮询发现撤权；无论 tap 是否仍 enabled 都取消旧捕获。
-                    with_engine(Engine::cancel_capture);
-                    events::remove();
-                    self.tap_failed = false;
-                }
-                crate::log!(
-                    "权限状态: 辅助功能={}, 输入监控={}",
-                    permissions.accessibility,
-                    permissions.input_monitoring
-                );
-                self.permissions = permissions;
-                menu::request_refresh();
-            }
-            if self.permissions.ready() && !events::active() {
+            let mut permissions = permissions::check();
+            if !permissions.accessibility {
+                with_engine(Engine::cancel_capture);
+                events::remove();
+            } else if !events::active() {
+                with_engine(Engine::cancel_capture);
+                host::clear_replays();
+                // CGPreflightListenEventAccess 的 false 可能来自旧缓存；实际成功的两个 tap 更可靠。
                 let installed = events::install();
                 if !installed && !self.tap_failed {
                     crate::log!("创建事件 tap 失败；两秒后重试，请检查系统权限与图形登录会话");
                 }
                 self.tap_failed = !installed;
+                if installed {
+                    if let Some(paused) = self.fault_pause.take() {
+                        with_engine(|engine| engine.set_paused(paused));
+                        crate::log!("事件 tap 已恢复，故障暂停已解除，原暂停状态={paused}");
+                    }
+                }
+                menu::request_refresh();
+            }
+            permissions.input_monitoring |= events::active();
+            if permissions != self.permissions {
+                crate::log!("权限状态: 辅助功能={}, 输入监控={}", permissions.accessibility, permissions.input_monitoring);
+                self.permissions = permissions;
                 menu::request_refresh();
             }
             instance::publish_input_state(events::active());
@@ -224,14 +275,6 @@ impl Runtime {
                         mousetroke_engine::push_toast(t(keys::TRAY_RELOAD_FAILED).into(), 3000);
                     }
                 }
-            }
-            if instance::take_quit_request() {
-                crate::log!("设置页请求更新退出引擎");
-                request_quit(0);
-            } else if instance::take_restart_request() {
-                crate::log!("设置页请求重启引擎");
-                RESTART.store(true, Ordering::Relaxed);
-                request_quit(0);
             }
         }
         if let Some(test) = self.selftest.as_mut() {
@@ -292,8 +335,18 @@ pub fn run() -> Result<i32, String> {
 pub fn run_with_config(config: Option<std::path::PathBuf>) -> Result<i32, String> {
     let mtm = MainThreadMarker::new().ok_or_else(|| t(keys::MAC_ERROR_MAIN_THREAD).to_string())?;
     log::init().map_err(|error| error.to_string())?;
+    mousetroke_engine::log::prepare_deferred();
     mousetroke_engine::log::set_observer(crate::selftest::observe);
+    // 默认 panic hook 会同步写 stderr；tap 内的异常也必须先进入本地日志缓冲。
+    let previous_hook = std::panic::take_hook();
+    std::panic::set_hook(Box::new(|info| {
+        let message = info.payload().downcast_ref::<&str>().copied()
+            .or_else(|| info.payload().downcast_ref::<String>().map(String::as_str))
+            .unwrap_or("未知异常"); // i18n:allow 仅供异常日志的非字符串 payload 占位
+        crate::log!("Rust panic: {message}，位置={:?}", info.location());
+    }));
     let result = autoreleasepool(|_| run_main(mtm, config));
+    std::panic::set_hook(previous_hook);
     // 启动失败也写进日志：从 Finder/open 启动时看不到 stderr。
     if let Err(error) = &result {
         mousetroke_engine::log!("运行失败：{error}");
@@ -320,6 +373,7 @@ fn run_main(mtm: MainThreadMarker, config_path: Option<std::path::PathBuf>) -> R
         crate::log!("已有实例运行，退出第二个实例");
         return Ok(if selftest { 1 } else { 0 });
     };
+    let _control = crate::control::Observer::new(mtm);
     instance::publish_input_state(false);
     let first_run = !path.exists();
     let config = if selftest {
@@ -354,6 +408,7 @@ fn run_main(mtm: MainThreadMarker, config_path: Option<std::path::PathBuf>) -> R
     host::refresh_target();
     host::refresh_screen(mtm);
     input::initialize(selftest);
+    events::prepare();
     crate::lua::initialize();
     let displays = DisplayObserver::new();
     let automatic_updates = config.settings.update_check;
@@ -388,6 +443,7 @@ fn run_main(mtm: MainThreadMarker, config_path: Option<std::path::PathBuf>) -> R
             next_permissions: now,
             next_engine_tick: now,
             tap_failed: false,
+            fault_pause: None,
             selftest: selftest.then(|| SelfTest::new(expected.0, expected.1)),
             _displays: displays,
             update_version: None,

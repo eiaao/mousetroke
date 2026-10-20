@@ -95,51 +95,32 @@ fn input_state_in(dir: &Path) -> Option<(u32, bool)> {
     crate::instance_state::read(dir, owner.parse().ok())
 }
 
+/// 从锁文件读取当前引擎 PID；通知发送不依赖输入快照是否已发布。
+pub fn engine_pid() -> Option<u32> {
+    let path = crate::default_config_path();
+    let mut lock = held_engine_lock(path.parent()?)?;
+    let mut owner = String::new();
+    lock.read_to_string(&mut owner).ok()?;
+    owner.parse().ok().filter(|pid| *pid != 0)
+}
+
+pub fn request_permission(accessibility: bool) -> io::Result<()> {
+    let pid = engine_pid().ok_or(io::ErrorKind::NotConnected)?;
+    crate::control::send(pid, if accessibility {
+        crate::control::Request::Accessibility
+    } else {
+        crate::control::Request::InputMonitoring
+    })
+}
+
 pub fn request_restart() -> io::Result<()> {
-    let (pid, _) = input_state().ok_or_else(|| io::Error::from(io::ErrorKind::NotConnected))?;
-    let path = crate::default_config_path();
-    let dir = path
-        .parent()
-        .ok_or_else(|| io::Error::from(io::ErrorKind::NotFound))?;
-    std::fs::write(dir.join("restart-request"), pid.to_string())
+    let pid = engine_pid().ok_or(io::ErrorKind::NotConnected)?;
+    crate::control::send(pid, crate::control::Request::Restart)
 }
 
-/// 更新只请求与快照 PID 匹配的引擎正常退出；临时文件 + rename 避免读到半个 PID。
+/// 更新请求只控制当前锁持有者；退出和重启共用无文件轮询的通知通道。
 pub fn request_quit(pid: u32) -> io::Result<()> {
-    if input_state().map(|state| state.0) != Some(pid) {
-        return Err(io::Error::from(io::ErrorKind::NotConnected));
-    }
-    let path = crate::default_config_path();
-    let dir = path
-        .parent()
-        .ok_or_else(|| io::Error::from(io::ErrorKind::NotFound))?;
-    let temporary = dir.join("quit-request.tmp");
-    std::fs::write(&temporary, pid.to_string())
-        .and_then(|()| std::fs::rename(&temporary, dir.join("quit-request")))
-}
-
-pub(crate) fn take_quit_request() -> bool {
-    let path = crate::default_config_path();
-    let Some(dir) = path.parent() else {
-        return false;
-    };
-    let request = dir.join("quit-request");
-    if std::fs::read_to_string(&request).is_ok_and(|pid| pid == std::process::id().to_string()) {
-        return std::fs::remove_file(request).is_ok();
-    }
-    false
-}
-
-pub(crate) fn take_restart_request() -> bool {
-    let path = crate::default_config_path();
-    let Some(dir) = path.parent() else {
-        return false;
-    };
-    let request = dir.join("restart-request");
-    if std::fs::read_to_string(&request).is_ok_and(|pid| pid == std::process::id().to_string()) {
-        return std::fs::remove_file(request).is_ok();
-    }
-    false
+    crate::control::send(pid, crate::control::Request::Quit)
 }
 
 #[cfg(test)]

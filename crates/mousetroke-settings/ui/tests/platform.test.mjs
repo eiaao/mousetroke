@@ -140,6 +140,7 @@ test("permission setup adds a Mac step and preserves the four Windows steps", ()
   assert.equal((missing.match(/role="tab"/g) ?? []).length, 5);
   const granted = { accessibility: true, input_monitoring: true };
   assert.equal((render({ initialPermissions: granted }).match(/role="tab"/g) ?? []).length, 4);
+  assert.equal((render({ initialPermissions: { ...granted, engine_ready: false } }).match(/role="tab"/g) ?? []).length, 5);
   const setup = render({ setup: true, initialPermissions: granted });
   assert.ok(setup.includes(t("mac.setup.ready")));
   assert.equal((setup.match(/role="tab"/g) ?? []).length, 5);

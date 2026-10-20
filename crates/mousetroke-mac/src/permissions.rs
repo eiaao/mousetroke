@@ -39,6 +39,40 @@ pub fn check() -> Permissions {
     }
 }
 
+/// 仅引导尚未就绪或 tap 被禁用时使用短命同 bundle 进程，绕过 TCC 的正／负进程缓存。
+/// 不读取配置、不请求权限、不创建文件；调用者必须在 tap 回调外调用。
+pub fn check_fresh() -> Option<Permissions> {
+    use std::{process::{Command, Stdio}, time::{Duration, Instant}};
+    let mut child = Command::new(std::env::current_exe().ok()?)
+        .arg("--permission-status")
+        .stdin(Stdio::null()).stdout(Stdio::null()).stderr(Stdio::null())
+        .spawn().ok()?;
+    let deadline = Instant::now() + Duration::from_secs(2);
+    loop {
+        if let Ok(Some(status)) = child.try_wait() {
+            let code = status.code()?;
+            return (0..=3).contains(&code).then_some(Permissions {
+                accessibility: code & 1 != 0,
+                input_monitoring: code & 2 != 0,
+            });
+        }
+        if Instant::now() >= deadline {
+            let _ = child.kill();
+            let _ = child.wait();
+            return None;
+        }
+        std::thread::sleep(Duration::from_millis(10));
+    }
+}
+
+/// 两个可执行入口都先处理内部探针，避免开发用设置程序意外递归打开窗口。
+pub fn exit_if_probe() {
+    if std::env::args().skip(1).eq(["--permission-status"]) {
+        let status = check();
+        std::process::exit(i32::from(status.accessibility) | (i32::from(status.input_monitoring) << 1));
+    }
+}
+
 /// 两种进程来自同一个已签名 bundle、同一个可执行文件，TCC 使用相同的 designated requirement。
 /// 设置界面的原生命令和菜单回调均在主线程调用，系统弹窗不会在后台线程创建。
 pub fn request(accessibility: bool) -> Result<(), String> {
@@ -51,6 +85,8 @@ pub fn request(accessibility: bool) -> Result<(), String> {
         "Privacy_Accessibility"
     } else {
         let granted = unsafe { CGRequestListenEventAccess() };
+        // 某些系统仅请求 API 不会登记列表；真实监听 tap 的创建也触发 TCC 登记。
+        crate::events::register_input_monitoring();
         crate::log!("用户请求输入监控权限: {granted}");
         "Privacy_ListenEvent"
     };

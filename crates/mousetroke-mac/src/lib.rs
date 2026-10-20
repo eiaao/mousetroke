@@ -22,6 +22,12 @@ mod targeting;
 #[cfg(target_os = "macos")]
 mod app;
 #[cfg(target_os = "macos")]
+mod control;
+#[cfg(any(target_os = "macos", test))]
+mod canvas;
+#[cfg(any(target_os = "macos", test))]
+mod tap_recovery;
+#[cfg(target_os = "macos")]
 mod events;
 #[cfg(target_os = "macos")]
 mod host;
