@@ -138,6 +138,18 @@ fn is_own_settings(t: &Target) -> bool {
     })
 }
 
+/// 显示器休眠/唤醒时的布局通知可能带过渡尺寸，之后不再通知；
+/// 定时与按下时核对，覆盖层与当前虚拟屏不一致就重建（否则轨迹画在屏幕外、边角失灵）。
+pub fn sync_display() {
+    let current = crate::overlay::system_virtual_rect();
+    with_engine(|e| {
+        if e.virtual_rect() != current {
+            crate::log!("覆盖层与当前屏幕不一致，重建");
+            e.on_display_change();
+        }
+    });
+}
+
 /// 执行动作（工作线程）。
 fn execute(action: Action, target: Option<targeting::Target>, vars: Vars, pos: (i32, i32)) {
     match action {

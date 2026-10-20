@@ -168,6 +168,9 @@ unsafe extern "system" fn mouse_proc(code: i32, wparam: WPARAM, lparam: LPARAM) 
         WM_MOUSEWHEEL => InputEvent::Wheel(-(hi as i16 as i32).signum()),
         _ => return CallNextHookEx(None, code, wparam, lparam),
     };
+    if matches!(ev, InputEvent::MouseDown { .. }) {
+        crate::engine::sync_display();
+    }
     forward(ev, info.flags & LLMHF_INJECTED != 0, code, wparam, lparam)
 }
 
