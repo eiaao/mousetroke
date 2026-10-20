@@ -1,6 +1,5 @@
 //! Windows 引擎适配：线程局部单例、绘制面、系统查询与异步动作执行。
 
-use std::cell::RefCell;
 use std::path::PathBuf;
 
 use mousetroke_core::matcher;
@@ -104,9 +103,6 @@ impl Host for SystemHost {
     fn cursor_pos(&self) -> (i32, i32) {
         input::get_cursor_pos()
     }
-    fn set_automatic_updates(&self, enabled: bool) {
-        crate::update::set_automatic(enabled);
-    }
     fn system_langs(&self) -> Vec<String> {
         crate::system_langs()
     }
@@ -118,15 +114,8 @@ impl Host for SystemHost {
     }
 }
 
-thread_local! {
-    /// 引擎单例（线程局部——LL 钩子回调与托盘消息都在引擎线程执行）。
-    pub(crate) static ENGINE: RefCell<Option<Engine>> = const { RefCell::new(None) };
-}
-
-/// 在引擎线程上访问引擎。重入（借用中）或未初始化时返回 `None`，绝不 panic。
-pub(crate) fn with_engine<R>(f: impl FnOnce(&mut Engine) -> R) -> Option<R> {
-    ENGINE.with(|slot| slot.try_borrow_mut().ok().and_then(|mut s| s.as_mut().map(f)))
-}
+/// LL 钩子回调与托盘消息都在引擎线程执行。
+pub(crate) use mousetroke_engine::with_engine;
 
 /// 目标是否 Mousetroke 自己的设置界面（与引擎同一个 exe 的另一个进程；开发版为单独的设置程序）。
 fn is_own_settings(t: &Target) -> bool {

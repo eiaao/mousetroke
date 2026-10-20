@@ -262,7 +262,6 @@ impl Engine {
 
     /// 替换配置并重算派生状态。须在无捕获时调用。
     fn apply_config(&mut self, cfg: Config) {
-        self.host.set_automatic_updates(cfg.settings.update_check);
         // 语言设置也随配置走：启动与热加载都在这里切换（托盘/屏幕提示 ≤1s 跟着换）
         let lang = mousetroke_core::i18n::resolve(&cfg.settings.language, &self.host.system_langs());
         let lang_changed = lang != mousetroke_core::i18n::lang();
@@ -275,7 +274,6 @@ impl Engine {
         self.tracker = PathTracker::new(cfg.settings.min_stroke_px as f64);
         self.overlay.set_color(&cfg.settings.trail.color_normal);
         self.overlay.set_width(cfg.settings.trail.width);
-        self.host.config_applied(&cfg);
         self.cfg = cfg;
     }
 
@@ -336,6 +334,16 @@ impl Engine {
 
     pub fn toggle_paused(&mut self) {
         self.set_paused(!self.paused);
+    }
+
+    /// 当前生效的配置；平台在启动与热加载成功后据此同步自身设置（菜单、热键、自动更新等）。
+    pub fn config(&self) -> &Config {
+        &self.cfg
+    }
+
+    /// 取消进行中的捕获（例如权限被撤销），不改变暂停状态。
+    pub fn cancel_capture(&mut self) {
+        self.abort_capture();
     }
 
     /// 覆盖层当前覆盖的虚拟屏 (x, y, w, h)。
