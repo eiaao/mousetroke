@@ -149,8 +149,17 @@
         <h1 id="h-hero">右ボタンを押して。<br>一筆描く。</h1>
         <p class="lede">Mousetroke は Windows のすべてのウィンドウにマウスジェスチャを加えます。右ボタンを押したまま動かす：<b>←</b> で戻る、<b>↓→</b> でタブを閉じる、<b>↙</b> で最小化。ただの右クリックなら、これまでどおりメニューが出ます。</p>
         <div class="cta">
-          <a class="btn primary dl-win" href="#download">Windows 版をダウンロード <small>12.9 MB</small></a>
-          <a class="btn primary dl-mac" href="#download" hidden>Mac 版をダウンロード（ベータ） <small>@@MAC_DMG_SIZE@@</small></a>
+          <div class="split">
+            <a class="btn primary dl-win" href="https://github.com/eiaao/mousetroke/releases/latest/download/mousetroke.exe">Windows 版をダウンロード <small>12.9 MB</small></a>
+            <a class="btn primary dl-mac" href="https://github.com/eiaao/mousetroke/releases/latest/download/Mousetroke.dmg" hidden>Mac 版をダウンロード（ベータ） <small>@@MAC_DMG_SIZE@@</small></a>
+            <details class="split-more">
+              <summary class="btn primary" aria-label="他のプラットフォーム"><span aria-hidden="true">▾</span></summary>
+              <div class="split-menu">
+                <a class="dl-win" href="https://github.com/eiaao/mousetroke/releases/latest/download/mousetroke.exe">Windows 版をダウンロード <small>12.9 MB · v0.1.1</small></a>
+                <a class="dl-mac" href="https://github.com/eiaao/mousetroke/releases/latest/download/Mousetroke.dmg">Mac 版をダウンロード（ベータ） <small>@@MAC_DMG_SIZE@@ · v0.1.1</small></a>
+              </div>
+            </details>
+          </div>
           <a class="btn" href="#gestures">ジェスチャを見る</a>
         </div>
         <ul class="meta">
@@ -370,10 +379,19 @@
         <p class="mac-first-text">Mousetroke をアプリケーションにドラッグし、そこから開きます。このベータ版は未公証です。macOS にブロックされた場合は、システム設定 → プライバシーとセキュリティ → このまま開く（古い macOS では右クリック → 開く）を選び、アクセシビリティと入力監視を許可してください。</p>
       </div>
       <div>
-        <a class="btn primary dl-win" href="https://github.com/eiaao/mousetroke/releases/latest/download/mousetroke.exe">Windows 版をダウンロード <small>12.9 MB · v0.1.1</small></a>
-        <div class="sys">Windows 10 1809+ / 11、64 ビット</div>
-        <a class="btn primary dl-mac" href="https://github.com/eiaao/mousetroke/releases/latest/download/Mousetroke.dmg">Mac 版をダウンロード（ベータ） <small>@@MAC_DMG_SIZE@@ · v0.1.1</small></a>
-        <div class="sys">macOS 11+ · Apple silicon &amp; Intel</div>
+        <div class="split">
+          <a class="btn primary dl-win" href="https://github.com/eiaao/mousetroke/releases/latest/download/mousetroke.exe">Windows 版をダウンロード <small>12.9 MB · v0.1.1</small></a>
+          <a class="btn primary dl-mac" href="https://github.com/eiaao/mousetroke/releases/latest/download/Mousetroke.dmg" hidden>Mac 版をダウンロード（ベータ） <small>@@MAC_DMG_SIZE@@ · v0.1.1</small></a>
+          <details class="split-more">
+            <summary class="btn primary" aria-label="他のプラットフォーム"><span aria-hidden="true">▾</span></summary>
+            <div class="split-menu">
+              <a class="dl-win" href="https://github.com/eiaao/mousetroke/releases/latest/download/mousetroke.exe">Windows 版をダウンロード <small>12.9 MB · v0.1.1</small></a>
+              <a class="dl-mac" href="https://github.com/eiaao/mousetroke/releases/latest/download/Mousetroke.dmg">Mac 版をダウンロード（ベータ） <small>@@MAC_DMG_SIZE@@ · v0.1.1</small></a>
+            </div>
+          </details>
+        </div>
+        <div class="sys dl-win">Windows 10 1809+ / 11、64 ビット</div>
+        <div class="sys dl-mac" hidden>macOS 11+ · Apple silicon &amp; Intel</div>
         <a class="src" href="https://github.com/eiaao/mousetroke">github.com/eiaao/mousetroke</a>
         <a class="src" href="../en/changelog.html">更新内容</a>
       </div>

@@ -143,7 +143,6 @@ code { font-family: "Cascadia Code", "JetBrains Mono", Consolas, monospace; font
 }
 .lede { font-size: clamp(17px, 1.6vw, 20px); color: var(--ink-2); max-width: 30em; margin: 0 0 30px; }
 .cta { display: flex; gap: 12px; flex-wrap: wrap; align-items: center; }
-.cta .btn[hidden] { display: none; }
 .meta { margin-top: 22px; color: var(--muted); font-size: 14px; display: flex; flex-wrap: wrap; gap: 6px 18px; padding: 0; list-style: none; }
 .meta li { display: flex; align-items: center; gap: 6px; }
 .meta li::before { content: ""; width: 6px; height: 6px; border-radius: 50%; background: var(--ok); }
@@ -575,7 +574,24 @@ body { position: relative; }
 @media (max-width: 480px) { .changelog-main { padding-top: 40px; } }
 
 /* Mac 下载与首次打开说明复用下载区排版。 */
-.get .sys + .btn { margin-top: 22px; }
-.get .btn:not(.primary) { background: transparent; color: var(--bg); border-color: color-mix(in srgb, var(--bg) 45%, transparent); }
 .get .mac-first-title { margin: 24px 0 8px; font-size: 18px; }
 .get .mac-first-text { font-size: 15px; line-height: 1.65; }
+
+/* 下载组合按钮：左侧下载当前系统版本，右侧 ▾ 展开其他系统 */
+/* 入场动画让 .cta 与后面的 .meta 各成层叠上下文，菜单要压在后续内容之上 */
+.hero .cta, .get .split { position: relative; z-index: 5; }
+.split { position: relative; display: inline-flex; align-items: stretch; }
+.split > .btn { border-top-right-radius: 0; border-bottom-right-radius: 0; }
+.split > .btn[hidden], .split-menu a[hidden], .get .sys[hidden] { display: none; }
+.split-more summary { list-style: none; height: 100%; padding: 0 14px; border-top-left-radius: 0; border-bottom-left-radius: 0; border-left-color: color-mix(in srgb, var(--bg) 30%, transparent); }
+.split-more summary::-webkit-details-marker { display: none; }
+.split-more summary span { display: inline-block; transition: transform 0.2s; }
+.split-more[open] summary span { transform: rotate(180deg); }
+.split-menu { position: absolute; right: 0; top: calc(100% + 8px); z-index: 60; display: grid; background: var(--surface); border: 1px solid var(--rule); border-radius: 12px; box-shadow: 0 14px 36px rgba(0,0,0,.16); padding: 6px; animation: open 0.18s var(--ease-out); }
+.split-menu a { padding: 10px 14px; font-size: 14px; font-weight: 600; color: var(--ink); text-decoration: none; border-radius: 8px; white-space: nowrap; }
+.split-menu a small { font-weight: 400; color: var(--muted); margin-left: 6px; }
+.split-menu a:hover { background: var(--bg); }
+.hero .split-menu { right: auto; left: 0; min-width: 100%; }
+.get .split { justify-content: flex-end; }
+.get .split-menu { text-align: left; }
+@media (max-width: 760px) { .get .split-menu { right: auto; left: 0; } }

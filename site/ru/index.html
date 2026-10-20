@@ -149,8 +149,17 @@
         <h1 id="h-hero">Удерживайте правую кнопку.<br>Нарисуйте линию.</h1>
         <p class="lede">Mousetroke добавляет жесты мышью в каждое окно Windows. Удерживайте правую кнопку и ведите: <b>←</b> — назад, <b>↓→</b> закрывает вкладку, <b>↙</b> сворачивает окно. Обычный правый щелчок по-прежнему открывает меню.</p>
         <div class="cta">
-          <a class="btn primary dl-win" href="#download">Скачать для Windows <small>12,9 МБ</small></a>
-          <a class="btn primary dl-mac" href="#download" hidden>Скачать для Mac (бета) <small>@@MAC_DMG_SIZE@@</small></a>
+          <div class="split">
+            <a class="btn primary dl-win" href="https://github.com/eiaao/mousetroke/releases/latest/download/mousetroke.exe">Скачать для Windows <small>12,9 МБ</small></a>
+            <a class="btn primary dl-mac" href="https://github.com/eiaao/mousetroke/releases/latest/download/Mousetroke.dmg" hidden>Скачать для Mac (бета) <small>@@MAC_DMG_SIZE@@</small></a>
+            <details class="split-more">
+              <summary class="btn primary" aria-label="Другие платформы"><span aria-hidden="true">▾</span></summary>
+              <div class="split-menu">
+                <a class="dl-win" href="https://github.com/eiaao/mousetroke/releases/latest/download/mousetroke.exe">Скачать для Windows <small>12,9 МБ · v0.1.1</small></a>
+                <a class="dl-mac" href="https://github.com/eiaao/mousetroke/releases/latest/download/Mousetroke.dmg">Скачать для Mac (бета) <small>@@MAC_DMG_SIZE@@ · v0.1.1</small></a>
+              </div>
+            </details>
+          </div>
           <a class="btn" href="#gestures">Посмотреть жесты</a>
         </div>
         <ul class="meta">
@@ -370,10 +379,19 @@
         <p class="mac-first-text">Перетащите Mousetroke в Программы и откройте оттуда. Эта бета не нотариально заверена Apple: если macOS блокирует запуск, выберите Системные настройки → Конфиденциальность и безопасность → Всё равно открыть (на старой macOS — правая кнопка → Открыть). Затем разрешите Универсальный доступ и Мониторинг ввода.</p>
       </div>
       <div>
-        <a class="btn primary dl-win" href="https://github.com/eiaao/mousetroke/releases/latest/download/mousetroke.exe">Скачать для Windows <small>12,9 МБ · v0.1.1</small></a>
-        <div class="sys">Windows 10 1809+ / 11, 64-бит</div>
-        <a class="btn primary dl-mac" href="https://github.com/eiaao/mousetroke/releases/latest/download/Mousetroke.dmg">Скачать для Mac (бета) <small>@@MAC_DMG_SIZE@@ · v0.1.1</small></a>
-        <div class="sys">macOS 11+ · Apple silicon &amp; Intel</div>
+        <div class="split">
+          <a class="btn primary dl-win" href="https://github.com/eiaao/mousetroke/releases/latest/download/mousetroke.exe">Скачать для Windows <small>12,9 МБ · v0.1.1</small></a>
+          <a class="btn primary dl-mac" href="https://github.com/eiaao/mousetroke/releases/latest/download/Mousetroke.dmg" hidden>Скачать для Mac (бета) <small>@@MAC_DMG_SIZE@@ · v0.1.1</small></a>
+          <details class="split-more">
+            <summary class="btn primary" aria-label="Другие платформы"><span aria-hidden="true">▾</span></summary>
+            <div class="split-menu">
+              <a class="dl-win" href="https://github.com/eiaao/mousetroke/releases/latest/download/mousetroke.exe">Скачать для Windows <small>12,9 МБ · v0.1.1</small></a>
+              <a class="dl-mac" href="https://github.com/eiaao/mousetroke/releases/latest/download/Mousetroke.dmg">Скачать для Mac (бета) <small>@@MAC_DMG_SIZE@@ · v0.1.1</small></a>
+            </div>
+          </details>
+        </div>
+        <div class="sys dl-win">Windows 10 1809+ / 11, 64-бит</div>
+        <div class="sys dl-mac" hidden>macOS 11+ · Apple silicon &amp; Intel</div>
         <a class="src" href="https://github.com/eiaao/mousetroke">github.com/eiaao/mousetroke</a>
         <a class="src" href="../en/changelog.html">Что нового</a>
       </div>

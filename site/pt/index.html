@@ -149,8 +149,17 @@
         <h1 id="h-hero">Segure o clique direito.<br>Desenhe uma linha.</h1>
         <p class="lede">O Mousetroke adiciona gestos de mouse a todas as janelas do Windows. Segure o botão direito e arraste: <b>←</b> volta, <b>↓→</b> fecha a aba, <b>↙</b> minimiza a janela. Um clique direito simples continua abrindo o menu.</p>
         <div class="cta">
-          <a class="btn primary dl-win" href="#download">Baixar para Windows <small>12,9 MB</small></a>
-          <a class="btn primary dl-mac" href="#download" hidden>Baixar para Mac (beta) <small>@@MAC_DMG_SIZE@@</small></a>
+          <div class="split">
+            <a class="btn primary dl-win" href="https://github.com/eiaao/mousetroke/releases/latest/download/mousetroke.exe">Baixar para Windows <small>12,9 MB</small></a>
+            <a class="btn primary dl-mac" href="https://github.com/eiaao/mousetroke/releases/latest/download/Mousetroke.dmg" hidden>Baixar para Mac (beta) <small>@@MAC_DMG_SIZE@@</small></a>
+            <details class="split-more">
+              <summary class="btn primary" aria-label="Outras plataformas"><span aria-hidden="true">▾</span></summary>
+              <div class="split-menu">
+                <a class="dl-win" href="https://github.com/eiaao/mousetroke/releases/latest/download/mousetroke.exe">Baixar para Windows <small>12,9 MB · v0.1.1</small></a>
+                <a class="dl-mac" href="https://github.com/eiaao/mousetroke/releases/latest/download/Mousetroke.dmg">Baixar para Mac (beta) <small>@@MAC_DMG_SIZE@@ · v0.1.1</small></a>
+              </div>
+            </details>
+          </div>
           <a class="btn" href="#gestures">Ver os gestos</a>
         </div>
         <ul class="meta">
@@ -370,10 +379,19 @@
         <p class="mac-first-text">Arraste Mousetroke para Aplicativos e abra-o de lá. Esta beta não é autenticada pela Apple: se o macOS bloquear, vá a Ajustes do Sistema → Privacidade e Segurança → Abrir Mesmo Assim (no macOS antigo, clique direito → Abrir). Depois permita Acessibilidade e Monitoramento de Entrada.</p>
       </div>
       <div>
-        <a class="btn primary dl-win" href="https://github.com/eiaao/mousetroke/releases/latest/download/mousetroke.exe">Baixar para Windows <small>12,9 MB · v0.1.1</small></a>
-        <div class="sys">Windows 10 1809+ / 11, 64 bits</div>
-        <a class="btn primary dl-mac" href="https://github.com/eiaao/mousetroke/releases/latest/download/Mousetroke.dmg">Baixar para Mac (beta) <small>@@MAC_DMG_SIZE@@ · v0.1.1</small></a>
-        <div class="sys">macOS 11+ · Apple silicon &amp; Intel</div>
+        <div class="split">
+          <a class="btn primary dl-win" href="https://github.com/eiaao/mousetroke/releases/latest/download/mousetroke.exe">Baixar para Windows <small>12,9 MB · v0.1.1</small></a>
+          <a class="btn primary dl-mac" href="https://github.com/eiaao/mousetroke/releases/latest/download/Mousetroke.dmg" hidden>Baixar para Mac (beta) <small>@@MAC_DMG_SIZE@@ · v0.1.1</small></a>
+          <details class="split-more">
+            <summary class="btn primary" aria-label="Outras plataformas"><span aria-hidden="true">▾</span></summary>
+            <div class="split-menu">
+              <a class="dl-win" href="https://github.com/eiaao/mousetroke/releases/latest/download/mousetroke.exe">Baixar para Windows <small>12,9 MB · v0.1.1</small></a>
+              <a class="dl-mac" href="https://github.com/eiaao/mousetroke/releases/latest/download/Mousetroke.dmg">Baixar para Mac (beta) <small>@@MAC_DMG_SIZE@@ · v0.1.1</small></a>
+            </div>
+          </details>
+        </div>
+        <div class="sys dl-win">Windows 10 1809+ / 11, 64 bits</div>
+        <div class="sys dl-mac" hidden>macOS 11+ · Apple silicon &amp; Intel</div>
         <a class="src" href="https://github.com/eiaao/mousetroke">github.com/eiaao/mousetroke</a>
         <a class="src" href="../en/changelog.html">Novidades</a>
       </div>

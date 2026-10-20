@@ -55,12 +55,18 @@ def mac_replacements(text):
     return pairs
 
 
+# 下载组合按钮右侧 ▾ 的无障碍名称
+OTHER_PLATFORMS = {"de": "Andere Plattformen", "es": "Otras plataformas", "fr": "Autres plateformes",
+                   "it": "Altre piattaforme", "ja": "他のプラットフォーム", "ko": "다른 플랫폼",
+                   "pt": "Outras plataformas", "ru": "Другие платформы"}
+
 # 各语言在 site/langs/<tag>.py（REPL = [(old, new), …]，base 由这里注入）
 import pathlib as _p
 for _f in sorted((_p.Path(__file__).parent / "langs").glob("*.py")):
     _ns = {"base": base}
     exec(compile(_f.read_text(encoding="utf-8"), str(_f), "exec"), _ns)
-    LANGS[_f.stem] = _ns["REPL"] + mac_replacements(_ns["MAC"])
+    LANGS[_f.stem] = _ns["REPL"] + mac_replacements(_ns["MAC"]) + [
+        ('aria-label="Other platforms"', f'aria-label="{OTHER_PLATFORMS[_f.stem]}"')]
 
 def gen(tag, repls):
     out = TPL
