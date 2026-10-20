@@ -35,7 +35,7 @@ export function Guide({ pauseHotkey, setup = false, initialPermissions, onDisabl
   const [presets, setPresets] = useState<PresetApp[] | null>(null);
   const [chosen, setChosen] = useState<Set<string>>(new Set());
   const [permissions, setPermissions] = useState(initialPermissions);
-  const [permissionStep, setPermissionStep] = useState(() => isMac() && (setup || !!initialPermissions && (!permissionsReady(initialPermissions) || initialPermissions.engine_ready === false)));
+  const [permissionStep, setPermissionStep] = useState(() => isMac() && (setup || !!initialPermissions && !permissionsReady(initialPermissions)));
   const [permissionError, setPermissionError] = useState<string | null>(null);
   const [pollError, setPollError] = useState<string | null>(null);
   const autoRestarted = useRef(false);
@@ -44,8 +44,11 @@ export function Guide({ pauseHotkey, setup = false, initialPermissions, onDisabl
   const [requesting, setRequesting] = useState<PermissionName | null>(null);
   const [restartOffered, setRestartOffered] = useState(false);
   const [restarting, setRestarting] = useState(false);
-  const granted = !!permissions && permissionsReady(permissions);
-  const ready = granted && !restarting && (permissions?.engine_ready === true || !restartAttempted && permissions?.engine_ready == null);
+  const [showInputMonitoring, setShowInputMonitoring] = useState(false);
+  const granted = permissions?.accessibility === true;
+  const ready = !!permissions && permissionsReady(permissions) && !restarting;
+  const needsInputMonitoring = granted && !ready && (permissions?.input_monitoring === false || permissions?.engine_ready === false);
+  const canRestart = granted && permissions?.input_monitoring === true;
 
   useEffect(() => {
     mounted.current = true;
@@ -58,7 +61,7 @@ export function Guide({ pauseHotkey, setup = false, initialPermissions, onDisabl
     api.getPermissions().then((status) => {
       if (disposed) return;
       setPermissions(status);
-      if (!permissionsReady(status) || status.engine_ready === false) { setPermissionStep(true); setStep(0); }
+      if (!permissionsReady(status)) { setPermissionStep(true); setStep(0); }
     }, (error) => { if (!disposed) setPermissionError(errText(error)); });
     return () => { disposed = true; };
   }, []);
@@ -82,7 +85,15 @@ export function Guide({ pauseHotkey, setup = false, initialPermissions, onDisabl
   }, [permissionStep]);
 
   useEffect(() => {
-    if (!permissionStep || !granted || permissions?.engine_ready !== false || autoRestarted.current) return;
+    setShowInputMonitoring(false);
+    if (!permissionStep || !needsInputMonitoring) return;
+    // 先等引擎正常安装；旧系统仍缺监听或 tap 持续失败时才追加输入监控。
+    const timer = setTimeout(() => setShowInputMonitoring(true), 4000);
+    return () => clearTimeout(timer);
+  }, [permissionStep, needsInputMonitoring]);
+
+  useEffect(() => {
+    if (!permissionStep || !canRestart || permissions?.engine_ready !== false || autoRestarted.current) return;
     // 先留一轮正常安装机会；负预检缓存仍未解除时，每次打开引导只自动重启一次。
     const timer = setTimeout(async () => {
       autoRestarted.current = true;
@@ -93,7 +104,7 @@ export function Guide({ pauseHotkey, setup = false, initialPermissions, onDisabl
       finally { if (mounted.current) setRestarting(false); }
     }, 2300);
     return () => clearTimeout(timer);
-  }, [permissionStep, granted, permissions?.engine_ready]);
+  }, [permissionStep, canRestart, permissions?.engine_ready]);
 
   useEffect(() => {
     setRestartOffered(false);
@@ -221,7 +232,7 @@ export function Guide({ pauseHotkey, setup = false, initialPermissions, onDisabl
     title: t("mac.setup.permissions"),
     body: <>
       <p className="permission-intro">{t("mac.setup.intro")}</p>
-      <PermissionRows status={permissions} requesting={requesting} onGrant={(permission) => void grant(permission)} />
+      <PermissionRows status={permissions} showInputMonitoring={showInputMonitoring && needsInputMonitoring} requesting={requesting} onGrant={(permission) => void grant(permission)} />
       {(permissionError || pollError) && <p className="error" role="alert">{permissionError || pollError}</p>}
       <p className="muted permission-later">{t("mac.setup.later")}</p>
     </>,
@@ -239,7 +250,7 @@ export function Guide({ pauseHotkey, setup = false, initialPermissions, onDisabl
         <div className={`guide-text ${dir > 0 ? "fwd" : "back"}`} key={`text-${step}`}>
           <div className="guide-step">{t("ui.guide.step", { step: step + 1, total: STEPS })}</div>
           <h2>{page.title}</h2>
-          {permissionStep && granted && <p className="permission-ready" role="status">✓ {t(!ready ? "mac.setup.starting" : "mac.setup.ready")}</p>}
+          {permissionStep && granted && <p className={ready ? "permission-ready" : "permission-starting"} role="status">{ready ? "✓ " : ""}{t(ready ? "mac.setup.ready" : "mac.setup.starting")}</p>}
           {restartOffered && <div className="permission-restart"><p>{t("mac.setup.restart_hint")}</p><button type="button" className="btn" disabled={restarting} onClick={() => void restart()}>{t("mac.setup.restart")}</button></div>}
           {(permissionError || pollError) && step !== 0 && <p className="error" role="alert">{permissionError || pollError}</p>}
           {page.body}
@@ -263,20 +274,24 @@ export function Guide({ pauseHotkey, setup = false, initialPermissions, onDisabl
 }
 
 export function permissionsReady(status: PermissionStatus): boolean {
-  return status.accessibility && status.input_monitoring;
+  return status.engine_ready === true;
 }
 
-/** 独立呈现两项状态，授权按钮的可访问名称包含对应权限。 */
-export function PermissionRows({ status, requesting, onGrant }: { status?: PermissionStatus; requesting: PermissionName | null; onGrant: (permission: PermissionName) => void }) {
+/** 默认只请求辅助功能；持续缺少监听时追加兜底授权，可访问名称包含对应权限。 */
+export function PermissionRows({ status, showInputMonitoring = false, requesting, onGrant }: { status?: PermissionStatus; showInputMonitoring?: boolean; requesting: PermissionName | null; onGrant: (permission: PermissionName) => void }) {
+  const rows: PermissionName[] = ["accessibility"];
+  if (showInputMonitoring) rows.push("input_monitoring");
   return <div className="permission-rows">
-    {(["accessibility", "input_monitoring"] as const).map((permission) => {
-      const granted = status?.[permission] ?? false;
+    {rows.map((permission) => {
+      // tap 安装失败时即使预检为 true，兜底按钮仍须允许用户打开系统面板。
+      const granted = permission === "accessibility" && (status?.accessibility ?? false);
+      const checking = !status || permission === "input_monitoring" && status.input_monitoring;
       const name = t(permission === "accessibility" ? "mac.setup.accessibility" : "mac.setup.input_monitoring");
       return <div className="permission-row" key={permission}>
         <div>
           <strong>{name}</strong>
           <p>{t(permission === "accessibility" ? "mac.setup.accessibility_why" : "mac.setup.input_monitoring_why")}</p>
-          <span className={granted ? "permission-granted" : "muted"} role="status">{granted ? `✓ ${t("mac.setup.granted")}` : t(status ? "mac.setup.pending" : "mac.setup.checking")}</span>
+          <span className={granted ? "permission-granted" : "muted"} role="status">{granted ? `✓ ${t("mac.setup.granted")}` : t(checking ? "mac.setup.checking" : "mac.setup.pending")}</span>
         </div>
         <button type="button" className="btn" disabled={granted || requesting !== null} aria-label={t("mac.setup.grant_named", { permission: name })} onClick={() => onGrant(permission)}>{t("mac.setup.grant")}</button>
       </div>;

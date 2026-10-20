@@ -138,7 +138,7 @@ test("permission setup adds a Mac step and preserves the four Windows steps", ()
   const missing = render({ initialPermissions: { accessibility: true, input_monitoring: false } });
   assert.ok(missing.includes(t("mac.setup.permissions")));
   assert.equal((missing.match(/role="tab"/g) ?? []).length, 5);
-  const granted = { accessibility: true, input_monitoring: true };
+  const granted = { accessibility: true, input_monitoring: true, engine_ready: true };
   assert.equal((render({ initialPermissions: granted }).match(/role="tab"/g) ?? []).length, 4);
   assert.equal((render({ initialPermissions: { ...granted, engine_ready: false } }).match(/role="tab"/g) ?? []).length, 5);
   const setup = render({ setup: true, initialPermissions: granted });
@@ -146,16 +146,31 @@ test("permission setup adds a Mac step and preserves the four Windows steps", ()
   assert.equal((setup.match(/role="tab"/g) ?? []).length, 5);
 });
 
-test("permission rows distinguish each grant and require both before advancing", () => {
+test("permission setup asks only for Accessibility and waits for an active tap", () => {
   platform.initPlatform("macos");
   const status = { accessibility: true, input_monitoring: false };
   const html = renderToStaticMarkup(createElement(PermissionRows, { status, requesting: null, onGrant() {} }));
   assert.ok(html.includes(t("mac.setup.accessibility_why")));
-  assert.ok(html.includes(t("mac.setup.input_monitoring_why")));
+  assert.ok(!html.includes(t("mac.setup.input_monitoring_why")));
   assert.ok(html.includes(t("mac.setup.granted")));
-  assert.ok(html.includes(t("mac.setup.pending")));
+  assert.equal((html.match(/<button/g) ?? []).length, 1);
   assert.equal((html.match(/disabled=""/g) ?? []).length, 1);
-  for (const [accessibility, input_monitoring, ready] of [[false, false, false], [true, false, false], [false, true, false], [true, true, true]]) {
-    assert.equal(permissionsReady({ accessibility, input_monitoring }), ready);
+  for (const accessibility of [false, true]) for (const input_monitoring of [false, true]) {
+    for (const engine_ready of [undefined, null, false, true]) {
+      assert.equal(permissionsReady({ accessibility, input_monitoring, engine_ready }), engine_ready === true);
+    }
+  }
+});
+
+test("Input Monitoring fallback remains actionable even when preflight succeeds but tap fails", () => {
+  for (const input_monitoring of [false, true]) {
+    const html = renderToStaticMarkup(createElement(PermissionRows, {
+      status: { accessibility: true, input_monitoring, engine_ready: false },
+      showInputMonitoring: true, requesting: null, onGrant() {},
+    }));
+    assert.equal((html.match(/<button/g) ?? []).length, 2);
+    assert.equal((html.match(/disabled=""/g) ?? []).length, 1);
+    assert.ok(html.includes(t("mac.setup.input_monitoring_why")));
+    assert.ok(html.includes(t(input_monitoring ? "mac.setup.checking" : "mac.setup.pending")));
   }
 });

@@ -141,6 +141,7 @@ export interface InitState {
 
 export interface PermissionStatus {
   accessibility: boolean;
+  // 监听访问可由辅助功能提供，不等同于单独授予输入监控。
   input_monitoring: boolean;
   engine_ready?: boolean | null;
 }

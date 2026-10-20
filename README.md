@@ -63,13 +63,17 @@ same release's `SHA256SUMS.txt` (which also lists the Windows exe).
 2. The beta is self-signed and **not notarized**. If macOS blocks it, use **System Settings →
    Privacy & Security → Open Anyway**; on older macOS, **right-click → Open**. A newly
    browser-downloaded copy may need this step again. In-app updates avoid the repeated prompt.
-3. Follow setup: each permission explains why it is needed and has a **Grant…** button.
-   Allow **Accessibility** and **Input Monitoring**; setup shows **Ready**, then a short guide.
+3. Follow setup and click **Grant…** to allow **Accessibility**. This lets Mousetroke see
+   mouse gestures, control windows and send keyboard shortcuts. Setup shows **Ready** once
+   the engine’s event taps are active, then a short guide.
    Try holding the right button and drawing `←` in a window. You can skip and grant later
    from the menu bar. **Screen Recording is not required**.
 
-The engine retries permissions every two seconds. If Input Monitoring still has not taken
-effect after granting, setup offers **Restart Mousetroke**, keeping settings open.
+The engine checks permissions with a fresh, silent probe every two seconds, including while
+gestures work, so revoking access is detected too. If Accessibility is enabled but listening
+or event taps still fail after a few seconds, setup and the menu bar offer **Input Monitoring**
+as a fallback for older macOS versions. Enable it only when asked. Setup can restart the engine
+once automatically and offers **Restart Mousetroke** if needed, keeping settings open.
 
 About supports manual update checks, release notes and **Update now**: the app downloads the
 DMG, verifies SHA-256, bundle identity, version and the current certificate's designated

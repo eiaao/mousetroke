@@ -163,6 +163,9 @@ struct Runtime {
     menu: Menu,
     permissions: Permissions,
     next_permissions: Instant,
+    permission_probe: Option<std::sync::mpsc::Receiver<Option<Permissions>>>,
+    listen_missing_since: Option<Instant>,
+    input_monitoring_required: bool,
     next_engine_tick: Instant,
     tap_failed: bool,
     fault_pause: Option<bool>,
@@ -175,6 +178,8 @@ impl Runtime {
     fn tick(&mut self, mtm: MainThreadMarker) {
         let now = Instant::now();
         if let Some(permissions) = events::service_disabled() {
+            // 丢弃禁用通知之前启动的探针结果，防止旧授权覆盖即时撤权。
+            self.permission_probe = None;
             with_engine(Engine::cancel_capture);
             host::clear_replays();
             self.permissions = permissions;
@@ -204,6 +209,7 @@ impl Runtime {
                 crate::log!("引擎处理权限请求: pid={}, 辅助功能={accessibility}", std::process::id());
                 if let Err(error) = permissions::request(accessibility) { crate::log!("引擎请求权限失败: {error}"); }
                 self.next_permissions = now;
+                self.permission_probe = None;
             }
         }
         if crate::control::take(crate::control::Request::Quit) {
@@ -229,34 +235,16 @@ impl Runtime {
         }
         if now >= self.next_permissions {
             self.next_permissions = now + Duration::from_secs(2);
-            let mut permissions = permissions::check();
-            if !permissions.accessibility {
-                with_engine(Engine::cancel_capture);
-                events::remove();
-            } else if !events::active() {
-                with_engine(Engine::cancel_capture);
-                host::clear_replays();
-                // CGPreflightListenEventAccess 的 false 可能来自旧缓存；实际成功的两个 tap 更可靠。
-                let installed = events::install();
-                if !installed && !self.tap_failed {
-                    crate::log!("创建事件 tap 失败；两秒后重试，请检查系统权限与图形登录会话");
+            // 同时最多一个静默探针；等待子进程放在工作线程，主线程继续处理输入。
+            if self.permission_probe.is_none() {
+                let (sender, receiver) = std::sync::mpsc::channel();
+                match std::thread::Builder::new().name("permission-probe".into()).spawn(move || {
+                    let _ = sender.send(permissions::check_fresh());
+                }) {
+                    Ok(_) => self.permission_probe = Some(receiver),
+                    Err(error) => crate::log!("启动权限探针失败: {error}"),
                 }
-                self.tap_failed = !installed;
-                if installed {
-                    if let Some(paused) = self.fault_pause.take() {
-                        with_engine(|engine| engine.set_paused(paused));
-                        crate::log!("事件 tap 已恢复，故障暂停已解除，原暂停状态={paused}");
-                    }
-                }
-                menu::request_refresh();
             }
-            permissions.input_monitoring |= events::active();
-            if permissions != self.permissions {
-                crate::log!("权限状态: 辅助功能={}, 输入监控={}", permissions.accessibility, permissions.input_monitoring);
-                self.permissions = permissions;
-                menu::request_refresh();
-            }
-            instance::publish_input_state(events::active());
             if host::refresh_screen(mtm) {
                 with_engine(Engine::on_display_change);
             }
@@ -277,6 +265,60 @@ impl Runtime {
                 }
             }
         }
+        if let Some(result) = self.permission_probe.as_ref().and_then(|probe| match probe.try_recv() {
+            Ok(result) => Some(result),
+            Err(std::sync::mpsc::TryRecvError::Disconnected) => Some(None),
+            Err(std::sync::mpsc::TryRecvError::Empty) => None,
+        }) {
+            self.permission_probe = None;
+            let permissions = result.unwrap_or(Permissions { accessibility: false, input_monitoring: false });
+            let was_active = events::active();
+            if !permissions.accessibility || (!permissions.input_monitoring && was_active) {
+                with_engine(Engine::cancel_capture);
+                host::clear_replays();
+                // 仅撤权变化或活动 tap 才触发故障，持续缺权时不重复暂停和写日志。
+                if was_active || permissions != self.permissions {
+                    events::permission_revoked();
+                } else {
+                    events::remove();
+                }
+            } else if !events::active() {
+                with_engine(Engine::cancel_capture);
+                host::clear_replays();
+                // 预检缺少监听权限时仍可尝试安装；只有两个 tap 均成功才算就绪。
+                let installed = events::install(permissions);
+                if !installed && !self.tap_failed {
+                    crate::log!("创建事件 tap 失败；两秒后重试，请检查系统权限与图形登录会话");
+                }
+                self.tap_failed = !installed;
+                if installed {
+                    if let Some(paused) = self.fault_pause.take() {
+                        with_engine(|engine| engine.set_paused(paused));
+                        crate::log!("事件 tap 已恢复，故障暂停已解除，原暂停状态={paused}");
+                    }
+                }
+            }
+            if permissions != self.permissions {
+                crate::log!("权限状态: 辅助功能={}, 输入监控={}", permissions.accessibility, permissions.input_monitoring);
+                self.permissions = permissions;
+                menu::request_refresh();
+            }
+            instance::publish_input_state(events::active());
+            if events::active() != was_active { menu::request_refresh(); }
+        }
+        // 辅助功能授权后给正常安装留四秒，仍缺监听或 tap 安装失败才显示输入监控兜底。
+        let fallback = self.permissions.accessibility && !events::active()
+            && (!self.permissions.input_monitoring || self.tap_failed);
+        let required = if fallback {
+            now.saturating_duration_since(*self.listen_missing_since.get_or_insert(now)) >= Duration::from_secs(4)
+        } else {
+            self.listen_missing_since = None;
+            false
+        };
+        if required != self.input_monitoring_required {
+            self.input_monitoring_required = required;
+            menu::request_refresh();
+        }
         if let Some(test) = self.selftest.as_mut() {
             test.tick(events::active());
         }
@@ -290,7 +332,7 @@ impl Runtime {
             self.menu.set_update(self.update_version.as_deref());
             let paused = with_engine(|engine| engine.is_paused()).unwrap_or(false);
             self.menu
-                .refresh(mtm, self.permissions, events::active(), paused);
+                .refresh(mtm, self.permissions, events::active(), paused, self.input_monitoring_required);
         }
         if QUIT.with(Cell::get).is_some() {
             stop(mtm);
@@ -441,6 +483,9 @@ fn run_main(mtm: MainThreadMarker, config_path: Option<std::path::PathBuf>) -> R
             menu,
             permissions,
             next_permissions: now,
+            permission_probe: None,
+            listen_missing_since: None,
+            input_monitoring_required: false,
             next_engine_tick: now,
             tap_failed: false,
             fault_pause: None,

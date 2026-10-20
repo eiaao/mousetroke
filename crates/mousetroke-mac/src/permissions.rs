@@ -15,6 +15,7 @@ extern "C" {
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub struct Permissions {
     pub accessibility: bool,
+    /// 监听访问的预检结果；辅助功能也能提供访问，不代表单独授予了输入监控。
     pub input_monitoring: bool,
 }
 
@@ -39,7 +40,7 @@ pub fn check() -> Permissions {
     }
 }
 
-/// 仅引导尚未就绪或 tap 被禁用时使用短命同 bundle 进程，绕过 TCC 的正／负进程缓存。
+/// 引导、两秒轮询与 tap 禁用处理共用短命同 bundle 进程，绕过 TCC 的正／负进程缓存。
 /// 不读取配置、不请求权限、不创建文件；调用者必须在 tap 回调外调用。
 pub fn check_fresh() -> Option<Permissions> {
     use std::{process::{Command, Stdio}, time::{Duration, Instant}};

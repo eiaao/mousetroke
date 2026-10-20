@@ -82,8 +82,8 @@ function Main({ init }: { init: InitState }) {
   const [toast, setToast] = useState<ToastMsg | null>(null);
   const [picking, setPicking] = useState(false);
   const [loadError, setLoadError] = useState(init.loadError);
-  const [setup, setSetup] = useState(() => isMac() && (!!init.setup || !!init.permissions && (!permissionsReady(init.permissions) || init.permissions.engine_ready === false)));
-  const [guide, setGuide] = useState(() => guideUnseen() || (isMac() && (!!init.setup || !!init.permissions && (!permissionsReady(init.permissions) || init.permissions.engine_ready === false))));
+  const [setup, setSetup] = useState(() => isMac() && (!!init.setup || !!init.permissions && !permissionsReady(init.permissions)));
+  const [guide, setGuide] = useState(() => guideUnseen() || (isMac() && (!!init.setup || !!init.permissions && !permissionsReady(init.permissions))));
   const [guideRequest, setGuideRequest] = useState(0);
   const guideOpen = useRef(guide);
   guideOpen.current = guide;
@@ -106,7 +106,7 @@ function Main({ init }: { init: InitState }) {
     const offSettings = listen("show-settings", () => {
       if (disposed) return;
       api.getPermissions().then((status) => {
-        if (!guideOpen.current && (!permissionsReady(status) || status.engine_ready === false)) openSetup();
+        if (!guideOpen.current && !permissionsReady(status)) openSetup();
       }).catch(() => {});
     });
     Promise.all([off, offSettings]).then(consumeSetup).catch(() => {});

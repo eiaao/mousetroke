@@ -67,12 +67,12 @@ const FILTERED: &[Kind] = &[
 /// 引擎对移动一律放行，无需同步等待。
 const LISTENED: &[Kind] = &[Kind::MouseMoved];
 
-pub fn install() -> bool {
+pub fn install(permissions: crate::permissions::Permissions) -> bool {
     if RETRY_AFTER.with(Cell::get).is_some_and(|until| Instant::now() < until) {
         return false;
     }
     if NEEDS_FRESH_PERMISSION.with(Cell::get)
-        && !crate::permissions::check_fresh().is_some_and(|permissions| permissions.ready())
+        && !permissions.ready()
     {
         return false;
     }
@@ -164,6 +164,14 @@ pub fn remove() {
 }
 pub fn take_fault() -> bool {
     FAULTED.with(|flag| flag.replace(false))
+}
+
+/// 静默轮询发现撤权时走同一故障恢复路径，不能靠现存端口覆盖新鲜预检结果。
+pub(crate) fn permission_revoked() {
+    remove();
+    SUSPENDED.with(|flag| flag.set(true));
+    FAULTED.with(|flag| flag.set(true));
+    NEEDS_FRESH_PERMISSION.with(|flag| flag.set(true));
 }
 
 pub fn is_tagged(tag: i64) -> bool {

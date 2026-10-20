@@ -190,6 +190,7 @@ impl Menu {
         );
         let accessibility = entry(Some(sel!(grantAccessibility:)));
         let input_monitoring = entry(Some(sel!(grantInputMonitoring:)));
+        input_monitoring.setHidden(true);
         let open_log = entry(Some(sel!(openLog:)));
         let settings = entry(Some(sel!(openSettings:)));
         settings.setKeyEquivalent(ns_string!(","));
@@ -256,9 +257,10 @@ impl Menu {
         permissions: Permissions,
         active: bool,
         paused: bool,
+        input_monitoring_required: bool,
     ) {
         self.item.setVisible(VISIBLE.with(Cell::get));
-        let key = if !permissions.ready() || !active {
+        let key = if !active {
             keys::MAC_STATUS_PERMISSION
         } else if paused {
             keys::MAC_STATUS_PAUSED
@@ -274,14 +276,14 @@ impl Menu {
         self.input_monitoring
             .setTitle(&NSString::from_str(t(keys::MAC_GRANT_INPUT_MONITORING)));
         self.input_monitoring
-            .setHidden(permissions.input_monitoring);
+            .setHidden(!input_monitoring_required);
         self.open_log
             .setTitle(&NSString::from_str(t(keys::UI_ABOUT_OPEN_LOG)));
         self.settings.setTitle(&NSString::from_str(t(keys::TRAY_MENU_SETTINGS)));
         self.about.setTitle(&NSString::from_str(t(keys::MAC_MENU_ABOUT)));
         self.quit.setTitle(&NSString::from_str(t(keys::TRAY_MENU_QUIT)));
         if let Some(button) = self.item.button(mtm) {
-            button.setAppearsDisabled(paused || !permissions.ready() || !active);
+            button.setAppearsDisabled(paused || !active);
             button.setToolTip(Some(&NSString::from_str(t(key))));
         }
     }

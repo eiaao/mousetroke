@@ -97,14 +97,16 @@ try {
 
   const page = await open({ permissions: missing });
   await page.waitForSelector(".guide-permissions");
+  assert.equal((await page.$$(".permission-row")).length, 1);
   assert.equal(await count(page, "request_permission"), 0);
   await page.click(".permission-row:first-child button");
   assert.deepEqual(await page.evaluate(() => window.__calls.filter((call) => call.command === "request_permission").map((call) => call.args.permission)), ["accessibility"]);
-  await page.evaluate(() => { window.__status.accessibility = true; });
+  await page.evaluate(() => { window.__status.accessibility = true; window.__status.input_monitoring = true; });
   await page.waitForSelector(".permission-row:first-child button:disabled");
   assert.notEqual(await page.$(".guide-permissions"), null);
-  await page.click(".permission-row:last-child button");
-  await page.evaluate(() => { window.__status.input_monitoring = true; window.__status.engine_ready = true; });
+  assert.equal(await page.$(".permission-ready"), null);
+  assert.equal((await page.$$(".permission-row")).length, 1);
+  await page.evaluate(() => { window.__status.engine_ready = true; });
   await page.waitForSelector(".permission-ready");
   await page.waitForFunction(() => !document.querySelector(".guide-permissions"));
   for (let i = 0; i < 3; i++) await page.click(".guide-foot .btn.primary");
@@ -158,6 +160,10 @@ try {
     const fallback = await open({ setup: true, permissions: { ...ready, engine_ready: false }, failAutomatic: true, emptyDuringRestart });
     await fallback.waitForSelector(".permission-restart", { timeout: 14000 });
     assert.notEqual(await fallback.$(".guide-permissions"), null);
+    if (!emptyDuringRestart) {
+      assert.equal((await fallback.$$(".permission-row")).length, 2);
+      assert.equal(await fallback.$eval(".permission-row:last-child button", (button) => button.disabled), false);
+    }
     assert.equal(await count(fallback, "restart_engine"), 1);
     await delay(2400);
     assert.equal(await count(fallback, "restart_engine"), 1);
@@ -176,7 +182,29 @@ try {
   const partial = await open({ setup: true, permissions: { ...missing, accessibility: true } });
   await delay(2700);
   assert.equal(await count(partial, "restart_engine"), 0);
+  assert.equal((await partial.$$(".permission-row")).length, 1);
+  await partial.waitForFunction(() => document.querySelectorAll(".permission-row").length === 2);
+  await partial.click(".permission-row:last-child button");
+  assert.deepEqual(await partial.evaluate(() => window.__calls.filter((call) => call.command === "request_permission").map((call) => call.args.permission)), ["input_monitoring"]);
+  await partial.evaluate(() => { window.__status.accessibility = false; });
+  await partial.waitForFunction(() => document.querySelectorAll(".permission-row").length === 1);
+  await delay(4200);
+  assert.equal((await partial.$$(".permission-row")).length, 1);
   await partial.close();
+
+  const active = await open({ setup: true, permissions: { ...ready, input_monitoring: false } });
+  await active.waitForSelector(".permission-ready");
+  await active.waitForFunction(() => !document.querySelector(".guide-permissions"));
+  assert.equal(await count(active, "request_permission"), 0);
+  assert.equal(await count(active, "restart_engine"), 0);
+  await active.close();
+
+  const unknown = await open({ setup: true, permissions: { ...ready, engine_ready: null } });
+  await delay(4500);
+  assert.notEqual(await unknown.$(".guide-permissions"), null);
+  assert.equal(await unknown.$(".permission-ready"), null);
+  assert.equal((await unknown.$$(".permission-row")).length, 1);
+  await unknown.close();
 
   const cancelled = await open({ setup: true, permissions: { ...ready, engine_ready: false } });
   await cancelled.click(".guide-foot .btn.subtle");
@@ -188,14 +216,21 @@ try {
   for (const lang of ["zh-CN", "en-US", "es-ES", "fr-FR", "de-DE", "ja-JP", "pt-BR", "ru-RU", "it-IT", "ko-KR"]) {
     const localized = await open({ setup: true, permissions: missing, lang });
     await localized.waitForSelector(".guide-permissions");
+    assert.equal((await localized.$$(".permission-row")).length, 1, lang);
     assert.equal(await localized.$eval(".guide", (element) => element.scrollWidth > element.clientWidth), false, lang);
     assert.equal(await localized.$eval(".guide-foot", (element) => element.getBoundingClientRect().bottom > window.innerHeight), false, lang);
-    assert.equal(await localized.$eval(".permission-row:last-child [role=status]", (element) => element.getBoundingClientRect().bottom > document.querySelector(".guide-text").getBoundingClientRect().bottom), false, `${lang}: both statuses must be visible`);
+    assert.equal(await localized.$eval(".permission-row [role=status]", (element) => element.getBoundingClientRect().bottom > document.querySelector(".guide-text").getBoundingClientRect().bottom), false, `${lang}: Accessibility status must be visible`);
     await localized.screenshot({ path: path.join(shots, `${lang}.png`) });
+    await localized.evaluate(() => { window.__status.accessibility = true; });
+    await localized.waitForFunction(() => document.querySelectorAll(".permission-row").length === 2);
+    assert.equal(await localized.$eval(".guide", (element) => element.scrollWidth > element.clientWidth), false, `${lang}: fallback width`);
+    assert.equal(await localized.$eval(".guide-foot", (element) => element.getBoundingClientRect().bottom > window.innerHeight), false, `${lang}: fallback footer`);
+    assert.equal(await localized.$eval(".permission-row:last-child button", (element) => element.getBoundingClientRect().bottom > document.querySelector(".guide-text").getBoundingClientRect().bottom), false, `${lang}: fallback button must be visible`);
+    await localized.screenshot({ path: path.join(shots, `${lang}-fallback.png`) });
     await localized.close();
   }
   assert.deepEqual(errors, []);
-  console.log("OK: live grants, polling cleanup, auto-advance, skip, setup routing/race, automatic restart, one-shot/error/empty-snapshot/manual fallback, Windows isolation, 10-language layout");
+  console.log("OK: Accessibility-only setup, delayed Input Monitoring fallback and revocation, active-tap readiness, polling cleanup, auto-advance, skip, setup routing/race, automatic restart, one-shot/error/empty-snapshot/manual fallback, Windows isolation, 10-language normal/fallback layout");
 } finally {
   await browser.close();
   await new Promise((resolve) => server.close(resolve));
