@@ -114,6 +114,14 @@ impl Drop for BusyGuard {
         BUSY.with(|b| b.set(false));
     }
 }
+/// 仍有排队动作或等待中的后台结果时，主循环保持快节奏。
+pub fn busy() -> bool {
+    STATE.with(|s| {
+        let s = s.borrow();
+        !s.queue.is_empty() || s.pending.is_some()
+    })
+}
+
 pub fn tick() {
     if BUSY.with(|b| b.replace(true)) {
         return;
