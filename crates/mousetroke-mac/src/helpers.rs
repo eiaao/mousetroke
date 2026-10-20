@@ -57,24 +57,6 @@ pub fn media_data1(code: u16, down: bool) -> isize {
     ((code as isize) << 16) | ((if down { 0xA } else { 0xB }) << 8)
 }
 
-pub fn expand_url(template: &str, values: &Vars) -> String {
-    if let Some(text) = values.get("MS_SELECTED_TEXT") {
-        if vars::looks_like_url(text) {
-            let text = text.trim();
-            return if text.starts_with("www.") {
-                format!("https://{text}")
-            } else {
-                text.into()
-            };
-        }
-        return vars::expand(
-            &template.replace("%MS_SELECTED_TEXT%", &vars::url_encode(text)),
-            values,
-        );
-    }
-    vars::expand(template, values)
-}
-
 /// LaunchApp.args 使用 shell 风格引号分词，但不执行 shell 展开或替换。
 pub fn arguments(text: &str) -> Option<Vec<String>> {
     let mut args = Vec::new();
@@ -183,22 +165,7 @@ mod tests {
     }
     #[test]
     fn variable_expansion_and_launch_arguments() {
-        let mut values = Vars::from([
-            ("MS_SELECTED_TEXT".into(), "a b&中文".into()),
-            ("MS_PID".into(), "42".into()),
-        ]);
-        assert_eq!(
-            expand_url(
-                "https://example.com?q=%MS_SELECTED_TEXT%&pid=%MS_PID%",
-                &values
-            ),
-            "https://example.com?q=a%20b%26%E4%B8%AD%E6%96%87&pid=42"
-        );
-        values.insert(
-            "MS_SELECTED_TEXT".into(),
-            " https://example.com/?x=1 ".into(),
-        );
-        assert_eq!(expand_url("unused", &values), "https://example.com/?x=1");
+        let values = Vars::from([("MS_PID".into(), "42".into())]);
         assert_eq!(
             vars::expand("/bin/kill -9 %MS_PID%", &values),
             "/bin/kill -9 42"

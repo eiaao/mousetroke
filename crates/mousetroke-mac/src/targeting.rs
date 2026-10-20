@@ -100,17 +100,21 @@ fn target(app: &NSRunningApplication, wid: usize) -> Target {
     }
 }
 pub fn ignored(target: &Target) -> bool {
-    target.pid == std::process::id()
-        || matches!(
-            target.class.as_str(),
-            "io.github.eiaao.mousetroke"
-                | "io.github.eiaao.mousetroke-settings"
-                | "dev.mousetroke.settings"
-                | "com.apple.dock"
-                | "com.apple.controlcenter"
-                | "com.apple.notificationcenterui"
-                | "com.apple.systemuiserver"
-        )
+    target.pid == std::process::id() || ignored_bundle(&target.class)
+}
+
+/// 自身与系统外壳不作为手势目标，也不出现在设置的作用域候选里。
+pub fn ignored_bundle(id: &str) -> bool {
+    matches!(
+        id,
+        "io.github.eiaao.mousetroke"
+            | "io.github.eiaao.mousetroke-settings"
+            | "dev.mousetroke.settings"
+            | "com.apple.dock"
+            | "com.apple.controlcenter"
+            | "com.apple.notificationcenterui"
+            | "com.apple.systemuiserver"
+    )
 }
 
 /// 设置点选器只读所属应用与边界，不读取窗口标题，不需要屏幕录制权限。

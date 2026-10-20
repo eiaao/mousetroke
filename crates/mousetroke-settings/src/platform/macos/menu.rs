@@ -35,7 +35,7 @@ fn build(app: &tauri::AppHandle) -> tauri::Result<Menu<tauri::Wry>> {
     let hide = Item::hide(app, Some(t(keys::MAC_MENU_HIDE)))?;
     let hide_others = Item::hide_others(app, Some(t(keys::MAC_MENU_HIDE_OTHERS)))?;
     let show_all = Item::show_all(app, Some(t(keys::MAC_MENU_SHOW_ALL)))?;
-    let quit = Item::quit(app, Some(t(keys::MAC_QUIT)))?;
+    let quit = Item::quit(app, Some(t(keys::TRAY_MENU_QUIT)))?;
     let app_menu = Submenu::with_items(
         app,
         "Mousetroke",

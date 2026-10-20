@@ -266,7 +266,7 @@ impl Menu {
             keys::MAC_STATUS_RUNNING
         };
         self.status.setTitle(&NSString::from_str(t(key)));
-        self.pause.setTitle(&NSString::from_str(t(keys::MAC_PAUSE)));
+        self.pause.setTitle(&NSString::from_str(t(keys::TRAY_MENU_PAUSE)));
         self.pause.setState(if paused { 1 } else { 0 });
         self.accessibility
             .setTitle(&NSString::from_str(t(keys::MAC_GRANT_ACCESSIBILITY)));
@@ -276,10 +276,10 @@ impl Menu {
         self.input_monitoring
             .setHidden(permissions.input_monitoring);
         self.open_log
-            .setTitle(&NSString::from_str(t(keys::MAC_OPEN_LOG)));
+            .setTitle(&NSString::from_str(t(keys::UI_ABOUT_OPEN_LOG)));
         self.settings.setTitle(&NSString::from_str(t(keys::TRAY_MENU_SETTINGS)));
         self.about.setTitle(&NSString::from_str(t(keys::MAC_MENU_ABOUT)));
-        self.quit.setTitle(&NSString::from_str(t(keys::MAC_QUIT)));
+        self.quit.setTitle(&NSString::from_str(t(keys::TRAY_MENU_QUIT)));
         if let Some(button) = self.item.button(mtm) {
             button.setAppearsDisabled(paused || !permissions.ready() || !active);
             button.setToolTip(Some(&NSString::from_str(t(key))));

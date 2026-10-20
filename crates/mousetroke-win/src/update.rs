@@ -7,9 +7,9 @@ use std::sync::{mpsc, Mutex};
 use std::time::Duration;
 
 pub use mousetroke_core::update::{Check, Error, RELEASES_URL};
-use mousetroke_core::update::{now, release_notes, version, Source, Release, UpdateState};
+use mousetroke_core::update::{version, Automatic, Source, Release};
 #[cfg(test)]
-use mousetroke_core::update::{API, DAY};
+use mousetroke_core::update::{now, release_notes, UpdateState, API};
 
 fn select_release(data: &[u8], source: &Source) -> Result<Release, Error> {
     mousetroke_core::update::select_release_for(data, source, "mousetroke.exe")
@@ -22,10 +22,7 @@ fn fetch_release(source: &Source) -> Result<Release, Error> {
 pub fn check() -> Result<Check, Error> {
     crate::log::init();
     crate::log!("检查更新：当前 {}", env!("CARGO_PKG_VERSION"));
-    let result = fetch_release(&Source::configured()).map(|r| Check {
-        notes: release_notes(&r.body, mousetroke_core::i18n::lang().tag()),
-        current: env!("CARGO_PKG_VERSION"), newer: version(&r.latest) > version(env!("CARGO_PKG_VERSION")), latest: r.latest, notes_url: r.notes_url, download_url: None,
-    });
+    let result = fetch_release(&Source::configured()).map(|r| Check::from_release(r, None));
     match &result {
         Ok(r) => crate::log!("检查更新成功：最新 {}", r.latest),
         Err(_) => crate::log!("检查更新失败"),
@@ -168,68 +165,17 @@ pub fn wait_for_previous(pids: &[u32]) -> Result<(), Error> {
     Ok(())
 }
 
-// 原子写入使用原有 Windows API，状态结构和每日判定由 core 共用。
-trait StateStore { fn save(&self, path: &Path) -> std::io::Result<()>; }
-impl StateStore for UpdateState {
-    fn save(&self, path: &Path) -> std::io::Result<()> {
-        use std::io::Write;
-        let tmp = sidecar(path, ".tmp");
-        let mut file = std::fs::File::create(&tmp)?;
-        file.write_all(&serde_json::to_vec(self)?)?;
-        file.sync_all()?;
-        drop(file);
-        // Windows 的 rename 不覆盖目标文件，使用系统的原子替换。
-        use windows::Win32::Storage::FileSystem::{MoveFileExW, MOVEFILE_REPLACE_EXISTING, MOVEFILE_WRITE_THROUGH};
-        let wide = |p: &Path| p.as_os_str().to_string_lossy().encode_utf16().chain([0]).collect::<Vec<_>>();
-        unsafe { MoveFileExW(windows::core::PCWSTR(wide(&tmp).as_ptr()), windows::core::PCWSTR(wide(path).as_ptr()), MOVEFILE_REPLACE_EXISTING | MOVEFILE_WRITE_THROUGH) }.map_err(std::io::Error::other)
-    }
-}
-static ENABLED: std::sync::atomic::AtomicBool = std::sync::atomic::AtomicBool::new(false);
-static WORKER: std::sync::OnceLock<std::thread::Thread> = std::sync::OnceLock::new();
-static NOTICE: Mutex<Option<(String, mpsc::Sender<bool>)>> = Mutex::new(None);
+static AUTOMATIC: Automatic = Automatic::new();
 
-pub fn set_automatic(enabled: bool) {
-    ENABLED.store(enabled, std::sync::atomic::Ordering::Release);
-    if let Some(thread) = WORKER.get() { thread.unpark(); }
-}
+pub fn set_automatic(enabled: bool) { AUTOMATIC.set(enabled); }
 
-/// 仅从引擎启动调用。关闭时线程不读状态、不联网；热加载只切换开关并唤醒线程。
+/// 仅从引擎启动调用；每日限制与通知握手见 core。
 pub fn start_automatic(config: PathBuf, enabled: bool) {
-    set_automatic(enabled);
-    let _ = std::thread::Builder::new().name("mousetroke-update".into()).spawn(move || {
-        let _ = WORKER.set(std::thread::current());
-        let path = config.with_file_name("update-state.json");
-        loop {
-            if ENABLED.load(std::sync::atomic::Ordering::Acquire) {
-                let mut state = UpdateState::load(&path);
-                if state.due(now()) {
-                    state.last_check = Some(now());
-                    // 先持久化尝试时间，网络失败或程序重启都不突破一天一次的限制。
-                    if state.save(&path).is_ok() {
-                        if let Ok(result) = check() {
-                            if result.newer && state.last_notified.as_ref() != Some(&result.latest) && ENABLED.load(std::sync::atomic::Ordering::Acquire) {
-                                let (tx, rx) = mpsc::channel();
-                                if let Ok(mut notice) = NOTICE.lock() { *notice = Some((result.latest.clone(), tx)); }
-                                if rx.recv_timeout(Duration::from_secs(5)) == Ok(true) {
-                                    state.last_notified = Some(result.latest);
-                                    let _ = state.save(&path);
-                                }
-                            }
-                        }
-                    } else { crate::log!("更新检查状态写入失败，跳过自动检查"); }
-                }
-            }
-            std::thread::park_timeout(Duration::from_secs(60));
-        }
-    });
+    AUTOMATIC.start(config, enabled, check, |message| crate::log!("{message}"));
 }
 
 /// 托盘定时器取出通知；只有成功提交给托盘才记录已通知版本。
-pub fn take_notice() -> Option<(String, mpsc::Sender<bool>)> {
-    let notice = NOTICE.lock().ok()?.take()?;
-    if ENABLED.load(std::sync::atomic::Ordering::Acquire) { Some(notice) }
-    else { let _ = notice.1.send(false); None }
-}
+pub fn take_notice() -> Option<(String, mpsc::Sender<bool>)> { AUTOMATIC.take_notice() }
 
 #[cfg(test)]
 #[path = "update_tests.rs"]

@@ -1,8 +1,10 @@
-//! 跨平台发布协议；网络、签名摘要与原子文件写入由平台层完成。
+//! 跨平台发布协议与每日自动检查；网络与签名摘要由平台层完成。
 use crate::i18n::keys;
 use serde::{Deserialize, Serialize};
-use std::path::Path;
-use std::time::{SystemTime, UNIX_EPOCH};
+use std::path::{Path, PathBuf};
+use std::sync::atomic::{AtomicBool, Ordering};
+use std::sync::{mpsc, Mutex, OnceLock};
+use std::time::{Duration, SystemTime, UNIX_EPOCH};
 
 pub struct Url<'a> {
     pub host: &'a str,
@@ -340,6 +342,20 @@ pub struct Check {
     pub download_url: Option<String>,
 }
 
+impl Check {
+    /// 由发布信息生成检查结果；`download_url` 只在需要浏览器下载的平台提供。
+    pub fn from_release(release: Release, download_url: Option<String>) -> Self {
+        Check {
+            current: env!("CARGO_PKG_VERSION"),
+            newer: version(&release.latest) > version(env!("CARGO_PKG_VERSION")),
+            notes: release_notes(&release.body, crate::i18n::lang().tag()),
+            latest: release.latest,
+            notes_url: release.notes_url,
+            download_url,
+        }
+    }
+}
+
 pub fn checksum_for(text: &str, asset: &str) -> Result<String, Error> {
     let mut found = None;
     for line in text.trim_start_matches('\u{feff}').lines() {
@@ -375,7 +391,7 @@ impl UpdateState {
             .and_then(|b| serde_json::from_slice(&b).ok())
             .unwrap_or_default()
     }
-    #[cfg(unix)]
+    /// 写临时文件后原子替换；Windows 上 std 的 rename 同样覆盖已有目标。
     pub fn save(&self, path: &Path) -> std::io::Result<()> {
         use std::io::Write;
         let tmp = path.with_extension("json.tmp");
@@ -384,6 +400,99 @@ impl UpdateState {
         file.sync_all()?;
         drop(file);
         std::fs::rename(tmp, path)
+    }
+}
+
+/// 每日自动检查：平台只提供 `check` 与日志，开关、每日限制和通知握手共用。
+pub struct Automatic {
+    enabled: AtomicBool,
+    worker: OnceLock<std::thread::Thread>,
+    notice: Mutex<Option<(String, mpsc::Sender<bool>)>>,
+}
+
+impl Automatic {
+    pub const fn new() -> Self {
+        Automatic {
+            enabled: AtomicBool::new(false),
+            worker: OnceLock::new(),
+            notice: Mutex::new(None),
+        }
+    }
+
+    pub fn set(&self, enabled: bool) {
+        self.enabled.store(enabled, Ordering::Release);
+        if let Some(thread) = self.worker.get() {
+            thread.unpark();
+        }
+    }
+
+    fn enabled(&self) -> bool {
+        self.enabled.load(Ordering::Acquire)
+    }
+
+    /// 仅从引擎启动调用。关闭时线程不读状态、不联网；热加载只切换开关并唤醒线程。
+    pub fn start(
+        &'static self,
+        config: PathBuf,
+        enabled: bool,
+        check: fn() -> Result<Check, Error>,
+        log: fn(&str),
+    ) {
+        self.set(enabled);
+        let _ = std::thread::Builder::new()
+            .name("mousetroke-update".into())
+            .spawn(move || {
+                let _ = self.worker.set(std::thread::current());
+                let path = config.with_file_name("update-state.json");
+                loop {
+                    if self.enabled() {
+                        self.run_once(&path, check, log);
+                    }
+                    std::thread::park_timeout(Duration::from_secs(60));
+                }
+            });
+    }
+
+    fn run_once(&self, path: &Path, check: fn() -> Result<Check, Error>, log: fn(&str)) {
+        let mut state = UpdateState::load(path);
+        if !state.due(now()) {
+            return;
+        }
+        state.last_check = Some(now());
+        // 先持久化尝试时间，网络失败或程序重启都不突破一天一次的限制。
+        if state.save(path).is_err() {
+            log("更新检查状态写入失败，跳过自动检查"); // i18n:allow 日志
+            return;
+        }
+        let Ok(result) = check() else { return };
+        if !result.newer || state.last_notified.as_ref() == Some(&result.latest) || !self.enabled() {
+            return;
+        }
+        let (tx, rx) = mpsc::channel();
+        if let Ok(mut notice) = self.notice.lock() {
+            *notice = Some((result.latest.clone(), tx));
+        }
+        if rx.recv_timeout(Duration::from_secs(5)) == Ok(true) {
+            state.last_notified = Some(result.latest);
+            let _ = state.save(path);
+        }
+    }
+
+    /// 主线程定时器取出通知；只有成功提交给界面才记录已通知版本。
+    pub fn take_notice(&self) -> Option<(String, mpsc::Sender<bool>)> {
+        let notice = self.notice.lock().ok()?.take()?;
+        if self.enabled() {
+            Some(notice)
+        } else {
+            let _ = notice.1.send(false);
+            None
+        }
+    }
+}
+
+impl Default for Automatic {
+    fn default() -> Self {
+        Self::new()
     }
 }
 
