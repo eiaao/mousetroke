@@ -18,7 +18,8 @@ use windows::Win32::Graphics::Gdi::{
 use windows::Win32::System::LibraryLoader::GetModuleHandleW;
 use windows::Win32::UI::WindowsAndMessaging::{
     CreateWindowExW, DefWindowProcW, DestroyWindow, GetSystemMetrics, KillTimer, RegisterClassW, SetTimer,
-    ShowWindow, UpdateLayeredWindow, UpdateLayeredWindowIndirect, CS_HREDRAW, CS_VREDRAW,
+    SetWindowPos, ShowWindow, HWND_TOPMOST, SWP_NOACTIVATE, SWP_NOMOVE, SWP_NOOWNERZORDER,
+    SWP_NOSENDCHANGING, SWP_NOSIZE, UpdateLayeredWindow, UpdateLayeredWindowIndirect, CS_HREDRAW, CS_VREDRAW,
     SM_CXVIRTUALSCREEN, SM_CYVIRTUALSCREEN, SM_XVIRTUALSCREEN, SM_YVIRTUALSCREEN,
     SW_SHOWNOACTIVATE, UPDATELAYEREDWINDOWINFO, WM_TIMER, WNDCLASSW, WS_EX_LAYERED,
     WS_EX_NOACTIVATE, WS_EX_TOOLWINDOW, WS_EX_TOPMOST, WS_EX_TRANSPARENT, WS_POPUP,
@@ -106,6 +107,18 @@ impl Drop for Overlay {
     }
 }
 
+/// 系统当前的虚拟屏 (x, y, w, h)；覆盖层按它创建，也用来发现过期的覆盖层。
+pub fn system_virtual_rect() -> (i32, i32, i32, i32) {
+    unsafe {
+        (
+            GetSystemMetrics(SM_XVIRTUALSCREEN),
+            GetSystemMetrics(SM_YVIRTUALSCREEN),
+            GetSystemMetrics(SM_CXVIRTUALSCREEN).max(1),
+            GetSystemMetrics(SM_CYVIRTUALSCREEN).max(1),
+        )
+    }
+}
+
 impl Overlay {
     /// 创建（窗口隐藏状态，缓冲区全透明）。
     pub fn new(color_normal: &str, width_px: f64) -> Option<Self> {
@@ -127,12 +140,8 @@ impl Overlay {
                 return None;
             }
 
-            let (vx, vy, vw, vh) = (
-                GetSystemMetrics(SM_XVIRTUALSCREEN),
-                GetSystemMetrics(SM_YVIRTUALSCREEN),
-                GetSystemMetrics(SM_CXVIRTUALSCREEN).max(1),
-                GetSystemMetrics(SM_CYVIRTUALSCREEN).max(1),
-            );
+            let (vx, vy, vw, vh) = system_virtual_rect();
+            crate::log!("覆盖层: ({vx},{vy}) {vw}×{vh}");
 
             let hwnd = CreateWindowExW(
                 WS_EX_LAYERED | WS_EX_TRANSPARENT | WS_EX_TOPMOST | WS_EX_TOOLWINDOW
@@ -230,6 +239,13 @@ impl Overlay {
             // 上次会话的内容可能仍在窗口表面上（淡出未跑完/中断），强制清一次
             if self.visible {
                 self.present_dirty(&b, true);
+            }
+        }
+        if self.visible {
+            // 窗口常驻只在首次置顶；之后别的置顶窗口可能压在上面，每次手势开始重新置顶。
+            unsafe {
+                let _ = SetWindowPos(self.hwnd, Some(HWND_TOPMOST), 0, 0, 0, 0,
+                    SWP_NOMOVE | SWP_NOSIZE | SWP_NOACTIVATE | SWP_NOOWNERZORDER | SWP_NOSENDCHANGING);
             }
         }
         self.prev = Some(self.to_local(x, y));

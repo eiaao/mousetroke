@@ -367,6 +367,7 @@ unsafe extern "system" fn tray_wndproc(hwnd: HWND, msg: u32, wparam: WPARAM, lpa
             LRESULT(0)
         }
         WM_TIMER if wparam.0 == CONFIG_TIMER_ID => {
+            crate::engine::sync_display();
             poll_config(hwnd);
             LRESULT(0)
         }

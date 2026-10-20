@@ -1,4 +1,6 @@
 //! Session tap：只做有界转换和引擎调用；补发由主线程下一次计时器处理。
+//! 普通移动走只监听的 tap（系统不等待回调，主线程忙时光标也不卡）；
+//! 按键、滚轮、拖动走可拦截的 tap，保证拖动与按下/松开的顺序。
 use std::cell::{Cell, RefCell};
 use std::ffi::c_void;
 use std::panic::{catch_unwind, AssertUnwindSafe};
@@ -15,7 +17,7 @@ use objc2_core_graphics::{
 
 pub const INJECT_TAG: i64 = 0x4D53_5452;
 thread_local! {
-    static TAP: RefCell<Option<Tap>> = const { RefCell::new(None) };
+    static TAPS: RefCell<Option<[Tap; 2]>> = const { RefCell::new(None) };
     static HOTKEY_HELD: Cell<bool> = const { Cell::new(false) };
     /// 暂停热键：(kVK, 必须恰好按下的修饰键位)；来自 settings.pause_hotkey。
     static PAUSE_KEY: Cell<Option<(u16, u64)>> = const { Cell::new(None) };
@@ -42,7 +44,7 @@ fn trace_events() -> bool {
     *TRACE.get_or_init(|| std::env::var_os("MOUSETROKE_TRACE_EVENTS").is_some_and(|v| v == "1"))
 }
 
-const KINDS: &[Kind] = &[
+const FILTERED: &[Kind] = &[
     Kind::LeftMouseDown,
     Kind::LeftMouseUp,
     Kind::LeftMouseDragged,
@@ -52,67 +54,74 @@ const KINDS: &[Kind] = &[
     Kind::OtherMouseDown,
     Kind::OtherMouseUp,
     Kind::OtherMouseDragged,
-    Kind::MouseMoved,
     Kind::ScrollWheel,
     Kind::KeyDown,
     Kind::KeyUp,
     Kind::FlagsChanged,
 ];
+/// 引擎对移动一律放行，无需同步等待。
+const LISTENED: &[Kind] = &[Kind::MouseMoved];
 
 pub fn install() -> bool {
     if active() {
         return true;
     }
     remove();
-    let mask = KINDS.iter().fold(0, |mask, kind| mask | (1u64 << kind.0));
-    // 安全：回调捕获所有 Rust unwind；user_info 不使用；source 只加入主 run loop。
-    let Some(port) = (unsafe {
-        CGEvent::tap_create(
-            CGEventTapLocation::SessionEventTap,
-            CGEventTapPlacement::HeadInsertEventTap,
-            CGEventTapOptions::Default,
-            mask,
-            Some(callback),
-            ptr::null_mut(),
-        )
-    }) else {
+    let (Some(filter), Some(listen)) = (
+        create(CGEventTapOptions::Default, FILTERED),
+        create(CGEventTapOptions::ListenOnly, LISTENED),
+    ) else {
         return false;
     };
-    let Some(source) = CFMachPort::new_run_loop_source(None, Some(&port), 0) else {
-        port.invalidate();
-        return false;
-    };
-    let Some(run_loop) = CFRunLoop::main() else {
-        port.invalidate();
-        return false;
-    };
-    // 安全：系统提供的 common modes 常量始终有效；菜单跟踪期间也要处理 tap。
-    let Some(mode) = (unsafe { kCFRunLoopCommonModes }) else {
-        port.invalidate();
-        return false;
-    };
-    run_loop.add_source(Some(&source), Some(mode));
-    CGEvent::tap_enable(&port, true);
-    if !run_loop.contains_source(Some(&source), Some(mode)) || !CGEvent::tap_is_enabled(&port) {
-        source.invalidate();
-        port.invalidate();
-        return false;
-    }
-    TAP.with(|slot| *slot.borrow_mut() = Some(Tap { port, source }));
+    TAPS.with(|slot| *slot.borrow_mut() = Some([filter, listen]));
     crate::log!("事件 tap 已启用（主 run loop）");
     true
 }
 
+fn create(options: CGEventTapOptions, kinds: &[Kind]) -> Option<Tap> {
+    let mask = kinds.iter().fold(0, |mask, kind| mask | (1u64 << kind.0));
+    // 安全：回调捕获所有 Rust unwind；user_info 不使用；source 只加入主 run loop。
+    let port = unsafe {
+        CGEvent::tap_create(
+            CGEventTapLocation::SessionEventTap,
+            CGEventTapPlacement::HeadInsertEventTap,
+            options,
+            mask,
+            Some(callback),
+            ptr::null_mut(),
+        )
+    }?;
+    let Some(source) = CFMachPort::new_run_loop_source(None, Some(&port), 0) else {
+        port.invalidate();
+        return None;
+    };
+    let Some(run_loop) = CFRunLoop::main() else {
+        port.invalidate();
+        return None;
+    };
+    // 安全：系统提供的 common modes 常量始终有效；菜单跟踪期间也要处理 tap。
+    let Some(mode) = (unsafe { kCFRunLoopCommonModes }) else {
+        port.invalidate();
+        return None;
+    };
+    run_loop.add_source(Some(&source), Some(mode));
+    CGEvent::tap_enable(&port, true);
+    let tap = Tap { port, source };
+    (run_loop.contains_source(Some(&tap.source), Some(mode)) && CGEvent::tap_is_enabled(&tap.port))
+        .then_some(tap)
+}
+
 pub fn active() -> bool {
-    TAP.with(|slot| {
-        slot.borrow()
-            .as_ref()
-            .is_some_and(|tap| tap.port.is_valid() && CGEvent::tap_is_enabled(&tap.port))
+    TAPS.with(|slot| {
+        slot.borrow().as_ref().is_some_and(|taps| {
+            taps.iter()
+                .all(|tap| tap.port.is_valid() && CGEvent::tap_is_enabled(&tap.port))
+        })
     })
 }
 pub fn remove() {
     EDGE_SETTLE.with(|slot| slot.set(None));
-    TAP.with(|slot| {
+    TAPS.with(|slot| {
         slot.borrow_mut().take();
     });
 }
@@ -125,12 +134,14 @@ pub fn is_tagged(tag: i64) -> bool {
 }
 
 fn reenable(kind: Kind) {
-    TAP.with(|slot| {
+    TAPS.with(|slot| {
         if let Ok(slot) = slot.try_borrow() {
-            if let Some(tap) = slot.as_ref() {
-                CGEvent::tap_enable(&tap.port, true);
-                let enabled = CGEvent::tap_is_enabled(&tap.port);
-                crate::log!("事件 tap 被系统禁用: {}，重新启用: {enabled}", kind.0);
+            for tap in slot.iter().flatten() {
+                if !CGEvent::tap_is_enabled(&tap.port) {
+                    CGEvent::tap_enable(&tap.port, true);
+                    let enabled = CGEvent::tap_is_enabled(&tap.port);
+                    crate::log!("事件 tap 被系统禁用: {}，重新启用: {enabled}", kind.0);
+                }
             }
         }
     });
