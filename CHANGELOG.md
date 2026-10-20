@@ -2,6 +2,26 @@
 
 Each version lists its highlights in English, then in Chinese. The release page, the in-app update notes and the website changelog are all generated from this file.
 
+## 0.2.0 — 2026-10-20
+
+### English
+
+- Mousetroke for Mac (beta): the same gestures, trails, screen corners and edges, per-app gestures and Lua scripts, in a menu-bar app for macOS 11 or later on Apple silicon and Intel. Defaults follow Mac conventions, such as Mission Control in the top-left corner and Spotlight in the bottom-left.
+- The Mac settings window has the same interface, with ⌘⌥⌃⇧ key names, a window picker, launch at login and a warning when a macOS hot corner overlaps a Mousetroke corner.
+- Windows: fixed the gesture trail sometimes not showing after the screen went to sleep or the display layout changed.
+- Selecting a web address that starts with www. and using a search gesture now opens that address directly.
+- Opening Settings again brings the existing window to the front instead of starting another one.
+- Lower idle CPU and memory use, and a quieter log.
+
+### 中文
+
+- Mac 版（测试版）：同样的手势、轨迹、屏幕边角、按程序区分的手势和 Lua 脚本，常驻菜单栏，支持 macOS 11 及以上的 Apple 芯片和 Intel 机型。默认手势按 Mac 习惯设置，例如左上角打开调度中心、左下角打开聚焦搜索。
+- Mac 设置窗口与 Windows 界面一致：按键显示为 ⌘⌥⌃⇧，支持点选窗口、登录时启动；系统触发角与 Mousetroke 边角冲突时会提醒。
+- Windows：修复屏幕休眠唤醒或显示器布局变化后，手势轨迹偶尔不显示的问题。
+- 选中以 www. 开头的网址再用搜索手势，会直接打开该网址。
+- 再次打开设置时，直接切到已打开的窗口，不会再开一个。
+- 降低空闲时的 CPU 与内存占用，日志更精简。
+
 ## 0.1.1 — 2026-10-19
 
 ### English
