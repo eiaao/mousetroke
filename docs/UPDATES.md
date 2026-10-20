@@ -31,12 +31,12 @@ API 只连接 HTTPS 的 `api.github.com`；下载及其每次跳转只允许 HTT
 
 ## 本地端到端回归（交互式 Windows 桌面）
 
-以下 PowerShell 命令从此工作树根目录执行；使用独立测试配置，避免修改日常配置。
+以下 PowerShell 命令从此工作树根目录执行；使用独立测试配置，避免修改日常配置。`<target-dir>` 可替换为仓库外的任意目录。
 先从托盘退出已有引擎和设置窗口。仅 debug 构建读取 `MOUSETROKE_UPDATE_BASE`；
 release 完全忽略它。测试服务只接受 `http://127.0.0.1:<端口>`，请求与跳转必须留在同一源。
 
 ```powershell
-$env:CARGO_TARGET_DIR='D:\project\mousetroke\.claude\worktrees\target-update'
+$env:CARGO_TARGET_DIR='<target-dir>'
 $env:CARGO_BUILD_JOBS='2'
 cargo build -p mousetroke --locked
 New-Item -ItemType Directory -Force target/update-e2e | Out-Null
@@ -67,7 +67,7 @@ $env:MOUSETROKE_UPDATE_BASE='http://127.0.0.1:8770'
 不依赖桌面的文件替换回归：
 
 ```powershell
-$env:CARGO_TARGET_DIR='D:\project\mousetroke\.claude\worktrees\target-update'
+$env:CARGO_TARGET_DIR='<target-dir>'
 $env:CARGO_BUILD_JOBS='2'
 cargo test -p mousetroke-win --release -- --include-ignored --skip new_session_clears_interrupted_fade
 ```

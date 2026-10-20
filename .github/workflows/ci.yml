@@ -61,6 +61,18 @@ jobs:
       CARGO_TARGET_DIR: ${{ github.workspace }}/target
     steps:
       - uses: actions/checkout@v7
+      - name: Check forbidden product name
+        shell: bash
+        run: |
+          pattern="wges""tures"
+          status=0
+          git grep -n -i -- "$pattern" || status=$?
+          if [ "$status" -eq 0 ]; then
+            echo "Forbidden product name found in tracked files."
+            exit 1
+          elif [ "$status" -ne 1 ]; then
+            exit "$status"
+          fi
       - uses: Swatinem/rust-cache@v2
       - uses: actions/setup-node@v7
         with:

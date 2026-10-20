@@ -56,7 +56,7 @@ robots.txt sitemap.xml
 ## 工具对比页
 
 - `/alternatives/` 和 `/en/alternatives/` 是选择指南；各自下设 `strokeit/`、`strokesplus/`、`gesturesign/`、`fastgestures/`、`mouseinc/`、`browser-extensions/`。每个目录提交 `index.html`，页面互链使用带尾斜杠的相对目录 URL，兼容镜像子路径。
-- 只维护 `alternatives_data.py` 中的双语内容和逐项官方来源，以及 `alternatives_template.html`。不要直接改生成页。新增事实必须打开官方页面核实；未知项留空，生成器显示“未验证 / Unverified”。不收录竞品图像、热度指标或资源占用。
+- 只维护 `alternatives_data.py` 中的双语内容和逐项官方来源，以及 `alternatives_template.html`。不要直接改生成页。新增事实必须打开官方页面核实；未知项留空，生成器显示“—”，并在表格下统一说明核查日期和符号含义。不收录竞品图像、热度指标或资源占用。
 - `python site/gen.py` 会生成首页、日志与全部对比页；也可单独运行 `python site/gen_alternatives.py`。后者同步 sitemap 的新增条目及本次有改动的首页日期；既有日志日期保留。两者均不在构建时联网。
 - FAQ 先生成可见 HTML，再通过首页共用的 `faq_entities` 提取同一份文字形成 JSON-LD。每页包含 WebPage、FAQPage、BreadcrumbList、官方来源和核查日期。中英 hreflang 互指，x-default 指向对应英文页；canonical 保持主站。
 - 站点检查会比较生成结果、元数据唯一性、自指 canonical、双向语言链接、FAQ 一致性、所有 JSON-LD、内部链接及片段、图片尺寸属性、sitemap 完整性和禁用名称。生成器关闭字节码写入，避免本机路径混入网站文件。部署工作流清理生成器、数据、模板与缓存。

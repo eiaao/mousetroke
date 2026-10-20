@@ -39,7 +39,7 @@
 
 ## Windows 侧验证
 
-构建环境：`CARGO_TARGET_DIR=D:\project\mousetroke\.claude\worktrees\target-mac-install`，`CARGO_BUILD_JOBS=4`，沿用该 target 目录中的 Zig 交叉 C 工具链。
+构建环境：`CARGO_TARGET_DIR=<target-dir>`，`CARGO_BUILD_JOBS=4`，沿用该 target 目录中的 Zig 交叉 C 工具链。`<target-dir>` 可替换为仓库外的任意目录。
 
 | 检查 | 结果 |
 | --- | --- |
