@@ -9,12 +9,7 @@ pub fn install(app: &tauri::App) {
     refresh(app.handle());
     app.on_menu_event(|app, event| {
         if event.id().as_ref() == "settings-about" {
-            super::instance::request_about();
-            if let Some(window) = app.get_webview_window("main") {
-                let _ = window.unminimize();
-                let _ = window.show();
-                let _ = window.set_focus();
-            }
+            crate::show_window(app, true);
         }
     });
 }

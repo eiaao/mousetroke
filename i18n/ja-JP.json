@@ -557,7 +557,6 @@
   "mac.hot_corner.conflict": "システムのホットコーナーが Mousetroke と競合しています：{corner}",
   "mac.menu.about": "Mousetroke について",
   "mac.settings.open_failed": "この場所を開けませんでした。",
-  "mac.settings.instance_failed": "設定プロセスに接続できません。再試行してください。",
   "mac.settings.not_app": "「{file}」は有効な .app または実行ファイルではありません。",
   "mac.settings.windows_only": "この機能は現在 Windows のみに対応しています。",
   "mac.autostart.bundle_required": "ログイン時の起動を設定するには Mousetroke.app から設定を開いてください。",

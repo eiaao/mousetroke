@@ -563,7 +563,6 @@
   "mac.hot_corner.conflict": "系统触发角与 Mousetroke 冲突：{corner}",
   "mac.menu.about": "关于 Mousetroke",
   "mac.settings.open_failed": "无法打开此位置。",
-  "mac.settings.instance_failed": "无法连接设置进程，请重试。",
   "mac.settings.not_app": "「{file}」不是有效的 .app 或可执行文件。",
   "mac.settings.windows_only": "此功能目前仅支持 Windows。",
   "mac.autostart.bundle_required": "请从 Mousetroke.app 内打开设置，再配置登录时启动。",

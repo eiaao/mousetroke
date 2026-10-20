@@ -12,13 +12,31 @@ use platform::{engine_exe, engine_status, icons, picker};
 
 use std::collections::BTreeMap;
 use std::path::{Path, PathBuf};
+use std::sync::atomic::{AtomicBool, Ordering};
 
 use mousetroke_core::i18n::{keys, t};
 use mousetroke_core::schema::{Config, Step};
 use mousetroke_core::shape;
 use mousetroke_core::caps;
 use serde::Serialize;
-use tauri::{Manager, State, WebviewWindow};
+use tauri::{Emitter, Manager, State, WebviewWindow};
+
+/// 启动参数或其他实例请求打开关于页；界面初始化时取一次，之后改用 show-about 事件。
+static ABOUT: AtomicBool = AtomicBool::new(false);
+
+/// 打开关于页并把窗口带到前台（第二次启动、Mac 应用菜单共用）。
+pub(crate) fn show_window(app: &tauri::AppHandle, about: bool) {
+    if about {
+        ABOUT.store(true, Ordering::Release);
+        let _ = app.emit("show-about", ());
+    }
+    if let Some(window) = app.get_webview_window("main") {
+        let _ = window.unminimize();
+        let _ = window.show();
+        let _ = window.set_focus();
+        platform::bring_to_front();
+    }
+}
 
 /// 后端返回给界面的错误：词条键 + 参数，由前端 `t(key, params)` 翻译。
 /// 切换语言不需要后端参与（docs/I18N-DESIGN.md §3.4）。
@@ -414,7 +432,7 @@ fn reveal_config(paths: State<AppPaths>) {
 
 /// 消费平台传来的关于页请求。
 #[tauri::command]
-fn take_about_request() -> bool { platform::take_about_request() }
+fn take_about_request() -> bool { ABOUT.swap(false, Ordering::AcqRel) }
 
 #[tauri::command]
 async fn check_update() -> MsgResult<platform::update::Check> {
@@ -460,20 +478,19 @@ async fn install_update(paths: State<'_, AppPaths>, app: tauri::AppHandle) -> Ms
 
 /// 运行设置界面（阻塞到窗口关闭）。`config` 缺省为默认配置路径。已有设置窗口时把它带到前台后返回。
 pub fn run(config: Option<PathBuf>) {
-    // 启动时按配置确定语言：focus_existing 找窗口、托盘/气泡等少量原生文字都依赖它
+    // 启动时按配置确定语言：窗口标题等少量原生文字依赖它
     let config = config.unwrap_or_else(platform::default_config_path);
     let langs = platform::system_langs();
     let lang = Config::load(&config)
         .map(|c| mousetroke_core::i18n::resolve(&c.settings.language, &langs))
         .unwrap_or_else(|_| mousetroke_core::i18n::resolve("auto", &langs));
     mousetroke_core::i18n::set_lang(lang);
-    if platform::enter_instance(std::env::args().any(|s| s == "--about")).unwrap_or_else(|e| {
-        eprintln!("{}", t(e.key));
-        std::process::exit(1);
-    }) {
-        return;
-    }
+    ABOUT.store(std::env::args().any(|s| s == "--about"), Ordering::Release);
     tauri::Builder::default()
+        // 必须最先注册：已有实例时把参数转交过去并立即退出，不再创建窗口
+        .plugin(tauri_plugin_single_instance::init(|app, argv, _cwd| {
+            show_window(app, argv.iter().any(|a| a == "--about"));
+        }))
         .manage(AppPaths { config })
         .invoke_handler(tauri::generate_handler![
             init_state,

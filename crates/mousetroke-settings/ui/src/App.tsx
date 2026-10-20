@@ -1,6 +1,7 @@
 import { initPlatform, primaryModifier, appIdentity } from "./platform";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { getCurrentWindow } from "@tauri-apps/api/window";
+import { listen } from "@tauri-apps/api/event";
 import { getCurrentWebview } from "@tauri-apps/api/webview";
 import type { Binding, Config, EngineStatus, InitState, Scope, Step } from "./types";
 import { api, errText } from "./api";
@@ -64,12 +65,13 @@ function Main({ init }: { init: InitState }) {
   const [lang] = useLang();
   const globalIdx = Math.max(0, config.scopes.findIndex((s) => s.kind === "global"));
   const [view, setView] = useState<View>(init.about ? { kind: "about" } : { kind: "scope", index: globalIdx });
+  // 再次打开设置（如托盘「关于」）时由后端推送，不再轮询
   useEffect(() => {
-    const timer = setInterval(() => {
-      if (document.hidden) return;
-      api.takeAboutRequest().then((about) => { if (about) setView({ kind: "about" }); }, () => {});
-    }, 1000);
-    return () => clearInterval(timer);
+    const off = listen("show-about", () => {
+      api.takeAboutRequest().catch(() => {});
+      setView({ kind: "about" });
+    });
+    return () => void off.then((f) => f());
   }, []);
   const [selected, setSelected] = useState<number | null>(null);
   // 分类与筛选跨作用域保留（切到某个程序时仍停在「触发角」）
