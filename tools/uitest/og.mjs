@@ -2,8 +2,8 @@
 import puppeteer from "puppeteer-core";
 const [out, lang = "zh"] = process.argv.slice(2);
 const TEXT = {
-  zh: ["按住右键，<br>画一笔。", "免费开源的 Windows 鼠标手势，常驻内存约 19 MB", "关闭标签页"],
-  en: ["Hold right-click.<br>Draw a line.", "Free, open-source mouse gestures for Windows", "Close tab"],
+  zh: ["按住右键，<br>画一笔。", "免费开源的 Windows 和 Mac 鼠标手势", "关闭标签页"],
+  en: ["Hold right-click.<br>Draw a line.", "Free, open-source mouse gestures<br>for Windows and Mac", "Close tab"],
 };
 const [title, sub, pillText] = TEXT[lang];
 const browser = await puppeteer.launch({ executablePath: "C:/Program Files (x86)/Microsoft/Edge/Application/msedge.exe", headless: true });
@@ -14,7 +14,7 @@ body{margin:0;width:1200px;height:630px;background:#e9edf2;font-family:"Schibste
 background-image:radial-gradient(circle at 1px 1px,rgba(16,21,31,.13) 1px,transparent 0);background-size:26px 26px}
 .b{position:absolute;left:80px;top:72px;display:flex;align-items:center;gap:16px;font-weight:800;font-size:34px}
 h1{position:absolute;left:80px;top:170px;margin:0;font-size:96px;line-height:1.02;letter-spacing:-.035em;font-weight:800;max-width:720px}
-p{position:absolute;left:80px;bottom:72px;margin:0;font-size:30px;color:#3a4352;font-weight:600}
+p{position:absolute;left:80px;bottom:72px;margin:0;max-width:700px;font-size:30px;line-height:1.3;color:#3a4352;font-weight:600}
 svg.t{position:absolute;right:-10px;top:110px;width:440px;height:420px;overflow:visible}
 .pill{position:absolute;right:150px;bottom:92px;background:#1c222c;color:#f4f7fb;font-size:30px;font-weight:600;padding:14px 30px;border-radius:999px}
 </style></head><body>

@@ -5,7 +5,7 @@
 重复行（如 data-on/data-off）一次性全换。生成后运行 site-check.py 校验结构。
 用法：python gen.py es fr …（缺省生成全部已定义语言）
 """
-import sys, pathlib, re, json
+import sys, pathlib, re, json, html
 
 ROOT = pathlib.Path(__file__).resolve().parent.parent
 TPL = (ROOT / "site/en/index.html").read_text(encoding="utf-8")
@@ -34,25 +34,41 @@ def base(d, lang_tag, og_locale, summary_label, self_name):
 
 LANGS = {}
 
-# Mac 新增片段的正文与 FAQ JSON-LD 必须使用同一份译文。
-MAC_EN = {'windows': 'Download Windows version',
- 'download': 'Download Mac version (beta)',
+# Mac 下载与首次打开说明共用译文；FAQ 统一从可见正文生成 JSON-LD。
+MAC_EN = {'download': 'Download Mac version (beta)',
  'first_title': 'First open on Mac',
  'first_text': 'Drag Mousetroke into Applications and open it there. This beta is not notarized: if macOS blocks it, '
                'go to System Settings → Privacy & Security → Open Anyway (on older macOS, right-click → Open). Then '
-               'grant Accessibility and Input Monitoring.',
- 'faq_title': 'How do I uninstall the Mac version?',
- 'faq_text': 'Quit from the menu bar, delete Mousetroke.app, ~/Library/Application Support/mousetroke and '
-             '~/Library/Logs/mousetroke, and remove the Mousetroke login item in System Settings.'}
+               'grant Accessibility and Input Monitoring.'}
 
 def mac_replacements(text):
-    import html
     pairs = []
-    for key, tail in [("download", " <small>"), ("first_title", "</h3>"), ("first_text", "</p>"), ("faq_title", "</summary>"), ("faq_text", "</p>")]:
+    for key, tail in [("download", " <small>"), ("first_title", "</h3>"), ("first_text", "</p>")]:
         pairs.append((">" + html.escape(MAC_EN[key], quote=False) + tail, ">" + html.escape(text[key], quote=False) + tail))
-    for key in ["faq_title", "faq_text"]:
-        pairs.append((json.dumps(MAC_EN[key], ensure_ascii=False), json.dumps(text[key], ensure_ascii=False)))
     return pairs
+
+
+def faq_entities(page):
+    """FAQ 正文含两平台的完整回答；JSON-LD 不按访客系统隐藏内容。"""
+    def plain(text):
+        # 相邻的平台 span 在 JSON-LD 中以空格分隔，code/kbd 保留原文。
+        text = text.replace('</span><span', '</span> <span')
+        return html.unescape(re.sub(r'<[^>]+>', '', text))
+    return [
+        {"@type": "Question", "name": plain(question),
+         "acceptedAnswer": {"@type": "Answer", "text": plain(answer)}}
+        for question, answer in re.findall(
+            r'<details(?: open)?><summary>(.*?)</summary><div class="ans"><p>(.*?)</p></div></details>', page)
+    ]
+
+
+def sync_faq(page):
+    entities = faq_entities(page)
+    if not entities:
+        raise ValueError('Missing visible FAQ')
+    body = ',\n'.join('        ' + json.dumps(item, ensure_ascii=False) for item in entities)
+    return re.sub(r'("mainEntity": \[\n).*?(\n      \])',
+                  lambda m: m[1] + body + m[2], page, count=1, flags=re.S)
 
 
 # 下载组合按钮右侧 ▾ 的无障碍名称
@@ -76,12 +92,7 @@ def gen(tag, repls):
             missed.append(old[:80])
             continue
         out = out.replace(old, new)
-        # 免费说明的结构化数据与可见回答保持同一译文。
-        if '<summary>Is Mousetroke free?</summary>' in old:
-            old_faq = re.search(r'<summary>(.*?)</summary>.*?<p>(.*?)</p>', old)
-            new_faq = re.search(r'<summary>(.*?)</summary>.*?<p>(.*?)</p>', new)
-            for source, translated in zip(old_faq.groups(), new_faq.groups()):
-                out = out.replace(json.dumps(source, ensure_ascii=False), json.dumps(translated, ensure_ascii=False))
+    out = sync_faq(out)
     d = ROOT / "site" / tag
     d.mkdir(exist_ok=True)
     (d / "index.html").write_text(out, encoding="utf-8")
@@ -90,6 +101,10 @@ def gen(tag, repls):
         print("  MISS:", m)
 
 if __name__ == "__main__":
+    # 中文手写、英文模板的 FAQ 也以正文为准，避免两处改动遗漏。
+    for path in [ROOT / 'site/index.html', ROOT / 'site/en/index.html']:
+        path.write_text(sync_faq(path.read_text(encoding='utf-8')), encoding='utf-8')
+    TPL = (ROOT / 'site/en/index.html').read_text(encoding='utf-8')
     tags = sys.argv[1:] or list(LANGS)
     for tag in tags:
         gen(tag, LANGS[tag])

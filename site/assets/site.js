@@ -15,11 +15,12 @@
     get(k) { try { return localStorage.getItem(k); } catch { return null; } },
     set(k, v) { try { localStorage.setItem(k, v); } catch { /* 隐私模式等 */ } },
   };
-  // 下载组合按钮：主按钮下载访客所在系统的版本，▾ 菜单只列其他系统。
+  // 平台文案与下载共用 os-win/os-mac；默认显示 Windows，Mac 在 HTML 中 hidden。
   // iPad 也报 MacIntel，用触屏点数排除；不跑脚本时主按钮是 Windows 版，菜单列出全部。
   const isMac = (navigator.userAgentData?.platform === "macOS" || /Mac/.test(navigator.platform || "")) && navigator.maxTouchPoints < 2;
-  const os = isMac ? "dl-mac" : "dl-win";
-  $$(".split > .btn, .get .sys.dl-win, .get .sys.dl-mac").forEach((el) => { el.hidden = !el.classList.contains(os); });
+  const os = isMac ? "os-mac" : "os-win";
+  $$(".os-win, .os-mac").forEach((el) => { el.hidden = !el.classList.contains(os); });
+  // ▾ 菜单反向显示其他系统；无脚本时两种下载都可从菜单访问。
   $$(".split-menu a").forEach((a) => { a.hidden = a.classList.contains(os); });
   // 鼠标设备悬停即展开，移出整个组合按钮后稍等再收起；触屏仍是点按展开
   if (matchMedia("(hover: hover)").matches) {
@@ -822,11 +823,12 @@
 
   // ---------- 程序开关 ----------
   $$("#apps .row").forEach((row) => {
-    const sw = $(".sw", row), st = $(".state", row);
-    sw.addEventListener("change", () => {
+    const switches = $$(".sw", row), st = $(".state", row);
+    switches.forEach((sw) => sw.addEventListener("change", () => {
+      switches.forEach((other) => { other.checked = sw.checked; });
       row.classList.toggle("off", !sw.checked);
       st.textContent = sw.checked ? st.dataset.on : st.dataset.off;
-    });
+    }));
   });
 
   // ---------- 进程内存 ----------

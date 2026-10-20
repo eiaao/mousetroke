@@ -4,9 +4,9 @@
 <meta charset="utf-8">
 <script>document.documentElement.classList.add("js")</script>
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Mousetroke: gesti del mouse gratuiti per Windows</title>
-<meta name="description" content="Gesti del mouse gratuiti e open source per Windows 10 e 11. Tieni premuto il destro e disegna per tornare indietro o chiudere una scheda; spingi in un angolo dello schermo per il volume. Circa 19 MB in memoria.">
-<meta name="keywords" content="gesti del mouse,gesti del mouse Windows,software gesti del mouse,angoli attivi,bordi dello schermo,gesti col tasto destro,produttività,Mousetroke">
+<title>Mousetroke: gesti del mouse gratis per Windows e Mac</title>
+<meta name="description" content="Gesti del mouse gratuiti e open source per Windows e Mac. Disegna con il tasto destro per tornare indietro o chiudere una scheda; usa gli angoli e i bordi dello schermo per eseguire azioni.">
+<meta name="keywords" content="gesti del mouse,gesti del mouse Windows e Mac,software gesti del mouse,angoli attivi,bordi dello schermo,gesti col tasto destro,produttività,Mousetroke">
 <link rel="canonical" href="https://mousetroke.pages.dev/it/">
 <link rel="alternate" hreflang="zh-CN" href="https://mousetroke.pages.dev/">
 <link rel="alternate" hreflang="en" href="https://mousetroke.pages.dev/en/">
@@ -36,7 +36,7 @@
 <meta property="og:locale:alternate" content="it_IT">
 <meta property="og:locale:alternate" content="ko_KR">
 <meta property="og:title" content="Mousetroke: tieni premuto il destro, disegna una linea">
-<meta property="og:description" content="Gesti del mouse gratuiti e open source per Windows. Disegna per tornare indietro o chiudere una scheda; spingi in un angolo per cambiare il volume. Circa 19 MB in memoria.">
+<meta property="og:description" content="Gesti del mouse gratuiti e open source per Windows e Mac. Disegna con il tasto destro per tornare indietro o chiudere una scheda; usa gli angoli e i bordi dello schermo per eseguire azioni.">
 <meta property="og:url" content="https://mousetroke.pages.dev/it/">
 <meta property="og:image" content="https://mousetroke.pages.dev/og-en.png">
 <meta property="og:image:width" content="1200">
@@ -54,30 +54,30 @@
       "@type": "SoftwareApplication",
       "@id": "https://mousetroke.pages.dev/#app",
       "name": "Mousetroke",
-      "description": "Gesti del mouse globali per Windows: tieni premuto il pulsante destro, centrale o laterale e disegna per eseguire un’azione; spingi il cursore in un angolo o contro un bordo dello schermo per attivare azioni; imposta gesti per app o disattivali del tutto in app specifiche.",
+      "description": "Gesti del mouse globali per Windows e Mac: tieni premuto il pulsante destro, centrale o laterale e disegna per eseguire un’azione; spingi il cursore in un angolo o contro un bordo dello schermo per attivare azioni; imposta gesti per app o disattivali del tutto in app specifiche.",
       "applicationCategory": "UtilitiesApplication",
       "applicationSubCategory": "Gesti del mouse",
       "operatingSystem": "Windows 10 1809+, Windows 11 (x64); macOS 11+ (Apple silicon, Intel)",
       "softwareVersion": "0.1.1",
       "sameAs": ["https://github.com/eiaao/mousetroke"],
-      "fileSize": "12.9 MB",
-      "memoryRequirements": "Circa 19 MB di memoria residente",
-      "softwareRequirements": "Microsoft Edge WebView2 (solo la finestra delle impostazioni; incluso in Windows 11)",
+      "fileSize": "Windows: 12.9 MB; Mac: @@MAC_DMG_SIZE@@",
+      "memoryRequirements": "Windows: circa 19 MB di memoria residente; Mac: circa 13 MB di memoria fisica",
+      "softwareRequirements": "Impostazioni Windows: Microsoft Edge WebView2 (incluso in Windows 11); impostazioni Mac: WebKit di sistema; su Mac servono Accessibilità e Monitoraggio input",
       "license": "https://opensource.org/licenses/MIT",
       "isAccessibleForFree": true,
       "inLanguage": ["en", "zh-CN", "es", "fr", "de", "ja", "pt-BR", "ru", "it", "ko"],
-      "downloadUrl": "https://github.com/eiaao/mousetroke/releases/latest/download/mousetroke.exe",
+      "downloadUrl": ["https://github.com/eiaao/mousetroke/releases/latest/download/mousetroke.exe", "https://github.com/eiaao/mousetroke/releases/latest/download/Mousetroke.dmg"],
       "url": "https://mousetroke.pages.dev/it/",
       "image": "https://mousetroke.pages.dev/og-en.png",
       "offers": { "@type": "Offer", "price": "0", "priceCurrency": "USD" },
       "featureList": [
         "Gesti con il pulsante destro, centrale o laterale, con il nome del gesto mostrato mentre disegni",
         "Circa 50 gesti integrati: indietro, avanti, chiudi scheda, copia e incolla, riduci a icona, sempre in primo piano e altri",
-        "Angoli e bordi dello schermo: menu Start, mostra desktop, rotella per il volume, rotella per la luminosità (DDC/CI sui monitor esterni)",
+        "Gli angoli e i bordi dello schermo eseguono azioni, come mostrare la scrivania e regolare il volume",
         "Otto tipi di azione: invia tasti, azioni sulla finestra, apri un’app, apri un URL, esegui un comando, media e sistema, mostra un menu, script Lua",
         "Gesti per app, o del tutto disattivati nelle app scelte",
-        "Si mette in pausa da solo in giochi, video e presentazioni a schermo intero; Win+Esc mette in pausa in qualsiasi momento",
-        "Circa 19 MB di memoria residente; un unico exe portatile",
+        "Pausa automatica con giochi, video e presentazioni a schermo intero; scorciatoia di pausa configurabile",
+        "Windows: circa 19 MB di memoria residente, exe portatile; Mac: circa 13 MB di memoria fisica, DMG",
         "Interfaccia in dieci lingue"
       ]
     },
@@ -91,15 +91,14 @@
     {
       "@type": "FAQPage",
       "mainEntity": [
-        { "@type": "Question", "name": "Does the right-click menu still work with Mousetroke?", "acceptedAnswer": { "@type": "Answer", "text": "Yes. A right-click without dragging is passed back to Windows unchanged, so the context menu opens as usual. Holding still past the drag timeout (0.5 seconds by default, adjustable) also becomes a normal right-drag." } },
-        { "@type": "Question", "name": "Will it misfire in games or remote desktop?", "acceptedAnswer": { "@type": "Answer", "text": "Fullscreen games, video and presentations pause gestures automatically. Programs that need right- or middle-drag themselves, such as Remote Desktop, AnyDesk, Blender or AutoCAD, can be excluded in one click on first run. Win+Esc pauses at any time." } },
-        { "@type": "Question", "name": "Which versions of Windows are supported?", "acceptedAnswer": { "@type": "Answer", "text": "Windows 10 1809 or later and Windows 11, 64-bit. The gesture engine has no runtime dependencies; the settings window uses Microsoft Edge WebView2, which ships with Windows 11 and comes with Edge on most Windows 10 PCs." } },
-        { "@type": "Question", "name": "Mousetroke è gratuito?", "acceptedAnswer": { "@type": "Answer", "text": "Sì. È open source con licenza MIT, senza pubblicità né account. Una volta al giorno chiede a GitHub se esiste una nuova versione (disattivabile nelle preferenze). Non viene inviato altro; nessuna telemetria." } },
-        { "@type": "Question", "name": "How much memory and CPU does it use?", "acceptedAnswer": { "@type": "Answer", "text": "The resident gesture engine uses about 19 MB working set (about 10 MB private) and no CPU when idle. The settings window is a separate process that only runs while it is open." } },
-        { "@type": "Question", "name": "Can I make my own gestures?", "acceptedAnswer": { "@type": "Answer", "text": "Yes. Create a gesture in settings and draw it once on the pad in the editor. You can also combine mouse buttons, the wheel, keyboard keys and screen edges, and set gestures separately for each app." } },
-        { "@type": "Question", "name": "Where are the settings stored, and how do I back them up?", "acceptedAnswer": { "@type": "Answer", "text": "In %APPDATA%\\mousetroke\\config.json. Settings has import and export. Saved changes take effect within about a second, without a restart." } },
-        { "@type": "Question", "name": "How do I uninstall it?", "acceptedAnswer": { "@type": "Answer", "text": "Turn off start with Windows in preferences, choose Quit from the tray icon menu, then delete mousetroke.exe and the %APPDATA%\\mousetroke folder. Nothing else is left behind." } },
-        {"@type": "Question", "name": "Come disinstallo la versione Mac?", "acceptedAnswer": {"@type": "Answer", "text": "Esci dalla barra dei menu, elimina Mousetroke.app, ~/Library/Application Support/mousetroke e ~/Library/Logs/mousetroke e rimuovi Mousetroke dagli elementi di login nelle Impostazioni di Sistema."}}
+        {"@type": "Question", "name": "Il menu del clic destro funziona ancora con Mousetroke?", "acceptedAnswer": {"@type": "Answer", "text": "Sì. Un clic destro senza trascinamento viene passato al sistema senza modifiche, quindi il menu contestuale si apre come sempre. Restare fermi oltre il tempo di attesa (0,5 secondi per impostazione predefinita, modificabile) consente anche il normale trascinamento con il tasto destro."}},
+        {"@type": "Question", "name": "Scatta per errore nei giochi o nel desktop remoto?", "acceptedAnswer": {"@type": "Answer", "text": "Windows: Giochi, video e presentazioni a schermo intero mettono in pausa i gesti da soli. I programmi che usano il trascinamento col destro o col centrale — Desktop remoto, AnyDesk, Blender, AutoCAD — si escludono con un clic al primo avvio. Win+Esc mette in pausa in qualsiasi momento. Mac: Giochi, video e presentazioni a schermo intero sospendono automaticamente i gesti. Puoi escludere app di desktop remoto, virtualizzazione e 3D nelle impostazioni. La scorciatoia di pausa predefinita è ⌃⌥⌘P e può essere modificata."}},
+        {"@type": "Question", "name": "Quali sistemi operativi sono supportati?", "acceptedAnswer": {"@type": "Answer", "text": "Windows: Windows 10 1809 o successivo e Windows 11, a 64 bit. Il motore dei gesti non ha dipendenze di runtime; la finestra delle impostazioni usa Microsoft Edge WebView2, incluso in Windows 11 e presente con Edge sulla maggior parte dei PC con Windows 10. Mac: macOS 11 o successivo, su Apple silicon e Intel. Il motore nativo usa AppKit e CGEventTap; le impostazioni usano il WebKit di sistema. Al primo avvio, concedi Accessibilità e Monitoraggio input."}},
+        {"@type": "Question", "name": "Mousetroke è gratuito?", "acceptedAnswer": {"@type": "Answer", "text": "Sì. È open source con licenza MIT, senza pubblicità né account. Una volta al giorno chiede a GitHub se esiste una nuova versione (disattivabile nelle preferenze). Non viene inviato altro; nessuna telemetria."}},
+        {"@type": "Question", "name": "Quanta memoria e CPU usa?", "acceptedAnswer": {"@type": "Answer", "text": "Windows: Il motore residente usa circa 19 MB di working set (circa 10 MB privati) e nessuna CPU a riposo. La finestra delle impostazioni è un processo separato che gira solo mentre è aperta. Mac: Il motore residente occupa circa 13 MB di memoria fisica in Monitoraggio Attività e non usa la CPU a riposo. Apri le impostazioni dalla barra dei menu."}},
+        {"@type": "Question", "name": "Posso creare gesti miei?", "acceptedAnswer": {"@type": "Answer", "text": "Sì. Crea un gesto nelle impostazioni e disegnalo una volta nel riquadro dell’editor. Puoi anche combinare pulsanti del mouse, rotella, tasti e bordi dello schermo, e definire gesti separati per ogni app."}},
+        {"@type": "Question", "name": "Dove sono salvate le impostazioni e come faccio un backup?", "acceptedAnswer": {"@type": "Answer", "text": "Windows: In %APPDATA%\\mousetroke\\config.json. Le impostazioni hanno importazione ed esportazione. Le modifiche salvate valgono in circa un secondo, senza riavvio. Mac: La configurazione è in ~/Library/Application Support/mousetroke/config.json; i log sono in ~/Library/Logs/mousetroke/. Usa importazione ed esportazione nelle impostazioni per il backup."}},
+        {"@type": "Question", "name": "Come si disinstalla?", "acceptedAnswer": {"@type": "Answer", "text": "Windows: Disattiva l’avvio con Windows nelle preferenze, scegli Esci dal menu dell’icona nell’area di notifica, poi elimina mousetroke.exe e la cartella %APPDATA%\\mousetroke. Non resta nient’altro. Mac: Esci dalla barra dei menu, elimina Mousetroke.app, ~/Library/Application Support/mousetroke e ~/Library/Logs/mousetroke e rimuovi Mousetroke dagli elementi di login nelle Impostazioni di Sistema."}}
       ]
     }
   ]
@@ -147,16 +146,16 @@
     <div class="wrap hero-grid">
       <div>
         <h1 id="h-hero">Tieni premuto il destro.<br>Disegna una linea.</h1>
-        <p class="lede">Mousetroke aggiunge i gesti del mouse a ogni finestra di Windows. Tieni premuto il destro e trascina: <b>←</b> torna indietro, <b>↓→</b> chiude la scheda, <b>↙</b> riduce a icona. Un semplice clic destro apre ancora il menu.</p>
+        <p class="lede">Mousetroke aggiunge i gesti del mouse a tutte le finestre su Windows e Mac. Tieni premuto il destro e trascina: <b>←</b> torna indietro, <b>↓→</b> chiude la scheda, <b>↙</b> riduce a icona. Un semplice clic destro apre ancora il menu.</p>
         <div class="cta">
           <div class="split">
-            <a class="btn primary dl-win" href="https://github.com/eiaao/mousetroke/releases/latest/download/mousetroke.exe">Scarica per Windows <small>12,9 MB</small></a>
-            <a class="btn primary dl-mac" href="https://github.com/eiaao/mousetroke/releases/latest/download/Mousetroke.dmg" hidden>Scarica per Mac (beta) <small>@@MAC_DMG_SIZE@@</small></a>
+            <a class="btn primary os-win" href="https://github.com/eiaao/mousetroke/releases/latest/download/mousetroke.exe">Scarica per Windows <small>12,9 MB</small></a>
+            <a class="btn primary os-mac" href="https://github.com/eiaao/mousetroke/releases/latest/download/Mousetroke.dmg" hidden>Scarica per Mac (beta) <small>@@MAC_DMG_SIZE@@</small></a>
             <details class="split-more">
               <summary class="btn primary" aria-label="Altre piattaforme"><span aria-hidden="true">▾</span></summary>
               <div class="split-menu">
-                <a class="dl-win" href="https://github.com/eiaao/mousetroke/releases/latest/download/mousetroke.exe">Scarica per Windows <small>12,9 MB · v0.1.1</small></a>
-                <a class="dl-mac" href="https://github.com/eiaao/mousetroke/releases/latest/download/Mousetroke.dmg">Scarica per Mac (beta) <small>@@MAC_DMG_SIZE@@ · v0.1.1</small></a>
+                <a class="os-win" href="https://github.com/eiaao/mousetroke/releases/latest/download/mousetroke.exe">Scarica per Windows <small>12,9 MB · v0.1.1</small></a>
+                <a class="os-mac" href="https://github.com/eiaao/mousetroke/releases/latest/download/Mousetroke.dmg">Scarica per Mac (beta) <small>@@MAC_DMG_SIZE@@ · v0.1.1</small></a>
               </div>
             </details>
           </div>
@@ -164,8 +163,8 @@
         </div>
         <ul class="meta">
           <li>Gratuito e open source (MIT)</li>
-          <li>Windows 10 / 11</li>
-          <li>Circa 19 MB in memoria</li>
+          <li>Windows 10 / 11 · macOS 11+</li>
+          <li><span class="os-win">Circa 19 MB in memoria</span><span class="os-mac" hidden>Circa 13 MB in memoria</span></li>
         </ul>
       </div>
 
@@ -194,7 +193,7 @@
         </ul>
       </div>
     </div>
-    <a class="cue" href="#gestures"><span class="cue-ico"><svg width="22" height="34" viewBox="0 0 22 34" aria-hidden="true"><rect x="1" y="1" width="20" height="32" rx="10" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M11 1v12M1 13h20" stroke="currentColor" stroke-width="1.6"/><path class="rb" d="M11.8 1.8h0a8.6 8.6 0 0 1 8.4 8.4V12.2H11.8Z"/></svg><svg class="cue-trail" width="14" height="40" viewBox="0 0 14 40" aria-hidden="true"><path pathLength="1" d="M7 2V36M2 31l5 5 5-5"/></svg></span><span>Scorri, oppure tieni premuto il destro e disegna verso il basso</span></a>
+    <a class="cue" href="#gestures"><span class="cue-ico"><svg width="22" height="34" viewBox="0 0 22 34" aria-hidden="true"><rect x="1" y="1" width="20" height="32" rx="10" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M11 1v12M1 13h20" stroke="currentColor" stroke-width="1.6"/><path class="rb" d="M11.8 1.8h0a8.6 8.6 0 0 1 8.4 8.4V12.2H11.8Z"/></svg><svg class="cue-trail" width="14" height="40" viewBox="0 0 14 40" aria-hidden="true"><path pathLength="1" d="M7 2V36M2 31l5 5 5-5"/></svg></span><span class="os-win">Scorri, oppure tieni premuto il destro e disegna verso il basso</span><span class="os-mac" hidden>Scorri per saperne di più</span></a>
   </section>
 
   <section class="sec" id="gestures" aria-labelledby="h-gestures">
@@ -207,7 +206,7 @@
         <div>
           <h3>Navigazione</h3>
           <ul>
-            <li data-p="50,0,0,0" data-act="back"><span class="glyph"></span><span class="nm">Indietro<small>Nei browser e in Esplora file</small></span><span class="ar">←</span></li>
+            <li data-p="50,0,0,0" data-act="back"><span class="glyph"></span><span class="nm">Indietro<small><span class="os-win">Nei browser e in Esplora file</span><span class="os-mac" hidden>Nei browser e nel Finder</span></small></span><span class="ar">←</span></li>
             <li data-p="0,0,50,0" data-act="forward"><span class="glyph"></span><span class="nm">Avanti</span><span class="ar">→</span></li>
             <li data-p="0,0,50,0,50,50" data-act="newtab"><span class="glyph"></span><span class="nm">Nuova scheda</span><span class="ar">→↓</span></li>
             <li data-p="0,0,0,50,50,50" data-act="closetab"><span class="glyph"></span><span class="nm">Chiudi scheda</span><span class="ar">↓→</span></li>
@@ -250,7 +249,7 @@
           </ul>
         </div>
       </div>
-      <p class="note">Mentre disegni, il nome del gesto compare in basso sullo schermo; ciò che non riconosce non fa nulla. Lo stesso gesto può fare cose diverse in Esplora file, nel terminale e sul desktop.</p>
+      <p class="note">Mentre disegni, il nome del gesto appare in basso sullo schermo; un gesto non riconosciuto non esegue nulla. Lo stesso gesto può fare cose diverse in applicazioni diverse.</p>
     </div>
   </section>
 
@@ -276,13 +275,13 @@
           </div>
         </div>
         <ul class="rules" aria-label="Regole predefinite di angoli e bordi; clicca per vederle">
-          <li><button type="button" data-edge="12"><span class="where">In basso a sinistra</span><span class="what">Menu Start</span></button></li>
+          <li><button type="button" data-edge="12"><span class="where">In basso a sinistra</span><span class="what"><span class="os-win">Menu Start</span><span class="os-mac" hidden>Spotlight</span></span></button></li>
           <li><button type="button" data-edge="6"><span class="where">In basso a destra</span><span class="what">Mostra desktop</span></button></li>
-          <li><button type="button" data-edge="9"><span class="where">In alto a sinistra</span><span class="what">Passa all’app precedente</span></button></li>
-          <li><button type="button" data-edge="3"><span class="where">In alto a destra</span><span class="what">Selettore attività</span></button></li>
-          <li><button type="button" data-edge="1" data-with="wheel"><span class="where">Bordo superiore</span><span class="what">Rotella per il volume<small>Il centrale silenzia, il destro riproduce / mette in pausa</small></span></button></li>
-          <li><button type="button" data-edge="4" data-with="wheel"><span class="where">Bordo inferiore</span><span class="what">Rotella per la luminosità<small>DDC/CI sui monitor esterni, anche gli schermi dei portatili</small></span></button></li>
-          <li><button type="button" data-edge="2" data-with="rub"><span class="where">Bordo destro</span><span class="what">Strofina su e giù per Gestione attività</span></button></li>
+          <li><button type="button" data-edge="9"><span class="where">In alto a sinistra</span><span class="what"><span class="os-win">Passa all’app precedente</span><span class="os-mac" hidden>Mission Control</span></span></button></li>
+          <li class="os-win"><button type="button" data-edge="3"><span class="where">In alto a destra</span><span class="what">Selettore attività</span></button></li>
+          <li><button type="button" data-edge="1" data-with="wheel"><span class="where">Bordo superiore</span><span class="what">Rotella per il volume<small class="os-win">Il centrale silenzia, il destro riproduce / mette in pausa</small></span></button></li>
+          <li class="os-win"><button type="button" data-edge="4" data-with="wheel"><span class="where">Bordo inferiore</span><span class="what">Rotella per la luminosità<small>DDC/CI sui monitor esterni, anche gli schermi dei portatili</small></span></button></li>
+          <li class="os-win"><button type="button" data-edge="2" data-with="rub"><span class="where">Bordo destro</span><span class="what">Strofina su e giù per Gestione attività</span></button></li>
         </ul>
       </div>
     </div>
@@ -295,11 +294,11 @@
         <p>Ogni gesto esegue uno di otto tipi di azione. Le azioni accettano variabili: <code>%MS_SELECTED_TEXT%</code> è il testo selezionato e <code>%MS_PID%</code> il processo sotto il cursore.</p>
       </div>
       <dl class="acts">
-        <div><span class="ico" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="2.5" y="6" width="19" height="12" rx="2.5"/><path d="M6.5 10h.01M10 10h.01M13.5 10h.01M17 10h.01M7.5 14h9"/></svg></span><dt>Invia tasti</dt><dd>Qualsiasi scorciatoia o sequenza di tasti, come <code>Ctrl+Shift+T</code>.</dd></div>
+        <div><span class="ico" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="2.5" y="6" width="19" height="12" rx="2.5"/><path d="M6.5 10h.01M10 10h.01M13.5 10h.01M17 10h.01M7.5 14h9"/></svg></span><dt>Invia tasti</dt><dd>Qualsiasi scorciatoia o sequenza di tasti, come <code class="os-win">Ctrl+Shift+T</code><code class="os-mac" hidden>⌘⇧T</code>.</dd></div>
         <div><span class="ico" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="16" rx="2.5"/><path d="M3 9h18"/></svg></span><dt>Azioni sulla finestra</dt><dd>Riduci a icona, ingrandisci, tieni in primo piano, chiudi o termina la finestra sotto il cursore o quella attiva.</dd></div>
-        <div><span class="ico" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M5 19 19 5M9 5h10v10"/></svg></span><dt>Apri un’app</dt><dd>Avvia qualsiasi programma o file con argomenti, come <code>notepad.exe</code>.</dd></div>
+        <div><span class="ico" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M5 19 19 5M9 5h10v10"/></svg></span><dt>Apri un’app</dt><dd>Apri un’app o un file, con argomenti facoltativi.</dd></div>
         <div><span class="ico" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c2.8 3 2.8 15 0 18M12 3c-2.8 3-2.8 15 0 18"/></svg></span><dt>Apri un URL</dt><dd>Nel browser predefinito, volendo con il testo selezionato: <code>https://www.bing.com/search?q=%MS_SELECTED_TEXT%</code></dd></div>
-        <div><span class="ico" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="m5 8 4 4-4 4M12 17h7"/></svg></span><dt>Esegui un comando</dt><dd>Qualsiasi riga di comando, come <code>taskkill /F /PID %MS_PID%</code>.</dd></div>
+        <div><span class="ico" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="m5 8 4 4-4 4M12 17h7"/></svg></span><dt>Esegui un comando</dt><dd>Esegui un comando, usando variabili se necessario.</dd></div>
         <div><span class="ico" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 10v4h4l5 4V6L8 10H4ZM16.5 9a4 4 0 0 1 0 6"/></svg></span><dt>Media e sistema</dt><dd>Volume, muto, riproduci / pausa, traccia precedente / successiva, luminosità dello schermo.</dd></div>
         <div><span class="ico" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="4" width="16" height="16" rx="2.5"/><path d="M8 9h8M8 12h8M8 15h5"/></svg></span><dt>Mostra un menu</dt><dd>Un gesto apre un menu di azioni accanto al cursore; clicca su una per eseguirla.</dd></div>
         <div><span class="ico" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="m8 7-5 5 5 5M16 7l5 5-5 5M14 4l-4 16"/></svg></span><dt>Script Lua</dt><dd>Poche righe di Lua quando servono condizioni o più passaggi di fila.</dd></div>
@@ -311,21 +310,21 @@
     <div class="wrap">
       <div class="sec-head">
         <h2 id="h-quiet">Si fa da parte quando serve</h2>
-        <p>Desktop remoto e app 3D e di progettazione usano da sole il trascinamento col destro e col centrale. Al primo avvio, Mousetroke trova quelle installate; spuntale per disattivare i gesti al loro interno.</p>
+        <p><span class="os-win">Desktop remoto e app 3D e di progettazione usano da sole il trascinamento col destro e col centrale. Al primo avvio, Mousetroke trova quelle installate; spuntale per disattivare i gesti al loro interno.</span><span class="os-mac" hidden>Su Mac i gesti sono disattivati per impostazione predefinita nelle app di desktop remoto, virtualizzazione e 3D, tra cui Windows App, Condivisione Schermo, Parallels Desktop e Blender. Puoi modificare queste regole nelle impostazioni.</span></p>
       </div>
       <div class="quiet">
         <div class="apps" id="apps">
-          <div class="row off"><span class="ai" style="background:#2b6cb0">R</span><span class="an"><b>Connessione Desktop remoto</b><small>mstsc.exe</small></span><span class="state" data-on="Gesti attivi" data-off="Gesti disattivati">Gesti disattivati</span><input class="sw" type="checkbox" aria-label="Usa i gesti in Connessione Desktop remoto"></div>
-          <div class="row off"><span class="ai" style="background:#d42c2c">A</span><span class="an"><b>AnyDesk</b><small>AnyDesk.exe</small></span><span class="state" data-on="Gesti attivi" data-off="Gesti disattivati">Gesti disattivati</span><input class="sw" type="checkbox" aria-label="Usa i gesti in AnyDesk"></div>
-          <div class="row off"><span class="ai" style="background:#e87d0d">B</span><span class="an"><b>Blender</b><small>blender.exe</small></span><span class="state" data-on="Gesti attivi" data-off="Gesti disattivati">Gesti disattivati</span><input class="sw" type="checkbox" aria-label="Usa i gesti in Blender"></div>
-          <div class="row off"><span class="ai" style="background:#c62828">A</span><span class="an"><b>AutoCAD</b><small>acad.exe</small></span><span class="state" data-on="Gesti attivi" data-off="Gesti disattivati">Gesti disattivati</span><input class="sw" type="checkbox" aria-label="Usa i gesti in AutoCAD"></div>
-          <div class="row"><span class="ai" style="background:#0098d9">C</span><span class="an"><b>Google Chrome</b><small>chrome.exe</small></span><span class="state" data-on="Gesti attivi" data-off="Gesti disattivati">Gesti attivi</span><input class="sw" type="checkbox" checked aria-label="Usa i gesti in Google Chrome"></div>
+          <div class="row off"><span class="ai" style="background:#2b6cb0">•</span><span class="an"><b><span class="os-win">Connessione Desktop remoto</span><span class="os-mac" hidden>Windows App</span></b><small><span class="os-win">mstsc.exe</span><span class="os-mac" hidden>com.microsoft.rdc.macos</span></small></span><span class="state" data-on="Gesti attivi" data-off="Gesti disattivati">Gesti disattivati</span><span class="os-win"><input class="sw" type="checkbox" aria-label="Usa i gesti in Connessione Desktop remoto"></span><span class="os-mac" hidden><input class="sw" type="checkbox" aria-label="Usa i gesti in Windows App"></span></div>
+          <div class="row off"><span class="ai" style="background:#d42c2c">•</span><span class="an"><b><span class="os-win">AnyDesk</span><span class="os-mac" hidden>Screen Sharing</span></b><small><span class="os-win">AnyDesk.exe</span><span class="os-mac" hidden>com.apple.ScreenSharing</span></small></span><span class="state" data-on="Gesti attivi" data-off="Gesti disattivati">Gesti disattivati</span><span class="os-win"><input class="sw" type="checkbox" aria-label="Usa i gesti in AnyDesk"></span><span class="os-mac" hidden><input class="sw" type="checkbox" aria-label="Usa i gesti in Screen Sharing"></span></div>
+          <div class="row off"><span class="ai" style="background:#e87d0d">•</span><span class="an"><b><span class="os-win">Blender</span><span class="os-mac" hidden>Blender</span></b><small><span class="os-win">blender.exe</span><span class="os-mac" hidden>org.blenderfoundation.blender</span></small></span><span class="state" data-on="Gesti attivi" data-off="Gesti disattivati">Gesti disattivati</span><span class="os-win"><input class="sw" type="checkbox" aria-label="Usa i gesti in Blender"></span><span class="os-mac" hidden><input class="sw" type="checkbox" aria-label="Usa i gesti in Blender"></span></div>
+          <div class="row off"><span class="ai" style="background:#c62828">•</span><span class="an"><b><span class="os-win">AutoCAD</span><span class="os-mac" hidden>Parallels Desktop</span></b><small><span class="os-win">acad.exe</span><span class="os-mac" hidden>com.parallels.desktop.console</span></small></span><span class="state" data-on="Gesti attivi" data-off="Gesti disattivati">Gesti disattivati</span><span class="os-win"><input class="sw" type="checkbox" aria-label="Usa i gesti in AutoCAD"></span><span class="os-mac" hidden><input class="sw" type="checkbox" aria-label="Usa i gesti in Parallels Desktop"></span></div>
+          <div class="row"><span class="ai" style="background:#0098d9">•</span><span class="an"><b><span class="os-win">Google Chrome</span><span class="os-mac" hidden>Google Chrome</span></b><small><span class="os-win">chrome.exe</span><span class="os-mac" hidden>com.google.Chrome</span></small></span><span class="state" data-on="Gesti attivi" data-off="Gesti disattivati">Gesti attivi</span><span class="os-win"><input class="sw" type="checkbox" checked aria-label="Usa i gesti in Google Chrome"></span><span class="os-mac" hidden><input class="sw" type="checkbox" checked aria-label="Usa i gesti in Google Chrome"></span></div>
         </div>
         <ul class="points">
           <li><b>Il clic destro funziona ancora</b><span>Premi senza disegnare e il menu contestuale si apre come sempre; resta fermo un attimo e diventa un normale trascinamento.</span></li>
           <li><b>Pausa a schermo intero</b><span>Giochi, video e presentazioni a schermo intero non attivano gesti né angoli.</span></li>
-          <li><b>Pausa quando vuoi</b><span>Premi <kbd>Win</kbd> + <kbd>Esc</kbd> per mettere in pausa o riprendere; l’icona nell’area di notifica diventa grigia.</span></li>
-          <li><b>Aggiungere un’app è veloce</b><span>Trascina il suo exe o collegamento nella finestra delle impostazioni, oppure clicca «Scegli una finestra» e poi la sua finestra.</span></li>
+          <li><b>Pausa quando vuoi</b><span class="os-win">Premi <kbd>Win</kbd> + <kbd>Esc</kbd> per mettere in pausa o riprendere; l’icona nell’area di notifica diventa grigia.</span><span class="os-mac" hidden>Premi <kbd>⌃</kbd> + <kbd>⌥</kbd> + <kbd>⌘</kbd> + <kbd>P</kbd> per sospendere o riprendere. Puoi cambiare la scorciatoia nelle impostazioni o sospendere dal menu nella barra dei menu.</span></li>
+          <li><b>Aggiungere un’app è veloce</b><span class="os-win">Trascina il suo exe o collegamento nella finestra delle impostazioni, oppure clicca «Scegli una finestra» e poi la sua finestra.</span><span class="os-mac" hidden>Scegli una .app nelle impostazioni, oppure fai clic su «Scegli una finestra» e poi sulla finestra dell’app.</span></li>
         </ul>
       </div>
     </div>
@@ -336,19 +335,20 @@
       <div>
         <div class="sec-head">
           <h2 id="h-light">Quasi invisibile</h2>
-          <p>Il motore dei gesti è scritto in Rust e parla direttamente con Windows, senza motore di browser né runtime. La finestra delle impostazioni è un processo separato che si apre solo quando serve.</p>
+          <p><span class="os-win">Il motore dei gesti è scritto in Rust e parla direttamente con Windows, senza motore di browser né runtime. La finestra delle impostazioni è un processo separato che si apre solo quando serve.</span><span class="os-mac" hidden>Il motore nativo dei gesti è scritto in Rust. Su Mac usa AppKit e CGEventTap; le impostazioni usano il WebKit di sistema, senza bisogno di WebView2.</span></p>
         </div>
         <dl class="figs">
-          <div><dt>Memoria residente</dt><dd>19<small>MB</small></dd><p>Working set misurato, circa 10 MB privati; nessuna CPU a riposo.</p></div>
-          <div><dt>Download</dt><dd>12,8<small>MB</small></dd><p>Un exe che gira da qualsiasi posizione. Nulla nel registro, a meno che non attivi l’avvio con Windows.</p></div>
+          <div><dt>Memoria residente</dt><dd><span class="os-win">19</span><span class="os-mac" hidden>13</span><small>MB</small></dd><p><span class="os-win">Working set misurato, circa 10 MB privati; nessuna CPU a riposo.</span><span class="os-mac" hidden>Circa 13 MB di memoria fisica in Monitoraggio Attività; nessun uso della CPU a riposo.</span></p></div>
+          <div><dt>Download</dt><dd><span class="os-win">12.9<small>MB</small></span><span class="os-mac" hidden>@@MAC_DMG_SIZE@@</span></dd><p><span class="os-win">Un exe che gira da qualsiasi posizione. Nulla nel registro, a meno che non attivi l’avvio con Windows.</span><span class="os-mac" hidden>Trascina Mousetroke dal DMG in Applicazioni. Gestisci l’avvio al login dagli elementi di login nelle Impostazioni di Sistema.</span></p></div>
         </dl>
       </div>
-      <div class="proc" id="proc" aria-label="Illustrazione della memoria dei processi">
+      <div class="proc os-win" id="proc" aria-label="Illustrazione della memoria dei processi">
         <div class="ph"><span>Processo</span><span>Memoria</span></div>
         <div class="pr"><span>Motore dei gesti di Mousetroke</span><span class="m" data-mb="19.3">19.3 MB</span><span class="meter"><b data-w="10"></b></span></div>
         <div class="pr webview"><span>Impostazioni di Mousetroke (WebView2)</span><span class="m" data-mb="185">—</span><span class="meter"><b data-w="96"></b></span></div>
         <div class="pt"><input class="sw" type="checkbox" id="proc-toggle"><label for="proc-toggle">Apri la finestra delle impostazioni</label></div>
       </div>
+      <div class="proc os-mac" hidden><p>Circa 13 MB di memoria fisica in Monitoraggio Attività; nessun uso della CPU a riposo.</p><p>Apri le impostazioni, sospendi o esci dal menu nella barra dei menu. Gestisci l’avvio al login nelle Impostazioni di Sistema.</p></div>
     </div>
   </section>
 
@@ -356,15 +356,15 @@
     <div class="wrap">
       <div class="sec-head"><h2 id="h-faq">Domande</h2></div>
       <div class="faq">
-        <details open><summary>Il menu del clic destro funziona ancora con Mousetroke?</summary><div class="ans"><p>Sì. Un clic destro senza trascinare viene restituito a Windows invariato, quindi il menu contestuale si apre come sempre. Restare fermi oltre il tempo di attesa (0,5 s di default, regolabile) diventa anch’esso un normale trascinamento col destro.</p></div></details>
-        <details><summary>Scatta per errore nei giochi o nel desktop remoto?</summary><div class="ans"><p>Giochi, video e presentazioni a schermo intero mettono in pausa i gesti da soli. I programmi che usano il trascinamento col destro o col centrale — Desktop remoto, AnyDesk, Blender, AutoCAD — si escludono con un clic al primo avvio. Win+Esc mette in pausa in qualsiasi momento.</p></div></details>
-        <details><summary>Quali versioni di Windows sono supportate?</summary><div class="ans"><p>Windows 10 1809 o successivo e Windows 11, a 64 bit. Il motore dei gesti non ha dipendenze di runtime; la finestra delle impostazioni usa Microsoft Edge WebView2, incluso in Windows 11 e presente con Edge sulla maggior parte dei PC con Windows 10.</p></div></details>
+        <details open><summary>Il menu del clic destro funziona ancora con Mousetroke?</summary><div class="ans"><p>Sì. Un clic destro senza trascinamento viene passato al sistema senza modifiche, quindi il menu contestuale si apre come sempre. Restare fermi oltre il tempo di attesa (0,5 secondi per impostazione predefinita, modificabile) consente anche il normale trascinamento con il tasto destro.</p></div></details>
+        <details><summary>Scatta per errore nei giochi o nel desktop remoto?</summary><div class="ans"><p><span class="os-win">Windows: Giochi, video e presentazioni a schermo intero mettono in pausa i gesti da soli. I programmi che usano il trascinamento col destro o col centrale — Desktop remoto, AnyDesk, Blender, AutoCAD — si escludono con un clic al primo avvio. Win+Esc mette in pausa in qualsiasi momento.</span><span class="os-mac" hidden>Mac: Giochi, video e presentazioni a schermo intero sospendono automaticamente i gesti. Puoi escludere app di desktop remoto, virtualizzazione e 3D nelle impostazioni. La scorciatoia di pausa predefinita è ⌃⌥⌘P e può essere modificata.</span></p></div></details>
+        <details><summary>Quali sistemi operativi sono supportati?</summary><div class="ans"><p><span class="os-win">Windows: Windows 10 1809 o successivo e Windows 11, a 64 bit. Il motore dei gesti non ha dipendenze di runtime; la finestra delle impostazioni usa Microsoft Edge WebView2, incluso in Windows 11 e presente con Edge sulla maggior parte dei PC con Windows 10.</span><span class="os-mac" hidden>Mac: macOS 11 o successivo, su Apple silicon e Intel. Il motore nativo usa AppKit e CGEventTap; le impostazioni usano il WebKit di sistema. Al primo avvio, concedi Accessibilità e Monitoraggio input.</span></p></div></details>
         <details><summary>Mousetroke è gratuito?</summary><div class="ans"><p>Sì. È open source con licenza MIT, senza pubblicità né account. Una volta al giorno chiede a GitHub se esiste una nuova versione (disattivabile nelle preferenze). Non viene inviato altro; nessuna telemetria.</p></div></details>
-        <details><summary>Quanta memoria e CPU usa?</summary><div class="ans"><p>Il motore residente usa circa 19 MB di working set (circa 10 MB privati) e nessuna CPU a riposo. La finestra delle impostazioni è un processo separato che gira solo mentre è aperta.</p></div></details>
+        <details><summary>Quanta memoria e CPU usa?</summary><div class="ans"><p><span class="os-win">Windows: Il motore residente usa circa 19 MB di working set (circa 10 MB privati) e nessuna CPU a riposo. La finestra delle impostazioni è un processo separato che gira solo mentre è aperta.</span><span class="os-mac" hidden>Mac: Il motore residente occupa circa 13 MB di memoria fisica in Monitoraggio Attività e non usa la CPU a riposo. Apri le impostazioni dalla barra dei menu.</span></p></div></details>
         <details><summary>Posso creare gesti miei?</summary><div class="ans"><p>Sì. Crea un gesto nelle impostazioni e disegnalo una volta nel riquadro dell’editor. Puoi anche combinare pulsanti del mouse, rotella, tasti e bordi dello schermo, e definire gesti separati per ogni app.</p></div></details>
-        <details><summary>Dove sono salvate le impostazioni e come faccio un backup?</summary><div class="ans"><p>In <code>%APPDATA%\mousetroke\config.json</code>. Le impostazioni hanno importazione ed esportazione. Le modifiche salvate valgono in circa un secondo, senza riavvio.</p></div></details>
-        <details><summary>Come si disinstalla?</summary><div class="ans"><p>Disattiva l’avvio con Windows nelle preferenze, scegli Esci dal menu dell’icona nell’area di notifica, poi elimina mousetroke.exe e la cartella <code>%APPDATA%\mousetroke</code>. Non resta nient’altro.</p></div></details>
-        <details><summary>Come disinstallo la versione Mac?</summary><div class="ans"><p>Esci dalla barra dei menu, elimina Mousetroke.app, ~/Library/Application Support/mousetroke e ~/Library/Logs/mousetroke e rimuovi Mousetroke dagli elementi di login nelle Impostazioni di Sistema.</p></div></details>
+        <details><summary>Dove sono salvate le impostazioni e come faccio un backup?</summary><div class="ans"><p><span class="os-win">Windows: In <code>%APPDATA%\mousetroke\config.json</code>. Le impostazioni hanno importazione ed esportazione. Le modifiche salvate valgono in circa un secondo, senza riavvio.</span><span class="os-mac" hidden>Mac: La configurazione è in <code>~/Library/Application Support/mousetroke/config.json</code>; i log sono in <code>~/Library/Logs/mousetroke/</code>. Usa importazione ed esportazione nelle impostazioni per il backup.</span></p></div></details>
+        <details><summary>Come si disinstalla?</summary><div class="ans"><p><span class="os-win">Windows: Disattiva l’avvio con Windows nelle preferenze, scegli Esci dal menu dell’icona nell’area di notifica, poi elimina mousetroke.exe e la cartella <code>%APPDATA%\mousetroke</code>. Non resta nient’altro.</span><span class="os-mac" hidden>Mac: Esci dalla barra dei menu, elimina Mousetroke.app, ~/Library/Application Support/mousetroke e ~/Library/Logs/mousetroke e rimuovi Mousetroke dagli elementi di login nelle Impostazioni di Sistema.</span></p></div></details>
+
       </div>
     </div>
   </section>
@@ -373,25 +373,25 @@
     <canvas aria-hidden="true"></canvas>
     <div class="wrap">
       <div>
-        <h2 id="h-get">Scarica, doppio clic, fatto</h2>
-        <p>Nessun installer. Nell’area di notifica compare un’icona: clic sinistro per le impostazioni, destro per mettere in pausa o uscire. Una guida in quattro passaggi accompagna il primo avvio.</p>
-        <h3 class="mac-first-title">Primo avvio su Mac</h3>
-        <p class="mac-first-text">Trascina Mousetroke in Applicazioni e aprilo da lì. Questa beta non è autenticata da Apple: se macOS la blocca, vai in Impostazioni di Sistema → Privacy e sicurezza → Apri comunque (su macOS meno recente, clic destro → Apri). Poi autorizza Accessibilità e Monitoraggio input.</p>
+        <h2 id="h-get">Scarica Mousetroke</h2>
+        <p><span class="os-win">Nessun installer. Nell’area di notifica compare un’icona: clic sinistro per le impostazioni, destro per mettere in pausa o uscire. Una guida in quattro passaggi accompagna il primo avvio.</span><span class="os-mac" hidden>Apri le impostazioni, sospendi o esci dal menu nella barra dei menu. Gestisci l’avvio al login nelle Impostazioni di Sistema.</span></p>
+        <h3 class="mac-first-title os-mac" hidden>Primo avvio su Mac</h3>
+        <p class="mac-first-text os-mac" hidden>Trascina Mousetroke in Applicazioni e aprilo da lì. Questa beta non è autenticata da Apple: se macOS la blocca, vai in Impostazioni di Sistema → Privacy e sicurezza → Apri comunque (su macOS meno recente, clic destro → Apri). Poi autorizza Accessibilità e Monitoraggio input.</p>
       </div>
       <div>
         <div class="split">
-          <a class="btn primary dl-win" href="https://github.com/eiaao/mousetroke/releases/latest/download/mousetroke.exe">Scarica per Windows <small>12,9 MB · v0.1.1</small></a>
-          <a class="btn primary dl-mac" href="https://github.com/eiaao/mousetroke/releases/latest/download/Mousetroke.dmg" hidden>Scarica per Mac (beta) <small>@@MAC_DMG_SIZE@@ · v0.1.1</small></a>
+          <a class="btn primary os-win" href="https://github.com/eiaao/mousetroke/releases/latest/download/mousetroke.exe">Scarica per Windows <small>12,9 MB · v0.1.1</small></a>
+          <a class="btn primary os-mac" href="https://github.com/eiaao/mousetroke/releases/latest/download/Mousetroke.dmg" hidden>Scarica per Mac (beta) <small>@@MAC_DMG_SIZE@@ · v0.1.1</small></a>
           <details class="split-more">
             <summary class="btn primary" aria-label="Altre piattaforme"><span aria-hidden="true">▾</span></summary>
             <div class="split-menu">
-              <a class="dl-win" href="https://github.com/eiaao/mousetroke/releases/latest/download/mousetroke.exe">Scarica per Windows <small>12,9 MB · v0.1.1</small></a>
-              <a class="dl-mac" href="https://github.com/eiaao/mousetroke/releases/latest/download/Mousetroke.dmg">Scarica per Mac (beta) <small>@@MAC_DMG_SIZE@@ · v0.1.1</small></a>
+              <a class="os-win" href="https://github.com/eiaao/mousetroke/releases/latest/download/mousetroke.exe">Scarica per Windows <small>12,9 MB · v0.1.1</small></a>
+              <a class="os-mac" href="https://github.com/eiaao/mousetroke/releases/latest/download/Mousetroke.dmg">Scarica per Mac (beta) <small>@@MAC_DMG_SIZE@@ · v0.1.1</small></a>
             </div>
           </details>
         </div>
-        <div class="sys dl-win">Windows 10 1809+ / 11, 64 bit</div>
-        <div class="sys dl-mac" hidden>macOS 11+ · Apple silicon &amp; Intel</div>
+        <div class="sys os-win">Windows 10 1809+ / 11, 64 bit</div>
+        <div class="sys os-mac" hidden>macOS 11+ · Apple silicon &amp; Intel</div>
         <a class="src" href="https://github.com/eiaao/mousetroke">github.com/eiaao/mousetroke</a>
         <a class="src" href="../en/changelog.html">Novità</a>
       </div>

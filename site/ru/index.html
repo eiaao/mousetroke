@@ -4,9 +4,9 @@
 <meta charset="utf-8">
 <script>document.documentElement.classList.add("js")</script>
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Mousetroke: бесплатные жесты мышью для Windows</title>
-<meta name="description" content="Бесплатные жесты мышью с открытым кодом для Windows 10 и 11. Удерживайте правую кнопку и рисуйте, чтобы вернуться или закрыть вкладку; уприте курсор в угол экрана для громкости. Около 19 МБ в памяти.">
-<meta name="keywords" content="жесты мышью,жесты мышью Windows,программа жестов мышью,активные углы,края экрана,жесты правой кнопкой,продуктивность,Mousetroke">
+<title>Mousetroke: бесплатные жесты мышью для Windows и Mac</title>
+<meta name="description" content="Бесплатные жесты мышью с открытым кодом для Windows и Mac. Рисуйте правой кнопкой, чтобы вернуться или закрыть вкладку; углы и края экрана тоже запускают действия.">
+<meta name="keywords" content="жесты мышью,жесты мышью Windows и Mac,программа жестов мышью,активные углы,края экрана,жесты правой кнопкой,продуктивность,Mousetroke">
 <link rel="canonical" href="https://mousetroke.pages.dev/ru/">
 <link rel="alternate" hreflang="zh-CN" href="https://mousetroke.pages.dev/">
 <link rel="alternate" hreflang="en" href="https://mousetroke.pages.dev/en/">
@@ -36,7 +36,7 @@
 <meta property="og:locale:alternate" content="it_IT">
 <meta property="og:locale:alternate" content="ko_KR">
 <meta property="og:title" content="Mousetroke: удерживайте правую кнопку и рисуйте линию">
-<meta property="og:description" content="Бесплатные жесты мышью с открытым кодом для Windows. Нарисуйте, чтобы вернуться или закрыть вкладку; уприте в угол, чтобы сменить громкость. Около 19 МБ в памяти.">
+<meta property="og:description" content="Бесплатные жесты мышью с открытым кодом для Windows и Mac. Рисуйте правой кнопкой, чтобы вернуться или закрыть вкладку; углы и края экрана тоже запускают действия.">
 <meta property="og:url" content="https://mousetroke.pages.dev/ru/">
 <meta property="og:image" content="https://mousetroke.pages.dev/og-en.png">
 <meta property="og:image:width" content="1200">
@@ -54,30 +54,30 @@
       "@type": "SoftwareApplication",
       "@id": "https://mousetroke.pages.dev/#app",
       "name": "Mousetroke",
-      "description": "Глобальные жесты мышью для Windows: удерживайте правую, среднюю или боковую кнопку и рисуйте, чтобы выполнить действие; уприте курсор в угол или кромку экрана, чтобы сработало; задавайте жесты для каждой программы или отключайте их в отдельных программах.",
+      "description": "Глобальные жесты мышью для Windows и Mac: удерживайте правую, среднюю или боковую кнопку и рисуйте, чтобы выполнить действие; уприте курсор в угол или кромку экрана, чтобы сработало; задавайте жесты для каждой программы или отключайте их в отдельных программах.",
       "applicationCategory": "UtilitiesApplication",
       "applicationSubCategory": "Жесты мышью",
       "operatingSystem": "Windows 10 1809+, Windows 11 (x64); macOS 11+ (Apple silicon, Intel)",
       "softwareVersion": "0.1.1",
       "sameAs": ["https://github.com/eiaao/mousetroke"],
-      "fileSize": "12.9 MB",
-      "memoryRequirements": "Около 19 МБ резидентной памяти",
-      "softwareRequirements": "Microsoft Edge WebView2 (только окно настроек; встроен в Windows 11)",
+      "fileSize": "Windows: 12.9 MB; Mac: @@MAC_DMG_SIZE@@",
+      "memoryRequirements": "Windows: около 19 МБ резидентной памяти; Mac: около 13 МБ физической памяти",
+      "softwareRequirements": "Настройки Windows: Microsoft Edge WebView2 (встроен в Windows 11); настройки Mac: системный WebKit; на Mac нужны Универсальный доступ и Мониторинг ввода",
       "license": "https://opensource.org/licenses/MIT",
       "isAccessibleForFree": true,
       "inLanguage": ["en", "zh-CN", "es", "fr", "de", "ja", "pt-BR", "ru", "it", "ko"],
-      "downloadUrl": "https://github.com/eiaao/mousetroke/releases/latest/download/mousetroke.exe",
+      "downloadUrl": ["https://github.com/eiaao/mousetroke/releases/latest/download/mousetroke.exe", "https://github.com/eiaao/mousetroke/releases/latest/download/Mousetroke.dmg"],
       "url": "https://mousetroke.pages.dev/ru/",
       "image": "https://mousetroke.pages.dev/og-en.png",
       "offers": { "@type": "Offer", "price": "0", "priceCurrency": "USD" },
       "featureList": [
         "Жесты правой, средней или боковой кнопкой; имя жеста показывается, пока вы рисуете",
         "Около 50 встроенных жестов: назад, вперёд, закрыть вкладку, копировать и вставить, свернуть, поверх всех окон и другие",
-        "Углы и кромки экрана: меню «Пуск», показать рабочий стол, колесо для громкости, колесо для яркости (DDC/CI на внешних мониторах)",
+        "Углы и края экрана запускают действия, например показ рабочего стола и регулировку громкости",
         "Восемь типов действий: послать клавиши, действия с окном, открыть программу, открыть URL, выполнить команду, медиа и система, показать меню, скрипт Lua",
         "Жесты для каждой программы, или полностью отключённые в выбранных программах",
-        "Ставит жесты на паузу в полноэкранных играх, видео и презентациях; Win+Esc — в любой момент",
-        "Около 19 МБ резидентной памяти; один портативный exe",
+        "Автоматическая пауза в полноэкранных играх, видео и презентациях; настраиваемое сочетание для паузы",
+        "Windows: около 19 МБ резидентной памяти, портативный exe; Mac: около 13 МБ физической памяти, DMG",
         "Интерфейс на десяти языках"
       ]
     },
@@ -91,15 +91,14 @@
     {
       "@type": "FAQPage",
       "mainEntity": [
-        { "@type": "Question", "name": "Does the right-click menu still work with Mousetroke?", "acceptedAnswer": { "@type": "Answer", "text": "Yes. A right-click without dragging is passed back to Windows unchanged, so the context menu opens as usual. Holding still past the drag timeout (0.5 seconds by default, adjustable) also becomes a normal right-drag." } },
-        { "@type": "Question", "name": "Will it misfire in games or remote desktop?", "acceptedAnswer": { "@type": "Answer", "text": "Fullscreen games, video and presentations pause gestures automatically. Programs that need right- or middle-drag themselves, such as Remote Desktop, AnyDesk, Blender or AutoCAD, can be excluded in one click on first run. Win+Esc pauses at any time." } },
-        { "@type": "Question", "name": "Which versions of Windows are supported?", "acceptedAnswer": { "@type": "Answer", "text": "Windows 10 1809 or later and Windows 11, 64-bit. The gesture engine has no runtime dependencies; the settings window uses Microsoft Edge WebView2, which ships with Windows 11 and comes with Edge on most Windows 10 PCs." } },
-        { "@type": "Question", "name": "Mousetroke бесплатен?", "acceptedAnswer": { "@type": "Answer", "text": "Да. Это открытый код под лицензией MIT, без рекламы и учётной записи. Раз в день GitHub получает запрос о наличии новой версии (можно отключить в настройках). Больше ничего не отправляется; телеметрии нет." } },
-        { "@type": "Question", "name": "How much memory and CPU does it use?", "acceptedAnswer": { "@type": "Answer", "text": "The resident gesture engine uses about 19 MB working set (about 10 MB private) and no CPU when idle. The settings window is a separate process that only runs while it is open." } },
-        { "@type": "Question", "name": "Can I make my own gestures?", "acceptedAnswer": { "@type": "Answer", "text": "Yes. Create a gesture in settings and draw it once on the pad in the editor. You can also combine mouse buttons, the wheel, keyboard keys and screen edges, and set gestures separately for each app." } },
-        { "@type": "Question", "name": "Where are the settings stored, and how do I back them up?", "acceptedAnswer": { "@type": "Answer", "text": "In %APPDATA%\\mousetroke\\config.json. Settings has import and export. Saved changes take effect within about a second, without a restart." } },
-        { "@type": "Question", "name": "How do I uninstall it?", "acceptedAnswer": { "@type": "Answer", "text": "Turn off start with Windows in preferences, choose Quit from the tray icon menu, then delete mousetroke.exe and the %APPDATA%\\mousetroke folder. Nothing else is left behind." } },
-        {"@type": "Question", "name": "Как удалить версию для Mac?", "acceptedAnswer": {"@type": "Answer", "text": "Завершите приложение через строку меню, удалите Mousetroke.app, ~/Library/Application Support/mousetroke и ~/Library/Logs/mousetroke и уберите Mousetroke из объектов входа в Системных настройках."}}
+        {"@type": "Question", "name": "Меню правого щелчка с Mousetroke работает?", "acceptedAnswer": {"@type": "Answer", "text": "Да. Щелчок правой кнопкой без перетаскивания передаётся системе без изменений, и контекстное меню открывается как обычно. Если удерживать кнопку неподвижно дольше заданного времени (по умолчанию 0,5 секунды, можно изменить), сработает обычное перетаскивание правой кнопкой."}},
+        {"@type": "Question", "name": "Не будет ли ложных срабатываний в играх или удалённом столе?", "acceptedAnswer": {"@type": "Answer", "text": "Windows: Полноэкранные игры, видео и презентации ставят жесты на паузу автоматически. Программы, которым самим нужны правое или среднее перетаскивание — удалённый стол, AnyDesk, Blender, AutoCAD — исключаются одним щелчком при первом запуске. Win+Esc ставит паузу в любой момент. Mac: В полноэкранных играх, видео и презентациях жесты приостанавливаются автоматически. Приложения удалённого доступа, виртуальных машин и 3D можно исключить в настройках. Сочетание для паузы по умолчанию — ⌃⌥⌘P, его можно изменить."}},
+        {"@type": "Question", "name": "Какие операционные системы поддерживаются?", "acceptedAnswer": {"@type": "Answer", "text": "Windows: Windows 10 с 1809 и Windows 11, 64-бит. У движка жестов нет рантайм-зависимостей; окно настроек использует Microsoft Edge WebView2 — он встроен в Windows 11 и есть с Edge на большинстве ПК с Windows 10. Mac: macOS 11 и новее на Apple silicon и Intel. Нативный движок использует AppKit и CGEventTap, настройки — системный WebKit. При первом запуске разрешите Универсальный доступ и Мониторинг ввода."}},
+        {"@type": "Question", "name": "Mousetroke бесплатен?", "acceptedAnswer": {"@type": "Answer", "text": "Да. Это открытый код под лицензией MIT, без рекламы и учётной записи. Раз в день GitHub получает запрос о наличии новой версии (можно отключить в настройках). Больше ничего не отправляется; телеметрии нет."}},
+        {"@type": "Question", "name": "Сколько памяти и CPU он занимает?", "acceptedAnswer": {"@type": "Answer", "text": "Windows: Резидентный движок занимает около 19 МБ рабочего набора (около 10 МБ приватных) и в простое не нагружает CPU. Окно настроек — отдельный процесс, работающий только пока открыто. Mac: Резидентный движок занимает около 13 МБ физической памяти в «Мониторинге системы» и не использует процессор в простое. Настройки открываются через строку меню."}},
+        {"@type": "Question", "name": "Можно создать свои жесты?", "acceptedAnswer": {"@type": "Answer", "text": "Да. Создайте жест в настройках и один раз нарисуйте его на планшете редактора. Можно также сочетать кнопки мыши, колесо, клавиши и кромки экрана, и назначать жесты отдельно для каждой программы."}},
+        {"@type": "Question", "name": "Где хранятся настройки и как их сохранить?", "acceptedAnswer": {"@type": "Answer", "text": "Windows: В %APPDATA%\\mousetroke\\config.json. В настройках есть импорт и экспорт. Сохранённые изменения вступают в силу примерно за секунду, без перезапуска. Mac: Настройки хранятся в ~/Library/Application Support/mousetroke/config.json, журналы — в ~/Library/Logs/mousetroke/. Для резервной копии используйте импорт и экспорт в настройках."}},
+        {"@type": "Question", "name": "Как его удалить?", "acceptedAnswer": {"@type": "Answer", "text": "Windows: Выключите автозапуск в настройках, выберите «Выход» в меню значка в трее, затем удалите mousetroke.exe и папку %APPDATA%\\mousetroke. Больше ничего не остаётся. Mac: Завершите приложение через строку меню, удалите Mousetroke.app, ~/Library/Application Support/mousetroke и ~/Library/Logs/mousetroke и уберите Mousetroke из объектов входа в Системных настройках."}}
       ]
     }
   ]
@@ -147,16 +146,16 @@
     <div class="wrap hero-grid">
       <div>
         <h1 id="h-hero">Удерживайте правую кнопку.<br>Нарисуйте линию.</h1>
-        <p class="lede">Mousetroke добавляет жесты мышью в каждое окно Windows. Удерживайте правую кнопку и ведите: <b>←</b> — назад, <b>↓→</b> закрывает вкладку, <b>↙</b> сворачивает окно. Обычный правый щелчок по-прежнему открывает меню.</p>
+        <p class="lede">Mousetroke добавляет жесты мышью во все окна Windows и Mac. Удерживайте правую кнопку и ведите: <b>←</b> — назад, <b>↓→</b> закрывает вкладку, <b>↙</b> сворачивает окно. Обычный правый щелчок по-прежнему открывает меню.</p>
         <div class="cta">
           <div class="split">
-            <a class="btn primary dl-win" href="https://github.com/eiaao/mousetroke/releases/latest/download/mousetroke.exe">Скачать для Windows <small>12,9 МБ</small></a>
-            <a class="btn primary dl-mac" href="https://github.com/eiaao/mousetroke/releases/latest/download/Mousetroke.dmg" hidden>Скачать для Mac (бета) <small>@@MAC_DMG_SIZE@@</small></a>
+            <a class="btn primary os-win" href="https://github.com/eiaao/mousetroke/releases/latest/download/mousetroke.exe">Скачать для Windows <small>12,9 МБ</small></a>
+            <a class="btn primary os-mac" href="https://github.com/eiaao/mousetroke/releases/latest/download/Mousetroke.dmg" hidden>Скачать для Mac (бета) <small>@@MAC_DMG_SIZE@@</small></a>
             <details class="split-more">
               <summary class="btn primary" aria-label="Другие платформы"><span aria-hidden="true">▾</span></summary>
               <div class="split-menu">
-                <a class="dl-win" href="https://github.com/eiaao/mousetroke/releases/latest/download/mousetroke.exe">Скачать для Windows <small>12,9 МБ · v0.1.1</small></a>
-                <a class="dl-mac" href="https://github.com/eiaao/mousetroke/releases/latest/download/Mousetroke.dmg">Скачать для Mac (бета) <small>@@MAC_DMG_SIZE@@ · v0.1.1</small></a>
+                <a class="os-win" href="https://github.com/eiaao/mousetroke/releases/latest/download/mousetroke.exe">Скачать для Windows <small>12,9 МБ · v0.1.1</small></a>
+                <a class="os-mac" href="https://github.com/eiaao/mousetroke/releases/latest/download/Mousetroke.dmg">Скачать для Mac (бета) <small>@@MAC_DMG_SIZE@@ · v0.1.1</small></a>
               </div>
             </details>
           </div>
@@ -164,8 +163,8 @@
         </div>
         <ul class="meta">
           <li>Бесплатно, открытый код (MIT)</li>
-          <li>Windows 10 / 11</li>
-          <li>Около 19 МБ в памяти</li>
+          <li>Windows 10 / 11 · macOS 11+</li>
+          <li><span class="os-win">Около 19 МБ в памяти</span><span class="os-mac" hidden>Около 13 МБ в памяти</span></li>
         </ul>
       </div>
 
@@ -194,7 +193,7 @@
         </ul>
       </div>
     </div>
-    <a class="cue" href="#gestures"><span class="cue-ico"><svg width="22" height="34" viewBox="0 0 22 34" aria-hidden="true"><rect x="1" y="1" width="20" height="32" rx="10" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M11 1v12M1 13h20" stroke="currentColor" stroke-width="1.6"/><path class="rb" d="M11.8 1.8h0a8.6 8.6 0 0 1 8.4 8.4V12.2H11.8Z"/></svg><svg class="cue-trail" width="14" height="40" viewBox="0 0 14 40" aria-hidden="true"><path pathLength="1" d="M7 2V36M2 31l5 5 5-5"/></svg></span><span>Прокрутите, или удерживайте правую кнопку и рисуйте вниз</span></a>
+    <a class="cue" href="#gestures"><span class="cue-ico"><svg width="22" height="34" viewBox="0 0 22 34" aria-hidden="true"><rect x="1" y="1" width="20" height="32" rx="10" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M11 1v12M1 13h20" stroke="currentColor" stroke-width="1.6"/><path class="rb" d="M11.8 1.8h0a8.6 8.6 0 0 1 8.4 8.4V12.2H11.8Z"/></svg><svg class="cue-trail" width="14" height="40" viewBox="0 0 14 40" aria-hidden="true"><path pathLength="1" d="M7 2V36M2 31l5 5 5-5"/></svg></span><span class="os-win">Прокрутите, или удерживайте правую кнопку и рисуйте вниз</span><span class="os-mac" hidden>Прокрутите, чтобы узнать больше</span></a>
   </section>
 
   <section class="sec" id="gestures" aria-labelledby="h-gestures">
@@ -207,7 +206,7 @@
         <div>
           <h3>Браузинг</h3>
           <ul>
-            <li data-p="50,0,0,0" data-act="back"><span class="glyph"></span><span class="nm">Назад<small>В браузерах и Проводнике</small></span><span class="ar">←</span></li>
+            <li data-p="50,0,0,0" data-act="back"><span class="glyph"></span><span class="nm">Назад<small><span class="os-win">В браузерах и Проводнике</span><span class="os-mac" hidden>В браузерах и Finder</span></small></span><span class="ar">←</span></li>
             <li data-p="0,0,50,0" data-act="forward"><span class="glyph"></span><span class="nm">Вперёд</span><span class="ar">→</span></li>
             <li data-p="0,0,50,0,50,50" data-act="newtab"><span class="glyph"></span><span class="nm">Новая вкладка</span><span class="ar">→↓</span></li>
             <li data-p="0,0,0,50,50,50" data-act="closetab"><span class="glyph"></span><span class="nm">Закрыть вкладку</span><span class="ar">↓→</span></li>
@@ -250,7 +249,7 @@
           </ul>
         </div>
       </div>
-      <p class="note">Пока вы рисуете, имя жеста появляется внизу экрана; нераспознанное ничего не делает. Один и тот же жест может действовать по-разному в Проводнике, терминале и на рабочем столе.</p>
+      <p class="note">Во время рисования название жеста появляется внизу экрана; нераспознанный жест ничего не делает. Один и тот же жест может выполнять разные действия в разных приложениях.</p>
     </div>
   </section>
 
@@ -276,13 +275,13 @@
           </div>
         </div>
         <ul class="rules" aria-label="Стандартные правила углов и кромок; нажмите, чтобы посмотреть">
-          <li><button type="button" data-edge="12"><span class="where">Левый нижний</span><span class="what">Меню «Пуск»</span></button></li>
+          <li><button type="button" data-edge="12"><span class="where">Левый нижний</span><span class="what"><span class="os-win">Меню «Пуск»</span><span class="os-mac" hidden>Spotlight</span></span></button></li>
           <li><button type="button" data-edge="6"><span class="where">Правый нижний</span><span class="what">Показать рабочий стол</span></button></li>
-          <li><button type="button" data-edge="9"><span class="where">Левый верхний</span><span class="what">Переключиться на прошлую программу</span></button></li>
-          <li><button type="button" data-edge="3"><span class="where">Правый верхний</span><span class="what">Переключатель задач</span></button></li>
-          <li><button type="button" data-edge="1" data-with="wheel"><span class="where">Верхняя кромка</span><span class="what">Колесо — громкость<small>Средняя кнопка — без звука, правая — пауза / воспроизведение</small></span></button></li>
-          <li><button type="button" data-edge="4" data-with="wheel"><span class="where">Нижняя кромка</span><span class="what">Колесо — яркость<small>DDC/CI на внешних мониторах, и на ноутбуках тоже</small></span></button></li>
-          <li><button type="button" data-edge="2" data-with="rub"><span class="where">Правая кромка</span><span class="what">Потрите вверх-вниз — Диспетчер задач</span></button></li>
+          <li><button type="button" data-edge="9"><span class="where">Левый верхний</span><span class="what"><span class="os-win">Переключиться на прошлую программу</span><span class="os-mac" hidden>Mission Control</span></span></button></li>
+          <li class="os-win"><button type="button" data-edge="3"><span class="where">Правый верхний</span><span class="what">Переключатель задач</span></button></li>
+          <li><button type="button" data-edge="1" data-with="wheel"><span class="where">Верхняя кромка</span><span class="what">Колесо — громкость<small class="os-win">Средняя кнопка — без звука, правая — пауза / воспроизведение</small></span></button></li>
+          <li class="os-win"><button type="button" data-edge="4" data-with="wheel"><span class="where">Нижняя кромка</span><span class="what">Колесо — яркость<small>DDC/CI на внешних мониторах, и на ноутбуках тоже</small></span></button></li>
+          <li class="os-win"><button type="button" data-edge="2" data-with="rub"><span class="where">Правая кромка</span><span class="what">Потрите вверх-вниз — Диспетчер задач</span></button></li>
         </ul>
       </div>
     </div>
@@ -295,11 +294,11 @@
         <p>Каждый жест выполняет одно из восьми типов действий. Действия умеют переменные: <code>%MS_SELECTED_TEXT%</code> — выделенный текст, <code>%MS_PID%</code> — процесс под курсором.</p>
       </div>
       <dl class="acts">
-        <div><span class="ico" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="2.5" y="6" width="19" height="12" rx="2.5"/><path d="M6.5 10h.01M10 10h.01M13.5 10h.01M17 10h.01M7.5 14h9"/></svg></span><dt>Послать клавиши</dt><dd>Любое сочетание или последовательность клавиш, например <code>Ctrl+Shift+T</code>.</dd></div>
+        <div><span class="ico" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="2.5" y="6" width="19" height="12" rx="2.5"/><path d="M6.5 10h.01M10 10h.01M13.5 10h.01M17 10h.01M7.5 14h9"/></svg></span><dt>Послать клавиши</dt><dd>Любое сочетание или последовательность клавиш, например <code class="os-win">Ctrl+Shift+T</code><code class="os-mac" hidden>⌘⇧T</code>.</dd></div>
         <div><span class="ico" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="16" rx="2.5"/><path d="M3 9h18"/></svg></span><dt>Действия с окном</dt><dd>Свернуть, развернуть, держать поверх, закрыть или снять окно под курсором или активное.</dd></div>
-        <div><span class="ico" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M5 19 19 5M9 5h10v10"/></svg></span><dt>Открыть программу</dt><dd>Запустить любую программу или файл с аргументами, например <code>notepad.exe</code>.</dd></div>
+        <div><span class="ico" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M5 19 19 5M9 5h10v10"/></svg></span><dt>Открыть программу</dt><dd>Откройте приложение или файл, при необходимости с аргументами.</dd></div>
         <div><span class="ico" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c2.8 3 2.8 15 0 18M12 3c-2.8 3-2.8 15 0 18"/></svg></span><dt>Открыть URL</dt><dd>В браузере по умолчанию, при желании с выделенным текстом: <code>https://www.bing.com/search?q=%MS_SELECTED_TEXT%</code></dd></div>
-        <div><span class="ico" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="m5 8 4 4-4 4M12 17h7"/></svg></span><dt>Выполнить команду</dt><dd>Любая командная строка, например <code>taskkill /F /PID %MS_PID%</code>.</dd></div>
+        <div><span class="ico" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="m5 8 4 4-4 4M12 17h7"/></svg></span><dt>Выполнить команду</dt><dd>Выполните команду, при необходимости используя переменные.</dd></div>
         <div><span class="ico" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 10v4h4l5 4V6L8 10H4ZM16.5 9a4 4 0 0 1 0 6"/></svg></span><dt>Медиа и система</dt><dd>Громкость, без звука, воспроизведение / пауза, предыдущий / следующий трек, яркость экрана.</dd></div>
         <div><span class="ico" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="4" width="16" height="16" rx="2.5"/><path d="M8 9h8M8 12h8M8 15h5"/></svg></span><dt>Показать меню</dt><dd>Один жест открывает меню действий рядом с курсором; щёлкните нужное.</dd></div>
         <div><span class="ico" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="m8 7-5 5 5 5M16 7l5 5-5 5M14 4l-4 16"/></svg></span><dt>Скрипт Lua</dt><dd>Пара строк Lua, когда нужны условия или несколько шагов подряд.</dd></div>
@@ -311,21 +310,21 @@
     <div class="wrap">
       <div class="sec-head">
         <h2 id="h-quiet">Не мешает, когда не нужно</h2>
-        <p>Удалённый стол и 3D-/дизайн-программы сами используют перетаскивание правой и средней кнопкой. При первом запуске Mousetroke найдёт установленные у вас; отметьте их, чтобы отключить жесты внутри.</p>
+        <p><span class="os-win">Удалённый стол и 3D-/дизайн-программы сами используют перетаскивание правой и средней кнопкой. При первом запуске Mousetroke найдёт установленные у вас; отметьте их, чтобы отключить жесты внутри.</span><span class="os-mac" hidden>На Mac жесты по умолчанию отключены в приложениях удалённого доступа, виртуальных машин и 3D, включая Windows App, Общий экран, Parallels Desktop и Blender. Эти правила можно изменить в настройках.</span></p>
       </div>
       <div class="quiet">
         <div class="apps" id="apps">
-          <div class="row off"><span class="ai" style="background:#2b6cb0">R</span><span class="an"><b>Подключение к удалённому рабочему столу</b><small>mstsc.exe</small></span><span class="state" data-on="Жесты включены" data-off="Жесты отключены">Жесты отключены</span><input class="sw" type="checkbox" aria-label="Использовать жесты в подключении к удалённому столу"></div>
-          <div class="row off"><span class="ai" style="background:#d42c2c">A</span><span class="an"><b>AnyDesk</b><small>AnyDesk.exe</small></span><span class="state" data-on="Жесты включены" data-off="Жесты отключены">Жесты отключены</span><input class="sw" type="checkbox" aria-label="Использовать жесты в AnyDesk"></div>
-          <div class="row off"><span class="ai" style="background:#e87d0d">B</span><span class="an"><b>Blender</b><small>blender.exe</small></span><span class="state" data-on="Жесты включены" data-off="Жесты отключены">Жесты отключены</span><input class="sw" type="checkbox" aria-label="Использовать жесты в Blender"></div>
-          <div class="row off"><span class="ai" style="background:#c62828">A</span><span class="an"><b>AutoCAD</b><small>acad.exe</small></span><span class="state" data-on="Жесты включены" data-off="Жесты отключены">Жесты отключены</span><input class="sw" type="checkbox" aria-label="Использовать жесты в AutoCAD"></div>
-          <div class="row"><span class="ai" style="background:#0098d9">C</span><span class="an"><b>Google Chrome</b><small>chrome.exe</small></span><span class="state" data-on="Жесты включены" data-off="Жесты отключены">Жесты включены</span><input class="sw" type="checkbox" checked aria-label="Использовать жесты в Google Chrome"></div>
+          <div class="row off"><span class="ai" style="background:#2b6cb0">•</span><span class="an"><b><span class="os-win">Подключение к удалённому рабочему столу</span><span class="os-mac" hidden>Windows App</span></b><small><span class="os-win">mstsc.exe</span><span class="os-mac" hidden>com.microsoft.rdc.macos</span></small></span><span class="state" data-on="Жесты включены" data-off="Жесты отключены">Жесты отключены</span><span class="os-win"><input class="sw" type="checkbox" aria-label="Использовать жесты в Подключение к удалённому рабочему столу"></span><span class="os-mac" hidden><input class="sw" type="checkbox" aria-label="Использовать жесты в Windows App"></span></div>
+          <div class="row off"><span class="ai" style="background:#d42c2c">•</span><span class="an"><b><span class="os-win">AnyDesk</span><span class="os-mac" hidden>Screen Sharing</span></b><small><span class="os-win">AnyDesk.exe</span><span class="os-mac" hidden>com.apple.ScreenSharing</span></small></span><span class="state" data-on="Жесты включены" data-off="Жесты отключены">Жесты отключены</span><span class="os-win"><input class="sw" type="checkbox" aria-label="Использовать жесты в AnyDesk"></span><span class="os-mac" hidden><input class="sw" type="checkbox" aria-label="Использовать жесты в Screen Sharing"></span></div>
+          <div class="row off"><span class="ai" style="background:#e87d0d">•</span><span class="an"><b><span class="os-win">Blender</span><span class="os-mac" hidden>Blender</span></b><small><span class="os-win">blender.exe</span><span class="os-mac" hidden>org.blenderfoundation.blender</span></small></span><span class="state" data-on="Жесты включены" data-off="Жесты отключены">Жесты отключены</span><span class="os-win"><input class="sw" type="checkbox" aria-label="Использовать жесты в Blender"></span><span class="os-mac" hidden><input class="sw" type="checkbox" aria-label="Использовать жесты в Blender"></span></div>
+          <div class="row off"><span class="ai" style="background:#c62828">•</span><span class="an"><b><span class="os-win">AutoCAD</span><span class="os-mac" hidden>Parallels Desktop</span></b><small><span class="os-win">acad.exe</span><span class="os-mac" hidden>com.parallels.desktop.console</span></small></span><span class="state" data-on="Жесты включены" data-off="Жесты отключены">Жесты отключены</span><span class="os-win"><input class="sw" type="checkbox" aria-label="Использовать жесты в AutoCAD"></span><span class="os-mac" hidden><input class="sw" type="checkbox" aria-label="Использовать жесты в Parallels Desktop"></span></div>
+          <div class="row"><span class="ai" style="background:#0098d9">•</span><span class="an"><b><span class="os-win">Google Chrome</span><span class="os-mac" hidden>Google Chrome</span></b><small><span class="os-win">chrome.exe</span><span class="os-mac" hidden>com.google.Chrome</span></small></span><span class="state" data-on="Жесты включены" data-off="Жесты отключены">Жесты включены</span><span class="os-win"><input class="sw" type="checkbox" checked aria-label="Использовать жесты в Google Chrome"></span><span class="os-mac" hidden><input class="sw" type="checkbox" checked aria-label="Использовать жесты в Google Chrome"></span></div>
         </div>
         <ul class="points">
           <li><b>Правый щелчок работает как раньше</b><span>Нажмите без рисования — контекстное меню откроется как обычно; задержитесь на миг — станет обычным перетаскиванием.</span></li>
           <li><b>Пауза в полноэкранном режиме</b><span>Игры, видео и презентации во весь экран не запускают ни жесты, ни углы.</span></li>
-          <li><b>Пауза в любой момент</b><span><kbd>Win</kbd> + <kbd>Esc</kbd> — пауза или продолжение; значок в трее становится серым.</span></li>
-          <li><b>Добавить программу — секунда</b><span>Перетащите её exe или ярлык в окно настроек, либо нажмите «Выбрать окно» и щёлкните по её окну.</span></li>
+          <li><b>Пауза в любой момент</b><span class="os-win"><kbd>Win</kbd> + <kbd>Esc</kbd> — пауза или продолжение; значок в трее становится серым.</span><span class="os-mac" hidden>Нажмите <kbd>⌃</kbd> + <kbd>⌥</kbd> + <kbd>⌘</kbd> + <kbd>P</kbd>, чтобы приостановить или возобновить жесты. Сочетание можно изменить в настройках; пауза также доступна в меню строки меню.</span></li>
+          <li><b>Добавить программу — секунда</b><span class="os-win">Перетащите её exe или ярлык в окно настроек, либо нажмите «Выбрать окно» и щёлкните по её окну.</span><span class="os-mac" hidden>Выберите .app в настройках или нажмите «Выбрать окно» и щёлкните по окну приложения.</span></li>
         </ul>
       </div>
     </div>
@@ -336,19 +335,20 @@
       <div>
         <div class="sec-head">
           <h2 id="h-light">Почти незаметен</h2>
-          <p>Движок жестов написан на Rust и обращается к Windows напрямую — без браузерного движка и без рантайма. Окно настроек — отдельный процесс, открывающийся только по нужде.</p>
+          <p><span class="os-win">Движок жестов написан на Rust и обращается к Windows напрямую — без браузерного движка и без рантайма. Окно настроек — отдельный процесс, открывающийся только по нужде.</span><span class="os-mac" hidden>Нативный движок жестов написан на Rust. На Mac он использует AppKit и CGEventTap, а настройки — системный WebKit. WebView2 не нужен.</span></p>
         </div>
         <dl class="figs">
-          <div><dt>Резидентная память</dt><dd>19<small>МБ</small></dd><p>Замеренный рабочий набор, около 10 МБ приватных; в простое CPU не занят.</p></div>
-          <div><dt>Загрузка</dt><dd>12,8<small>МБ</small></dd><p>Один exe, работающий откуда угодно. В реестре ничего не появляется, если не включить автозапуск.</p></div>
+          <div><dt>Резидентная память</dt><dd><span class="os-win">19</span><span class="os-mac" hidden>13</span><small>MB</small></dd><p><span class="os-win">Замеренный рабочий набор, около 10 МБ приватных; в простое CPU не занят.</span><span class="os-mac" hidden>Около 13 МБ физической памяти в «Мониторинге системы»; в простое процессор не используется.</span></p></div>
+          <div><dt>Загрузка</dt><dd><span class="os-win">12.9<small>MB</small></span><span class="os-mac" hidden>@@MAC_DMG_SIZE@@</span></dd><p><span class="os-win">Один exe, работающий откуда угодно. В реестре ничего не появляется, если не включить автозапуск.</span><span class="os-mac" hidden>Перетащите Mousetroke из DMG в «Программы». Запуск при входе настраивается в объектах входа в Системных настройках.</span></p></div>
         </dl>
       </div>
-      <div class="proc" id="proc" aria-label="Иллюстрация памяти процессов">
+      <div class="proc os-win" id="proc" aria-label="Иллюстрация памяти процессов">
         <div class="ph"><span>Процесс</span><span>Память</span></div>
         <div class="pr"><span>Движок жестов Mousetroke</span><span class="m" data-mb="19.3">19.3 MB</span><span class="meter"><b data-w="10"></b></span></div>
         <div class="pr webview"><span>Настройки Mousetroke (WebView2)</span><span class="m" data-mb="185">—</span><span class="meter"><b data-w="96"></b></span></div>
         <div class="pt"><input class="sw" type="checkbox" id="proc-toggle"><label for="proc-toggle">Открыть окно настроек</label></div>
       </div>
+      <div class="proc os-mac" hidden><p>Около 13 МБ физической памяти в «Мониторинге системы»; в простое процессор не используется.</p><p>Открывайте настройки, ставьте жесты на паузу и выходите через строку меню. Запуск при входе настраивается в Системных настройках.</p></div>
     </div>
   </section>
 
@@ -356,15 +356,15 @@
     <div class="wrap">
       <div class="sec-head"><h2 id="h-faq">Вопросы</h2></div>
       <div class="faq">
-        <details open><summary>Меню правого щелчка с Mousetroke работает?</summary><div class="ans"><p>Да. Правый щелчок без перетаскивания возвращается Windows без изменений, и контекстное меню открывается как обычно. Если задержаться дольше таймаута (по умолчанию 0,5 с, настраивается), это тоже станет обычным перетаскиванием.</p></div></details>
-        <details><summary>Не будет ли ложных срабатываний в играх или удалённом столе?</summary><div class="ans"><p>Полноэкранные игры, видео и презентации ставят жесты на паузу автоматически. Программы, которым самим нужны правое или среднее перетаскивание — удалённый стол, AnyDesk, Blender, AutoCAD — исключаются одним щелчком при первом запуске. Win+Esc ставит паузу в любой момент.</p></div></details>
-        <details><summary>Какие версии Windows поддерживаются?</summary><div class="ans"><p>Windows 10 с 1809 и Windows 11, 64-бит. У движка жестов нет рантайм-зависимостей; окно настроек использует Microsoft Edge WebView2 — он встроен в Windows 11 и есть с Edge на большинстве ПК с Windows 10.</p></div></details>
+        <details open><summary>Меню правого щелчка с Mousetroke работает?</summary><div class="ans"><p>Да. Щелчок правой кнопкой без перетаскивания передаётся системе без изменений, и контекстное меню открывается как обычно. Если удерживать кнопку неподвижно дольше заданного времени (по умолчанию 0,5 секунды, можно изменить), сработает обычное перетаскивание правой кнопкой.</p></div></details>
+        <details><summary>Не будет ли ложных срабатываний в играх или удалённом столе?</summary><div class="ans"><p><span class="os-win">Windows: Полноэкранные игры, видео и презентации ставят жесты на паузу автоматически. Программы, которым самим нужны правое или среднее перетаскивание — удалённый стол, AnyDesk, Blender, AutoCAD — исключаются одним щелчком при первом запуске. Win+Esc ставит паузу в любой момент.</span><span class="os-mac" hidden>Mac: В полноэкранных играх, видео и презентациях жесты приостанавливаются автоматически. Приложения удалённого доступа, виртуальных машин и 3D можно исключить в настройках. Сочетание для паузы по умолчанию — ⌃⌥⌘P, его можно изменить.</span></p></div></details>
+        <details><summary>Какие операционные системы поддерживаются?</summary><div class="ans"><p><span class="os-win">Windows: Windows 10 с 1809 и Windows 11, 64-бит. У движка жестов нет рантайм-зависимостей; окно настроек использует Microsoft Edge WebView2 — он встроен в Windows 11 и есть с Edge на большинстве ПК с Windows 10.</span><span class="os-mac" hidden>Mac: macOS 11 и новее на Apple silicon и Intel. Нативный движок использует AppKit и CGEventTap, настройки — системный WebKit. При первом запуске разрешите Универсальный доступ и Мониторинг ввода.</span></p></div></details>
         <details><summary>Mousetroke бесплатен?</summary><div class="ans"><p>Да. Это открытый код под лицензией MIT, без рекламы и учётной записи. Раз в день GitHub получает запрос о наличии новой версии (можно отключить в настройках). Больше ничего не отправляется; телеметрии нет.</p></div></details>
-        <details><summary>Сколько памяти и CPU он занимает?</summary><div class="ans"><p>Резидентный движок занимает около 19 МБ рабочего набора (около 10 МБ приватных) и в простое не нагружает CPU. Окно настроек — отдельный процесс, работающий только пока открыто.</p></div></details>
+        <details><summary>Сколько памяти и CPU он занимает?</summary><div class="ans"><p><span class="os-win">Windows: Резидентный движок занимает около 19 МБ рабочего набора (около 10 МБ приватных) и в простое не нагружает CPU. Окно настроек — отдельный процесс, работающий только пока открыто.</span><span class="os-mac" hidden>Mac: Резидентный движок занимает около 13 МБ физической памяти в «Мониторинге системы» и не использует процессор в простое. Настройки открываются через строку меню.</span></p></div></details>
         <details><summary>Можно создать свои жесты?</summary><div class="ans"><p>Да. Создайте жест в настройках и один раз нарисуйте его на планшете редактора. Можно также сочетать кнопки мыши, колесо, клавиши и кромки экрана, и назначать жесты отдельно для каждой программы.</p></div></details>
-        <details><summary>Где хранятся настройки и как их сохранить?</summary><div class="ans"><p>В <code>%APPDATA%\mousetroke\config.json</code>. В настройках есть импорт и экспорт. Сохранённые изменения вступают в силу примерно за секунду, без перезапуска.</p></div></details>
-        <details><summary>Как его удалить?</summary><div class="ans"><p>Выключите автозапуск в настройках, выберите «Выход» в меню значка в трее, затем удалите mousetroke.exe и папку <code>%APPDATA%\mousetroke</code>. Больше ничего не остаётся.</p></div></details>
-        <details><summary>Как удалить версию для Mac?</summary><div class="ans"><p>Завершите приложение через строку меню, удалите Mousetroke.app, ~/Library/Application Support/mousetroke и ~/Library/Logs/mousetroke и уберите Mousetroke из объектов входа в Системных настройках.</p></div></details>
+        <details><summary>Где хранятся настройки и как их сохранить?</summary><div class="ans"><p><span class="os-win">Windows: В <code>%APPDATA%\mousetroke\config.json</code>. В настройках есть импорт и экспорт. Сохранённые изменения вступают в силу примерно за секунду, без перезапуска.</span><span class="os-mac" hidden>Mac: Настройки хранятся в <code>~/Library/Application Support/mousetroke/config.json</code>, журналы — в <code>~/Library/Logs/mousetroke/</code>. Для резервной копии используйте импорт и экспорт в настройках.</span></p></div></details>
+        <details><summary>Как его удалить?</summary><div class="ans"><p><span class="os-win">Windows: Выключите автозапуск в настройках, выберите «Выход» в меню значка в трее, затем удалите mousetroke.exe и папку <code>%APPDATA%\mousetroke</code>. Больше ничего не остаётся.</span><span class="os-mac" hidden>Mac: Завершите приложение через строку меню, удалите Mousetroke.app, ~/Library/Application Support/mousetroke и ~/Library/Logs/mousetroke и уберите Mousetroke из объектов входа в Системных настройках.</span></p></div></details>
+
       </div>
     </div>
   </section>
@@ -373,25 +373,25 @@
     <canvas aria-hidden="true"></canvas>
     <div class="wrap">
       <div>
-        <h2 id="h-get">Скачали, два щелчка, готово</h2>
-        <p>Без установщика. В области уведомлений появляется значок: левый щелчок — настройки, правый — пауза или выход. Четырёхшаговое руководство проводит первый запуск.</p>
-        <h3 class="mac-first-title">Первый запуск на Mac</h3>
-        <p class="mac-first-text">Перетащите Mousetroke в Программы и откройте оттуда. Эта бета не нотариально заверена Apple: если macOS блокирует запуск, выберите Системные настройки → Конфиденциальность и безопасность → Всё равно открыть (на старой macOS — правая кнопка → Открыть). Затем разрешите Универсальный доступ и Мониторинг ввода.</p>
+        <h2 id="h-get">Скачать Mousetroke</h2>
+        <p><span class="os-win">Без установщика. В области уведомлений появляется значок: левый щелчок — настройки, правый — пауза или выход. Четырёхшаговое руководство проводит первый запуск.</span><span class="os-mac" hidden>Открывайте настройки, ставьте жесты на паузу и выходите через строку меню. Запуск при входе настраивается в Системных настройках.</span></p>
+        <h3 class="mac-first-title os-mac" hidden>Первый запуск на Mac</h3>
+        <p class="mac-first-text os-mac" hidden>Перетащите Mousetroke в Программы и откройте оттуда. Эта бета не нотариально заверена Apple: если macOS блокирует запуск, выберите Системные настройки → Конфиденциальность и безопасность → Всё равно открыть (на старой macOS — правая кнопка → Открыть). Затем разрешите Универсальный доступ и Мониторинг ввода.</p>
       </div>
       <div>
         <div class="split">
-          <a class="btn primary dl-win" href="https://github.com/eiaao/mousetroke/releases/latest/download/mousetroke.exe">Скачать для Windows <small>12,9 МБ · v0.1.1</small></a>
-          <a class="btn primary dl-mac" href="https://github.com/eiaao/mousetroke/releases/latest/download/Mousetroke.dmg" hidden>Скачать для Mac (бета) <small>@@MAC_DMG_SIZE@@ · v0.1.1</small></a>
+          <a class="btn primary os-win" href="https://github.com/eiaao/mousetroke/releases/latest/download/mousetroke.exe">Скачать для Windows <small>12,9 МБ · v0.1.1</small></a>
+          <a class="btn primary os-mac" href="https://github.com/eiaao/mousetroke/releases/latest/download/Mousetroke.dmg" hidden>Скачать для Mac (бета) <small>@@MAC_DMG_SIZE@@ · v0.1.1</small></a>
           <details class="split-more">
             <summary class="btn primary" aria-label="Другие платформы"><span aria-hidden="true">▾</span></summary>
             <div class="split-menu">
-              <a class="dl-win" href="https://github.com/eiaao/mousetroke/releases/latest/download/mousetroke.exe">Скачать для Windows <small>12,9 МБ · v0.1.1</small></a>
-              <a class="dl-mac" href="https://github.com/eiaao/mousetroke/releases/latest/download/Mousetroke.dmg">Скачать для Mac (бета) <small>@@MAC_DMG_SIZE@@ · v0.1.1</small></a>
+              <a class="os-win" href="https://github.com/eiaao/mousetroke/releases/latest/download/mousetroke.exe">Скачать для Windows <small>12,9 МБ · v0.1.1</small></a>
+              <a class="os-mac" href="https://github.com/eiaao/mousetroke/releases/latest/download/Mousetroke.dmg">Скачать для Mac (бета) <small>@@MAC_DMG_SIZE@@ · v0.1.1</small></a>
             </div>
           </details>
         </div>
-        <div class="sys dl-win">Windows 10 1809+ / 11, 64-бит</div>
-        <div class="sys dl-mac" hidden>macOS 11+ · Apple silicon &amp; Intel</div>
+        <div class="sys os-win">Windows 10 1809+ / 11, 64-бит</div>
+        <div class="sys os-mac" hidden>macOS 11+ · Apple silicon &amp; Intel</div>
         <a class="src" href="https://github.com/eiaao/mousetroke">github.com/eiaao/mousetroke</a>
         <a class="src" href="../en/changelog.html">Что нового</a>
       </div>
