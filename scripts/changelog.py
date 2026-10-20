@@ -90,8 +90,13 @@ def main() -> int:
     # 直接写 UTF-8 文件：经 PowerShell 重定向可能按控制台代码页转码，中文会乱
     notes_parser.add_argument("--out", type=Path)
     commands.add_parser("check")
+    # 发版流程用它校验标签，避免各处各写一套版本解析
+    commands.add_parser("version")
     args = parser.parse_args()
     try:
+        if args.command == "version":
+            print(workspace_version((ROOT / "Cargo.toml").read_text(encoding="utf-8")))
+            return 0
         releases = load()
         if args.command == "notes":
             body = notes(releases, args.version)

@@ -307,9 +307,7 @@ unsafe extern "system" fn tray_wndproc(hwnd: HWND, msg: u32, wparam: WPARAM, lpa
         WM_TRAY => {
             match (lparam.0 & 0xffff) as u32 {
                 WM_LBUTTONUP => open_settings(),
-                NIN_BALLOONUSERCLICK => {
-                    if UPDATE_BALLOON.swap(false, std::sync::atomic::Ordering::Relaxed) { open_settings_page(true); }
-                }
+                NIN_BALLOONUSERCLICK if UPDATE_BALLOON.swap(false, std::sync::atomic::Ordering::Relaxed) => open_settings_page(true),
                 // WM_CONTEXTMENU：键盘选中托盘图标后按菜单键/Shift+F10
                 WM_RBUTTONUP | WM_CONTEXTMENU => show_menu(hwnd),
                 _ => {}

@@ -7,7 +7,8 @@ use std::io::Write;
 use std::sync::mpsc::{channel, sync_channel, Sender, SyncSender};
 use std::sync::OnceLock;
 
-static TX: OnceLock<Sender<String>> = OnceLock::new();
+/// (控制台文本, 文件行)。控制台也由写日志线程输出：附着到终端时同步写控制台会阻塞钩子线程。
+static TX: OnceLock<Sender<(String, String)>> = OnceLock::new();
 static SHAPE_TX: OnceLock<SyncSender<Vec<i32>>> = OnceLock::new();
 const MAX_BYTES: u64 = 1 << 20;
 
@@ -49,7 +50,7 @@ pub fn path() -> std::path::PathBuf {
 /// 启动写日志线程（重复调用无效果）。
 pub fn init() {
     TX.get_or_init(|| {
-        let (tx, rx) = channel::<String>();
+        let (tx, rx) = channel::<(String, String)>();
         let path = path();
         std::thread::Builder::new()
             .name("mousetroke-log".into())
@@ -59,7 +60,8 @@ pub fn init() {
                 }
                 let open = || std::fs::OpenOptions::new().create(true).append(true).open(&path).ok();
                 let mut file = open();
-                for line in rx {
+                for (console, line) in rx {
+                    println!("[mousetroke] {console}");
                     if file.as_ref().and_then(|f| f.metadata().ok()).is_some_and(|m| m.len() > MAX_BYTES) {
                         drop(file.take());
                         let _ = std::fs::rename(&path, path.with_extension("log.old"));
@@ -82,9 +84,11 @@ pub fn write(msg: &str) {
         "{:04}-{:02}-{:02} {:02}:{:02}:{:02}.{:03} {msg}",
         t.wYear, t.wMonth, t.wDay, t.wHour, t.wMinute, t.wSecond, t.wMilliseconds
     );
-    println!("[mousetroke] {msg}");
-    if let Some(tx) = TX.get() {
-        let _ = tx.send(line);
+    match TX.get() {
+        Some(tx) => {
+            let _ = tx.send((msg.to_owned(), line));
+        }
+        None => println!("[mousetroke] {msg}"),
     }
 }
 

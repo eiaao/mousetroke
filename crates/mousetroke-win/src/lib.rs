@@ -61,7 +61,7 @@ pub fn system_langs() -> Vec<String> {
         buf[..len as usize]
             .split(|&c| c == 0)
             .filter(|s| !s.is_empty())
-            .map(|s| String::from_utf16_lossy(s))
+            .map(String::from_utf16_lossy)
             .collect()
     }
 }
