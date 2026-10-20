@@ -1,11 +1,24 @@
 """验证共享解析器拒绝会造成发布或站点缺文案的输入。"""
 import unittest
-from changelog import notes, parse
+from changelog import notes, parse, workspace_version
 
 ENTRY = "## 0.1.1 — 2026-10-19\n\n### English\n\n- A change\n\n### 中文\n\n- 一项更新\n"
 
 
 class ChangelogTests(unittest.TestCase):
+    def test_workspace_version_is_scoped_to_workspace_package(self):
+        self.assertEqual(workspace_version('''[package]
+version = "9.9.9"
+[workspace.package] # shared metadata
+version = '0.1.1' # release version
+[dependencies]
+version = "8.8.8"
+'''), "0.1.1")
+        for manifest in ['[package]\nversion = "9.9.9"\n',
+                         '[workspace.package]\n[dependencies]\nversion = "8.8.8"\n']:
+            with self.subTest(manifest=manifest), self.assertRaises(ValueError):
+                workspace_version(manifest)
+
     def test_notes_and_wrapped_bullets(self):
         releases = parse("# Changelog\n\n" + ENTRY.replace("A change", "A change\n  continued"))
         self.assertEqual(notes(releases, "0.1.1"), "### English\n\n- A change continued\n\n### 中文\n\n- 一项更新")

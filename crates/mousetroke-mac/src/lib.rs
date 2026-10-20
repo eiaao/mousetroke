@@ -89,3 +89,8 @@ mod bundle_tests {
         assert!(child.wait().unwrap().success());
     }
 }
+
+#[cfg(any(target_os = "macos", test))]
+mod first_run;
+#[cfg(target_os = "macos")]
+pub mod update;

@@ -186,7 +186,7 @@ REPL = base("pt", "pt-BR", "pt_BR", "Idioma", "Português (Brasil)") + [
     ('<h2 id="h-get">Download, double-click, done</h2>', '<h2 id="h-get">Baixe, dê dois cliques, pronto</h2>'),
     ('<p>No installer. An icon appears in the notification area: left-click it for settings, right-click to pause or quit. A four-step guide walks you through the first run.</p>',
      '<p>Sem instalador. Um ícone aparece na área de notificação: clique esquerdo abre as configurações, clique direito pausa ou sai. Um guia de quatro passos acompanha o primeiro início.</p>'),
-    ('>Download mousetroke.exe <small>12.9 MB · v0.1.1</small></a>', '>Baixar mousetroke.exe <small>12,9 MB · v0.1.1</small></a>'),
+    ('>Download Windows version <small>12.9 MB · v0.1.1</small></a>', '>Baixar para Windows <small>12,9 MB · v0.1.1</small></a>'),
     ('<div class="sys">Windows 10 1809+ / 11, 64-bit</div>', '<div class="sys">Windows 10 1809+ / 11, 64 bits</div>'),
     ('<span>Mousetroke · MIT license</span>', '<span>Mousetroke · Licença MIT</span>'),
     ('<nav aria-label="Footer">', '<nav aria-label="Rodapé">'),
@@ -217,3 +217,13 @@ REPL += [
 ('<a href="../en/changelog.html">Changelog</a>', '<a href="../en/changelog.html">Histórico de versões</a>'),
 ('<a class="src" href="../en/changelog.html">What’s new</a>', '<a class="src" href="../en/changelog.html">Novidades</a>'),
 ]
+
+MAC = {'windows': 'Baixar para Windows',
+ 'download': 'Baixar para Mac (beta)',
+ 'first_title': 'Primeira abertura no Mac',
+ 'first_text': 'Arraste Mousetroke para Aplicativos e abra-o de lá. Esta beta não é autenticada pela Apple: se o macOS '
+               'bloquear, vá a Ajustes do Sistema → Privacidade e Segurança → Abrir Mesmo Assim (no macOS antigo, '
+               'clique direito → Abrir). Depois permita Acessibilidade e Monitoramento de Entrada.',
+ 'faq_title': 'Como desinstalo a versão para Mac?',
+ 'faq_text': 'Encerre pela barra de menus, apague Mousetroke.app, ~/Library/Application Support/mousetroke e '
+             '~/Library/Logs/mousetroke e remova Mousetroke dos itens de início nos Ajustes do Sistema.'}

@@ -51,6 +51,12 @@ robots.txt sitemap.xml
 - 手势表每行的 `data-p` 是手势折线编码（与引擎配置相同），`data-act` 决定首屏演示里模拟浏览器的反应；带 `data-mod`/`data-btn` 的行只展示、不参与演示识别。
 - 产品数据（内存、大小、默认手势、边角规则）要和真实程序一致，改了程序行为记得回来改这里。
 
+## Mac 测试版发布前
+
+下载区同时提供 Windows exe 与 `releases/latest/download/Mousetroke.dmg`。Mac 最低 11，通用包包含 Apple silicon / Intel；首次打开和卸载说明在正文与 FAQ JSON-LD 同步，新增八种译文在 `langs/*.py` 的 `MAC` 中维护。
+
+`@@MAC_DMG_SIZE@@` 是尚未测量的 DMG 大小，不能估计。审查期间运行 `python site/check.py --allow-mac-size-placeholder`；发布者测量最终签名 DMG 后，在中文页、英文模板和 `gen.py`（如有大小引用）填入实际大小，再运行 `python site/gen.py`、`python site/check.py`。默认检查必须通过后才能部署站点，部署工作流不允许占位符。
+
 ## 本地预览与检查
 
 ```

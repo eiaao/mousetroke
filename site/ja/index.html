@@ -57,7 +57,7 @@
       "description": "Windows 用グローバルマウスジェスチャ：右・中・サイドボタンを押しながら描いて操作を実行。カーソルを画面の隅や端に押し付けて発動。アプリごとのジェスチャ設定や、特定アプリでの完全オフも可能。",
       "applicationCategory": "UtilitiesApplication",
       "applicationSubCategory": "マウスジェスチャ",
-      "operatingSystem": "Windows 10 1809+, Windows 11 (x64)",
+      "operatingSystem": "Windows 10 1809+, Windows 11 (x64); macOS 11+ (Apple silicon, Intel)",
       "softwareVersion": "0.1.1",
       "sameAs": ["https://github.com/eiaao/mousetroke"],
       "fileSize": "12.9 MB",
@@ -98,7 +98,8 @@
         { "@type": "Question", "name": "How much memory and CPU does it use?", "acceptedAnswer": { "@type": "Answer", "text": "The resident gesture engine uses about 19 MB working set (about 10 MB private) and no CPU when idle. The settings window is a separate process that only runs while it is open." } },
         { "@type": "Question", "name": "Can I make my own gestures?", "acceptedAnswer": { "@type": "Answer", "text": "Yes. Create a gesture in settings and draw it once on the pad in the editor. You can also combine mouse buttons, the wheel, keyboard keys and screen edges, and set gestures separately for each app." } },
         { "@type": "Question", "name": "Where are the settings stored, and how do I back them up?", "acceptedAnswer": { "@type": "Answer", "text": "In %APPDATA%\\mousetroke\\config.json. Settings has import and export. Saved changes take effect within about a second, without a restart." } },
-        { "@type": "Question", "name": "How do I uninstall it?", "acceptedAnswer": { "@type": "Answer", "text": "Turn off start with Windows in preferences, choose Quit from the tray icon menu, then delete mousetroke.exe and the %APPDATA%\\mousetroke folder. Nothing else is left behind." } }
+        { "@type": "Question", "name": "How do I uninstall it?", "acceptedAnswer": { "@type": "Answer", "text": "Turn off start with Windows in preferences, choose Quit from the tray icon menu, then delete mousetroke.exe and the %APPDATA%\\mousetroke folder. Nothing else is left behind." } },
+        {"@type": "Question", "name": "Mac 版をアンインストールするには？", "acceptedAnswer": {"@type": "Answer", "text": "メニューバーから終了し、Mousetroke.app、~/Library/Application Support/mousetroke、~/Library/Logs/mousetroke を削除して、システム設定で Mousetroke のログイン項目を取り除きます。"}}
       ]
     }
   ]
@@ -353,6 +354,7 @@
         <details><summary>自分でジェスチャを作れますか？</summary><div class="ans"><p>はい。設定で新規ジェスチャを作り、エディタのパッドに一度描くだけ。マウスボタン・ホイール・キー・画面の端を組み合わせたり、アプリごとに別々のジェスチャを設定したりもできます。</p></div></details>
         <details><summary>設定はどこに保存されますか？バックアップは？</summary><div class="ans"><p><code>%APPDATA%\mousetroke\config.json</code> です。設定画面にインポート・エクスポートがあります。保存した変更は再起動なしに約 1 秒で反映されます。</p></div></details>
         <details><summary>アンインストールの方法は？</summary><div class="ans"><p>設定で Windows 起動時の実行をオフにし、トレイアイコンのメニューから終了を選び、mousetroke.exe と <code>%APPDATA%\mousetroke</code> フォルダーを削除するだけです。他には何も残りません。</p></div></details>
+        <details><summary>Mac 版をアンインストールするには？</summary><div class="ans"><p>メニューバーから終了し、Mousetroke.app、~/Library/Application Support/mousetroke、~/Library/Logs/mousetroke を削除して、システム設定で Mousetroke のログイン項目を取り除きます。</p></div></details>
       </div>
     </div>
   </section>
@@ -363,10 +365,14 @@
       <div>
         <h2 id="h-get">ダウンロードして、ダブルクリック、以上</h2>
         <p>インストーラー不要。通知領域にアイコンが現れます：左クリックで設定、右クリックで一時停止や終了。初回は 4 ステップのガイドが付いてきます。</p>
+        <h3 class="mac-first-title">Mac で初めて開く</h3>
+        <p class="mac-first-text">Mousetroke をアプリケーションにドラッグし、そこから開きます。このベータ版は未公証です。macOS にブロックされた場合は、システム設定 → プライバシーとセキュリティ → このまま開く（古い macOS では右クリック → 開く）を選び、アクセシビリティと入力監視を許可してください。</p>
       </div>
       <div>
-        <a class="btn primary" href="https://github.com/eiaao/mousetroke/releases/latest/download/mousetroke.exe">mousetroke.exe をダウンロード <small>12.9 MB · v0.1.1</small></a>
+        <a class="btn primary" href="https://github.com/eiaao/mousetroke/releases/latest/download/mousetroke.exe">Windows 版をダウンロード <small>12.9 MB · v0.1.1</small></a>
         <div class="sys">Windows 10 1809+ / 11、64 ビット</div>
+        <a class="btn primary mac-download" href="https://github.com/eiaao/mousetroke/releases/latest/download/Mousetroke.dmg">Mac 版をダウンロード（ベータ） <small>@@MAC_DMG_SIZE@@ · v0.1.1</small></a>
+        <div class="sys">macOS 11+ · Apple silicon &amp; Intel</div>
         <a class="src" href="https://github.com/eiaao/mousetroke">github.com/eiaao/mousetroke</a>
         <a class="src" href="../en/changelog.html">更新内容</a>
       </div>

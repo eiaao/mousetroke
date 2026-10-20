@@ -28,3 +28,5 @@ pub mod recognizer;
 pub mod schema;
 pub mod shape;
 pub mod vars;
+
+pub mod update;

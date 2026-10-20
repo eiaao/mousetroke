@@ -1,40 +1,52 @@
 #!/bin/bash
 set -euo pipefail
-root=$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)
-source "$root/scripts/mac/messages.sh"
-cd "$root"
-version=$(awk '/^\[workspace.package\]/{section=1;next} /^\[/{section=0} section && /^version = / {gsub(/"/, "", $3); print $3; exit}' Cargo.toml)
-test -n "$version"
-print_plist() { sed "s/@VERSION@/$version/g" "$root/scripts/mac/Info.plist.in"; }
-if [[ "${1:-}" == --print-plist ]]; then print_plist; exit 0; fi
+script_dir=$(dirname "${BASH_SOURCE[0]}") || exit 1
+root=$(cd "$script_dir/../.." && pwd) || exit 1
+source "$root/scripts/mac/messages.sh" || exit 1
+source "$root/scripts/mac/sign.sh" || exit 1
+cd "$root" || exit 1
+version=$(awk '/^\[workspace.package\]/{section=1;next} /^\[/{section=0} section && /^version = / {gsub(/"/, "", $3); print $3; exit}' Cargo.toml) || exit 1
+[[ -n "$version" ]] || { printf 'Missing workspace version\n' >&2; exit 1; }
+print_plist() { sed "s/@VERSION@/$version/g" "$root/scripts/mac/Info.plist.in" || return 1; }
+if [[ "${1:-}" == --print-plist ]]; then print_plist || exit 1; exit 0; fi
+[[ $# -eq 0 || ( $# -eq 1 && "$1" == --universal ) ]] || { printf 'Usage: bundle.sh [--universal|--print-plist]\n' >&2; exit 2; }
+
+# 构建开始前清除旧包；任何后续失败也不能留下可被 dmg.sh 复用的半成品。
+bundle="$root/target/mac/Mousetroke.app"
+rm -rf "$bundle" || exit 1
+trap 'status=$?; rm -rf "$bundle" || status=1; exit "$status"' EXIT
 
 # 尊重调用者的构建目录，最终 app 固定放在仓库的 target/mac。
 # 先在 crates/mousetroke-settings/ui 执行 npm ci && npm run build；custom-protocol 将 ui/dist 内嵌进主程序。
 build_target="${CARGO_TARGET_DIR:-$root/target}"
-CARGO_TARGET_DIR="$build_target" CARGO_BUILD_JOBS=4 MACOSX_DEPLOYMENT_TARGET=11.0 cargo build --release -p mousetroke --locked
-bundle="$root/target/mac/Mousetroke.app"
-mkdir -p "$bundle/Contents/MacOS"
-cp "$build_target/release/mousetroke" "$bundle/Contents/MacOS/mousetroke"
-chmod +x "$bundle/Contents/MacOS/mousetroke"
-print_plist > "$bundle/Contents/Info.plist"
-plutil -lint "$bundle/Contents/Info.plist"
-# 优先用 make-dev-cert.sh 建的专用钥匙串（SSH 下也能解锁）；也可用 MOUSETROKE_SIGN_ID 指定其他身份。
-keychain="$HOME/Library/Keychains/mousetroke-dev.keychain-db"
-secret="$HOME/.config/mousetroke-dev/keychain-password"
-sign_args=()
-identity="${MOUSETROKE_SIGN_ID:-}"
-if [[ -z "$identity" && -f "$keychain" && -f "$secret" ]]; then
-    security unlock-keychain -p "$(cat "$secret")" "$keychain"
-    identity=$(security find-certificate -c "Mousetroke Dev" -Z "$keychain" | awk '/SHA-1 hash:/ {print $NF; exit}')
-    sign_args=(--keychain "$keychain")
+export CARGO_TARGET_DIR="$build_target" CARGO_BUILD_JOBS=4 MACOSX_DEPLOYMENT_TARGET=11.0
+if [[ "${1:-}" == --universal ]]; then
+    for architecture in aarch64-apple-darwin x86_64-apple-darwin; do
+        cargo build --release -p mousetroke --locked --target "$architecture" || exit 1
+    done
+    mkdir -p "$build_target/universal/release" || exit 1
+    binary="$build_target/universal/release/mousetroke"
+    lipo "$build_target/aarch64-apple-darwin/release/mousetroke" \
+        "$build_target/x86_64-apple-darwin/release/mousetroke" -create -output "$binary" || exit 1
+    # CommandLineTools 的 -verify_arch 每次只接受一个架构。
+    for architecture in arm64 x86_64; do
+        lipo "$binary" -verify_arch "$architecture" || exit 1
+    done
+    architectures=$(lipo "$binary" -archs) || exit 1
+    [[ "$architectures" =~ ^[[:space:]]*(arm64[[:space:]]+x86_64|x86_64[[:space:]]+arm64)[[:space:]]*$ ]] || {
+        printf 'Expected exactly arm64 and x86_64; got: %s\n' "$architectures" >&2
+        exit 1
+    }
+else
+    cargo build --release -p mousetroke --locked || exit 1
+    binary="$build_target/release/mousetroke"
 fi
-identity="${identity:-Mousetroke Dev}"
-if [[ "$identity" != - && ${#sign_args[@]} -eq 0 ]] && ! security find-identity -p codesigning | grep -F -- "$identity" >/dev/null; then
-    warning=$(mac_message mac.bundle.adhoc_warning)
-    printf '%s\n' "${warning//\{identity\}/$identity}" >&2
-    identity=-
-fi
-codesign --force --options runtime --sign "$identity" ${sign_args[@]+"${sign_args[@]}"} "$bundle"
-codesign --verify --strict --verbose=2 "$bundle"
-message=$(mac_message mac.bundle.done)
+mkdir -p "$bundle/Contents/MacOS" || exit 1
+cp "$binary" "$bundle/Contents/MacOS/mousetroke" || exit 1
+chmod +x "$bundle/Contents/MacOS/mousetroke" || exit 1
+print_plist > "$bundle/Contents/Info.plist" || exit 1
+plutil -lint "$bundle/Contents/Info.plist" || exit 1
+sign_mac "$bundle" || exit 1
+message=$(mac_message mac.bundle.done) || exit 1
+trap - EXIT
 printf '%s\n' "${message//\{path\}/$bundle}"

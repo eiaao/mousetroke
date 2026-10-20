@@ -6,7 +6,6 @@ from datetime import date
 from pathlib import Path
 import re
 import sys
-import tomllib
 
 ROOT = Path(__file__).resolve().parent.parent
 LANGUAGES = ("English", "中文")
@@ -73,6 +72,16 @@ def notes(releases: list[Release], version: str) -> str:
         "- " + bullet for bullet in release.sections[language]) for language in LANGUAGES)
 
 
+def workspace_version(manifest: str) -> str:
+    # 只读取 workspace.package.version，与打包脚本一致；Python 3.9 无 tomllib。
+    section = re.search(r"(?ms)^\[workspace\.package\][ \t]*(?:#[^\n]*)?\n(.*?)(?=^\[|\Z)", manifest)
+    if section:
+        version = re.search(r'''(?m)^version[ \t]*=[ \t]*(["'])([^"'\n]+)\1[ \t]*(?:#.*)?$''', section[1])
+        if version:
+            return version[2]
+    raise ValueError("Cargo.toml: missing workspace.package.version")
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     commands = parser.add_subparsers(dest="command", required=True)
@@ -91,7 +100,7 @@ def main() -> int:
             else:
                 print(body)
         else:
-            version = tomllib.loads((ROOT / "Cargo.toml").read_text(encoding="utf-8"))["workspace"]["package"]["version"]
+            version = workspace_version((ROOT / "Cargo.toml").read_text(encoding="utf-8"))
             notes(releases, version)
             print(f"OK: {len(releases)} releases; workspace {version} has an entry")
         return 0

@@ -130,9 +130,13 @@ fn local_download_verify_replace_and_rollback() {
     let listener = TcpListener::bind("127.0.0.1:0").unwrap();
     listener.set_nonblocking(true).unwrap();
     let origin = format!("http://{}", listener.local_addr().unwrap());
-    let release_json = serde_json::to_vec(&sample(&origin)).unwrap();
+    let mut mixed = sample(&origin);
+    mixed["assets"].as_array_mut().unwrap().push(serde_json::json!({
+        "name": "Mousetroke.dmg", "browser_download_url": format!("{origin}/mac")
+    }));
+    let release_json = serde_json::to_vec(&mixed).unwrap();
     let data = b"test replacement payload";
-    let sums = format!("{} *mousetroke.exe\n", sha256(data).unwrap()).into_bytes();
+    let sums = format!("{}  Mousetroke.dmg\n{} *mousetroke.exe\n", "a".repeat(64), sha256(data).unwrap()).into_bytes();
     let stop = Arc::new(AtomicBool::new(false));
     let flag = stop.clone();
     let server = std::thread::spawn(move || {
@@ -194,4 +198,23 @@ fn local_download_verify_replace_and_rollback() {
     assert_eq!(std::fs::read(&exe).unwrap(), data);
     transaction.rollback().unwrap();
     assert_eq!(std::fs::read(&exe).unwrap(), b"original");
+}
+
+#[test]
+fn mixed_mac_windows_release_selects_and_verifies_only_windows_payload() {
+    let data = b"Windows executable payload";
+    let expected = sha256(data).unwrap();
+    let mac_hash = "a".repeat(64);
+    for sums in [format!("{mac_hash}  Mousetroke.dmg\n{expected}  mousetroke.exe\n"),
+        format!("{expected} *mousetroke.exe\n{mac_hash} *Mousetroke.dmg\n")] {
+        assert_eq!(checksum_line(&sums).unwrap(), sha256(data).unwrap());
+        assert_ne!(checksum_line(&sums).unwrap(), sha256(b"corrupt exe").unwrap());
+    }
+    let mut json = sample("https://github.com");
+    json["assets"].as_array_mut().unwrap().insert(0, serde_json::json!({
+        "name": "Mousetroke.dmg", "browser_download_url": "https://github.com/Mousetroke.dmg"
+    }));
+    let release = select_release(&serde_json::to_vec(&json).unwrap(), &Source::production()).unwrap();
+    assert_eq!(release.exe, "https://github.com/exe");
+    assert_eq!(release.sums, "https://github.com/sums");
 }

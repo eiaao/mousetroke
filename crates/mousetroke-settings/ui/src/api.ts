@@ -34,6 +34,7 @@ export const api = {
   presetApps: () => invoke<PresetApp[]>("preset_apps"),
   appInfo: () => invoke<AppInfo>("app_info"),
   checkUpdate: () => invoke<{ current: string; latest: string; newer: boolean; notes_url: string; notes: string[] }>("check_update"),
+  downloadUpdate: () => invoke<void>("download_update"),
   installUpdate: () => invoke<void>("install_update"),
   takeAboutRequest: () => invoke<boolean>("take_about_request"),
   openPath: (what: "log" | "config_dir" | "homepage" | "github" | "issues" | "releases") => invoke<void>("open_path", { what }),

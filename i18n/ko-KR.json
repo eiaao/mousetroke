@@ -605,5 +605,15 @@
   "mac.menu.copy": "복사하기",
   "mac.menu.paste": "붙여넣기",
   "mac.menu.select_all": "모두 선택",
-  "mac.settings.keys_unsupported": "macOS는 이 시퀀스의 마우스 키 또는 매핑되지 않은 키를 지원하지 않습니다. 미디어 키는 시스템 키 동작을 사용하세요."
+  "mac.settings.keys_unsupported": "macOS는 이 시퀀스의 마우스 키 또는 매핑되지 않은 키를 지원하지 않습니다. 미디어 키는 시스템 키 동작을 사용하세요.",
+  "mac.first_run.install": "Mousetroke를 응용 프로그램으로 드래그한 다음 거기서 여세요.",
+  "mac.release.sign_required": "릴리스 서명에는 고정 인증서가 필요하며 임시 서명은 허용되지 않습니다.",
+  "mac.release.cert_usage": "사용법: make-release-cert.sh /저장소/외부/새-인증서.p12",
+  "mac.release.cert_outside": "인증서를 저장소 밖에 저장하세요.",
+  "mac.release.cert_password": "새 P12 암호 입력 (표시 안 됨):",
+  "mac.release.cert_confirm": "암호 다시 입력:",
+  "mac.release.cert_secrets": "아래 명령으로 MAC_SIGN_P12_BASE64를 복사하고 입력한 암호를 MAC_SIGN_P12_PASSWORD로 설정하세요. 이 인증서를 백업하고 업데이트에도 재사용하세요.",
+  "mac.ui.update.download": "새 버전 다운로드",
+  "mac.update.available": "새 버전 v{version}",
+  "mac.ui.update.latest": "최신 버전: {version}"
 }

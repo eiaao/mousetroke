@@ -59,7 +59,7 @@
       "description": "Windows 全局鼠标手势工具：按住右键（或中键、侧键）画手势执行操作，鼠标推到屏幕边角触发动作，可按程序分别设置或禁用。",
       "applicationCategory": "UtilitiesApplication",
       "applicationSubCategory": "鼠标手势",
-      "operatingSystem": "Windows 10 1809+, Windows 11 (x64)",
+      "operatingSystem": "Windows 10 1809+, Windows 11 (x64); macOS 11+ (Apple silicon, Intel)",
       "softwareVersion": "0.1.1",
       "sameAs": ["https://github.com/eiaao/mousetroke"],
       "fileSize": "12.9 MB",
@@ -100,7 +100,8 @@
         { "@type": "Question", "name": "占用多少内存和 CPU？", "acceptedAnswer": { "@type": "Answer", "text": "常驻的手势引擎约 19 MB 工作集（私有内存约 10 MB），空闲时不占 CPU。设置界面是单独的进程，打开时才启动，关掉就退出。" } },
         { "@type": "Question", "name": "能自己定义手势吗？", "acceptedAnswer": { "@type": "Answer", "text": "能。在设置里新建一个手势，用鼠标在编辑面板的画板上画一遍轨迹就记下来了；也可以组合鼠标键、滚轮、键盘键和屏幕边角，并给每个程序单独设置。" } },
         { "@type": "Question", "name": "配置保存在哪里？怎么备份？", "acceptedAnswer": { "@type": "Answer", "text": "配置在 %APPDATA%\\mousetroke\\config.json，设置里可以导入和导出。改动保存后约 1 秒内生效，不用重启。" } },
-        { "@type": "Question", "name": "怎么卸载？", "acceptedAnswer": { "@type": "Answer", "text": "在偏好设置里关掉开机自启，右键托盘图标选「退出」，再删除 mousetroke.exe 和 %APPDATA%\\mousetroke 文件夹即可，不会留下其他文件。" } }
+        { "@type": "Question", "name": "怎么卸载？", "acceptedAnswer": { "@type": "Answer", "text": "在偏好设置里关掉开机自启，右键托盘图标选「退出」，再删除 mousetroke.exe 和 %APPDATA%\\mousetroke 文件夹即可，不会留下其他文件。" } },
+        {"@type": "Question", "name": "Mac 版怎么卸载？", "acceptedAnswer": {"@type": "Answer", "text": "从菜单栏退出，删除 Mousetroke.app、~/Library/Application Support/mousetroke 和 ~/Library/Logs/mousetroke，并在系统设置中移除 Mousetroke 登录项。"}}
       ]
     }
   ]
@@ -355,6 +356,7 @@
         <details><summary>能自己定义手势吗？</summary><div class="ans"><p>能。在设置里新建一个手势，用鼠标在编辑面板的画板上画一遍轨迹就记下来了；也可以组合鼠标键、滚轮、键盘键和屏幕边角，并给每个程序单独设置。</p></div></details>
         <details><summary>配置保存在哪里？怎么备份？</summary><div class="ans"><p>配置在 <code>%APPDATA%\mousetroke\config.json</code>，设置里可以导入和导出。改动保存后约 1 秒内生效，不用重启。</p></div></details>
         <details><summary>怎么卸载？</summary><div class="ans"><p>在偏好设置里关掉开机自启，右键托盘图标选「退出」，再删除 mousetroke.exe 和 <code>%APPDATA%\mousetroke</code> 文件夹即可，不会留下其他文件。</p></div></details>
+        <details><summary>Mac 版怎么卸载？</summary><div class="ans"><p>从菜单栏退出，删除 Mousetroke.app、~/Library/Application Support/mousetroke 和 ~/Library/Logs/mousetroke，并在系统设置中移除 Mousetroke 登录项。</p></div></details>
       </div>
     </div>
   </section>
@@ -365,10 +367,14 @@
       <div>
         <h2 id="h-get">下载后双击就能用</h2>
         <p>不用安装。运行后任务栏右下角出现图标，左键打开设置，右键暂停或退出。第一次打开会有一段四步的使用引导。</p>
+        <h3 class="mac-first-title">首次打开 Mac 版</h3>
+        <p class="mac-first-text">将 Mousetroke 拖入“应用程序”，再从那里打开。测试版尚未公证，macOS 拦截首次打开时，请到“系统设置 → 隐私与安全性 → 仍要打开”（旧版 macOS 可右键 → 打开），然后授予“辅助功能”和“输入监控”权限。</p>
       </div>
       <div>
-        <a class="btn primary" href="https://github.com/eiaao/mousetroke/releases/latest/download/mousetroke.exe">下载 mousetroke.exe <small>12.9 MB · v0.1.1</small></a>
+        <a class="btn primary" href="https://github.com/eiaao/mousetroke/releases/latest/download/mousetroke.exe">下载 Windows 版 <small>12.9 MB · v0.1.1</small></a>
         <div class="sys">Windows 10 1809+ / 11，64 位</div>
+        <a class="btn primary mac-download" href="https://github.com/eiaao/mousetroke/releases/latest/download/Mousetroke.dmg">下载 Mac 版（测试版） <small>@@MAC_DMG_SIZE@@ · v0.1.1</small></a>
+        <div class="sys">macOS 11+ · Apple silicon &amp; Intel</div>
         <a class="src" href="https://github.com/eiaao/mousetroke">github.com/eiaao/mousetroke</a>
         <a class="src" href="changelog.html">更新内容</a>
       </div>

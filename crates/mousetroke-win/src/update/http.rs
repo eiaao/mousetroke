@@ -5,26 +5,7 @@ use std::ffi::c_void;
 use windows::core::PCWSTR;
 use windows::Win32::Networking::WinHttp::*;
 
-pub(super) struct Url<'a> {
-    pub host: &'a str,
-    pub port: u16,
-    pub path: &'a str,
-    pub secure: bool,
-}
-
-pub(super) fn parse_url(text: &str) -> Option<Url<'_>> {
-    if text.bytes().any(|b| b <= 32 || b == 127) || text.contains(['\\', '#', '@']) { return None; }
-    let (secure, rest) = if let Some(s) = text.strip_prefix("https://") { (true, s) }
-        else { (false, text.strip_prefix("http://")?) };
-    let (authority, path) = rest.split_once('/').map(|(a, _)| (a, &rest[a.len()..])).unwrap_or((rest, "/"));
-    let (host, port) = match authority.split_once(':') {
-        Some((h, p)) if !p.is_empty() && p.bytes().all(|b| b.is_ascii_digit()) => (h, p.parse().ok()?),
-        Some(_) => return None,
-        None => (authority, if secure { 443 } else { 80 }),
-    };
-    if host.is_empty() || port == 0 || !host.bytes().all(|b| b.is_ascii_alphanumeric() || b == b'.' || b == b'-') { return None; }
-    Some(Url { host, port, path, secure })
-}
+use mousetroke_core::update::parse_url;
 
 struct Internet(*mut c_void);
 impl Internet {

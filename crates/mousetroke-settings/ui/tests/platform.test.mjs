@@ -64,14 +64,15 @@ test("unsupported imported actions require an explicit repair", () => {
   }
 });
 
-test("macOS About retains project links and hides every update control", () => {
+test("macOS About retains project links and enables manual update checks", () => {
   const props = { engine: { running: true, autostart: false, exeFound: true }, onShowGuide() {}, notify() {} };
   platform.initPlatform("windows");
   assert.match(renderToStaticMarkup(createElement(About, props)), /update-check/);
   platform.initPlatform("macos");
   const html = renderToStaticMarkup(createElement(About, props));
-  assert.doesNotMatch(html, /update-check|update-install|update-download/);
-  for (const key of ["ui.about.homepage", "ui.about.source", "ui.about.star_button", "ui.update.notes"]) {
+  assert.match(html, /update-check/);
+  assert.doesNotMatch(html, /update-install/);
+  for (const key of ["ui.about.homepage", "ui.about.source", "ui.about.star_button"]) {
     assert.ok(html.includes(t(key)), key);
   }
 });

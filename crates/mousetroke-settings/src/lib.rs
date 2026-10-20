@@ -423,6 +423,19 @@ async fn check_update() -> MsgResult<platform::update::Check> {
 }
 
 #[tauri::command]
+async fn download_update() -> MsgResult<()> {
+    #[cfg(target_os = "macos")]
+    {
+        let url = tauri::async_runtime::spawn_blocking(platform::update::download).await
+            .map_err(|_| Msg::new(keys::UPDATE_ERROR_NETWORK, &[]))?
+            .map_err(|e| Msg::new(e.key(), &[]))?;
+        platform::open_url(&url)
+    }
+    #[cfg(not(target_os = "macos"))]
+    Err(Msg::new(keys::UPDATE_ERROR_NETWORK, &[]))
+}
+
+#[tauri::command]
 async fn install_update(paths: State<'_, AppPaths>, app: tauri::AppHandle) -> MsgResult<()> {
     let exe = engine_exe().ok_or_else(|| Msg::new(keys::ERROR_ENGINE_NOT_FOUND, &[]))?;
     let config = paths.config.clone();
@@ -473,6 +486,7 @@ pub fn run(config: Option<PathBuf>) {
             app_info,
             check_update,
             install_update,
+            download_update,
             take_about_request,
             open_path,
             pick_window,

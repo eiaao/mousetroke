@@ -42,8 +42,8 @@ export function About({ engine, onShowGuide, notify }: { engine: EngineStatus; o
     finally { setBusy(null); }
   };
   const installUpdate = async () => {
-    setBusy("install"); setError(null);
-    try { await api.installUpdate(); }
+    setBusy(isMac() ? "check" : "install"); setError(null);
+    try { if (isMac()) await api.downloadUpdate(); else await api.installUpdate(); }
     catch (e) {
       setError(e);
       if ((e as Msg)?.key === "update.error.not_writable") await open("releases");
@@ -71,7 +71,7 @@ export function About({ engine, onShowGuide, notify }: { engine: EngineStatus; o
         </button>
       </div>
 
-      {!isMac() && <div className="pref-group update-group" aria-busy={busy !== null}>
+      <div className="pref-group update-group" aria-busy={busy !== null}>
         <div className="pref-row">
           <span className="pref-label">{t("ui.update.version")}<small>{info?.version ?? "…"}</small></span>
           <button type="button" className="btn small update-check" disabled={busy !== null} onClick={checkUpdate}>
@@ -80,6 +80,7 @@ export function About({ engine, onShowGuide, notify }: { engine: EngineStatus; o
           </button>
         </div>
         <div className="update-status" role="status" aria-live="polite">
+          {isMac() && update && <p>{t("mac.ui.update.latest", { version: update.latest })}</p>}
           {busy === "install" ? <p><span className="update-spinner" aria-hidden />{t("ui.update.installing")}</p> : error ? <>
             <p className="update-error">{errText(error)}</p>
             <button type="button" className="btn small update-download" onClick={() => open("releases")}>{t("ui.update.download")}</button>
@@ -90,14 +91,11 @@ export function About({ engine, onShowGuide, notify }: { engine: EngineStatus; o
             </ul>}
             <div className="update-actions">
               <button type="button" className="btn small update-notes" disabled={busy !== null} onClick={() => open("releases")}>{t("ui.update.notes")}</button>
-              <button type="button" className="btn primary update-install" disabled={busy !== null} onClick={installUpdate}>{t("ui.update.install")}</button>
+              <button type="button" className={`btn primary ${isMac() ? "update-download" : "update-install"}`} disabled={busy !== null} onClick={installUpdate}>{t(isMac() ? "mac.ui.update.download" : "ui.update.install")}</button>
             </div>
           </> : <p>{t("ui.update.current")}</p>)}
         </div>
       </div>
-
-      }
-      {isMac() && <div className="pref-group"><button type="button" className="btn small" onClick={() => open("releases")}>{t("ui.update.notes")}</button></div>}
 
       <div className="pref-group about-project" role="group" aria-labelledby="about-project-title">
         <h2 id="about-project-title">{t("ui.about.project_group")}</h2>

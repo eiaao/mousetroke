@@ -11,6 +11,9 @@ permissions:
 jobs:
   macos-engine:
     runs-on: macos-latest
+    defaults:
+      run:
+        shell: /bin/bash --noprofile --norc -e -o pipefail {0}
     env:
       CARGO_BUILD_JOBS: 4
       CARGO_TARGET_DIR: ${{ github.workspace }}/target
@@ -28,10 +31,10 @@ jobs:
       - name: Build and test settings UI
         working-directory: crates/mousetroke-settings/ui
         run: |
-          npm ci
-          npm run typecheck
-          npm test
-          npm run build
+          npm ci || exit 1
+          npm run typecheck || exit 1
+          npm test || exit 1
+          npm run build || exit 1
       - name: Build macOS application
         run: cargo build -p mousetroke -p mousetroke-settings --locked
       - name: Test shared core, engine and macOS platform
@@ -39,8 +42,22 @@ jobs:
       - name: Test settings commands and headless config round-trip smoke
         run: cargo test -p mousetroke-settings --locked
 
+      - name: Test macOS packaging gates
+        run: python -m unittest discover -s scripts -p test_mac_packaging.py
+      - name: Universal bundle and DMG smoke test
+        env:
+          MOUSETROKE_SIGN_ID: "-"
+          MOUSETROKE_REQUIRE_SIGNING: "0"
+        run: |
+          rustup target add aarch64-apple-darwin x86_64-apple-darwin || exit 1
+          /bin/bash scripts/mac/bundle.sh --universal || exit 1
+          /bin/bash scripts/mac/dmg.sh || exit 1
+
   test:
     runs-on: windows-latest
+    env:
+      CARGO_BUILD_JOBS: 4
+      CARGO_TARGET_DIR: ${{ github.workspace }}/target
     steps:
       - uses: actions/checkout@v7
       - uses: actions/setup-node@v7
@@ -57,7 +74,7 @@ jobs:
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
           python -m unittest discover -s scripts -p test_changelog.py
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
-          python site/check.py
+          python site/check.py --allow-mac-size-placeholder
       - name: Build settings UI
         working-directory: crates/mousetroke-settings/ui
         run: |

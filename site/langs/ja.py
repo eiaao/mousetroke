@@ -186,7 +186,7 @@ REPL = base("ja", "ja", "ja_JP", "言語", "日本語") + [
     ('<h2 id="h-get">Download, double-click, done</h2>', '<h2 id="h-get">ダウンロードして、ダブルクリック、以上</h2>'),
     ('<p>No installer. An icon appears in the notification area: left-click it for settings, right-click to pause or quit. A four-step guide walks you through the first run.</p>',
      '<p>インストーラー不要。通知領域にアイコンが現れます：左クリックで設定、右クリックで一時停止や終了。初回は 4 ステップのガイドが付いてきます。</p>'),
-    ('>Download mousetroke.exe <small>12.9 MB · v0.1.1</small></a>', '>mousetroke.exe をダウンロード <small>12.9 MB · v0.1.1</small></a>'),
+    ('>Download Windows version <small>12.9 MB · v0.1.1</small></a>', '>Windows 版をダウンロード <small>12.9 MB · v0.1.1</small></a>'),
     ('<div class="sys">Windows 10 1809+ / 11, 64-bit</div>', '<div class="sys">Windows 10 1809+ / 11、64 ビット</div>'),
     ('<span>Mousetroke · MIT license</span>', '<span>Mousetroke · MIT ライセンス</span>'),
     ('<nav aria-label="Footer">', '<nav aria-label="フッター">'),
@@ -217,3 +217,12 @@ REPL += [
 ('<a href="../en/changelog.html">Changelog</a>', '<a href="../en/changelog.html">更新履歴</a>'),
 ('<a class="src" href="../en/changelog.html">What’s new</a>', '<a class="src" href="../en/changelog.html">更新内容</a>'),
 ]
+
+MAC = {'windows': 'Windows 版をダウンロード',
+ 'download': 'Mac 版をダウンロード（ベータ）',
+ 'first_title': 'Mac で初めて開く',
+ 'first_text': 'Mousetroke をアプリケーションにドラッグし、そこから開きます。このベータ版は未公証です。macOS にブロックされた場合は、システム設定 → プライバシーとセキュリティ → このまま開く（古い '
+               'macOS では右クリック → 開く）を選び、アクセシビリティと入力監視を許可してください。',
+ 'faq_title': 'Mac 版をアンインストールするには？',
+ 'faq_text': 'メニューバーから終了し、Mousetroke.app、~/Library/Application Support/mousetroke、~/Library/Logs/mousetroke '
+             'を削除して、システム設定で Mousetroke のログイン項目を取り除きます。'}

@@ -611,5 +611,15 @@
   "mac.menu.copy": "Copy",
   "mac.menu.paste": "Paste",
   "mac.menu.select_all": "Select All",
-  "mac.settings.keys_unsupported": "macOS does not support mouse or unmapped keys in this sequence; use a System key action for media keys."
+  "mac.settings.keys_unsupported": "macOS does not support mouse or unmapped keys in this sequence; use a System key action for media keys.",
+  "mac.first_run.install": "Drag Mousetroke into Applications, then open it from there.",
+  "mac.release.sign_required": "Release signing requires a stable certificate; ad-hoc signing is not allowed.",
+  "mac.release.cert_usage": "Usage: make-release-cert.sh /outside/repository/new-certificate.p12",
+  "mac.release.cert_outside": "Save the certificate outside the repository.",
+  "mac.release.cert_password": "Enter a new P12 password (hidden):",
+  "mac.release.cert_confirm": "Confirm the password:",
+  "mac.release.cert_secrets": "Use the command below to copy MAC_SIGN_P12_BASE64; set MAC_SIGN_P12_PASSWORD to the password you entered. Back up this certificate and reuse it for updates.",
+  "mac.ui.update.download": "Download new version",
+  "mac.update.available": "New version v{version}",
+  "mac.ui.update.latest": "Latest version: {version}"
 }

@@ -167,7 +167,7 @@ impl Host for SystemHost {
             .map(|p| (p.x as i32, p.y as i32))
             .unwrap_or((0, 0))
     }
-    fn set_automatic_updates(&self, _enabled: bool) {}
+    fn set_automatic_updates(&self, enabled: bool) { crate::update::set_automatic(enabled); }
     fn system_langs(&self) -> Vec<String> {
         system_langs()
     }

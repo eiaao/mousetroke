@@ -611,5 +611,15 @@
   "mac.menu.copy": "Copier",
   "mac.menu.paste": "Coller",
   "mac.menu.select_all": "Tout sélectionner",
-  "mac.settings.keys_unsupported": "macOS ne prend pas en charge les touches souris ou non mappées dans cette séquence ; utilisez une action de touche système pour le multimédia."
+  "mac.settings.keys_unsupported": "macOS ne prend pas en charge les touches souris ou non mappées dans cette séquence ; utilisez une action de touche système pour le multimédia.",
+  "mac.first_run.install": "Glissez Mousetroke dans Applications, puis ouvrez-le depuis ce dossier.",
+  "mac.release.sign_required": "La publication exige un certificat stable ; la signature ad hoc est interdite.",
+  "mac.release.cert_usage": "Utilisation : make-release-cert.sh /hors/depot/nouveau-certificat.p12",
+  "mac.release.cert_outside": "Enregistrez le certificat hors du dépôt.",
+  "mac.release.cert_password": "Saisissez un nouveau mot de passe P12 (masqué) :",
+  "mac.release.cert_confirm": "Confirmez le mot de passe :",
+  "mac.release.cert_secrets": "Copiez MAC_SIGN_P12_BASE64 avec la commande ci-dessous ; utilisez le mot de passe saisi pour MAC_SIGN_P12_PASSWORD. Sauvegardez ce certificat et réutilisez-le pour les mises à jour.",
+  "mac.ui.update.download": "Télécharger la nouvelle version",
+  "mac.update.available": "Nouvelle version v{version}",
+  "mac.ui.update.latest": "Dernière version : {version}"
 }

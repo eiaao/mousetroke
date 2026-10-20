@@ -1,6 +1,6 @@
-# Mousetroke macOS M4
+# Mousetroke macOS M5a
 
-Apple Silicon, macOS 11+. Install Xcode Command Line Tools and Rust. From the repository root:
+Universal Apple silicon and Intel, macOS 11+. Install Xcode Command Line Tools and Rust. From the repository root:
 
 ```bash
 export CARGO_BUILD_JOBS=4 CARGO_TARGET_DIR="$PWD/target" MACOSX_DEPLOYMENT_TARGET=11.0
@@ -18,7 +18,7 @@ The certificate script creates a **Mousetroke Dev** signing identity in a dedica
 
 **Screen Recording is not required**: titles are obtained through Accessibility, never `kCGWindowName`. Grant **Accessibility** and **Input Monitoring** to `Mousetroke.app` in System Settings → Privacy & Security. The menu links to missing permissions. Permissions are checked every two seconds and the tap starts without restarting. Prompts are requested only on first launch, tracked by `permission-prompted` in Application Support. SSH tests require an active graphical login for the same user. Use the signed bundle for repeatable permission tests.
 
-The menu icon dims while paused or awaiting permission. Toggle pause from the menu or with **⌃⌥⌘P**. Ordinary right clicks are replayed. Right-button drags recognize shared-engine gestures and send configured keys to the focused application. Window targeting and fullscreen pause use a roughly 250 ms snapshot. Target activation is supported. Settings run in a separate process; automatic updates remain Windows-only until macOS packaging is ready.
+The menu icon dims while paused or awaiting permission. Toggle pause from the menu or with **⌃⌥⌘P**. Ordinary right clicks are replayed. Right-button drags recognize shared-engine gestures and send configured keys to the focused application. Window targeting and fullscreen pause use a roughly 250 ms snapshot. Target activation is supported. Settings run in a separate process; manual and daily update checks are supported; downloads open in the browser and installation is manual.
 
 ## Overlay
 
@@ -228,7 +228,7 @@ The picker places a transparent click-catching window on every display, uses a c
 
 Login launch uses **SMAppService.mainAppService on macOS 13+**, discovered only after a runtime version check; no 13+ class symbol is imported on Big Sur. Enabled state comes from the service status, including user approval/disabled states. Approval-needed registration shows a translated instruction and stays unchecked. Run the signed `.app`, rather than a standalone development binary, for this path. On **11–12**, a per-user `~/Library/LaunchAgents/io.github.eiaao.mousetroke.plist` contains the absolute executable path as one ProgramArguments entry, with RunAtLoad. `launchctl enable/bootstrap/disable` applies changes without stopping a running engine when login launch is disabled, and status checks the plist, loaded service and launchd disabled override. No administrator privileges are needed. Moving the app requires re-enabling login launch.
 
-macOS retains the native title bar/traffic lights and light/dark appearance. The backend platform value drives Command/Option/Control/Shift names, physical-key recording and ⌘F/⌘D/⌘Z/⌘⇧Z UI shortcuts; stored keys remain shared Windows-VK logical values. Finder, menu bar, login launch and application examples have ten-language variants. Unsupported imported action options get an explicit warning and repair button; unmapped or mouse keys in key sequences get a translated validation error; topmost cannot be selected, elevation is hidden, and Windows Lua shims are called out. **One-click update and automatic update preferences/checks remain Windows-only**. About still exposes the version, homepage, source/Star, feedback and changelog links.
+macOS retains the native title bar/traffic lights and light/dark appearance. The backend platform value drives Command/Option/Control/Shift names, physical-key recording and ⌘F/⌘D/⌘Z/⌘⇧Z UI shortcuts; stored keys remain shared Windows-VK logical values. Finder, menu bar, login launch and application examples have ten-language variants. Unsupported imported action options get an explicit warning and repair button; unmapped or mouse keys in key sequences get a translated validation error; topmost cannot be selected, elevation is hidden, and Windows Lua shims are called out. **One-click installation remains Windows-only**. Mac About supports shared update checks and release notes, with browser DMG downloads; Preferences controls daily checking. About also exposes the homepage, source/Star and feedback links.
 
 Fresh macOS defaults disable gestures in Parallels Desktop, VMware Fusion, Windows App, Screen Sharing, VirtualBox VM, Blender, Cinema 4D, Maya, Unity and Unreal Editor. Remote/VM apps need their mouse buttons passed through to another OS; 3D/game editors need right/middle drag for viewport navigation. These bundle-id entries also populate the existing recommended-disable picker and onboarding list; installation detection uses LaunchServices. Existing configurations remain intact.
 
@@ -241,4 +241,152 @@ Real-Mac hand test (signed bundle; macOS 27 on Apple silicon, repeat login fallb
 3. Select running apps, browse/drop a `.app` from /Applications, and select an executable. Verify bundle ids/full executable paths in the saved scope and matching behavior in the engine. Check icons and the ten default-disabled apps.
 4. With Screen Recording denied, pick an overlapping background app; cancel with Escape/right-click. Repeat on the 2560×1440 screen, fullscreen Spaces and secondary screens at negative origins; no click should reach the target app.
 5. Enable/disable login launch, verify the actual System Settings state, log out/in, and repeat with user approval denied. Confirm engine status/start and Finder/log/project links.
-6. Open About and confirm no update controls; import unsupported action options and check their warning and explicit repair. Run onboarding in each of the ten languages and check native traffic lights and focus.
+6. Open About, check current/latest version and release notes, and download the newer DMG in the browser; import unsupported action options and check their warning and explicit repair. Run onboarding in each of the ten languages and check native traffic lights and focus.
+
+
+## Universal beta release
+
+The reviewer Mac needs Xcode Command Line Tools, Rust, Python 3 and both Rust targets.
+There is no Node dependency in these scripts: copy the already built
+`crates/mousetroke-settings/ui/dist` from Windows before building. CI builds it with Node 22.
+
+```bash
+export CARGO_BUILD_JOBS=4 CARGO_TARGET_DIR="$PWD/target" MACOSX_DEPLOYMENT_TARGET=11.0
+rustup target add aarch64-apple-darwin x86_64-apple-darwin
+cargo test -p mousetroke-core -p mousetroke-engine -p mousetroke-mac -p mousetroke-settings --locked
+# 快速主机架构开发包；开发证书缺失时有明确警告并回退 ad-hoc。
+bash scripts/mac/make-dev-cert.sh
+bash scripts/mac/bundle.sh
+# CI 冒烟明确选择 ad-hoc，不能用于公开发布。
+MOUSETROKE_SIGN_ID=- MOUSETROKE_REQUIRE_SIGNING=0 bash scripts/mac/bundle.sh --universal
+MOUSETROKE_SIGN_ID=- MOUSETROKE_REQUIRE_SIGNING=0 bash scripts/mac/dmg.sh
+```
+
+Create the release certificate **once**, in a private directory outside every repository
+and worktree. The script refuses existing output, repository paths and paths resolving
+through symlinks into the repository. Enter a nonempty password twice without echo.
+The ten-year certificate is RSA 2048 with the codeSigning EKU and common name
+**Mousetroke Self-Signed**. The private key is removed from the system temporary directory
+on exit. Only the password-protected p12 remains, with owner-only permissions.
+
+```bash
+mkdir -p "$HOME/.config/mousetroke-release"
+chmod 700 "$HOME/.config/mousetroke-release"
+bash scripts/mac/make-release-cert.sh "$HOME/.config/mousetroke-release/signing.p12"
+# 脚本只打印此命令；执行后从剪贴板粘贴到 GitHub Secret，不把内容输出到日志。
+base64 < "$HOME/.config/mousetroke-release/signing.p12" | tr -d '\n' | pbcopy
+```
+
+Set repository Actions secrets `MAC_SIGN_P12_BASE64` to that clipboard value and
+`MAC_SIGN_P12_PASSWORD` to the entered password. Back up the p12 and password securely;
+**do not regenerate the certificate for each release**. Do not put either in git or logs.
+The release job fails if either secret is absent or import/signing fails. It creates an
+unlocked temporary keychain, imports the identity, allows codesign access, signs with
+`--options runtime`, then restores the keychain list and deletes temporary signing material
+with an `always()` step. No notarization is performed in M5a.
+
+For a real signed local build over SSH, import that same p12 into a temporary unlocked
+keychain. Run these commands in a subshell so cleanup also happens on failure. Enter the
+P12 password interactively; do not substitute its literal value into a command.
+
+```bash
+(
+set -euo pipefail
+umask 077
+temporary=$(mktemp -d)
+keychain="$temporary/release.keychain-db"
+trap 'security delete-keychain "$keychain" >/dev/null 2>&1 || true; rm -rf "$temporary"; unset p12_password keychain_password' EXIT
+read -r -s -p 'P12 password: ' p12_password; printf '\n'
+keychain_password=$(openssl rand -hex 32)
+security create-keychain -p "$keychain_password" "$keychain"
+security set-keychain-settings -lut 21600 "$keychain"
+security unlock-keychain -p "$keychain_password" "$keychain"
+security import "$HOME/.config/mousetroke-release/signing.p12" -k "$keychain" -P "$p12_password" -T /usr/bin/codesign >/dev/null 2>&1
+security set-key-partition-list -S apple-tool:,apple:,codesign: -s -k "$keychain_password" "$keychain" >/dev/null 2>&1
+export MOUSETROKE_SIGN_KEYCHAIN="$keychain"
+export MOUSETROKE_SIGN_ID='Mousetroke Self-Signed' MOUSETROKE_REQUIRE_SIGNING=1
+bash scripts/mac/bundle.sh --universal
+bash scripts/mac/dmg.sh
+lipo -archs target/mac/Mousetroke.app/Contents/MacOS/mousetroke
+codesign --verify --strict --verbose=2 target/mac/Mousetroke.app
+codesign --verify --strict --verbose=2 target/mac/Mousetroke.dmg
+codesign -d -r- target/mac/Mousetroke.app
+hdiutil verify target/mac/Mousetroke.dmg
+)
+```
+
+Expect `arm64 x86_64` (order may differ). The designated requirement must retain
+`identifier "io.github.eiaao.mousetroke" and certificate root = H"<same SHA-1>"`
+across independently rebuilt versions. This explicitly avoids a requirement based on the
+binary's changing code hash. SHA-1 here identifies the certificate, not the asset checksum.
+Keep the app in the same Applications path. Certificate changes, moving the app or macOS
+policy changes may still require granting permissions again; verify on both macOS 27 and 11.
+
+`dmg.sh` creates `target/mac/Mousetroke.dmg` with `hdiutil` UDZO, volume name
+**Mousetroke**, the signed app and an `/Applications` symlink, and signs the DMG with
+the same identity. `release.yml` has `windows`, `macos` and `publish` jobs. The first two
+upload `windows-release` (exe + notes) and `macos-release` (DMG) artifacts. Only `publish`
+has contents-write permission; it waits for both, generates and verifies one
+`SHA256SUMS.txt` listing `mousetroke.exe` and `Mousetroke.dmg`, then creates one release.
+
+`bundle.sh` removes the previous app before building and removes incomplete bundles on
+failure. `dmg.sh` deletes the previous DMG before checking its input, requires both arm64
+and x86_64 slices and verifies all code signatures before creating a fresh image. With
+`MOUSETROKE_REQUIRE_SIGNING=1` (set for the entire macOS release job), both slices must
+have a certificate signing identity; ad-hoc signatures are rejected. Failed image creation,
+signing or verification removes the incomplete DMG. The CI smoke test explicitly uses
+`MOUSETROKE_REQUIRE_SIGNING=0` to allow a universal ad-hoc bundle.
+
+## First open, updates and uninstall
+
+Open the DMG, drag Mousetroke to **Applications**, then launch it there. The beta is
+self-signed and **not notarized**: if blocked, go to **System Settings → Privacy & Security →
+Open Anyway** (older macOS: **right-click → Open**). Each newly downloaded version may
+need this again. Grant **Accessibility** and **Input Monitoring**; no Screen Recording.
+Launching from `/Volumes/` or `/AppTranslocation/` logs the location problem and queues one
+translated eight-second notice per engine launch. It does not modify quarantine attributes.
+
+About reuses the Windows version comparison and plain-text, language-selected release-note
+renderer. The transport is `/usr/bin/curl`, already present on macOS 11, avoiding another
+network crate or Objective-C session lifecycle. It disables curlrc, restricts protocols to
+HTTPS, validates the exact `api.github.com` host, follows no redirects, requires HTTP 200,
+and limits connect/total time to 10/30 seconds and response body to 1 MiB. Only API metadata
+is fetched by the app; the checked `Mousetroke.dmg` URL is opened in the browser after an
+explicit download action. No one-click installation runs on Mac. The API must provide one
+exact DMG and one exact sums asset; malformed/duplicate/untrusted assets are rejected.
+
+The daily worker follows `settings.update_check` and its live reload. It saves the attempt
+before networking in `update-state.json` beside the config, checks at most every 24 hours,
+and suppresses repeat menu notices for the same version. Rollback of the clock postpones
+checking. A version menu item opens settings About. Disabled checks do not read state or
+make requests; an already active request may finish, but its notice is suppressed.
+Windows retains WinHTTP, BCrypt SHA-256, file replacement/rollback and restart behavior;
+mixed Windows/Mac asset and checksum fixtures exercise the actual Windows selectors.
+
+To uninstall, quit from the menu bar; delete the app,
+`~/Library/Application Support/mousetroke` and `~/Library/Logs/mousetroke`; remove its login
+item in System Settings.
+
+## M5a acceptance checklist
+
+- Build twice with the same release p12; compare `codesign -d -r-` requirements, verify
+  both slices and hardened runtime, and run each host architecture (`arch -x86_64` requires
+  Rosetta on Apple silicon). Run natively on the Intel macOS 11 machine too.
+- Mount the DMG read-only, verify volume name, app and Applications symlink; launch there
+  and from a quarantined/translocated downloaded copy and confirm one installation notice
+  plus log. Copy to Applications and confirm no notice.
+- Download through a browser to test real quarantine/Gatekeeper; follow Open Anyway,
+  grant both permissions, verify gestures/settings and then replace with the second signed
+  build at the same path. Confirm grants and gestures survive and login launch still works.
+- About: test current/newer/error responses, Chinese/English release-note selection and
+  fallback, retry, browser DMG download, no in-app installation. Test the ten UI languages.
+- With a newer real release, enable daily checks and confirm one menu notice opening About;
+  restart and confirm no second request that day. Disable/re-enable and live-reload the
+  preference; inspect the state/log. Invalid/future state and offline networking must not
+  block event processing.
+- Run `bash -n scripts/mac/*.sh` with a loop and shellcheck if available; CI also runs
+  universal + ad-hoc DMG smoke tests. Locally remove either release secret in a test workflow
+  and confirm the mac job fails and publish never starts (do not create a public test tag).
+- Measure the final signed DMG size, fill `@@MAC_DMG_SIZE@@` in the site sources, regenerate
+  all pages and require `python site/check.py` without the pre-release allowance before
+  deploying the site. Keep version/changelog updates for the actual release.

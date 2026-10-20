@@ -186,7 +186,7 @@ REPL = base("ru", "ru", "ru_RU", "Язык", "Русский") + [
     ('<h2 id="h-get">Download, double-click, done</h2>', '<h2 id="h-get">Скачали, два щелчка, готово</h2>'),
     ('<p>No installer. An icon appears in the notification area: left-click it for settings, right-click to pause or quit. A four-step guide walks you through the first run.</p>',
      '<p>Без установщика. В области уведомлений появляется значок: левый щелчок — настройки, правый — пауза или выход. Четырёхшаговое руководство проводит первый запуск.</p>'),
-    ('>Download mousetroke.exe <small>12.9 MB · v0.1.1</small></a>', '>Скачать mousetroke.exe <small>12,9 МБ · v0.1.1</small></a>'),
+    ('>Download Windows version <small>12.9 MB · v0.1.1</small></a>', '>Скачать для Windows <small>12,9 МБ · v0.1.1</small></a>'),
     ('<div class="sys">Windows 10 1809+ / 11, 64-bit</div>', '<div class="sys">Windows 10 1809+ / 11, 64-бит</div>'),
     ('<span>Mousetroke · MIT license</span>', '<span>Mousetroke · Лицензия MIT</span>'),
     ('<nav aria-label="Footer">', '<nav aria-label="Нижний колонтитул">'),
@@ -217,3 +217,14 @@ REPL += [
 ('<a href="../en/changelog.html">Changelog</a>', '<a href="../en/changelog.html">История изменений</a>'),
 ('<a class="src" href="../en/changelog.html">What’s new</a>', '<a class="src" href="../en/changelog.html">Что нового</a>'),
 ]
+
+MAC = {'windows': 'Скачать для Windows',
+ 'download': 'Скачать для Mac (бета)',
+ 'first_title': 'Первый запуск на Mac',
+ 'first_text': 'Перетащите Mousetroke в Программы и откройте оттуда. Эта бета не нотариально заверена Apple: если '
+               'macOS блокирует запуск, выберите Системные настройки → Конфиденциальность и безопасность → Всё равно '
+               'открыть (на старой macOS — правая кнопка → Открыть). Затем разрешите Универсальный доступ и Мониторинг '
+               'ввода.',
+ 'faq_title': 'Как удалить версию для Mac?',
+ 'faq_text': 'Завершите приложение через строку меню, удалите Mousetroke.app, ~/Library/Application Support/mousetroke '
+             'и ~/Library/Logs/mousetroke и уберите Mousetroke из объектов входа в Системных настройках.'}

@@ -34,12 +34,33 @@ def base(d, lang_tag, og_locale, summary_label, self_name):
 
 LANGS = {}
 
+# Mac 新增片段的正文与 FAQ JSON-LD 必须使用同一份译文。
+MAC_EN = {'windows': 'Download Windows version',
+ 'download': 'Download Mac version (beta)',
+ 'first_title': 'First open on Mac',
+ 'first_text': 'Drag Mousetroke into Applications and open it there. This beta is not notarized: if macOS blocks it, '
+               'go to System Settings → Privacy & Security → Open Anyway (on older macOS, right-click → Open). Then '
+               'grant Accessibility and Input Monitoring.',
+ 'faq_title': 'How do I uninstall the Mac version?',
+ 'faq_text': 'Quit from the menu bar, delete Mousetroke.app, ~/Library/Application Support/mousetroke and '
+             '~/Library/Logs/mousetroke, and remove the Mousetroke login item in System Settings.'}
+
+def mac_replacements(text):
+    import html
+    pairs = []
+    for key, tail in [("download", " <small>"), ("first_title", "</h3>"), ("first_text", "</p>"), ("faq_title", "</summary>"), ("faq_text", "</p>")]:
+        pairs.append((">" + html.escape(MAC_EN[key], quote=False) + tail, ">" + html.escape(text[key], quote=False) + tail))
+    for key in ["faq_title", "faq_text"]:
+        pairs.append((json.dumps(MAC_EN[key], ensure_ascii=False), json.dumps(text[key], ensure_ascii=False)))
+    return pairs
+
+
 # 各语言在 site/langs/<tag>.py（REPL = [(old, new), …]，base 由这里注入）
 import pathlib as _p
 for _f in sorted((_p.Path(__file__).parent / "langs").glob("*.py")):
     _ns = {"base": base}
     exec(compile(_f.read_text(encoding="utf-8"), str(_f), "exec"), _ns)
-    LANGS[_f.stem] = _ns["REPL"]
+    LANGS[_f.stem] = _ns["REPL"] + mac_replacements(_ns["MAC"])
 
 def gen(tag, repls):
     out = TPL

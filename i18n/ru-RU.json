@@ -623,5 +623,15 @@
   "mac.menu.copy": "Скопировать",
   "mac.menu.paste": "Вставить",
   "mac.menu.select_all": "Выбрать все",
-  "mac.settings.keys_unsupported": "macOS не поддерживает кнопки мыши или несопоставленные клавиши в этой последовательности; для медиа используйте действие системной клавиши."
+  "mac.settings.keys_unsupported": "macOS не поддерживает кнопки мыши или несопоставленные клавиши в этой последовательности; для медиа используйте действие системной клавиши.",
+  "mac.first_run.install": "Перетащите Mousetroke в Программы и откройте оттуда.",
+  "mac.release.sign_required": "Для выпуска нужен постоянный сертификат; подпись ad hoc запрещена.",
+  "mac.release.cert_usage": "Использование: make-release-cert.sh /вне/репозитория/новый-сертификат.p12",
+  "mac.release.cert_outside": "Сохраните сертификат вне репозитория.",
+  "mac.release.cert_password": "Введите новый пароль P12 (скрыт):",
+  "mac.release.cert_confirm": "Повторите пароль:",
+  "mac.release.cert_secrets": "Скопируйте MAC_SIGN_P12_BASE64 следующей командой; задайте введённый пароль в MAC_SIGN_P12_PASSWORD. Сохраните резервную копию сертификата и используйте его для обновлений.",
+  "mac.ui.update.download": "Скачать новую версию",
+  "mac.update.available": "Новая версия v{version}",
+  "mac.ui.update.latest": "Последняя версия: {version}"
 }
