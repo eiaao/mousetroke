@@ -99,3 +99,5 @@ mod bundle_tests {
 mod first_run;
 #[cfg(target_os = "macos")]
 pub mod update;
+#[cfg(any(target_os = "macos", test))]
+mod update_helpers;

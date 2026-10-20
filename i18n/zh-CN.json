@@ -614,7 +614,7 @@
   "mac.release.cert_password": "输入新的 P12 密码（不回显）：",
   "mac.release.cert_confirm": "再次输入密码：",
   "mac.release.cert_secrets": "将下列命令复制的内容设为 MAC_SIGN_P12_BASE64；将刚输入的密码设为 MAC_SIGN_P12_PASSWORD。备份同一证书，更新时不要重建。",
-  "mac.ui.update.download": "下载新版本",
+  "mac.ui.update.download": "手动下载",
   "mac.update.available": "有新版本 v{version}",
   "mac.ui.update.latest": "最新版本：{version}",
   "mac.setup.permissions": "权限",
@@ -642,5 +642,8 @@
   "mac.ui.guide.p3_body_installed": "远程桌面、3D 和设计软件需要用右键或中键拖动。这台 Mac 上找到了以下程序，勾选的程序将禁用手势：",
   "mac.setup.restart": "重启 Mousetroke",
   "mac.setup.restart_hint": "如果已在系统设置中开启权限，但手势仍未启动，请重启 Mousetroke 让输入监控生效；设置窗口会保留。",
-  "mac.setup.starting": "权限已授予，正在启动手势…"
+  "mac.setup.starting": "权限已授予，正在启动手势…",
+  "mac.update.error.signature": "更新包的标识、版本或签名证书验证失败，已取消更新。",
+  "mac.update.error.not_writable": "无法在此位置更新。请从可写的“应用程序”文件夹运行，或手动下载安装。",
+  "update.fixture.payload_required": "至少需要提供 --exe 或 --dmg 中的一个。"
 }

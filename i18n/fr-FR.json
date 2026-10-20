@@ -614,7 +614,7 @@
   "mac.release.cert_password": "Saisissez un nouveau mot de passe P12 (masqué) :",
   "mac.release.cert_confirm": "Confirmez le mot de passe :",
   "mac.release.cert_secrets": "Copiez MAC_SIGN_P12_BASE64 avec la commande ci-dessous ; utilisez le mot de passe saisi pour MAC_SIGN_P12_PASSWORD. Sauvegardez ce certificat et réutilisez-le pour les mises à jour.",
-  "mac.ui.update.download": "Télécharger la nouvelle version",
+  "mac.ui.update.download": "Télécharger manuellement",
   "mac.update.available": "Nouvelle version v{version}",
   "mac.ui.update.latest": "Dernière version : {version}",
   "mac.setup.permissions": "Autorisations",
@@ -642,5 +642,8 @@
   "mac.ui.guide.p3_body_installed": "Les apps de bureau à distance, de 3D et de création utilisent le glisser avec le bouton droit ou central. Ces apps ont été trouvées sur ce Mac ; les gestes seront désactivés pour celles cochées :",
   "mac.setup.restart": "Redémarrer Mousetroke",
   "mac.setup.restart_hint": "Si les autorisations sont activées dans Réglages Système mais que les gestes ne fonctionnent toujours pas, redémarrez Mousetroke pour activer la Surveillance de l’entrée. Cette fenêtre de réglages restera ouverte.",
-  "mac.setup.starting": "Autorisations accordées — démarrage des gestes…"
+  "mac.setup.starting": "Autorisations accordées — démarrage des gestes…",
+  "mac.update.error.signature": "Impossible de vérifier l’identité, la version ou le certificat de signature de la mise à jour. Mise à jour annulée.",
+  "mac.update.error.not_writable": "Cette copie ne peut pas être mise à jour ici. Lancez-la depuis un dossier Applications accessible en écriture ou téléchargez-la manuellement.",
+  "update.fixture.payload_required": "Au moins une des options --exe ou --dmg est requise."
 }

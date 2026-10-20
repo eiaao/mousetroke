@@ -103,6 +103,27 @@ pub fn request_restart() -> io::Result<()> {
     std::fs::write(dir.join("restart-request"), pid.to_string())
 }
 
+/// 更新只请求与快照 PID 匹配的引擎正常退出；临时文件 + rename 避免读到半个 PID。
+pub fn request_quit(pid: u32) -> io::Result<()> {
+    if input_state().map(|state| state.0) != Some(pid) {
+        return Err(io::Error::from(io::ErrorKind::NotConnected));
+    }
+    let path = crate::default_config_path();
+    let dir = path.parent().ok_or_else(|| io::Error::from(io::ErrorKind::NotFound))?;
+    let temporary = dir.join("quit-request.tmp");
+    std::fs::write(&temporary, pid.to_string()).and_then(|()| std::fs::rename(&temporary, dir.join("quit-request")))
+}
+
+pub(crate) fn take_quit_request() -> bool {
+    let path = crate::default_config_path();
+    let Some(dir) = path.parent() else { return false };
+    let request = dir.join("quit-request");
+    if std::fs::read_to_string(&request).is_ok_and(|pid| pid == std::process::id().to_string()) {
+        return std::fs::remove_file(request).is_ok();
+    }
+    false
+}
+
 pub(crate) fn take_restart_request() -> bool {
     let path = crate::default_config_path();
     let Some(dir) = path.parent() else {

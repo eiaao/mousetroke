@@ -42,12 +42,18 @@ export function About({ engine, onShowGuide, notify }: { engine: EngineStatus; o
     finally { setBusy(null); }
   };
   const installUpdate = async () => {
-    setBusy(isMac() ? "check" : "install"); setError(null);
-    try { if (isMac()) await api.downloadUpdate(); else await api.installUpdate(); }
+    setBusy("install"); setError(null);
+    try { await api.installUpdate(); }
     catch (e) {
       setError(e);
-      if ((e as Msg)?.key === "update.error.not_writable") await open("releases");
+      if (!isMac() && (e as Msg)?.key === "update.error.not_writable") await open("releases");
     } finally { setBusy(null); }
+  };
+  const downloadUpdate = async () => {
+    setBusy("check");
+    try { await api.downloadUpdate(); }
+    catch (e) { setError(e); }
+    finally { setBusy(null); }
   };
 
   return (
@@ -79,22 +85,8 @@ export function About({ engine, onShowGuide, notify }: { engine: EngineStatus; o
             {t(busy === "check" ? "ui.update.checking" : error ? "ui.update.retry" : "ui.update.check")}
           </button>
         </div>
-        <div className="update-status" role="status" aria-live="polite">
-          {isMac() && update && <p>{t("mac.ui.update.latest", { version: update.latest })}</p>}
-          {busy === "install" ? <p><span className="update-spinner" aria-hidden />{t("ui.update.installing")}</p> : error ? <>
-            <p className="update-error">{errText(error)}</p>
-            <button type="button" className="btn small update-download" onClick={() => open("releases")}>{t("ui.update.download")}</button>
-          </> : update && (update.newer ? <>
-            <p>{t("update.available", { version: update.latest })}</p>
-            {update.notes.length > 0 && <ul className="update-note-list" tabIndex={0}>
-              {update.notes.map((note, index) => <li key={index}>{note}</li>)}
-            </ul>}
-            <div className="update-actions">
-              <button type="button" className="btn small update-notes" disabled={busy !== null} onClick={() => open("releases")}>{t("ui.update.notes")}</button>
-              <button type="button" className={`btn primary ${isMac() ? "update-download" : "update-install"}`} disabled={busy !== null} onClick={installUpdate}>{t(isMac() ? "mac.ui.update.download" : "ui.update.install")}</button>
-            </div>
-          </> : <p>{t("ui.update.current")}</p>)}
-        </div>
+        <UpdateStatus update={update} busy={busy} error={error} onInstall={installUpdate}
+          onDownload={() => isMac() && !error ? downloadUpdate() : open("releases")} onNotes={() => open("releases")} />
       </div>
 
       <div className="pref-group about-project" role="group" aria-labelledby="about-project-title">
@@ -195,4 +187,32 @@ export function About({ engine, onShowGuide, notify }: { engine: EngineStatus; o
       </div>
     </section>
   );
+}
+
+/** 两个平台共用更新状态和主要操作，Mac 另外保留手动下载。 */
+export function UpdateStatus({ update, busy, error, onInstall, onDownload, onNotes }: {
+  update: Awaited<ReturnType<typeof api.checkUpdate>> | null;
+  busy: "check" | "install" | null;
+  error: unknown;
+  onInstall: () => void;
+  onDownload: () => void;
+  onNotes: () => void;
+}) {
+  return <div className="update-status" role="status" aria-live="polite">
+    {isMac() && update && <p>{t("mac.ui.update.latest", { version: update.latest })}</p>}
+    {busy === "install" ? <p><span className="update-spinner" aria-hidden />{t("ui.update.installing")}</p> : error ? <>
+      <p className="update-error">{errText(error)}</p>
+      <button type="button" className="btn small update-download" disabled={isMac() && busy !== null} onClick={onDownload}>{t(isMac() ? "mac.ui.update.download" : "ui.update.download")}</button>
+    </> : update && (update.newer ? <>
+      <p>{t("update.available", { version: update.latest })}</p>
+      {update.notes.length > 0 && <ul className="update-note-list" tabIndex={0}>
+        {update.notes.map((note, index) => <li key={index}>{note}</li>)}
+      </ul>}
+      <div className="update-actions">
+        <button type="button" className="btn small update-notes" disabled={busy !== null} onClick={onNotes}>{t("ui.update.notes")}</button>
+        {isMac() && <button type="button" className="btn small update-download" disabled={busy !== null} onClick={onDownload}>{t("mac.ui.update.download")}</button>}
+        <button type="button" className="btn primary update-install" disabled={busy !== null} onClick={onInstall}>{t("ui.update.install")}</button>
+      </div>
+    </> : <p>{t("ui.update.current")}</p>)}
+  </div>;
 }

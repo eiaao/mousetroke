@@ -614,7 +614,7 @@
   "mac.release.cert_password": "Neues P12-Passwort eingeben (verdeckt):",
   "mac.release.cert_confirm": "Passwort bestätigen:",
   "mac.release.cert_secrets": "Kopiere MAC_SIGN_P12_BASE64 mit dem folgenden Befehl; verwende das eingegebene Passwort für MAC_SIGN_P12_PASSWORD. Sichere dieses Zertifikat und verwende es für Updates weiter.",
-  "mac.ui.update.download": "Neue Version herunterladen",
+  "mac.ui.update.download": "Manuell herunterladen",
   "mac.update.available": "Neue Version v{version}",
   "mac.ui.update.latest": "Neueste Version: {version}",
   "mac.setup.permissions": "Berechtigungen",
@@ -642,5 +642,8 @@
   "mac.ui.guide.p3_body_installed": "Remote-Desktop-, 3D- und Design-Apps benötigen die rechte oder mittlere Maustaste zum Ziehen. Diese wurden auf diesem Mac gefunden; bei den markierten Apps werden Gesten deaktiviert:",
   "mac.setup.restart": "Mousetroke neu starten",
   "mac.setup.restart_hint": "Wenn die Berechtigungen in den Systemeinstellungen aktiviert sind, die Gesten aber noch nicht funktionieren, starte Mousetroke neu, damit die Eingabeüberwachung wirksam wird. Dieses Einstellungsfenster bleibt geöffnet.",
-  "mac.setup.starting": "Berechtigungen erteilt — Gesten werden gestartet…"
+  "mac.setup.starting": "Berechtigungen erteilt — Gesten werden gestartet…",
+  "mac.update.error.signature": "Identität, Version oder Signaturzertifikat des Updates konnten nicht bestätigt werden. Update abgebrochen.",
+  "mac.update.error.not_writable": "Diese Kopie kann hier nicht aktualisiert werden. Aus einem beschreibbaren Programme-Ordner starten oder manuell herunterladen.",
+  "update.fixture.payload_required": "Mindestens --exe oder --dmg muss angegeben werden."
 }

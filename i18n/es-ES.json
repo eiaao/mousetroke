@@ -614,7 +614,7 @@
   "mac.release.cert_password": "Introduce una contraseña P12 nueva (oculta):",
   "mac.release.cert_confirm": "Confirma la contraseña:",
   "mac.release.cert_secrets": "Copia MAC_SIGN_P12_BASE64 con el comando siguiente; usa la contraseña introducida para MAC_SIGN_P12_PASSWORD. Conserva el mismo certificado para las actualizaciones.",
-  "mac.ui.update.download": "Descargar nueva versión",
+  "mac.ui.update.download": "Descargar manualmente",
   "mac.update.available": "Nueva versión v{version}",
   "mac.ui.update.latest": "Última versión: {version}",
   "mac.setup.permissions": "Permisos",
@@ -642,5 +642,8 @@
   "mac.ui.guide.p3_body_installed": "Las apps de escritorio remoto, 3D y diseño necesitan arrastrar con el botón derecho o central. Se encontraron estas apps en tu Mac; las marcadas tendrán los gestos desactivados:",
   "mac.setup.restart": "Reiniciar Mousetroke",
   "mac.setup.restart_hint": "Si los permisos están activados en Ajustes del Sistema pero los gestos siguen sin funcionar, reinicia Mousetroke para aplicar la Monitorización de entrada. Esta ventana de ajustes seguirá abierta.",
-  "mac.setup.starting": "Permisos concedidos: iniciando gestos…"
+  "mac.setup.starting": "Permisos concedidos: iniciando gestos…",
+  "mac.update.error.signature": "No se pudo verificar la identidad, la versión o el certificado de firma de la actualización. Actualización cancelada.",
+  "mac.update.error.not_writable": "No se puede actualizar esta copia aquí. Ejecútala desde una carpeta Aplicaciones con permiso de escritura o descárgala manualmente.",
+  "update.fixture.payload_required": "Se requiere al menos una de las opciones --exe o --dmg."
 }

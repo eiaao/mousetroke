@@ -614,7 +614,7 @@
   "mac.release.cert_password": "Inserisci una nuova password P12 (nascosta):",
   "mac.release.cert_confirm": "Conferma la password:",
   "mac.release.cert_secrets": "Copia MAC_SIGN_P12_BASE64 con il comando seguente; usa la password inserita per MAC_SIGN_P12_PASSWORD. Conserva questo certificato e riutilizzalo per gli aggiornamenti.",
-  "mac.ui.update.download": "Scarica nuova versione",
+  "mac.ui.update.download": "Scarica manualmente",
   "mac.update.available": "Nuova versione v{version}",
   "mac.ui.update.latest": "Ultima versione: {version}",
   "mac.setup.permissions": "Autorizzazioni",
@@ -642,5 +642,8 @@
   "mac.ui.guide.p3_body_installed": "Le app di desktop remoto, 3D e progettazione usano il trascinamento con il pulsante destro o centrale. Su questo Mac sono state trovate queste app; i gesti saranno disattivati per quelle selezionate:",
   "mac.setup.restart": "Riavvia Mousetroke",
   "mac.setup.restart_hint": "Se le autorizzazioni sono attive in Impostazioni di Sistema ma i gesti non funzionano ancora, riavvia Mousetroke per applicare il Monitoraggio input. Questa finestra delle impostazioni resterà aperta.",
-  "mac.setup.starting": "Autorizzazioni concesse: avvio dei gesti…"
+  "mac.setup.starting": "Autorizzazioni concesse: avvio dei gesti…",
+  "mac.update.error.signature": "Impossibile verificare identità, versione o certificato di firma dell’aggiornamento. Aggiornamento annullato.",
+  "mac.update.error.not_writable": "Questa copia non può essere aggiornata qui. Avviala da una cartella Applicazioni scrivibile o scaricala manualmente.",
+  "update.fixture.payload_required": "È necessaria almeno una delle opzioni --exe o --dmg."
 }

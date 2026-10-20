@@ -62,6 +62,7 @@ pub enum Error {
     Restart,
     Busy,
     Current,
+    Signature,
 }
 
 impl Error {
@@ -74,6 +75,7 @@ impl Error {
             Self::Restart => keys::UPDATE_ERROR_RESTART,
             Self::Busy => keys::UPDATE_ERROR_BUSY,
             Self::Current => keys::UI_UPDATE_CURRENT,
+            Self::Signature => keys::MAC_UPDATE_ERROR_SIGNATURE,
         }
     }
 }

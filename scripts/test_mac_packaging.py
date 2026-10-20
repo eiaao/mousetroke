@@ -12,6 +12,10 @@ from unittest.mock import Mock, patch
 import types
 import struct
 import sys
+import contextlib
+import hashlib
+import io
+import json
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -601,6 +605,53 @@ if message=$(mac_message mac.bundle.done); then exit 0; else exit 1; fi
                 self.run_script("dmg", success=False, **failure)
                 self.assertFalse(self.image.exists())
                 self.assertIn(stage, self.log.read_text())
+
+
+class UpdateFixtureTests(unittest.TestCase):
+    def fixture(self, *options):
+        with patch.object(sys, "argv", ["update-test-server.py", *map(str, options)]), \
+                patch("http.server.ThreadingHTTPServer") as server, \
+                contextlib.redirect_stdout(io.StringIO()):
+            server.return_value.serve_forever.side_effect = KeyboardInterrupt
+            runpy.run_path(str(ROOT / "scripts/update-test-server.py"), run_name="__main__")
+        self.assertEqual(server.call_args.args[0], ("127.0.0.1", 8770))
+        handler = server.call_args.args[1]
+
+        def get(path):
+            request = types.SimpleNamespace(path=path, wfile=io.BytesIO(),
+                                            send_response=Mock(), send_header=Mock(), end_headers=Mock())
+            handler.do_GET(request)
+            request.send_response.assert_called_once_with(200)
+            body = request.wfile.getvalue()
+            request.send_header.assert_called_once_with("Content-Length", str(len(body)))
+            return body
+        return get
+
+    def test_windows_mac_and_mixed_fixtures_serve_exact_payloads_and_checksums(self):
+        with tempfile.TemporaryDirectory() as directory:
+            exe, dmg = Path(directory) / "input.exe", Path(directory) / "input.dmg"
+            exe.write_bytes(b"Windows fixture")
+            dmg.write_bytes(b"Mac fixture")
+            for options, assets in [(["--exe", exe], {"mousetroke.exe": exe}),
+                                    (["--dmg", dmg], {"Mousetroke.dmg": dmg}),
+                                    (["--exe", exe, "--dmg", dmg], {"mousetroke.exe": exe, "Mousetroke.dmg": dmg})]:
+                with self.subTest(options=options):
+                    get = self.fixture(*options, "--version", "1.2.3")
+                    release = json.loads(get("/repos/eiaao/mousetroke/releases/latest"))
+                    self.assertEqual(release["tag_name"], "v1.2.3")
+                    self.assertEqual({a["name"] for a in release["assets"]}, set(assets) | {"SHA256SUMS.txt"})
+                    sums = get("/SHA256SUMS.txt").decode()
+                    for name, source in assets.items():
+                        payload = source.read_bytes()
+                        self.assertEqual(get("/" + name), payload)
+                        self.assertIn(f"{hashlib.sha256(payload).hexdigest()} *{name}\n", sums)
+                    bad = self.fixture(*options, "--bad-checksum")("/SHA256SUMS.txt").decode()
+                    self.assertTrue(all(line.startswith("0" * 64) for line in bad.splitlines()))
+
+    def test_fixture_requires_a_payload(self):
+        with contextlib.redirect_stderr(io.StringIO()), self.assertRaises(SystemExit) as error:
+            self.fixture()
+        self.assertEqual(error.exception.code, 2)
 
 
 if __name__ == "__main__":

@@ -2,7 +2,8 @@
 //!
 //! 独立进程、按需打开、关掉即退（常驻引擎不含 WebView，保持低占用）。
 //! 只读写原生 `config.json`（原子写入），引擎轮询 mtime 热加载——两个进程之间
-//! Windows 更新通过托盘消息交接；关于页请求由平台层传递。配置语义复用 mousetroke-core。
+//! Windows 更新通过托盘消息交接，macOS 通过 PID 退出请求交接；关于页请求由平台层传递。
+//! 配置语义复用 mousetroke-core。
 //!
 //! 以库的形式编进 `mousetroke`（`mousetroke settings [配置路径]` 启动本界面进程）：
 //! 只发布一个主程序，但界面仍是独立进程——常驻的引擎进程里没有 WebView。
@@ -471,7 +472,7 @@ async fn check_update() -> MsgResult<platform::update::Check> {
         .map_err(|e| Msg::new(e.key(), &[]))
 }
 
-/// 只有 macOS 走浏览器下载；Windows 原地安装。
+/// macOS 的手动下载后备入口；安装入口仍在原生侧重新解析发布信息。
 #[tauri::command]
 async fn download_update() -> MsgResult<()> {
     #[cfg(target_os = "macos")]
@@ -485,7 +486,7 @@ async fn download_update() -> MsgResult<()> {
     Err(Msg::new(keys::UPDATE_ERROR_NETWORK, &[]))
 }
 
-/// 只有 Windows 原地安装；macOS 走浏览器下载。
+/// 两个平台均在阻塞工作线程完成验证和替换，再退出设置进程交给助手重启。
 #[tauri::command]
 async fn install_update(paths: State<'_, AppPaths>, app: tauri::AppHandle) -> MsgResult<()> {
     #[cfg(windows)]
@@ -499,7 +500,16 @@ async fn install_update(paths: State<'_, AppPaths>, app: tauri::AppHandle) -> Ms
         app.exit(0);
         Ok(())
     }
-    #[cfg(not(windows))]
+    #[cfg(target_os = "macos")]
+    {
+        let config = paths.config.clone();
+        tauri::async_runtime::spawn_blocking(move || platform::update::install(&config)).await
+            .map_err(|_| Msg::new(keys::UPDATE_ERROR_REPLACE, &[]))?
+            .map_err(|e| Msg::new(e.key(), &[]))?;
+        app.exit(0);
+        Ok(())
+    }
+    #[cfg(not(any(windows, target_os = "macos")))]
     {
         let _ = (paths, app);
         Err(Msg::new(keys::UPDATE_ERROR_REPLACE, &[]))

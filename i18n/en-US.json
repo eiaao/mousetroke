@@ -614,7 +614,7 @@
   "mac.release.cert_password": "Enter a new P12 password (hidden):",
   "mac.release.cert_confirm": "Confirm the password:",
   "mac.release.cert_secrets": "Use the command below to copy MAC_SIGN_P12_BASE64; set MAC_SIGN_P12_PASSWORD to the password you entered. Back up this certificate and reuse it for updates.",
-  "mac.ui.update.download": "Download new version",
+  "mac.ui.update.download": "Download manually",
   "mac.update.available": "New version v{version}",
   "mac.ui.update.latest": "Latest version: {version}",
   "mac.setup.permissions": "Permissions",
@@ -642,5 +642,8 @@
   "mac.ui.guide.p3_body_installed": "Remote desktop, 3D and design apps need the right or middle button for dragging. These were found on this Mac — the checked ones will have gestures turned off:",
   "mac.setup.restart": "Restart Mousetroke",
   "mac.setup.restart_hint": "If permissions are enabled in System Settings but gestures still don’t work, restart Mousetroke to apply Input Monitoring. This settings window will stay open.",
-  "mac.setup.starting": "Permissions granted — starting gestures…"
+  "mac.setup.starting": "Permissions granted — starting gestures…",
+  "mac.update.error.signature": "The update identity, version or signing certificate could not be verified. Update canceled.",
+  "mac.update.error.not_writable": "This copy cannot be updated here. Run it from a writable Applications folder, or download manually.",
+  "update.fixture.payload_required": "At least one of --exe or --dmg is required."
 }

@@ -231,4 +231,4 @@ REPL = base("de", "de", "de_DE", "Sprache", "Deutsch") + [
 
 MAC = {'download': 'Mac-Version herunterladen (Beta)',
  'first_title': 'Erster Start auf dem Mac',
- 'first_text': 'Ziehe Mousetroke in „Programme“ und öffne es. Bei einer Sperre: Systemeinstellungen → Datenschutz & Sicherheit → Dennoch öffnen (Beta nicht notarisiert). Der Einrichtungsassistent führt durch die Berechtigungen und bestätigt, wenn alles bereit ist.'}
+ 'first_text': 'Ziehe Mousetroke in „Programme“ und öffne es. Bei einer Sperre: Systemeinstellungen → Datenschutz & Sicherheit → Dennoch öffnen (Beta nicht notarisiert). Der Einrichtungsassistent führt durch die Berechtigungen und bestätigt, wenn alles bereit ist. Spätere Updates lassen sich über „Jetzt aktualisieren“ unter „Über“ ohne erneutes „Dennoch öffnen“ installieren; manueller Download bleibt möglich.'}

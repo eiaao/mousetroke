@@ -62,7 +62,7 @@ same release's `SHA256SUMS.txt` (which also lists the Windows exe).
    if the shared folder is not writable). Quit an older copy before replacing it.
 2. The beta is self-signed and **not notarized**. If macOS blocks it, use **System Settings →
    Privacy & Security → Open Anyway**; on older macOS, **right-click → Open**. A newly
-   downloaded update may need this step again.
+   browser-downloaded copy may need this step again. In-app updates avoid the repeated prompt.
 3. Follow setup: each permission explains why it is needed and has a **Grant…** button.
    Allow **Accessibility** and **Input Monitoring**; setup shows **Ready**, then a short guide.
    Try holding the right button and drawing `←` in a window. You can skip and grant later
@@ -71,11 +71,15 @@ same release's `SHA256SUMS.txt` (which also lists the Windows exe).
 The engine retries permissions every two seconds. If Input Monitoring still has not taken
 effect after granting, setup offers **Restart Mousetroke**, keeping settings open.
 
-About supports manual update checks, shared release notes and a **Download new version**
-button that opens the DMG in your browser. Preferences controls the daily automatic check;
-a new-version menu item opens About. Install the downloaded DMG in the same Applications folder.
-Quit before replacing the app. Releases reuse one signing certificate to retain permissions;
-changing the certificate or installation path can require granting them again.
+About supports manual update checks, release notes and **Update now**: the app downloads the
+DMG, verifies SHA-256, bundle identity, version and the current certificate's designated
+requirement, then replaces the running bundle and restarts. The old app goes to Trash after
+the engine and settings exit. Failed replacement or restart handoff restores the old bundle.
+In-app downloads have no browser quarantine, so updates avoid a second Gatekeeper prompt.
+The signing identity and installation path stay the same to retain permissions.
+**Download manually** remains available if the folder is not writable or updating fails;
+browser downloads may require Open Anyway again. Preferences controls daily checking,
+and a new-version menu item opens About. See the [Mac update acceptance recipe](crates/mousetroke-mac/README.md#in-app-update-acceptance-on-the-mac-mini).
 
 Uninstall: quit from the menu bar, delete `Mousetroke.app`,
 `~/Library/Application Support/mousetroke` and `~/Library/Logs/mousetroke`, then remove

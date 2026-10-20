@@ -225,7 +225,10 @@ impl Runtime {
                     }
                 }
             }
-            if instance::take_restart_request() {
+            if instance::take_quit_request() {
+                crate::log!("设置页请求更新退出引擎");
+                request_quit(0);
+            } else if instance::take_restart_request() {
                 crate::log!("设置页请求重启引擎");
                 RESTART.store(true, Ordering::Relaxed);
                 request_quit(0);

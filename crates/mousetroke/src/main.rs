@@ -12,6 +12,12 @@ fn main() {
     i18n::init_from_config(&mousetroke_core::schema::default_config_path(), &mousetroke_mac::system_langs());
     let args: Vec<_> = std::env::args().skip(1).collect();
     match args.first().map(String::as_str) {
+        Some("update-relaunch") if args.len() == 5 => {
+            let result = args[1].parse().ok().zip(args[2].parse().ok())
+                .ok_or(mousetroke_mac::update::Error::Restart)
+                .and_then(|(engine, settings)| mousetroke_mac::update::relaunch(engine, settings, std::path::Path::new(&args[3]), std::path::Path::new(&args[4])));
+            std::process::exit(if result.is_ok() { 0 } else { 1 });
+        }
         Some("settings") | Some("--settings") => mousetroke_settings::run(args.get(1).filter(|s| !s.starts_with("--")).map(Into::into)),
         None | Some("run") | Some("--config") if valid_mac_run_args(&args) => match mousetroke_mac::run_with_config(mac_config_arg(&args)) {
             Ok(code) => std::process::exit(code),

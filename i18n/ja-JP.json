@@ -608,7 +608,7 @@
   "mac.release.cert_password": "新しい P12 パスワードを入力（非表示）:",
   "mac.release.cert_confirm": "パスワードを再入力:",
   "mac.release.cert_secrets": "次のコマンドで MAC_SIGN_P12_BASE64 をコピーし、入力したパスワードを MAC_SIGN_P12_PASSWORD に設定してください。同じ証明書をバックアップし、更新時も再利用してください。",
-  "mac.ui.update.download": "新しいバージョンをダウンロード",
+  "mac.ui.update.download": "手動でダウンロード",
   "mac.update.available": "新しいバージョン v{version}",
   "mac.ui.update.latest": "最新バージョン: {version}",
   "mac.setup.permissions": "アクセス権",
@@ -636,5 +636,8 @@
   "mac.ui.guide.p3_body_installed": "リモートデスクトップ、3D、デザイン用のアプリは、右ボタンや中央ボタンでのドラッグを使います。この Mac で見つかった次のアプリでは、チェックしたもののジェスチャーを無効にします：",
   "mac.setup.restart": "Mousetroke を再起動",
   "mac.setup.restart_hint": "システム設定でアクセス権をオンにしてもジェスチャーが使えない場合は、入力監視を有効にするため Mousetroke を再起動してください。この設定ウインドウは開いたままになります。",
-  "mac.setup.starting": "アクセス権を確認しました — ジェスチャーを開始中…"
+  "mac.setup.starting": "アクセス権を確認しました — ジェスチャーを開始中…",
+  "mac.update.error.signature": "更新の識別子、バージョン、または署名証明書を検証できませんでした。更新を中止しました。",
+  "mac.update.error.not_writable": "この場所では更新できません。書き込み可能なアプリケーションフォルダから起動するか、手動でダウンロードしてください。",
+  "update.fixture.payload_required": "--exe または --dmg の少なくとも一方を指定してください。"
 }
