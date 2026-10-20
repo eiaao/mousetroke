@@ -193,12 +193,12 @@ fn install_legacy(lua: &Lua, ms: &Table) -> mlua::Result<()> {
     }
     let _ = lua.globals().set("User32", user32);
     let luanet = lua.create_table()?;
-    let _ = luanet.set(
+    luanet.set(
         "enum",
         lua.create_function(|_l, (_t, name): (Value, String)| Ok(name))?,
     )?;
     let _ = lua.globals().set("luanet", luanet);
-    let _ = lua
+    lua
         .globals()
         .set("import", lua.create_function(|_l, _m: String| Ok(()))?)?;
     Ok(())

@@ -1,7 +1,7 @@
 import { primaryModifier } from "../platform";
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import type { Binding, MouseButton, Scope, Step } from "../types";
-import { EDGE, actionSummary, buttonName, conflicts, decompose, describePattern, edgeName, fileName } from "../gesture";
+import { EDGE, actionSummary, buttonName, decompose, describePattern, edgeName, fileName } from "../gesture";
 import { T, currentLang, displayName, t } from "../i18n";
 import { PatternGlyph } from "./Glyph";
 import { AppIcon, EdgeIcon, MouseIcon } from "./Icons";
@@ -36,6 +36,7 @@ export function BindingList({
   onToggle,
   onScopeChange,
   onDeleteScope,
+  clash,
 }: {
   scope: Scope;
   tab: ListTab;
@@ -51,11 +52,12 @@ export function BindingList({
   onToggle: (i: number) => void;
   onScopeChange: (f: (s: Scope) => Scope, coalesce?: string) => void;
   onDeleteScope: () => void;
+  /** 冲突表（由上层计算一次，编辑面板与列表共用）。 */
+  clash: Map<number, number[]>;
 }) {
   const [query, setQuery] = useState("");
   const search = useRef<HTMLInputElement>(null);
   const listRef = useRef<HTMLUListElement>(null);
-  const clash = useMemo(() => conflicts(scope.bindings), [scope.bindings]);
 
   const classes = useMemo(() => scope.bindings.map(classify), [scope.bindings]);
   const tabCount = (t0: ListTab) => classes.filter((c) => c.tab === t0).length;

@@ -38,7 +38,7 @@ pub(super) fn main() {
         Some("diag") => cmd_diag(),
         Some("-h") | Some("--help") => print_help(),
         Some(other) => {
-            eprintln!("{}", tf(keys::CLI_UNKNOWN_COMMAND, &[("cmd", &other.to_string())]));
+            eprintln!("{}", tf(keys::CLI_UNKNOWN_COMMAND, &[("cmd", other)]));
             print_help();
             std::process::exit(2);
         }
@@ -49,7 +49,7 @@ pub(super) fn main() {
 fn init_lang() {
     let setting = std::fs::read_to_string(default_config_path())
         .ok()
-        .and_then(|text| serde_json::from_str::<serde_json::Value>(&text.trim_start_matches('\u{feff}')).ok())
+        .and_then(|text| serde_json::from_str::<serde_json::Value>(text.trim_start_matches('\u{feff}')).ok())
         .and_then(|v| {
             v.get("settings").and_then(|s| s.get("language")).and_then(|l| l.as_str()).map(str::to_string)
         })
@@ -59,7 +59,7 @@ fn init_lang() {
 }
 
 fn print_help() {
-    println!("{}", tf(keys::CLI_HELP, &[("version", &env!("CARGO_PKG_VERSION").to_string())]));
+    println!("{}", tf(keys::CLI_HELP, &[("version", env!("CARGO_PKG_VERSION"))]));
 }
 
 fn cmd_import(args: &[String]) {
@@ -118,7 +118,7 @@ fn cmd_lua(args: &[String]) {
         std::process::exit(2);
     };
     let code = std::fs::read_to_string(path).unwrap_or_else(|e| {
-        eprintln!("{}", tf(keys::ERROR_READ_FILE, &[("path", &path), ("err", &e.to_string())]));
+        eprintln!("{}", tf(keys::ERROR_READ_FILE, &[("path", path), ("err", &e.to_string())]));
         std::process::exit(1);
     });
     let ctx = mousetroke_win::lua::LuaCtx {
@@ -152,7 +152,7 @@ fn cmd_autostart(args: &[String]) {
             "{}",
             tf(keys::CLI_AUTOSTART_STATUS, &[(
                 "state",
-                &t(if mousetroke_win::autostart::is_enabled() { keys::CLI_STATE_ON } else { keys::CLI_STATE_OFF }).to_string()
+                t(if mousetroke_win::autostart::is_enabled() { keys::CLI_STATE_ON } else { keys::CLI_STATE_OFF })
             )])
         ),
     }
@@ -201,7 +201,7 @@ fn cmd_run(args: &[String]) {
 fn cmd_diag() {
     use mousetroke_win::targeting;
     let yn = |b: bool| t(if b { keys::CLI_DIAG_YES } else { keys::CLI_DIAG_NO });
-    println!("{}", tf(keys::CLI_DIAG_ENGINE_RUNNING, &[("state", &yn(mousetroke_win::engine_running()).to_string())]));
+    println!("{}", tf(keys::CLI_DIAG_ENGINE_RUNNING, &[("state", yn(mousetroke_win::engine_running()))]));
     // 这些工具也会截取/重发鼠标事件；Mousetroke 能识别它们重发的回声，列出来便于排查
     let tools = ["uTools.exe", "Quicker.exe", "AutoHotkey.exe", "AutoHotkey64.exe", "XMouseButtonControl.exe", "StrokesPlus.net.exe", "PowerToys.MouseWithoutBorders.exe"];
     let running: Vec<&str> = tools.into_iter().filter(|tool| targeting::process_running(tool)).collect();
@@ -221,11 +221,11 @@ fn cmd_diag() {
             ("y", &y.to_string()),
             ("class", &target.class),
             ("exe", target.exe.as_deref().unwrap_or("-")),
-            ("desktop", &yn(target.is_desktop).to_string()),
-            ("shell", &yn(target.is_shell_ui()).to_string()),
+            ("desktop", yn(target.is_desktop)),
+            ("shell", yn(target.is_shell_ui())),
         ])
     );
-    println!("{}", tf(keys::CLI_DIAG_FULLSCREEN, &[("state", &yn(targeting::is_foreground_fullscreen()).to_string())]));
+    println!("{}", tf(keys::CLI_DIAG_FULLSCREEN, &[("state", yn(targeting::is_foreground_fullscreen()))]));
     println!("{}", t(keys::CLI_DIAG_FULLSCREEN_WINDOWS));
     for (hwnd, title) in targeting::visible_windows() {
         if targeting::is_fullscreen_window(hwnd) {

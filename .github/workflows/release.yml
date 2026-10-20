@@ -27,7 +27,8 @@ jobs:
       - name: Check tag matches Cargo version
         shell: pwsh
         run: |
-          $v = (Select-String -Path Cargo.toml -Pattern '^version = "(.+)"').Matches[0].Groups[1].Value
+          $v = python scripts/changelog.py version
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
           if ("v$v" -ne "${{ github.ref_name }}") { throw "Tag ${{ github.ref_name }} does not match Cargo version $v" }
       - name: Prepare release notes
         shell: pwsh
