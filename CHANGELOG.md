@@ -2,21 +2,23 @@
 
 Each version lists its highlights in English, then in Chinese. The release page, the in-app update notes and the website changelog are all generated from this file.
 
-## Unreleased
+## 0.2.1 — 2026-10-20
 
 ### English
 
-- Mac: Update now downloads and verifies the DMG and signing identity, replaces the installed app and restarts without another Gatekeeper prompt. Permissions stay granted; failures roll back, and manual download remains available.
-- Mac: first launch opens a setup guide with separate Accessibility and Input Monitoring controls, live permission status and a ready confirmation, instead of two immediate system prompts.
-- Mac: opening from a DMG or App Translocation offers to install in Applications and relaunch. An older copy is moved to Trash; a running copy must be quit first.
-- Mac: the DMG now has a Retina background, a clear drag-to-Applications layout and a short first-open reminder.
+- Mac: Update now downloads and verifies the new version, replaces the installed app and restarts it. No second "Open Anyway" is needed after this update, and permissions stay granted. If anything fails, the old version is kept; manual download remains available.
+- Mac: first launch opens a short setup guide instead of two system prompts. Usually only Accessibility is needed; once it is on, gestures start right away without restarting.
+- Mac: opening Mousetroke from the DMG offers to move it to Applications and reopen it. If an older copy is running, it can be quit and replaced; the old copy goes to the Trash.
+- Mac: the DMG window shows where to drag the app and how to get past the first-open warning.
+- Mac: if permissions are turned off while Mousetroke is running, it now pauses instead of slowing down the mouse.
 
 ### 中文
 
-- Mac：支持应用内一键下载、校验 DMG 与签名身份、原地替换并重启，更新无需再次“仍要打开”，保留已有权限；失败可回滚，并保留手动下载入口。
-- Mac：首次启动打开设置引导，分别说明并申请辅助功能和输入监控权限，实时显示授权状态和就绪提示，不再连续弹出两个系统授权框。
-- Mac：从 DMG 或 App Translocation 打开时，可安装到“应用程序”并重新启动；旧副本移到废纸篓，运行中的副本需先退出。
-- Mac：DMG 加入 Retina 背景、拖入“应用程序”的固定布局和首次打开提示。
+- Mac：支持应用内一键更新。下载并校验新版本后替换已安装的应用并重新打开，更新后不用再点"仍要打开"，已有权限保持不变。出错时保留旧版本，也可以改为手动下载。
+- Mac：首次启动打开简短的设置引导，不再连续弹出两个系统授权框。通常只需打开辅助功能，打开后手势立即可用，无需重启。
+- Mac：从 DMG 直接打开时，可一键移到"应用程序"并重新打开；旧版本正在运行时可退出并替换，旧副本移到废纸篓。
+- Mac：DMG 窗口标明拖到哪里，并提示首次打开被拦截时怎么办。
+- Mac：运行中关闭了权限时，Mousetroke 会自动暂停，不再拖慢鼠标。
 
 ## 0.2.0 — 2026-10-20
 
