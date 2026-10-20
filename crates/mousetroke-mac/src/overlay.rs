@@ -26,6 +26,12 @@ const MAX_SEGMENTS: usize = 8192;
 thread_local! {
     static STARTS: Cell<usize> = const { Cell::new(0) };
     static LINES: Cell<usize> = const { Cell::new(0) };
+    /// 正在绘制或淡出；主循环据此决定是否保持快节奏。
+    static ACTIVE: Cell<bool> = const { Cell::new(false) };
+}
+
+pub fn busy() -> bool {
+    ACTIVE.with(Cell::get)
 }
 
 pub fn counters() -> (usize, usize) {
@@ -238,6 +244,15 @@ impl Overlay {
         for screen in &mut self.windows {
             screen.clear();
         }
+        self.note_activity();
+    }
+
+    fn note_activity(&self) {
+        let active = self.previous.is_some()
+            || self.dirty
+            || self.fade_pending
+            || self.fade_deadline.is_some();
+        ACTIVE.with(|slot| slot.set(active));
     }
 }
 
@@ -268,6 +283,7 @@ impl Canvas for Overlay {
         // 即使上一轮尚在淡出也立即移除动画和旧 path，不依赖旧动画的 completion。
         self.reset();
         self.previous = Some((x as f64, y as f64));
+        self.note_activity();
         for screen in &self.windows {
             let (x, y) = screen.frame.layer_point(x as f64, y as f64);
             // 安全：path 仅由主线程持有；null 表示不附加变换。
@@ -317,6 +333,7 @@ impl Canvas for Overlay {
     fn fade_out(&mut self) {
         self.previous = None;
         self.fade_pending = true;
+        self.note_activity();
     }
 
     fn tick_fade(&mut self) {
@@ -356,6 +373,7 @@ impl Canvas for Overlay {
         {
             self.reset();
         }
+        self.note_activity();
     }
 
     fn draw_label(&mut self, text: &str, x: i32, y: i32, value: &str) {

@@ -148,6 +148,7 @@ unsafe extern "C-unwind" fn callback(
             reenable(kind);
             return event.as_ptr();
         }
+        crate::app::wake();
         let event_ref = unsafe { event.as_ref() };
         if is_tagged(CGEvent::integer_value_field(
             Some(event_ref),
@@ -242,6 +243,10 @@ const OPTION: u64 = 1 << 19;
 const COMMAND: u64 = 1 << 20;
 
 /// 修饰键必须恰好一致（多按 Shift 不算），与 Windows RegisterHotKey 的语义相同。
+pub fn settle_pending() -> bool {
+    EDGE_SETTLE.with(|slot| slot.get().is_some())
+}
+
 pub fn pause_chord(flags: u64, required: u64) -> bool {
     flags & (SHIFT | CONTROL | OPTION | COMMAND) == required
 }

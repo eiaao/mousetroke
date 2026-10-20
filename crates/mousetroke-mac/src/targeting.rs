@@ -131,11 +131,24 @@ pub fn pick_app_at(x: f64, y: f64, excluded_pid: u32) -> Option<(String, String)
     }
     None
 }
+/// 从空闲恢复时调用：快照可能已过期，下一拍立即重新查询。
+pub fn invalidate() {
+    SNAPSHOT.with(|slot| {
+        if let Ok(mut snapshot) = slot.try_borrow_mut() {
+            snapshot.next_query = None;
+        }
+    });
+}
+
 pub fn refresh(screens: &[Rect]) {
     SNAPSHOT.with(|slot| {
         let mut snapshot = slot.borrow_mut();
         if snapshot.screens != screens {
             snapshot.screens = screens.to_vec();
+        }
+        // 空闲时不查询窗口列表；下一次输入唤醒后立即刷新（见 invalidate）。
+        if !crate::app::awake() && snapshot.pending.is_none() {
+            return;
         }
         let received = snapshot.pending.as_ref().map(|rx| rx.try_recv());
         let now = Instant::now();

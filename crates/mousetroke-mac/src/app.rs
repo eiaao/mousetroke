@@ -22,7 +22,8 @@ use objc2_app_kit::{
     NSApplicationDidChangeScreenParametersNotification, NSEvent, NSEventModifierFlags, NSEventType,
 };
 use objc2_foundation::{
-    NSNotificationCenter, NSObjectProtocol, NSPoint, NSRunLoop, NSRunLoopCommonModes, NSTimer,
+    NSDate, NSNotificationCenter, NSObjectProtocol, NSPoint, NSRunLoop, NSRunLoopCommonModes,
+    NSTimer,
 };
 
 use crate::{
@@ -36,6 +37,62 @@ thread_local! {
     static ENGINE: RefCell<Option<Engine>> = const { RefCell::new(None) };
     static RUNTIME: RefCell<Option<Runtime>> = const { RefCell::new(None) };
     static QUIT: Cell<Option<i32>> = const { Cell::new(None) };
+    static TIMER: RefCell<Option<Retained<NSTimer>>> = const { RefCell::new(None) };
+    /// 最近一次输入或后台结果后保持 10ms 节奏的截止时间。
+    static AWAKE_UNTIL: Cell<Option<Instant>> = const { Cell::new(None) };
+    static SLOW: Cell<bool> = const { Cell::new(false) };
+}
+
+/// 有活动时 10ms 一拍；空闲后每 250ms 一拍，只做权限、配置、提示等低频工作。
+const FAST: f64 = 0.01;
+const SLOW_INTERVAL: Duration = Duration::from_millis(250);
+const LINGER: Duration = Duration::from_secs(1);
+
+/// 主线程：输入事件或后台结果到达时恢复快节奏，并至少保持 LINGER。
+pub(crate) fn wake() {
+    AWAKE_UNTIL.with(|until| until.set(Some(Instant::now() + LINGER)));
+    if SLOW.with(|slow| slow.replace(false)) {
+        crate::targeting::invalidate();
+        TIMER.with(|timer| {
+            if let Some(timer) = timer.borrow().as_ref() {
+                timer.setFireDate(&NSDate::now());
+            }
+        });
+    }
+}
+
+/// 任意线程：把 wake 交给主队列执行，不直接触碰主线程状态。
+pub(crate) fn wake_from_worker() {
+    extern "C" fn on_main(_: *mut std::ffi::c_void) {
+        wake();
+    }
+    extern "C" {
+        static _dispatch_main_q: u8;
+        fn dispatch_async_f(
+            queue: *const u8,
+            context: *mut std::ffi::c_void,
+            work: extern "C" fn(*mut std::ffi::c_void),
+        );
+    }
+    // 安全：主队列是进程生命周期内的全局对象；回调不使用 context。
+    unsafe { dispatch_async_f(&raw const _dispatch_main_q, std::ptr::null_mut(), on_main) };
+}
+
+pub(crate) fn awake() -> bool {
+    !SLOW.with(Cell::get)
+}
+
+/// 本拍结束后若无待办工作，把下一拍推迟到 250ms 后。
+fn settle_rhythm(now: Instant, busy: bool) {
+    if busy || AWAKE_UNTIL.with(Cell::get).is_some_and(|until| now < until) {
+        return;
+    }
+    SLOW.with(|slow| slow.set(true));
+    TIMER.with(|timer| {
+        if let Some(timer) = timer.borrow().as_ref() {
+            timer.setFireDate(&NSDate::dateWithTimeIntervalSinceNow(SLOW_INTERVAL.as_secs_f64()));
+        }
+    });
 }
 
 static DISPLAY_CHANGED: AtomicBool = AtomicBool::new(false);
@@ -180,7 +237,14 @@ impl Runtime {
         }
         if QUIT.with(Cell::get).is_some() {
             stop(mtm);
+            return;
         }
+        let busy = self.selftest.is_some()
+            || crate::overlay::busy()
+            || input::busy()
+            || crate::actions::busy()
+            || events::settle_pending();
+        settle_rhythm(now, busy);
     }
 }
 
@@ -347,11 +411,14 @@ fn run_main(mtm: MainThreadMarker, config_path: Option<std::path::PathBuf>) -> R
     });
     // 安全：只在主 run loop common modes 调用 block；timer 在退出前失效，捕获的 mtm 也仅在主线程使用。
     let timer: Retained<NSTimer> =
-        unsafe { NSTimer::timerWithTimeInterval_repeats_block(0.01, true, &block) };
+        unsafe { NSTimer::timerWithTimeInterval_repeats_block(FAST, true, &block) };
     unsafe { NSRunLoop::mainRunLoop().addTimer_forMode(&timer, NSRunLoopCommonModes) };
+    TIMER.with(|slot| *slot.borrow_mut() = Some(timer.clone()));
+    wake();
     crate::log!("Mousetroke macOS M3b 启动");
     app.run();
     timer.invalidate();
+    TIMER.with(|slot| slot.borrow_mut().take());
     crate::actions::shutdown();
     crate::lua::shutdown();
     events::remove();
