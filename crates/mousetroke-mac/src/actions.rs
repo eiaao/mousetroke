@@ -431,15 +431,12 @@ fn dispatch(request: Request) {
         Action::LaunchApp {
             exe,
             args,
-            elevate,
             if_running,
             ..
         } => {
-            if *elevate {
-                crate::log!("macOS 不支持 elevate，按普通权限启动");
-            }
-            if *if_running == IfRunning::SendKeys {
-                crate::log!("macOS LaunchApp SendKeys 按 Activate 处理");
+            if !mousetroke_core::caps::action_supported(action, mousetroke_core::caps::Platform::Macos) {
+                // 规则见 core::caps：提权、按窗口查找、SendKeys 均按普通激活处理。
+                crate::log!("启动应用含 macOS 不支持的选项，按普通启动/激活处理");
             }
             launch(
                 &vars::expand(exe, vars),

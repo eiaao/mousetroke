@@ -1,0 +1,16 @@
+[
+  { "action": { "type": "launch_app", "exe": "com.apple.Safari", "elevate": true, "if_running": "send_keys", "win_class": "test", "win_title": null, "regex": false },
+    "repaired": { "type": "launch_app", "exe": "com.apple.Safari", "elevate": false, "if_running": "activate", "win_class": null, "win_title": null, "regex": false } },
+  { "action": { "type": "launch_app", "exe": "com.apple.Safari", "elevate": false, "if_running": "run_again", "win_class": null, "win_title": null, "regex": false } },
+  { "action": { "type": "window_op", "op": "toggle_topmost", "allow_child": false },
+    "repaired": { "type": "window_op", "op": "minimize", "allow_child": false } },
+  { "action": { "type": "window_op", "op": "close", "allow_child": true },
+    "repaired": { "type": "window_op", "op": "close", "allow_child": false } },
+  { "action": { "type": "window_op", "op": "toggle_maximize", "allow_child": false } },
+  { "action": { "type": "key_sequence", "keys": "{MOUSE_LEFT}^c{WHEEL_DOWN}", "mode": "mapping", "secured": false, "activate_target": false },
+    "repaired": { "type": "key_sequence", "keys": "^c", "mode": "down_up", "secured": false, "activate_target": false } },
+  { "action": { "type": "key_sequence", "keys": "#{TAB}", "mode": "down_up", "secured": false, "activate_target": true } },
+  { "action": { "type": "menu", "columns": 2, "items": [] },
+    "repaired": { "type": "menu", "columns": 1, "items": [] } },
+  { "action": { "type": "open_url", "url_template": "https://example.com", "browser": null } }
+]
