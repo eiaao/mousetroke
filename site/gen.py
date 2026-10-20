@@ -71,6 +71,9 @@ def sync_faq(page):
                   lambda m: m[1] + body + m[2], page, count=1, flags=re.S)
 
 
+# 文件大小的小数点与单位（未列出的语言写 "8.1 MB"）
+SIZE_LOCALE = {"de": (",", "MB"), "fr": (",", "Mo"), "it": (",", "MB"), "pt": (",", "MB"), "ru": (",", "МБ")}
+
 # 下载组合按钮右侧 ▾ 的无障碍名称
 OTHER_PLATFORMS = {"de": "Andere Plattformen", "es": "Otras plataformas", "fr": "Autres plateformes",
                    "it": "Altre piattaforme", "ja": "他のプラットフォーム", "ko": "다른 플랫폼",
@@ -92,6 +95,10 @@ def gen(tag, repls):
             missed.append(old[:80])
             continue
         out = out.replace(old, new)
+    # Mac 下载按钮的大小与 Windows 一样按语言写小数点和单位
+    if tag in SIZE_LOCALE:
+        sep, unit = SIZE_LOCALE[tag]
+        out = re.sub(r'<small>(\d+)\.(\d) MB', lambda m: f'<small>{m[1]}{sep}{m[2]} {unit}', out)
     out = sync_faq(out)
     d = ROOT / "site" / tag
     d.mkdir(exist_ok=True)
