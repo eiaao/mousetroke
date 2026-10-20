@@ -1,6 +1,11 @@
 //! macOS M3b 平台层：AppKit、tap、覆盖层与引擎在主线程，AX/进程/Lua 在工作线程。
 #![deny(unsafe_op_in_unsafe_fn)]
 
+/// 供导出的 `log!` 宏引用，调用方无需直接依赖引擎 crate。
+#[cfg(target_os = "macos")]
+#[doc(hidden)]
+pub use mousetroke_engine as __engine;
+
 #[cfg(target_os = "macos")]
 mod actions;
 #[cfg(target_os = "macos")]

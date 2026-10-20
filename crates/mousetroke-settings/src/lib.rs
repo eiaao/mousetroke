@@ -480,11 +480,7 @@ async fn install_update(paths: State<'_, AppPaths>, app: tauri::AppHandle) -> Ms
 pub fn run(config: Option<PathBuf>) {
     // 启动时按配置确定语言：窗口标题等少量原生文字依赖它
     let config = config.unwrap_or_else(platform::default_config_path);
-    let langs = platform::system_langs();
-    let lang = Config::load(&config)
-        .map(|c| mousetroke_core::i18n::resolve(&c.settings.language, &langs))
-        .unwrap_or_else(|_| mousetroke_core::i18n::resolve("auto", &langs));
-    mousetroke_core::i18n::set_lang(lang);
+    mousetroke_core::i18n::init_from_config(&config, &platform::system_langs());
     ABOUT.store(std::env::args().any(|s| s == "--about"), Ordering::Release);
     tauri::Builder::default()
         // 必须最先注册：已有实例时把参数转交过去并立即退出，不再创建窗口

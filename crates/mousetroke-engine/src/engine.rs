@@ -225,9 +225,6 @@ impl Engine {
     pub fn new(cfg: Config, cfg_path: Option<PathBuf>, host: Box<dyn Host>) -> Option<Self> {
         let overlay = host.new_canvas(&cfg.settings.trail.color_normal, cfg.settings.trail.width)?;
         let shape_samples = std::env::var_os("MOUSETROKE_SHAPE_SAMPLES").as_deref() == Some(std::ffi::OsStr::new("1"));
-        if shape_samples {
-            host.init_shape_samples();
-        }
         Some(Self::with_parts(cfg, cfg_path, overlay, host, shape_samples))
     }
 

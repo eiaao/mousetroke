@@ -158,9 +158,8 @@ impl Host for SystemHost {
             width,
         )?))
     }
-    fn init_shape_samples(&self) {}
     fn shape_sample(&self, encoded: Vec<i32>) {
-        crate::log::shape_sample(encoded);
+        mousetroke_engine::log::shape_sample(encoded);
     }
     fn cursor_pos(&self) -> (i32, i32) {
         cursor_pos()

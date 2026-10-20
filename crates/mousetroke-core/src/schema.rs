@@ -517,6 +517,17 @@ impl Config {
         Self::load(path).map(Some)
     }
 
+    /// 读取配置；首次运行（文件不存在）写入内置默认值，设置界面随后读到的也是这一份。
+    /// 返回值第二项是首次写盘失败的原因（不影响本次运行，调用方记录即可）。
+    pub fn load_or_init(path: &std::path::Path) -> Result<(Self, Option<String>), String> {
+        if let Some(cfg) = Self::load_existing(path)? {
+            return Ok((cfg, None));
+        }
+        let cfg = Self::builtin();
+        let saved = cfg.save(path).err();
+        Ok((cfg, saved))
+    }
+
     /// 读取配置文件。
     pub fn load(path: &std::path::Path) -> Result<Self, String> {
         let text = std::fs::read_to_string(path).map_err(|e| format!("读取 {} 失败: {e}", path.display()))?; // i18n:allow 配置损坏时的诊断信息（serde 原文混排，不进词条）

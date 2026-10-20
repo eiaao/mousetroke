@@ -9,11 +9,7 @@ fn main() { windows::main(); }
 #[cfg(target_os = "macos")]
 fn main() {
     use mousetroke_core::i18n::{self, keys, t, tf};
-    let setting = std::fs::read_to_string(mousetroke_core::schema::default_config_path()).ok()
-        .and_then(|text| serde_json::from_str::<serde_json::Value>(text.trim_start_matches('\u{feff}')).ok())
-        .and_then(|v| v.get("settings")?.get("language")?.as_str().map(str::to_string))
-        .unwrap_or_default();
-    i18n::set_lang(i18n::resolve(&setting, &mousetroke_mac::system_langs()));
+    i18n::init_from_config(&mousetroke_core::schema::default_config_path(), &mousetroke_mac::system_langs());
     let args: Vec<_> = std::env::args().skip(1).collect();
     match args.first().map(String::as_str) {
         Some("settings") | Some("--settings") => mousetroke_settings::run(args.get(1).filter(|s| !s.starts_with("--")).map(Into::into)),

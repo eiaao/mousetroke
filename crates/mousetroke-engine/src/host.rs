@@ -58,8 +58,6 @@ pub trait Host {
     fn label_anchor(&self, x: i32, y: i32) -> (i32, i32);
     /// 创建绘制面；仅启动与显示器布局变化时调用，不在输入回调内重建。
     fn new_canvas(&self, color: &str, width: f64) -> Option<Box<dyn Canvas>>;
-    /// 启动校准样本接收器；仅初始化且开启采样时调用，可在此创建后台线程。
-    fn init_shape_samples(&self);
     /// 投递固定大小校准样本；输入回调调用，队列满时丢弃，不得等待或写盘。
     fn shape_sample(&self, encoded: Vec<i32>);
     /// 查询当前光标；仅提示定时器调用，须快速返回。

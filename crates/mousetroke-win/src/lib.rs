@@ -12,6 +12,10 @@
 
 #![cfg(windows)]
 
+/// 供导出的 `log!` 宏引用，调用方无需直接依赖引擎 crate。
+#[doc(hidden)]
+pub use mousetroke_engine as __engine;
+
 pub mod autostart;
 pub mod brightness;
 pub mod engine;
