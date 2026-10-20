@@ -3,6 +3,7 @@
 use crate::overlay::geometry::Rect;
 #[cfg(not(target_os = "macos"))]
 use crate::overlay_geometry::Rect;
+#[cfg(test)]
 use mousetroke_core::vars::{self, Vars};
 
 #[derive(Clone, Debug)]
