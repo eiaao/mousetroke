@@ -10,8 +10,9 @@ es fr de ja pt ru it ko/index.html   由 gen.py 从英文页生成，不要手�
 404.html            中英双语错误页，兼容主站与镜像的路径
 gen.py langs/*.py   生成器与各语言替换表（原文行 → 译文行）
 check.py            校验 10 个页面：结构与英文页一致、JSON 合法、canonical/hreflang/语言菜单自指
-assets/site.css     两页共用的样式
-assets/site.js      两页共用的交互（文案都在 HTML 里，脚本只管行为）
+_worker.js          Cloudflare 入口：访问首页 / 时按 mt_lang cookie（语言菜单点选写入）或浏览器语言 302 到对应语言版本；GitHub Pages 部署时删除
+assets/site.css     10 种语言共用的样式
+assets/site.js      共用交互与系统检测（文案都在 HTML 里，脚本只管行为）
 assets/icon.svg     站点图标
 og.png / og-en.png  社交分享图（tools/uitest/og.mjs 生成）
 llms.txt            给 AI 搜索 / Agent 读的纯文本摘要
@@ -26,8 +27,7 @@ robots.txt sitemap.xml
   （权限 Account → Cloudflare Pages → Edit）和 `CLOUDFLARE_ACCOUNT_ID`。
 - **GitHub Pages 是镜像**：<https://eiaao.github.io/mousetroke/>。`.github/workflows/pages.yml`
   继续在 `main` 的 `site/` 或该工作流有改动时自动发布；镜像的 canonical 等绝对地址统一指向 Cloudflare 主站。
-- 下载按钮指向 `https://github.com/eiaao/mousetroke/releases/latest/download/mousetroke.exe`，
-  永远是最新版本，发版时不用改页面。版本号、大小写在各页的下载按钮、JSON-LD 和 `llms.txt` 里，大版本时顺手更新。
+- Windows 下载指向 `releases/latest/download/mousetroke.exe`，Mac 下载指向 `releases/latest/download/Mousetroke.dmg`（均在 GitHub 的 `eiaao/mousetroke` 仓库），永远是最新版本。版本号、大小写在下载按钮、资源说明、JSON-LD 和 `llms.txt` 里；发布者在发版时统一核对。
 - 换主站域名时，在仓库根目录用 Bash（如 Git Bash）执行一次递归替换，覆盖 `site/` 下的
   canonical / hreflang / og / JSON-LD / sitemap / robots / llms，以及 `site/gen.py`、
   `site/langs/*.py` 替换表的两侧和 `site/check.py`；同时同步根目录的产品主页链接：
@@ -46,14 +46,28 @@ robots.txt sitemap.xml
 ## 改内容时注意
 
 - 中文页手写；英文页是其余 8 种语言的模板。改英文页后跑 `python gen.py`，有 `MISS` 说明对应语言的替换表要补译文，再跑 `python check.py`。`gen.py` 也会生成双语更新日志；只改根目录 `CHANGELOG.md` 时可单独跑 `python site/gen_changelog.py`。发布正文与网站共用 `scripts/changelog.py`，`check.py` 会检查日志页是否过期。
-- 改中文页时同步英文页；FAQ 同时出现在页面正文和 `<script type="application/ld+json">` 里，两处都要改（替换表里也是两处）。
+- 改中文页时同步英文页。FAQ 正文是唯一文案来源：`gen.py` 会从中文、英文和生成页的可见 FAQ 同步 JSON-LD，合并两个平台的回答；替换表只翻译正文。`check.py` 会核对全部 8 个 FAQ，包含免费说明和合并后的卸载说明。
 - 语言菜单（页头 `details.langmenu`）和页脚语言列表在 10 个页面里都有，新增语言时 hreflang 块、`sitemap.xml`、两个列表都要加。
 - 手势表每行的 `data-p` 是手势折线编码（与引擎配置相同），`data-act` 决定首屏演示里模拟浏览器的反应；带 `data-mod`/`data-btn` 的行只展示、不参与演示识别。
 - 产品数据（内存、大小、默认手势、边角规则）要和真实程序一致，改了程序行为记得回来改这里。
 
+## 平台文案与下载
+
+共同事实使用简短的双平台文案；SEO、SoftwareApplication 和 FAQ JSON-LD 都覆盖 Windows 和 Mac，不按访客切换。不同事实使用 `os-win` / `os-mac`，行内写法：
+
+```html
+<span class="os-win">Windows 文案</span><span class="os-mac" hidden>Mac 文案</span>
+```
+
+也可直接给段落、列表项、下载链接或整块插图加类。Windows 分支默认不带 `hidden`，Mac 分支必须带 `hidden`；CSS 的全局 `[hidden] { display: none !important; }` 保证 flex/grid 不会使隐藏分支重新显示。`site.js` 沿用 `isMac` 检测（排除报告 MacIntel 的 iPad），统一切换这些元素。脚本不可用时显示 Windows 文案，爬虫仍可读取两平台的 HTML 与 JSON-LD。
+
+下载组合按钮的主按钮显示当前系统，▾ 菜单反向显示其他系统。菜单内两种链接都不预设 `hidden`，无脚本时仍可下载两个版本。修改分支后同步中文、英文和 `langs/*.py`，运行生成器及检查器；检查器还会核对分支数量和无脚本默认状态。
+
+Windows 资源示意图保留实测 WebView2 数据，只在 Windows 显示；Mac 显示活动监视器物理内存约 13 MB 的说明。首屏浏览器、任务栏、边角动画与 `demo-text` 是示意演示，保留 Windows 风格；旁边的默认边角列表和产品说明按平台显示。
+
 ## Mac 测试版发布前
 
-下载区同时提供 Windows exe 与 `releases/latest/download/Mousetroke.dmg`。Mac 最低 11，通用包包含 Apple silicon / Intel；首次打开和卸载说明在正文与 FAQ JSON-LD 同步，新增八种译文在 `langs/*.py` 的 `MAC` 中维护。
+下载区同时提供 Windows exe 与 `releases/latest/download/Mousetroke.dmg`。Mac 最低 11，通用包包含 Apple silicon / Intel；首次打开的共用译文在 `langs/*.py` 的 `MAC` 中维护，其他平台文案在 `REPL` 中维护。卸载已合并为一个 FAQ，JSON-LD 自动包含两平台的完整回答。
 
 `@@MAC_DMG_SIZE@@` 是尚未测量的 DMG 大小，不能估计。审查期间运行 `python site/check.py --allow-mac-size-placeholder`；发布者测量最终签名 DMG 后，在中文页、英文模板和 `gen.py`（如有大小引用）填入实际大小，再运行 `python site/gen.py`、`python site/check.py`。默认检查必须通过后才能部署站点，部署工作流不允许占位符。
 

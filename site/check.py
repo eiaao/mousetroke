@@ -1,7 +1,9 @@
 #!/usr/bin/env python3
 """校验 10 个语言页面：结构与英文模板一致、JSON 合法、元数据自指、无英文残留。"""
-import html, json, re, sys, pathlib
+import json, re, sys, pathlib
 from gen_changelog import render as render_changelog
+from gen import faq_entities
+from html.parser import HTMLParser
 ROOT = pathlib.Path(__file__).resolve().parent
 PAGES = {"zh-CN": "index.html", "en": "en/index.html", "es": "es/index.html", "fr": "fr/index.html",
          "de": "de/index.html", "ja": "ja/index.html", "pt-BR": "pt/index.html", "ru": "ru/index.html",
@@ -16,8 +18,45 @@ args = parser.parse_args()
 errors = []
 tpl = (ROOT / "en/index.html").read_text(encoding="utf-8")
 ref = {m: tpl.count(m) for m in MARKS}
+
+
+class PlatformDefaults(HTMLParser):
+    """无 JS 时 Windows 可见、Mac 隐藏；其他平台下载菜单列出全部平台。"""
+    def __init__(self):
+        super().__init__()
+        self.menu_depth = 0
+        self.problems = []
+        self.counts = {"os-win": 0, "os-mac": 0}
+
+    def handle_starttag(self, tag, attrs):
+        attrs = dict(attrs)
+        classes = attrs.get("class", "").split()
+        if tag == "div" and "split-menu" in classes:
+            self.menu_depth += 1
+        for platform in self.counts:
+            if platform in classes:
+                self.counts[platform] += 1
+                if platform == "os-mac" and not self.menu_depth and "hidden" not in attrs:
+                    self.problems.append("Mac variant missing hidden")
+                if platform == "os-win" and "hidden" in attrs:
+                    self.problems.append("Windows variant hidden by default")
+
+    def handle_endtag(self, tag):
+        if tag == "div" and self.menu_depth:
+            self.menu_depth -= 1
+
+
+platform_ref = PlatformDefaults()
+platform_ref.feed(tpl)
 for lang, rel in PAGES.items():
     s = (ROOT / rel).read_text(encoding="utf-8")
+    platforms = PlatformDefaults()
+    platforms.feed(s)
+    errors.extend(f"{lang}: {problem}" for problem in platforms.problems)
+    if platforms.counts != platform_ref.counts:
+        errors.append(f"{lang}: platform variant counts differ from template")
+    if 'dl-win' in s or 'dl-mac' in s:
+        errors.append(f"{lang}: obsolete download-only platform classes")
     for m in MARKS:
         if lang != "zh-CN" and s.count(m) != ref[m]:
             errors.append(f"{lang}: {m!r} {s.count(m)} != {ref[m]}")
@@ -69,15 +108,14 @@ for lang, rel in PAGES.items():
     target = "changelog.html" if lang == "zh-CN" else "../en/changelog.html"
     if len(re.findall(rf'<a[^>]*href="{re.escape(target)}"', s)) != 2:
         errors.append(f"{lang}: expected download and footer changelog links")
-    faq = re.search(r'<summary>[^<]*</summary><div class="ans"><p>([^<]*GitHub[^<]*)</p>', s)
-    # 免费说明不能在 JSON-LD 中保留旧的隐私承诺。
-    if faq and ld is not None and json.dumps(faq.group(1), ensure_ascii=False) not in json.dumps(ld, ensure_ascii=False):
-        errors.append(f"{lang}: visible privacy FAQ differs from JSON-LD")
-    mac_faq = re.search(r'<details><summary>([^<]+)</summary><div class="ans"><p>([^<]*~/Library/Logs/mousetroke[^<]*)</p>', s)
-    if not mac_faq or ld is None:
-        errors.append(f"{lang}: missing Mac uninstall FAQ")
-    elif any(json.dumps(html.unescape(part), ensure_ascii=False) not in json.dumps(ld, ensure_ascii=False) for part in mac_faq.groups()):
-        errors.append(f"{lang}: visible Mac uninstall FAQ differs from JSON-LD")
+    # FAQ 的 JSON-LD 包含两个平台；每个可见分支都必须原样覆盖。
+    visible_faq = faq_entities(s)
+    schema_faq = next((item.get('mainEntity') for item in (ld or {}).get('@graph', [])
+                       if item.get('@type') == 'FAQPage'), None)
+    if len(visible_faq) != 8 or schema_faq != visible_faq:
+        errors.append(f"{lang}: visible FAQ differs from JSON-LD")
+    if not any('~/Library/Logs/mousetroke' in item['acceptedAnswer']['text'] for item in visible_faq):
+        errors.append(f"{lang}: missing Mac uninstall/configuration paths")
 try:
     for path, content in render_changelog().items():
         if not path.exists() or path.read_text(encoding="utf-8") != content:

@@ -25,3 +25,4 @@ dist/
 
 # 内部工作文档（需求分析、交接记录），不进公开仓库
 docs/internal/
+__pycache__/

@@ -15,6 +15,40 @@
     get(k) { try { return localStorage.getItem(k); } catch { return null; } },
     set(k, v) { try { localStorage.setItem(k, v); } catch { /* 隐私模式等 */ } },
   };
+  // 平台文案与下载共用 os-win/os-mac；默认显示 Windows，Mac 在 HTML 中 hidden。
+  // iPad 也报 MacIntel，用触屏点数排除；不跑脚本时主按钮是 Windows 版，菜单列出全部。
+  const isMac = (navigator.userAgentData?.platform === "macOS" || /Mac/.test(navigator.platform || "")) && navigator.maxTouchPoints < 2;
+  const os = isMac ? "os-mac" : "os-win";
+  $$(".os-win, .os-mac").forEach((el) => { el.hidden = !el.classList.contains(os); });
+  // ▾ 菜单反向显示其他系统；无脚本时两种下载都可从菜单访问。
+  $$(".split-menu a").forEach((a) => { a.hidden = a.classList.contains(os); });
+  // 鼠标设备悬停即展开，移出整个组合按钮后稍等再收起；触屏仍是点按展开
+  if (matchMedia("(hover: hover)").matches) {
+    $$(".split").forEach((split) => {
+      const d = $(".split-more", split);
+      let timer = 0;
+      d.addEventListener("pointerenter", () => { clearTimeout(timer); d.open = true; });
+      split.addEventListener("pointerenter", () => clearTimeout(timer));
+      split.addEventListener("pointerleave", () => { timer = setTimeout(() => { d.open = false; }, 200); });
+    });
+  }
+  $$(".split-more").forEach((d) => d.addEventListener("toggle", () => {
+    if (!d.open) return;
+    const close = (e) => {
+      if (e.type === "keydown" ? e.key === "Escape" : !d.contains(e.target)) {
+        d.open = false;
+        removeEventListener("pointerdown", close);
+        removeEventListener("keydown", close);
+      }
+    };
+    addEventListener("pointerdown", close);
+    addEventListener("keydown", close);
+  }));
+
+  // 在语言菜单里手动选过语言后记住选择，首页不再按浏览器语言自动跳转（见 _worker.js）
+  $$(".langdrop a[hreflang]").forEach((a) => a.addEventListener("click", () => {
+    document.cookie = `mt_lang=${encodeURIComponent(a.hreflang)}; path=/; max-age=31536000; SameSite=Lax`;
+  }));
   // 锚点滚动由脚本接管（自定义缓动），关掉 CSS 的 smooth 避免逐帧叠加
   document.documentElement.style.scrollBehavior = "auto";
 
@@ -789,11 +823,12 @@
 
   // ---------- 程序开关 ----------
   $$("#apps .row").forEach((row) => {
-    const sw = $(".sw", row), st = $(".state", row);
-    sw.addEventListener("change", () => {
+    const switches = $$(".sw", row), st = $(".state", row);
+    switches.forEach((sw) => sw.addEventListener("change", () => {
+      switches.forEach((other) => { other.checked = sw.checked; });
       row.classList.toggle("off", !sw.checked);
       st.textContent = sw.checked ? st.dataset.on : st.dataset.off;
-    });
+    }));
   });
 
   // ---------- 进程内存 ----------

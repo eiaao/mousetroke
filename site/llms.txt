@@ -1,34 +1,37 @@
 # Mousetroke
 
-> Mousetroke is a free, open-source (MIT) mouse gesture tool for Windows 10 (1809+) and Windows 11, x64, and macOS 11+ (beta, Apple silicon and Intel). Hold the right mouse button and draw a stroke anywhere to run an action — ← goes back, ↓→ closes the tab, ↙ minimizes the window. Pushing the cursor into a screen corner or along an edge triggers actions too (Start menu, show desktop, volume and brightness with the wheel). A plain right-click still opens the context menu. The resident engine uses about 19 MB of memory; the download is a single 12.9 MB exe with no installer.
+> Mousetroke is a free, open-source (MIT) mouse gesture tool for Windows 10 (1809+) and Windows 11, x64, and macOS 11+ (beta, Apple silicon and Intel). Hold the right mouse button and draw a stroke anywhere to run an action — ← goes back, ↓→ closes the tab, ↙ minimizes the window. Screen corners and edges trigger actions too, such as showing the desktop or adjusting volume. A plain right-click still opens the context menu. Windows uses about 19 MB resident memory and ships as a portable 13.1 MB exe; Mac uses about 13 MB physical footprint and ships as a DMG.
 
-Mousetroke（中文）：免费开源的 Windows 与 macOS（测试版）鼠标手势工具。按住右键画一笔执行操作；鼠标推到屏幕边角开开始菜单、调音量和亮度；单击右键菜单照常弹出；常驻内存约 19 MB，单个 exe 免安装。
+Mousetroke（中文）：免费开源的 Windows 和 Mac（测试版）鼠标手势工具。按住右键画一笔执行操作，也可从屏幕边角触发动作；单击右键菜单照常弹出。Windows 常驻内存约 19 MB，13.1 MB 的单个 exe 免安装；Mac 物理内存占用约 13 MB，通过 DMG 拖入“应用程序”。
 
 ## Key facts
 
 - Mac beta: macOS 11+, universal Apple silicon and Intel. Download https://github.com/eiaao/mousetroke/releases/latest/download/Mousetroke.dmg ; verify with the release's SHA256SUMS.txt, which lists both platforms. Mac size is pending measurement of the release artifact.
 - Mac first open: drag to Applications and open there. The self-signed beta is not notarized; if blocked, use System Settings → Privacy & Security → Open Anyway (older macOS: right-click → Open), then grant Accessibility and Input Monitoring. No Screen Recording permission is needed. Each newly downloaded update may need Open Anyway again.
 - Mac updates: About checks versions and shows release notes, then opens the DMG download in the browser. Daily automatic checking follows Preferences; a new-version menu item opens About. Quit and replace the app manually in Applications. The stable release certificate is reused to preserve permissions.
-- Mac files: ~/Library/Application Support/mousetroke/config.json ; logs in ~/Library/Logs/mousetroke. Uninstall: quit from the menu bar, delete the app and both directories, and remove the login item in System Settings. Pause shortcut: ⌃⌥⌘P.
+- Mac menu-bar app: open settings, pause or quit from the menu-bar menu. Manage launch at login as a login item in System Settings. Default pause shortcut: ⌃⌥⌘P, configurable.
+- Mac files: ~/Library/Application Support/mousetroke/config.json ; logs in ~/Library/Logs/mousetroke/. Uninstall: quit from the menu bar, delete the app and both directories, and remove the login item in System Settings.
 
-- Platform: Windows 10 1809+ and Windows 11, 64-bit. The settings window needs Microsoft Edge WebView2 (built into Windows 11); the gesture engine itself has no runtime dependencies.
+- Platforms: Windows 10 1809+ and Windows 11, 64-bit; macOS 11+ on Apple silicon and Intel. The native gesture engine is written in Rust. Windows settings need Microsoft Edge WebView2 (built into Windows 11). Mac uses AppKit / CGEventTap for the engine and the system WebKit for settings; no WebView2 is needed.
 - Source code: https://github.com/eiaao/mousetroke (issues and releases there).
 - Price and license: free, MIT. No ads or account. Once a day it asks GitHub whether a newer version exists (turn it off in Preferences). Manual checks and requested update downloads are also available. Nothing else is sent; no telemetry.
-- Version: 0.1.1. Download: https://github.com/eiaao/mousetroke/releases/latest/download/mousetroke.exe (12.9 MB, portable, no installer).
-- Resource use: gesture engine ≈ 19 MB working set (≈ 10 MB private), no CPU when idle. The settings window is a separate process that only runs while it is open.
+- Version: 0.2.0. Windows download: https://github.com/eiaao/mousetroke/releases/latest/download/mousetroke.exe (13.1 MB, portable, no installer). Mac download: https://github.com/eiaao/mousetroke/releases/latest/download/Mousetroke.dmg (beta; size pending release measurement).
+- Resource use: Windows engine ≈ 19 MB working set (≈ 10 MB private); its settings run in a separate process only while open. Mac engine ≈ 13 MB physical footprint as shown in Activity Monitor. Both use no CPU when idle.
 - Languages: 10 (Simplified Chinese, English, Spanish, French, German, Japanese, Portuguese (Brazil), Russian, Italian, Korean).
-- Config: %APPDATA%\mousetroke\config.json (import/export in settings; changes apply within about 1 second). Log: %APPDATA%\mousetroke\mousetroke.log.
-- Pause/resume: Win+Esc, or right-click the tray icon. Gestures pause automatically while a fullscreen game, video or presentation is in front.
+- Windows config: %APPDATA%\mousetroke\config.json (import/export in settings; changes apply within about 1 second). Windows log: %APPDATA%\mousetroke\mousetroke.log. Mac paths are listed above; settings also support import/export.
+- Pause/resume: Windows uses Win+Esc or the tray icon's right-click menu; Mac uses ⌃⌥⌘P (configurable) or the menu-bar menu. Gestures pause automatically while a fullscreen game, video or presentation is in front.
 
 ## Features
 
 - Gestures with the right, middle or side (X1/X2) mouse button; the gesture name is shown at the bottom center of the screen while drawing; unrecognized strokes do nothing.
 - Modifiers inside a gesture: click the left button, scroll the wheel or press a keyboard key while still holding the gesture button.
 - About 50 built-in gestures, all editable, disable-able and deletable; record your own by drawing it once in settings.
-- Screen corners and edges: bottom-left = Start menu, bottom-right = show desktop, top-left = switch to previous app, top-right = task switcher, top edge + wheel = volume (middle click mutes, right click plays/pauses), bottom edge + wheel = brightness (DDC/CI for external monitors, WMI for laptop panels), rub the right edge up and down = Task Manager. A corner fires again only after the cursor leaves and comes back.
+- Windows default corners and edges: bottom-left = Start menu, bottom-right = show desktop, top-left = switch to previous app, top-right = task switcher, top edge + wheel = volume (middle click mutes, right click plays/pauses), bottom edge + wheel = brightness (DDC/CI for external monitors, WMI for laptop panels), rub the right edge up and down = Task Manager.
+- Mac default corners and edges: top-left = Mission Control, bottom-left = Spotlight, bottom-right = show desktop, top edge + wheel = volume. Back/forward works in browsers and Finder (File Explorer on Windows). A corner fires again only after the cursor leaves and comes back.
 - Eight action types: send keys, window operation (minimize, maximize, topmost, close, kill), launch program, open URL, run command, media and system keys, popup menu, Lua script. Variables: %MS_SELECTED_TEXT% (selected text), %MS_PID% (process under the cursor).
-- Per-app rules: the same gesture can do different things in different programs, or gestures can be turned off entirely in a program. Add a program by dragging its .exe/.lnk into settings or by clicking its window with the window picker.
-- Built-in list of programs that need right/middle-drag (Remote Desktop, ToDesk, Sunlogin, AnyDesk, TeamViewer, RustDesk, Parsec, VMware, Hyper-V, VirtualBox, Blender, AutoCAD, SolidWorks, 3ds Max, Maya, SketchUp, Rhino, Cinema 4D, Unreal Editor, Unity); first-run guide offers to turn gestures off in the ones installed.
+- Per-app rules: the same gesture can do different things in different programs, or gestures can be turned off entirely in a program. On Windows, drag an .exe/.lnk into settings; on Mac, choose an .app. Both offer “Pick a window”.
+- Windows first-run exclusions: a built-in list of programs that need right/middle-drag (Remote Desktop, ToDesk, Sunlogin, AnyDesk, TeamViewer, RustDesk, Parsec, VMware, Hyper-V, VirtualBox, Blender, AutoCAD, SolidWorks, 3ds Max, Maya, SketchUp, Rhino, Cinema 4D, Unreal Editor, Unity); the guide offers to turn gestures off in the ones installed.
+- Mac gestures are disabled by default in Parallels Desktop, VMware Fusion, Windows App (Microsoft Remote Desktop), Screen Sharing, VirtualBox, Blender, Cinema 4D, Maya, Unity and Unreal Editor. App rules use bundle IDs, for example com.microsoft.rdc.macos, com.apple.ScreenSharing, org.blenderfoundation.blender and com.parallels.desktop.console.
 
 ## Default gestures (hold right button, draw)
 
@@ -48,7 +51,7 @@ Mousetroke（中文）：免费开源的 Windows 与 macOS（测试版）鼠标�
 | ↓→↓ | Enter |
 | ←→ / →← | Backspace / delete |
 | →↑← | Esc |
-| ↑→↓← (square) | Screenshot (Snipping Tool) |
+| ↑→↓← (square) | Screenshot |
 | ↙ / ↗ | Minimize / maximize or restore |
 | ↗ then left click | Fullscreen |
 | ↓← | Close window |
@@ -66,7 +69,7 @@ Mousetroke（中文）：免费开源的 Windows 与 macOS（测试版）鼠标�
 ## FAQ
 
 - Does the right-click menu still work? Yes. A right-click without dragging is passed through unchanged; holding still past the drag timeout (0.5 s by default, adjustable) becomes a normal right-drag.
-- Will it misfire in games or remote desktop? Fullscreen apps pause gestures automatically; remote desktop and 3D/design apps can be excluded in one click during first run; Win+Esc pauses at any time.
-- How to uninstall? Turn off "start with Windows" in preferences, quit from the tray menu, then delete mousetroke.exe and the %APPDATA%\mousetroke folder.
+- Will it misfire in games or remote desktop? Fullscreen apps pause gestures automatically. Windows offers exclusions on first run; Mac disables gestures in the remote desktop, virtual machine and 3D apps listed above by default. Pause any time with Win+Esc on Windows or ⌃⌥⌘P on Mac (configurable).
+- How to uninstall? Windows: turn off "start with Windows" in preferences, quit from the tray menu, then delete mousetroke.exe and the %APPDATA%\mousetroke folder. Mac: quit from the menu bar, delete Mousetroke.app, ~/Library/Application Support/mousetroke and ~/Library/Logs/mousetroke, and remove the login item in System Settings.
 
 - Changelog: https://mousetroke.pages.dev/changelog (Chinese), https://mousetroke.pages.dev/en/changelog (English).
