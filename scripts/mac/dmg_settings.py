@@ -20,4 +20,4 @@ show_pathbar = False
 show_tab_view = False
 include_icon_view_settings = True
 include_list_view_settings = False
-hide_extensions = ["Mousetroke.app"]
+# .app 已由 Finder 隐藏扩展名；勿用 SetFile 给签名包写 FinderInfo。

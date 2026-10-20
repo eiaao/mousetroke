@@ -23,10 +23,45 @@ if [[ "${MOUSETROKE_REQUIRE_SIGNING:-0}" == 1 ]]; then
     done
 fi
 temporary=$(mktemp -d) || exit 1
-trap 'status=$?; rm -rf "$temporary" || status=1; rm -f "$image" || status=1; exit "$status"' EXIT
+mountpoint="$temporary/mount"
+attached=0
+complete=0
+cleanup() {
+    local status=$?
+    if [[ "$attached" == 1 ]]; then
+        if hdiutil detach "$mountpoint" || hdiutil detach -force "$mountpoint"; then
+            attached=0
+        else
+            status=1
+        fi
+    fi
+    # 卸载失败时保留挂载目录，绝不递归删除仍挂载的卷。
+    if [[ "$attached" == 0 ]]; then rm -rf "$temporary" || status=1; fi
+    if [[ "$complete" != 1 || "$status" != 0 ]]; then rm -f "$image" || status=1; fi
+    exit "$status"
+}
+trap cleanup EXIT
 ditto "$bundle" "$temporary/Mousetroke.app" || exit 1
 # dmgbuild 创建固定布局、Applications 链接和隐藏的 Retina 背景；先暂存一次以保留原包。
 python3 "$root/scripts/mac/build_dmg.py" "$root/scripts/mac/dmg_settings.py" "$temporary/Mousetroke.app" "$image" || exit 1
+# 复制回调早于 Finder 布局处理；必须重挂最终镜像，检查真正交付的 app。
+mkdir "$mountpoint" || exit 1
+attached=1
+hdiutil attach -readonly -nobrowse -mountpoint "$mountpoint" "$image" || exit 1
+mounted_app="$mountpoint/Mousetroke.app"
+codesign --verify --deep --strict --all-architectures "$mounted_app" || exit 1
+# codesign 允许 quarantine 等属性；递归检查明确拒绝 FinderInfo 和资源叉。
+attributes=$(xattr -r "$mounted_app") || exit 1
+while IFS= read -r attribute; do
+    case "${attribute##*: }" in
+        com.apple.FinderInfo|com.apple.ResourceFork)
+            printf 'Forbidden extended attributes in DMG app:\n%s\n' "$attributes" >&2
+            exit 1
+            ;;
+    esac
+done <<< "$attributes"
+hdiutil detach "$mountpoint" || exit 1
+attached=0
 sign_mac "$image" || exit 1
 hdiutil verify "$image" || exit 1
-trap 'status=$?; rm -rf "$temporary" || status=1; exit "$status"' EXIT
+complete=1

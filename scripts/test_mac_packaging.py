@@ -64,7 +64,14 @@ case "$tool" in
         ;;
     codesign)
         case "$1" in
-            --verify) [[ "${FAIL_VERIFY:-0}" != 1 ]] || exit 1 ;;
+            --verify)
+                [[ "${FAIL_VERIFY:-0}" != 1 ]] || exit 1
+                if [[ "${!#}" == */mount/Mousetroke.app ]]; then
+                    [[ $# -eq 5 && "$2" == --deep && "$3" == --strict && "$4" == --all-architectures ]] || exit 1
+                    test -d "${!#}" || exit 1
+                    [[ "${FAIL_MOUNTED_VERIFY:-0}" != 1 ]] || exit 1
+                fi
+                ;;
             --display)
                 [[ "${FAIL_DISPLAY:-0}" != 1 ]] || exit 1
                 architecture=
@@ -130,15 +137,41 @@ case "$tool" in
         hdiutil create "$4" || exit 1
         [[ "${FAIL_DMGBUILD:-0}" != 1 ]] || exit 1
         ;;
-    hdiutil)
-        if [[ "$1" == create ]]; then
-            image="$2"
-            [[ "$image" == *.dmg && ! -e "$image" ]] || exit 1
-            printf 'fresh DMG\n' > "$image"
-            [[ "${FAIL_CREATE:-0}" != 1 ]] || exit 1
-        else
-            [[ "$1" == verify && "${FAIL_IMAGE_VERIFY:-0}" != 1 ]] || exit 1
+    xattr)
+        [[ $# -eq 2 && "$1" == -r && "$2" == */mount/Mousetroke.app ]] || exit 1
+        test -d "$2" || exit 1
+        [[ "${FAIL_XATTR:-0}" != 1 ]] || exit 1
+        if [[ -n "${MOCK_XATTR:-}" ]]; then
+            printf '%s: %s\n' "$2/Contents/MacOS/mousetroke" "$MOCK_XATTR"
         fi
+        ;;
+    hdiutil)
+        case "$1" in
+            create)
+                image="$2"
+                [[ "$image" == *.dmg && ! -e "$image" ]] || exit 1
+                printf 'fresh DMG\n' > "$image"
+                [[ "${FAIL_CREATE:-0}" != 1 ]] || exit 1
+                ;;
+            attach)
+                [[ $# -eq 6 && "$2" == -readonly && "$3" == -nobrowse && "$4" == -mountpoint ]] || exit 1
+                test -f "$6" || exit 1
+                # 失败也可能已部分挂载，EXIT trap 仍须卸载。
+                printf '%s\n' "$5" > "$PWD/mounted"
+                cp -R "$PWD/target/mac/Mousetroke.app" "$5/Mousetroke.app" || exit 1
+                [[ "${FAIL_ATTACH:-0}" != 1 ]] || exit 1
+                ;;
+            detach)
+                if [[ "${FAIL_DETACH:-}" == always || ( "${FAIL_DETACH:-}" == normal && "$2" != -force ) ]]; then
+                    exit 1
+                fi
+                test -f "$PWD/mounted" || exit 1
+                [[ "${!#}" == "$(cat "$PWD/mounted")" ]] || exit 1
+                rm -f "$PWD/mounted" || exit 1
+                ;;
+            verify) [[ "${FAIL_IMAGE_VERIFY:-0}" != 1 ]] || exit 1 ;;
+            *) exit 2 ;;
+        esac
         ;;
     *) exit 2 ;;
 esac
@@ -211,6 +244,9 @@ class DmgLayoutTests(unittest.TestCase):
         self.assertEqual(settings["background"], str(ROOT / "scripts/mac/background") + "/background.png")
         self.assertEqual(settings["icon_size"], 128)
         self.assertEqual(settings["format"], "UDZO")
+        # 这些设置用 SetFile 写 app 的 FinderInfo；图标位置只写卷的 .DS_Store。
+        self.assertNotIn("hide_extensions", settings)
+        self.assertNotIn("Mousetroke.app", settings.get("hide", []))
         for key in ["show_toolbar", "show_sidebar", "show_status_bar", "show_pathbar", "show_tab_view"]:
             self.assertFalse(settings[key], key)
         for suffix, size in [("", (640, 400)), ("@2x", (1280, 800))]:
@@ -295,7 +331,7 @@ class MacPackagingTests(unittest.TestCase):
         shutil.copyfile(ROOT / "i18n/en-US.json", self.root / "i18n/en-US.json")
         commands = self.root / "commands"
         commands.mkdir()
-        for name in ["cargo", "lipo", "codesign", "security", "openssl", "git", "base64", "plutil", "ditto", "ln", "hdiutil", "python3"]:
+        for name in ["cargo", "lipo", "codesign", "security", "openssl", "git", "base64", "plutil", "ditto", "ln", "hdiutil", "python3", "xattr"]:
             executable = commands / name
             with executable.open("w", encoding="utf-8", newline="\n") as stream:
                 stream.write(MOCK_TOOL)
@@ -358,6 +394,12 @@ class MacPackagingTests(unittest.TestCase):
         operations = [line.split("> ", 1)[1] for line in self.log.read_text().splitlines()
                       if line.startswith("lipo <") and " <-create>" not in line]
         self.assertEqual(operations, ["<-verify_arch> <arm64>", "<-verify_arch> <x86_64>", "<-archs>"])
+
+    def image_mountpoint(self):
+        path = re.search(r"hdiutil <attach>.*?<-mountpoint> <([^>]+)>", self.log.read_text())[1]
+        if os.name == "nt":
+            path = re.sub(r"^/([a-zA-Z])/", r"\1:/", path)
+        return Path(path)
 
     def test_lipo_fake_rejects_multiple_architectures(self):
         binary = (self.bundle / "Contents/MacOS/mousetroke").as_posix()
@@ -593,7 +635,7 @@ if message=$(mac_message mac.bundle.done); then exit 0; else exit 1; fi
 
     def test_universal_adhoc_smoke_and_certificate_release_create_fresh_image(self):
         for environment in [
-            dict(MOUSETROKE_SIGN_ID="-", MOCK_ADHOC_ARCH="all"),
+            dict(MOUSETROKE_SIGN_ID="-", MOCK_ADHOC_ARCH="all", MOCK_XATTR="com.apple.quarantine"),
             dict(MOUSETROKE_REQUIRE_SIGNING="1"),
         ]:
             with self.subTest(environment=environment):
@@ -602,6 +644,56 @@ if message=$(mac_message mac.bundle.done); then exit 0; else exit 1; fi
                 self.assertEqual(self.image.read_text(), "fresh DMG\n")
                 self.assertIn("hdiutil <verify>", self.log.read_text())
                 self.assert_universal_verification()
+
+    def test_final_image_app_is_strictly_verified_readonly_before_image_signing(self):
+        self.run_script("dmg")
+        operations = self.log.read_text().splitlines()
+        attach = next(line for line in operations if line.startswith("hdiutil <attach>"))
+        self.assertIn("<-readonly> <-nobrowse> <-mountpoint>", attach)
+        mount = re.search(r"<-mountpoint> <([^>]+)>", attach)[1]
+        app = mount + "/Mousetroke.app"
+        verify = f"codesign <--verify> <--deep> <--strict> <--all-architectures> <{app}>"
+        attrs = f"xattr <-r> <{app}>"
+        detach = f"hdiutil <detach> <{mount}>"
+        sign = next(line for line in operations if line.startswith("codesign <--force>") and ".dmg>" in line)
+        stages = [attach, verify, attrs, detach, sign]
+        self.assertEqual(sorted(stages, key=operations.index), stages)
+        self.assertFalse(self.root.joinpath("mounted").exists())
+        self.assertFalse(self.image_mountpoint().parent.exists())
+
+    def test_mounted_app_verification_and_xattr_failures_remove_image_and_detach(self):
+        for failure in [dict(FAIL_MOUNTED_VERIFY="1"), dict(FAIL_XATTR="1"),
+                        dict(MOCK_XATTR="com.apple.FinderInfo"), dict(MOCK_XATTR="com.apple.ResourceFork")]:
+            with self.subTest(failure=failure):
+                self.seed_outputs()
+                self.run_script("dmg", success=False, **failure)
+                self.assertFalse(self.image.exists())
+                self.assertFalse(self.root.joinpath("mounted").exists())
+                log = self.log.read_text()
+                self.assertIn("hdiutil <detach>", log)
+                self.assertNotIn("codesign <--force>", log)
+                self.assertFalse(self.image_mountpoint().parent.exists())
+
+    def test_failed_attach_or_detach_removes_image_and_cleans_up_mount(self):
+        for failure in [dict(FAIL_ATTACH="1"), dict(FAIL_DETACH="normal")]:
+            with self.subTest(failure=failure):
+                self.seed_outputs()
+                self.run_script("dmg", success=False, **failure)
+                self.assertFalse(self.image.exists())
+                self.assertFalse(self.root.joinpath("mounted").exists())
+                log = self.log.read_text()
+                self.assertIn("hdiutil <detach>", log)
+                if "FAIL_DETACH" in failure:
+                    self.assertIn("hdiutil <detach> <-force>", log)
+                self.assertNotIn("codesign <--force>", log)
+                self.assertFalse(self.image_mountpoint().parent.exists())
+
+    def test_failed_cleanup_detach_preserves_mount_directory_and_removes_image(self):
+        self.run_script("dmg", success=False, FAIL_MOUNTED_VERIFY="1", FAIL_DETACH="always")
+        self.assertFalse(self.image.exists())
+        mount = self.image_mountpoint()
+        self.assertTrue((mount / "Mousetroke.app/Contents/MacOS/mousetroke").is_file())
+        self.assertIn("hdiutil <detach> <-force>", self.log.read_text())
 
     def test_failed_image_creation_signing_or_verification_removes_partial_image(self):
         for failure, stage in [
