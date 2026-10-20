@@ -22,6 +22,12 @@ mod targeting;
 #[cfg(target_os = "macos")]
 mod app;
 #[cfg(target_os = "macos")]
+mod control;
+#[cfg(any(target_os = "macos", test))]
+mod canvas;
+#[cfg(any(target_os = "macos", test))]
+mod tap_recovery;
+#[cfg(target_os = "macos")]
 mod events;
 #[cfg(target_os = "macos")]
 mod host;
@@ -29,6 +35,8 @@ mod host;
 mod input;
 #[cfg(target_os = "macos")]
 pub mod instance;
+#[cfg(any(target_os = "macos", test))]
+mod instance_state;
 #[cfg(target_os = "macos")]
 pub mod log;
 #[cfg(target_os = "macos")]
@@ -36,7 +44,7 @@ mod menu;
 #[cfg(target_os = "macos")]
 mod overlay;
 #[cfg(target_os = "macos")]
-mod permissions;
+pub mod permissions;
 #[cfg(target_os = "macos")]
 mod selftest;
 
@@ -99,3 +107,5 @@ mod bundle_tests {
 mod first_run;
 #[cfg(target_os = "macos")]
 pub mod update;
+#[cfg(any(target_os = "macos", test))]
+mod update_helpers;

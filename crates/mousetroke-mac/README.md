@@ -16,9 +16,9 @@ open target/mac/Mousetroke.app
 
 The certificate script creates a **Mousetroke Dev** signing identity in a dedicated keychain. Follow its trust instructions and keep the identity and app path stable across rebuilds. Set `MOUSETROKE_SIGN_ID` for another identity. Without a matching identity, bundling warns and uses ad-hoc signing; rebuilding can then require Accessibility permission again. This development bundle is not notarized.
 
-**Screen Recording is not required**: titles are obtained through Accessibility, never `kCGWindowName`. Grant **Accessibility** and **Input Monitoring** to `Mousetroke.app` in System Settings → Privacy & Security. The menu links to missing permissions. Permissions are checked every two seconds and the tap starts without restarting. Prompts are requested only on first launch, tracked by `permission-prompted` in Application Support. SSH tests require an active graphical login for the same user. Use the signed bundle for repeatable permission tests.
+**Screen Recording is not required**: titles are obtained through Accessibility, never `kCGWindowName`. First launch, or a launch with missing permissions, opens `mousetroke settings <config> --setup`. Setup explains **Accessibility** and **Input Monitoring** separately; only clicking **Grant…** requests that permission and opens its System Settings pane. The menu provides the same fallback. The settings process uses the same signed executable and bundle identity as the engine. Setup polls every second and displays Ready when both are granted; the engine checks every two seconds and retries the tap without restarting. If the tap is still inactive eight seconds after granting, setup offers to restart the engine while keeping settings open. No `permission-prompted` file is used. SSH tests require an active graphical login for the same user. Use the signed bundle for repeatable permission tests.
 
-The menu icon dims while paused or awaiting permission. Toggle pause from the menu or with **⌃⌥⌘P**. Ordinary right clicks are replayed. Right-button drags recognize shared-engine gestures and send configured keys to the focused application. Window targeting and fullscreen pause use a roughly 250 ms snapshot. Target activation is supported. Settings run in a separate process; manual and daily update checks are supported; downloads open in the browser and installation is manual.
+The menu icon dims while paused or awaiting permission. Toggle pause from the menu or with **⌃⌥⌘P**. Ordinary right clicks are replayed. Right-button drags recognize shared-engine gestures and send configured keys to the focused application. Window targeting and fullscreen pause use a roughly 250 ms snapshot. Target activation is supported. Settings run in a separate process; manual and daily update checks are supported; Update now verifies and installs the DMG in place, with manual browser download as a fallback.
 
 ## Overlay
 
@@ -228,7 +228,7 @@ The picker places a transparent click-catching window on every display, uses a c
 
 Login launch uses **SMAppService.mainAppService on macOS 13+**, discovered only after a runtime version check; no 13+ class symbol is imported on Big Sur. Enabled state comes from the service status, including user approval/disabled states. Approval-needed registration shows a translated instruction and stays unchecked. Run the signed `.app`, rather than a standalone development binary, for this path. On **11–12**, a per-user `~/Library/LaunchAgents/io.github.eiaao.mousetroke.plist` contains the absolute executable path as one ProgramArguments entry, with RunAtLoad. `launchctl enable/bootstrap/disable` applies changes without stopping a running engine when login launch is disabled, and status checks the plist, loaded service and launchd disabled override. No administrator privileges are needed. Moving the app requires re-enabling login launch.
 
-macOS retains the native title bar/traffic lights and light/dark appearance. The backend platform value drives Command/Option/Control/Shift names, physical-key recording and ⌘F/⌘D/⌘Z/⌘⇧Z UI shortcuts; stored keys remain shared Windows-VK logical values. Finder, menu bar, login launch and application examples have ten-language variants. Unsupported imported action options get an explicit warning and repair button; unmapped or mouse keys in key sequences get a translated validation error; topmost cannot be selected, elevation is hidden, and Windows Lua shims are called out. **One-click installation remains Windows-only**. Mac About supports shared update checks and release notes, with browser DMG downloads; Preferences controls daily checking. About also exposes the homepage, source/Star and feedback links.
+macOS retains the native title bar/traffic lights and light/dark appearance. The backend platform value drives Command/Option/Control/Shift names, physical-key recording and ⌘F/⌘D/⌘Z/⌘⇧Z UI shortcuts; stored keys remain shared Windows-VK logical values. Finder, menu bar, login launch and application examples have ten-language variants. Unsupported imported action options get an explicit warning and repair button; unmapped or mouse keys in key sequences get a translated validation error; topmost cannot be selected, elevation is hidden, and Windows Lua shims are called out. Mac About supports shared update checks and release notes, one-click verified installation and a secondary manual download; Preferences controls daily checking. About also exposes the homepage, source/Star and feedback links.
 
 Fresh macOS defaults disable gestures in Parallels Desktop, VMware Fusion, Windows App, Screen Sharing, VirtualBox VM, Blender, Cinema 4D, Maya, Unity and Unreal Editor. Remote/VM apps need their mouse buttons passed through to another OS; 3D/game editors need right/middle drag for viewport navigation. These bundle-id entries also populate the existing recommended-disable picker and onboarding list; installation detection uses LaunchServices. Existing configurations remain intact.
 
@@ -241,7 +241,7 @@ Real-Mac hand test (signed bundle; macOS 27 on Apple silicon, repeat login fallb
 3. Select running apps, browse/drop a `.app` from /Applications, and select an executable. Verify bundle ids/full executable paths in the saved scope and matching behavior in the engine. Check icons and the ten default-disabled apps.
 4. With Screen Recording denied, pick an overlapping background app; cancel with Escape/right-click. Repeat on the 2560×1440 screen, fullscreen Spaces and secondary screens at negative origins; no click should reach the target app.
 5. Enable/disable login launch, verify the actual System Settings state, log out/in, and repeat with user approval denied. Confirm engine status/start and Finder/log/project links.
-6. Open About, check current/latest version and release notes, and download the newer DMG in the browser; import unsupported action options and check their warning and explicit repair. Run onboarding in each of the ten languages and check native traffic lights and focus.
+6. Open About, check current/latest version and release notes, and install the newer DMG in-app; import unsupported action options and check their warning and explicit repair. Run onboarding in each of the ten languages and check native traffic lights and focus.
 
 
 ## Universal beta release
@@ -253,6 +253,7 @@ There is no Node dependency in these scripts: copy the already built
 ```bash
 export CARGO_BUILD_JOBS=4 CARGO_TARGET_DIR="$PWD/target" MACOSX_DEPLOYMENT_TARGET=11.0
 rustup target add aarch64-apple-darwin x86_64-apple-darwin
+python3 -m pip install dmgbuild==1.6.5
 cargo test -p mousetroke-core -p mousetroke-engine -p mousetroke-mac -p mousetroke-settings --locked
 # 快速主机架构开发包；开发证书缺失时有明确警告并回退 ad-hoc。
 bash scripts/mac/make-dev-cert.sh
@@ -322,9 +323,16 @@ binary's changing code hash. SHA-1 here identifies the certificate, not the asse
 Keep the app in the same Applications path. Certificate changes, moving the app or macOS
 policy changes may still require granting permissions again; verify on both macOS 27 and 11.
 
-`dmg.sh` creates `target/mac/Mousetroke.dmg` with `hdiutil` UDZO, volume name
-**Mousetroke**, the signed app and an `/Applications` symlink, and signs the DMG with
-the same identity. `release.yml` has `windows`, `macos` and `publish` jobs. The first two
+`dmg.sh` uses **dmgbuild 1.6.5** (Python 3.9+) to create `target/mac/Mousetroke.dmg` in
+UDZO format, volume name **Mousetroke**. Its 640×400 Finder window has 128-point app and
+Applications icons, a drag arrow, a hidden `.background.tiff` and no toolbar or sidebar.
+Only `background` specifies the artwork: dmgbuild 1.6.5 automatically discovers the adjacent
+`background@2x.png` and combines both PNGs with `tiffutil -cathidpicheck` for Retina.
+The source PNG directory is not copied into the image. Regenerate the committed PNGs with
+`python scripts/gen_dmg_background.py` (development only: `python -m pip install Pillow`,
+optionally `--font <font.ttf>`). The image repeats the Gatekeeper first-open instruction.
+The image’s app copy is verified before finalizing, and the DMG is signed with the same
+identity. `release.yml` has `windows`, `macos` and `publish` jobs. The first two
 upload `windows-release` (exe + notes) and `macos-release` (DMG) artifacts. Only `publish`
 has contents-write permission; it waits for both, generates and verifies one
 `SHA256SUMS.txt` listing `mousetroke.exe` and `Mousetroke.dmg`, then creates one release.
@@ -341,20 +349,61 @@ signing or verification removes the incomplete DMG. The CI smoke test explicitly
 
 Open the DMG, drag Mousetroke to **Applications**, then launch it there. The beta is
 self-signed and **not notarized**: if blocked, go to **System Settings → Privacy & Security →
-Open Anyway** (older macOS: **right-click → Open**). Each newly downloaded version may
-need this again. Grant **Accessibility** and **Input Monitoring**; no Screen Recording.
-Launching from `/Volumes/` or `/AppTranslocation/` logs the location problem and queues one
-translated eight-second notice per engine launch. It does not modify quarantine attributes.
+Open Anyway** (older macOS: **right-click → Open**). Browser-downloaded copies may need this again; subsequent in-app updates avoid the repeated prompt. Follow the setup window to grant **Accessibility** and **Input Monitoring**;
+no Screen Recording. Setup can be skipped and reopened from About, or with `--setup`.
+Launching from `/Volumes/` or `/AppTranslocation/` first shows a native Move to Applications
+or Quit alert. Installation uses `ditto`, falling back to `~/Applications` if `/Applications`
+is not writable. If another copy with the same bundle ID or destination path is running,
+**Quit and Replace / Cancel** asks for confirmation. Confirming sends a normal AppKit quit
+request to both the engine and settings processes and waits up to 10 seconds; cancelling
+leaves them running. Refusal or timeout preserves the old bundle and shows the existing
+manual-quit error. No process is force-killed. The replaced copy goes to Trash.
+Only the staged new copy has quarantine removed. The installed app is opened with `open -n`
+before any engine lock is taken, and a directly mounted DMG is ejected after a short delay.
+Errors explain the manual drag-and-open path. Every installation step is logged.
 
-About reuses the Windows version comparison and plain-text, language-selected release-note
-renderer. The transport is `/usr/bin/curl`, already present on macOS 11, avoiding another
-network crate or Objective-C session lifecycle. It disables curlrc, restricts protocols to
-HTTPS, validates the exact `api.github.com` host, follows no redirects, requires HTTP 200,
-and limits connect/total time to 10/30 seconds and response body to 1 MiB. Only API metadata
-is fetched by the app; the checked `Mousetroke.dmg` URL is opened in the browser after an
-explicit download action. No one-click installation runs on Mac. The API must provide one
-exact DMG and one exact sums asset; malformed/duplicate/untrusted assets are rejected.
+The engine publishes `input-state` once at startup and only when its PID or event tap state
+changes. There is no heartbeat write or snapshot expiry. Settings accepts a snapshot only
+while the engine lock is held and its recorded owner PID matches the snapshot, so an old
+file is ignored after exit or before a new engine publishes its state.
 
+About reuses the Windows version comparison, plain-text release notes, progress and error
+states. **Update now** re-resolves the API in native code, downloads `Mousetroke.dmg` and
+`SHA256SUMS.txt` using `/usr/bin/curl`, and checks SHA-256 through CommonCrypto in libSystem.
+Curl disables curlrc, URL globbing and automatic redirects, requires HTTPS and HTTP 200,
+and caps API/checksum bodies at 1 MiB and DMGs at 64 MiB (including chunked responses).
+API redirects are rejected; each of at most five asset redirects must match the shared
+GitHub host allowlist before connecting. Connect timeout is 10 seconds; total timeout is
+30 seconds for the API and 120 seconds per asset request. Debug builds alone accept the
+loopback `MOUSETROKE_UPDATE_BASE` fixture.
+
+The image is attached read-only with no Finder windows. The mounted and staged app must
+match our bundle ID, the release version, and `CFBundleExecutable`; deep strict signature
+verification across all architectures and the running app's certificate-pinned designated
+requirement must pass. The new app must also declare that same designated requirement.
+The running bundle is resolved from `current_exe`; `/Volumes` and App Translocation are
+refused. `ditto` copies into `.Mousetroke-update.app` beside the current bundle; quarantine
+is removed from that copy, then renames switch current → `.Mousetroke-old.app` and staging
+→ current. Failed renames or helper startup/quit requests restore the original bundle.
+Pre-existing staging/backup paths are preserved and reported as busy, never overwritten.
+
+The new binary starts a detached `update-relaunch` helper and acknowledges readiness
+before the settings process requests the engine's normal quit path and exits. The helper
+waits up to 30 seconds for both old PIDs, moves the backup to Trash using NSFileManager,
+then calls `open -n` on the same installed path with the existing config. Wait failure
+rolls back without starting a competing engine. Trash failure restores and opens the old
+app; an `open` command failure restores it from the exact returned Trash path and retries
+the old app. Once LaunchServices accepts `open`, later app crashes are outside this
+transaction. If a rollback itself fails, both copies are preserved and the log records
+the error for manual recovery. Errors after settings exits are recorded in the log.
+
+Temporary downloads are removed and attached volumes are detached on every exit path,
+including partial attach failures. If both normal and forced detach fail, the temporary
+mount is logged and retained for manual ejection rather than deleting mounted contents.
+App copies are only moved to Trash, never recursively deleted. The old signature identity
+and installed path preserve TCC grants; in-app downloads avoid browser quarantine and
+the second Gatekeeper prompt. **Download manually** remains available for an unwritable
+folder or any failure; browser downloads may still require Open Anyway.
 The daily worker follows `settings.update_check` and its live reload. It saves the attempt
 before networking in `update-state.json` beside the config, checks at most every 24 hours,
 and suppresses repeat menu notices for the same version. Rollback of the clock postpones
@@ -367,6 +416,118 @@ To uninstall, quit from the menu bar; delete the app,
 `~/Library/Application Support/mousetroke` and `~/Library/Logs/mousetroke`; remove its login
 item in System Settings.
 
+## In-app update acceptance on the Mac mini
+
+Run under the graphical login on macOS 27 / Apple silicon. Quit every existing Mousetroke
+engine and settings window first. Use a disposable checkout of this commit and a fresh
+review install directory. These commands use the existing dev certificate for **both**
+versions; do not recreate the certificate between builds. Python 3.9 is supported.
+
+From a checkout containing this commit:
+
+```bash
+set -e
+review_dir=$(mktemp -d /tmp/mousetroke-update-review.XXXXXX)
+git worktree add --detach "$review_dir/src" HEAD
+cd "$review_dir/src"
+printf 'Review directory: %s\n' "$review_dir"
+export CARGO_TARGET_DIR="$review_dir/target" CARGO_BUILD_JOBS=4
+rustup target add aarch64-apple-darwin x86_64-apple-darwin
+/usr/bin/python3 -m venv "$review_dir/venv"
+. "$review_dir/venv/bin/activate"
+python3 -m pip install 'dmgbuild==1.6.5'
+(cd crates/mousetroke-settings/ui && npm ci && npm run build)
+bash scripts/mac/make-dev-cert.sh
+unset MOUSETROKE_SIGN_ID MOUSETROKE_SIGN_KEYCHAIN
+export MOUSETROKE_REQUIRE_SIGNING=1
+
+# 先构建支持回环更新源的旧版调试应用，固定到可写安装位置。
+cargo test -p mousetroke-mac common_crypto_known_vectors --locked
+cargo build -p mousetroke --locked
+mkdir -p "$HOME/Applications"
+mkdir "$HOME/Applications/Mousetroke Update Review"
+installed="$HOME/Applications/Mousetroke Update Review/Mousetroke.app"
+mkdir -p "$installed/Contents/MacOS" "$installed/Contents/Resources"
+cp "$CARGO_TARGET_DIR/debug/mousetroke" "$installed/Contents/MacOS/mousetroke"
+cp crates/mousetroke-settings/icons/icon.icns "$installed/Contents/Resources/AppIcon.icns"
+bash scripts/mac/bundle.sh --print-plist > "$installed/Contents/Info.plist"
+. scripts/mac/messages.sh
+. scripts/mac/sign.sh
+sign_mac "$installed"
+codesign -d -r- "$installed" > "$review_dir/requirement-before.txt" 2>/dev/null
+
+# 只修改隔离 checkout 的版本，生成真正的高版本通用 DMG；不提交或发布。
+cp Cargo.toml "$review_dir/Cargo.toml.before"
+cp Cargo.lock "$review_dir/Cargo.lock.before"
+/usr/bin/python3 - <<'PY'
+from pathlib import Path
+import re
+path = Path('Cargo.toml')
+text = path.read_text()
+text, count = re.subn(r'(\[workspace\.package\]\s*\nversion = )"[^"]+"', r'\g<1>"999.0.0"', text, count=1)
+assert count == 1
+path.write_text(text)
+PY
+cargo update --workspace --offline
+bash scripts/mac/bundle.sh --universal
+bash scripts/mac/dmg.sh
+cp Cargo.toml "$review_dir/Cargo.toml.higher"
+cp "$review_dir/Cargo.toml.before" Cargo.toml
+cp "$review_dir/Cargo.lock.before" Cargo.lock
+/usr/bin/python3 scripts/update-test-server.py --dmg target/mac/Mousetroke.dmg --version 999.0.0
+```
+
+Leave the server running. In a second Terminal, substitute the printed review checkout
+path and launch the installed **debug** binary directly so its settings child inherits
+the local update source (the release build ignores that environment variable):
+
+```bash
+review_dir=/tmp/mousetroke-update-review.XXXXXX
+installed="$HOME/Applications/Mousetroke Update Review/Mousetroke.app"
+MOUSETROKE_UPDATE_BASE=http://127.0.0.1:8770 "$installed/Contents/MacOS/mousetroke"
+```
+
+1. Grant Accessibility and Input Monitoring to this signed debug app and confirm Ready
+   and a working ← gesture. If testing the first Gatekeeper prompt too, first give the
+   debug bundle a browser quarantine attribute (`xattr -w com.apple.quarantine
+   "0083;$(printf '%x' "$(date +%s)");Safari;" "$installed"`), open it in Finder, and use
+   Open Anyway once. Quit it and use the debug launch command above afterward.
+2. Open About → Check for updates → **Update now**. Check the installing spinner, the
+   disappearance of settings, one new engine PID and relaunch within 30 seconds. No
+   second Gatekeeper/Open Anyway or permission prompt should appear. Open About again:
+   the running version must be **999.0.0**, setup must remain Ready, and ← must still work.
+3. Verify the installed plist and requirement, and inspect attributes and the update log:
+
+   ```bash
+   /usr/libexec/PlistBuddy -c 'Print :CFBundleShortVersionString' "$installed/Contents/Info.plist"
+   codesign --verify --deep --strict "$installed"
+   codesign -d -r- "$installed" > "$review_dir/requirement-after.txt" 2>/dev/null
+   cmp "$review_dir/requirement-before.txt" "$review_dir/requirement-after.txt"
+   xattr -r "$installed"
+   tail -n 100 "$HOME/Library/Logs/mousetroke/mousetroke.log"
+   open "$HOME/.Trash"
+   ```
+
+   Expect `999.0.0`, matching requirements and no `com.apple.quarantine` anywhere in the
+   installed bundle. In Trash, use ⌘⇧. to show hidden files and find `.Mousetroke-old.app`
+   (the log records its exact collision-safe Trash path); its plist is the original version.
+   Neither `.Mousetroke-update.app` nor `.Mousetroke-old.app` should remain in the install
+   directory. `hdiutil info` should show no updater mount left behind.
+4. Before the successful case, also try restarting the fixture with `--bad-checksum`:
+   clicking Update must leave the original running app, permissions and version intact,
+   report a checksum error, and offer **Download manually**. Repeat with fixture version
+   `999.0.1` but the `999.0.0` DMG (version rejection), and an independently signed or
+   ad-hoc higher-version bundle (signature rejection). For the unwritable case, remove
+   write permission from the dedicated review parent directory, click Update, and restore
+   its permissions afterward; expect the localized error and manual fallback. Existing
+   staging/backup paths must produce Busy and remain intact. Run these attempts from
+   the original debug bundle; the successfully installed release ignores the fixture.
+
+The helper's late timeout/Trash/open failures are logged because settings has already
+exited; verify that rollback leaves the original app recoverable and never deletes an
+app recursively. Re-run from a fresh review directory when testing a second successful
+update, and quit the review app before removing the disposable checkout via git worktree.
+
 ## M5a acceptance checklist
 
 - Build twice with the same release p12; compare `codesign -d -r-` requirements, verify
@@ -374,12 +535,23 @@ item in System Settings.
   Rosetta on Apple silicon). Run natively on the Intel macOS 11 machine too.
 - Mount the DMG read-only, verify volume name, app and Applications symlink; launch there
   and from a quarantined/translocated downloaded copy and confirm one installation notice
-  plus log. Copy to Applications and confirm no notice.
+  plus log. Copy to Applications and confirm no notice. Show hidden files: only
+  `.background.tiff` should contain artwork, with both 640×400 and 1280×800 representations
+  (`tiffutil -info`); there should be no `.background` source directory. Check the arrow at 1x/2x.
+- Keep an older copy's engine and settings window open, then install from a new DMG.
+  Cancel must leave both processes and the installed bundle unchanged. Confirm must quit
+  both processes and open the replaced copy. Suspend one old process with `kill -STOP`
+  before confirming: after about 10 seconds, installation must fail without replacing or
+  force-killing it; resume it with `kill -CONT` afterwards.
+- With setup showing Ready, leave the engine idle for more than 6 seconds: `input-state`
+  modification time must not change and setup must stay Ready. Toggle the tap permissions
+  and check the snapshot changes. Quit the engine and leave the snapshot in place:
+  setup must show it stopped. Restart it and confirm the snapshot PID matches the lock PID.
 - Download through a browser to test real quarantine/Gatekeeper; follow Open Anyway,
   grant both permissions, verify gestures/settings and then replace with the second signed
   build at the same path. Confirm grants and gestures survive and login launch still works.
 - About: test current/newer/error responses, Chinese/English release-note selection and
-  fallback, retry, browser DMG download, no in-app installation. Test the ten UI languages.
+  fallback, retry, verified in-app update, and manual DMG download. Test the ten UI languages.
 - With a newer real release, enable daily checks and confirm one menu notice opening About;
   restart and confirm no second request that day. Disable/re-enable and live-reload the
   preference; inspect the state/log. Invalid/future state and offline networking must not

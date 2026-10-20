@@ -91,6 +91,11 @@ jobs:
           npm run typecheck || exit 1
           npm test || exit 1
           npm run build || exit 1
+      - name: Install DMG layout tool
+        env:
+          # 运行器的 Homebrew Python 遵循 PEP 668；旧版 pip 忽略此变量
+          PIP_BREAK_SYSTEM_PACKAGES: "1"
+        run: python3 -m pip install dmgbuild==1.6.5 || exit 1
       - name: Test macOS packaging gates
         run: python -m unittest discover -s scripts -p test_mac_packaging.py
       - name: Install universal targets

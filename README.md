@@ -57,17 +57,33 @@ cargo test --workspace       :: engine, importer, i18n and settings tests
 macOS 11+, Apple silicon and Intel in one universal app. Compare its SHA-256 with the
 same release's `SHA256SUMS.txt` (which also lists the Windows exe).
 
-1. Open the DMG, drag **Mousetroke** into **Applications**, then open it from there.
+1. Open the DMG, drag **Mousetroke** into **Applications**, then open it. If opened from the
+   DMG, choose **Move to Applications** to install and reopen it there (or in `~/Applications`
+   if the shared folder is not writable). Quit an older copy before replacing it.
 2. The beta is self-signed and **not notarized**. If macOS blocks it, use **System Settings →
    Privacy & Security → Open Anyway**; on older macOS, **right-click → Open**. A newly
-   downloaded update may need this step again.
-3. Grant **Accessibility** and **Input Monitoring**. **Screen Recording is not required**.
+   browser-downloaded copy may need this step again. In-app updates avoid the repeated prompt.
+3. Follow setup and click **Grant…** to allow **Accessibility**. This lets Mousetroke see
+   mouse gestures, control windows and send keyboard shortcuts. Setup shows **Ready** once
+   the engine’s event taps are active, then a short guide.
+   Try holding the right button and drawing `←` in a window. You can skip and grant later
+   from the menu bar. **Screen Recording is not required**.
 
-About supports manual update checks, shared release notes and a **Download new version**
-button that opens the DMG in your browser. Preferences controls the daily automatic check;
-a new-version menu item opens About. Installation remains a manual drag into Applications.
-Quit before replacing the app. Releases reuse one signing certificate to retain permissions;
-changing the certificate or installation path can require granting them again.
+The engine checks permissions with a fresh, silent probe every two seconds, including while
+gestures work, so revoking access is detected too. If Accessibility is enabled but listening
+or event taps still fail after a few seconds, setup and the menu bar offer **Input Monitoring**
+as a fallback for older macOS versions. Enable it only when asked. Setup can restart the engine
+once automatically and offers **Restart Mousetroke** if needed, keeping settings open.
+
+About supports manual update checks, release notes and **Update now**: the app downloads the
+DMG, verifies SHA-256, bundle identity, version and the current certificate's designated
+requirement, then replaces the running bundle and restarts. The old app goes to Trash after
+the engine and settings exit. Failed replacement or restart handoff restores the old bundle.
+In-app downloads have no browser quarantine, so updates avoid a second Gatekeeper prompt.
+The signing identity and installation path stay the same to retain permissions.
+**Download manually** remains available if the folder is not writable or updating fails;
+browser downloads may require Open Anyway again. Preferences controls daily checking,
+and a new-version menu item opens About. See the [Mac update acceptance recipe](crates/mousetroke-mac/README.md#in-app-update-acceptance-on-the-mac-mini).
 
 Uninstall: quit from the menu bar, delete `Mousetroke.app`,
 `~/Library/Application Support/mousetroke` and `~/Library/Logs/mousetroke`, then remove

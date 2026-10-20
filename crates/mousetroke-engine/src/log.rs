@@ -6,6 +6,7 @@ use std::path::PathBuf;
 use std::sync::mpsc::{sync_channel, SyncSender};
 use std::sync::{Mutex, OnceLock};
 use std::thread::JoinHandle;
+use std::{cell::RefCell, collections::VecDeque};
 
 const MAX_LINE: usize = 2048;
 const MAX_BYTES: u64 = 1 << 20;
@@ -45,6 +46,51 @@ enum Message {
     Line(Line),
     Shape(Vec<i32>),
     Stop,
+}
+
+// macOS tap 的日志只写线程本地缓冲；共享发送端和诊断观察器移到下一拍。
+#[derive(Default)]
+struct Deferred {
+    active: bool,
+    queue: VecDeque<Message>,
+}
+thread_local! { static DEFERRED: RefCell<Deferred> = RefCell::new(Deferred::default()); }
+
+pub fn prepare_deferred() {
+    DEFERRED.with(|slot| slot.borrow_mut().queue.reserve(QUEUE));
+}
+
+pub fn defer<R>(work: impl FnOnce() -> R) -> R {
+    struct Guard(bool);
+    impl Drop for Guard {
+        fn drop(&mut self) { DEFERRED.with(|slot| slot.borrow_mut().active = self.0); }
+    }
+    let previous = DEFERRED.with(|slot| {
+        let mut state = slot.borrow_mut();
+        std::mem::replace(&mut state.active, true)
+    });
+    let _guard = Guard(previous);
+    work()
+}
+
+pub fn flush_deferred() {
+    loop {
+        let message = DEFERRED.with(|slot| slot.borrow_mut().queue.pop_front());
+        let Some(message) = message else { break };
+        if let Message::Line(line) = &message {
+            if let Some(observe) = OBSERVER.get() { observe(line.text()); }
+        }
+        if let Some(tx) = TX.get() { let _ = tx.try_send(message); }
+    }
+}
+
+fn enqueue_deferred(message: Message) -> Option<Message> {
+    DEFERRED.with(|slot| {
+        let mut state = slot.borrow_mut();
+        if !state.active { return Some(message); }
+        if state.queue.len() < state.queue.capacity() { state.queue.push_back(message); }
+        None
+    })
 }
 
 /// 启动写日志线程（重复调用无效果）。`timestamp` 在后台线程调用。
@@ -104,6 +150,7 @@ pub fn set_observer(observer: fn(&str)) {
 pub fn write_args(args: fmt::Arguments<'_>) {
     let mut line = Line::new();
     let _ = line.write_fmt(args);
+    let Some(Message::Line(line)) = enqueue_deferred(Message::Line(line)) else { return };
     if let Some(observe) = OBSERVER.get() {
         observe(line.text());
     }
@@ -122,8 +169,9 @@ pub fn write(text: &str) {
 /// 校准样本（MOUSETROKE_SHAPE_SAMPLES=1）；格式化在后台，超长样本丢弃。
 pub fn shape_sample(sample: Vec<i32>) {
     if sample.len() <= 512 {
+        let Some(message) = enqueue_deferred(Message::Shape(sample)) else { return };
         if let Some(tx) = TX.get() {
-            let _ = tx.try_send(Message::Shape(sample));
+            let _ = tx.try_send(message);
         }
     }
 }
@@ -154,5 +202,18 @@ mod tests {
         line.write_str(&"界".repeat(1000)).unwrap();
         assert!(line.len <= MAX_LINE);
         assert_eq!(line.text().len(), 2046);
+    }
+
+    #[test]
+    fn deferred_callback_logs_are_bounded_and_restore_after_unwind() {
+        prepare_deferred();
+        defer(|| {
+            for _ in 0..QUEUE + 10 { write("测试日志"); }
+            DEFERRED.with(|slot| assert_eq!(slot.borrow().queue.len(), QUEUE));
+        });
+        let _ = std::panic::catch_unwind(|| defer(|| panic!("模拟回调失败")));
+        DEFERRED.with(|slot| assert!(!slot.borrow().active));
+        flush_deferred();
+        DEFERRED.with(|slot| assert!(slot.borrow().queue.is_empty()));
     }
 }

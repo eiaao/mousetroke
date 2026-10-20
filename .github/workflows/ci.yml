@@ -40,6 +40,11 @@ jobs:
 
       - name: Test macOS packaging gates
         run: python -m unittest discover -s scripts -p test_mac_packaging.py
+      - name: Install DMG tooling
+        env:
+          # 运行器的 Homebrew Python 遵循 PEP 668；旧版 pip 忽略此变量
+          PIP_BREAK_SYSTEM_PACKAGES: "1"
+        run: python3 -m pip install dmgbuild==1.6.5
       - name: Universal bundle and DMG smoke test
         env:
           MOUSETROKE_SIGN_ID: "-"

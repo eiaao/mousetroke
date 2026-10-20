@@ -2402,6 +2402,21 @@ select.lang-select {
   background: var(--trail);
 }
 
+/* Mac 权限页减少插图区高度，长译文仍可在正文中滚动。 */
+.guide-permissions { width: min(600px, 92vw); }
+.guide-permissions .guide-art { height: 56px; }
+.guide-permissions .guide-text { padding-top: 16px; }
+.permission-symbol { font-size: 42px; color: var(--trail); }
+.guide .permission-intro, .guide .permission-later { font-size: 13px; line-height: 1.5; }
+.permission-rows { display: grid; gap: 10px; margin: 12px 0; }
+.permission-row { display: flex; align-items: center; gap: 12px; padding: 10px 12px; border: 1px solid var(--line); border-radius: 12px; }
+.permission-row > div { flex: 1; min-width: 0; }
+.guide .permission-row p { margin: 4px 0; font-size: 13px; line-height: 1.5; }
+.permission-row .btn { flex-shrink: 0; }
+.permission-row span { font-size: 12px; }
+.permission-granted, .permission-ready { color: var(--ok); }
+.guide-try { font-weight: 600; }
+
 /* 插图 */
 .art {
   width: 320px;

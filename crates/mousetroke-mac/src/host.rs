@@ -152,11 +152,8 @@ impl Host for SystemHost {
         })
     }
     fn new_canvas(&self, color: &str, width: f64) -> Option<Box<dyn Canvas>> {
-        Some(Box::new(Overlay::new(
-            MainThreadMarker::new()?,
-            color,
-            width,
-        )?))
+        let overlay = Overlay::new(MainThreadMarker::new()?, color, width)?;
+        Some(Box::new(crate::canvas::DeferredCanvas::new(Box::new(overlay))))
     }
     fn shape_sample(&self, encoded: Vec<i32>) {
         mousetroke_engine::log::shape_sample(encoded);
@@ -172,6 +169,11 @@ impl Host for SystemHost {
     fn refresh_texts(&self) {
         crate::menu::request_refresh();
     }
+}
+
+/// 输入故障时丢弃旧捕获尚未补发的事件。
+pub fn clear_replays() {
+    REPLAYS.with(|slot| slot.borrow_mut().clear());
 }
 
 /// 在 tap 回调返回后的下一次主 run loop 计时器执行，队列上限固定，不同步重入引擎。

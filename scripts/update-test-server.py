@@ -4,33 +4,44 @@
 import argparse
 import hashlib
 import json
+import os
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--exe", type=Path, required=True)
+    parser.add_argument("--exe", type=Path)
+    parser.add_argument("--dmg", type=Path)
     parser.add_argument("--version", default="999.0.0")
     parser.add_argument("--port", type=int, default=8770)
     parser.add_argument("--bad-checksum", action="store_true")
     args = parser.parse_args()
-    payload = args.exe.read_bytes()
-    digest = "0" * 64 if args.bad_checksum else hashlib.sha256(payload).hexdigest()
+    if not args.exe and not args.dmg:
+        catalogs = Path(__file__).resolve().parents[1] / "i18n"
+        language = os.environ.get("MOUSETROKE_BUILD_LANG", "en-US")
+        if language not in {path.stem for path in catalogs.glob("*.json")}:
+            language = "en-US"
+        messages = json.loads((catalogs / f"{language}.json").read_text(encoding="utf-8"))
+        parser.error(messages["update.fixture.payload_required"])
     origin = f"http://127.0.0.1:{args.port}"
     release = {
         "tag_name": f"v{args.version}", "draft": False, "prerelease": False,
         "html_url": f"{origin}/releases/latest",
-        "assets": [
-            {"name": "mousetroke.exe", "browser_download_url": f"{origin}/mousetroke.exe"},
-            {"name": "SHA256SUMS.txt", "browser_download_url": f"{origin}/SHA256SUMS.txt"},
-        ],
+        "assets": [{"name": "SHA256SUMS.txt", "browser_download_url": f"{origin}/SHA256SUMS.txt"}],
     }
-    bodies = {
-        "/repos/eiaao/mousetroke/releases/latest": json.dumps(release).encode(),
-        "/mousetroke.exe": payload,
-        "/SHA256SUMS.txt": f"{digest} *mousetroke.exe\n".encode(),
-    }
+    bodies = {}
+    sums = []
+    for path, name in [(args.exe, "mousetroke.exe"), (args.dmg, "Mousetroke.dmg")]:
+        if path is None:
+            continue
+        payload = path.read_bytes()
+        digest = "0" * 64 if args.bad_checksum else hashlib.sha256(payload).hexdigest()
+        release["assets"].append({"name": name, "browser_download_url": f"{origin}/{name}"})
+        bodies[f"/{name}"] = payload
+        sums.append(f"{digest} *{name}\n")
+    bodies["/repos/eiaao/mousetroke/releases/latest"] = json.dumps(release).encode()
+    bodies["/SHA256SUMS.txt"] = "".join(sums).encode()
 
     class Handler(BaseHTTPRequestHandler):
         def do_GET(self):

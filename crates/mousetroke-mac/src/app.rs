@@ -1,7 +1,6 @@
 //! 唯一的主线程状态；输入回调只借用 ENGINE，不借用包含 AppKit 对象的 Runtime。
 use std::cell::{Cell, RefCell};
 use std::ffi::OsStr;
-use std::fs::OpenOptions;
 use std::panic::{catch_unwind, AssertUnwindSafe};
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::time::{Duration, Instant};
@@ -40,6 +39,7 @@ thread_local! {
     /// 最近一次输入或后台结果后保持 10ms 节奏的截止时间。
     static AWAKE_UNTIL: Cell<Option<Instant>> = const { Cell::new(None) };
     static SLOW: Cell<bool> = const { Cell::new(false) };
+    static TOGGLE_PAUSE: Cell<bool> = const { Cell::new(false) };
 }
 
 /// 有活动时 10ms 一拍；空闲后每 250ms 一拍，只做权限、配置、提示等低频工作。
@@ -58,6 +58,16 @@ pub(crate) fn wake() {
             }
         });
     }
+}
+
+/// tap 内仅更新线程本地状态；不调用 AppKit、调度器或共享队列，最迟下一空闲拍处理。
+pub(crate) fn note_input() {
+    AWAKE_UNTIL.with(|until| until.set(Some(Instant::now() + LINGER)));
+    if SLOW.with(|slow| slow.replace(false)) { crate::targeting::invalidate(); }
+}
+
+pub(crate) fn request_toggle_pause() {
+    TOGGLE_PAUSE.with(|pending| pending.set(!pending.get()));
 }
 
 /// 任意线程：把 wake 交给主队列执行，不直接触碰主线程状态。
@@ -95,6 +105,7 @@ fn settle_rhythm(now: Instant, busy: bool) {
 }
 
 static DISPLAY_CHANGED: AtomicBool = AtomicBool::new(false);
+static RESTART: AtomicBool = AtomicBool::new(false);
 
 struct DisplayObserver(Retained<ProtocolObject<dyn NSObjectProtocol>>);
 impl DisplayObserver {
@@ -152,8 +163,12 @@ struct Runtime {
     menu: Menu,
     permissions: Permissions,
     next_permissions: Instant,
+    permission_probe: Option<std::sync::mpsc::Receiver<Option<Permissions>>>,
+    listen_missing_since: Option<Instant>,
+    input_monitoring_required: bool,
     next_engine_tick: Instant,
     tap_failed: bool,
+    fault_pause: Option<bool>,
     selftest: Option<SelfTest>,
     _displays: DisplayObserver,
     update_version: Option<String>,
@@ -162,9 +177,48 @@ struct Runtime {
 impl Runtime {
     fn tick(&mut self, mtm: MainThreadMarker) {
         let now = Instant::now();
-        if events::take_fault() {
-            with_engine(|engine| engine.set_paused(true));
+        if let Some(permissions) = events::service_disabled() {
+            // 丢弃禁用通知之前启动的探针结果，防止旧授权覆盖即时撤权。
+            self.permission_probe = None;
+            with_engine(Engine::cancel_capture);
+            host::clear_replays();
+            self.permissions = permissions;
+            instance::publish_input_state(events::active());
             menu::request_refresh();
+        }
+        if events::take_fault() {
+            events::remove();
+            host::clear_replays();
+            with_engine(|engine| {
+                self.fault_pause.get_or_insert(engine.is_paused());
+                engine.cancel_capture();
+                engine.set_paused(true);
+            });
+            instance::publish_input_state(false);
+            crate::log!("输入故障：已取消捕获并暂停，等待正常权限轮询恢复");
+            menu::request_refresh();
+        }
+        mousetroke_engine::log::flush_deferred();
+        if TOGGLE_PAUSE.with(|pending| pending.replace(false)) {
+            toggle_pause();
+            // 故障期间用户主动切换暂停时，恢复后保留这个选择。
+            if self.fault_pause.is_some() { self.fault_pause = with_engine(|engine| engine.is_paused()); }
+        }
+        for (request, accessibility) in [(crate::control::Request::Accessibility, true), (crate::control::Request::InputMonitoring, false)] {
+            if crate::control::take(request) {
+                crate::log!("引擎处理权限请求: pid={}, 辅助功能={accessibility}", std::process::id());
+                if let Err(error) = permissions::request(accessibility) { crate::log!("引擎请求权限失败: {error}"); }
+                self.next_permissions = now;
+                self.permission_probe = None;
+            }
+        }
+        if crate::control::take(crate::control::Request::Quit) {
+            crate::log!("设置页请求更新退出引擎");
+            request_quit(0);
+        } else if crate::control::take(crate::control::Request::Restart) {
+            crate::log!("设置页请求重启引擎");
+            RESTART.store(true, Ordering::Relaxed);
+            request_quit(0);
         }
         if DISPLAY_CHANGED.swap(false, Ordering::Relaxed) {
             host::refresh_screen(mtm);
@@ -181,29 +235,15 @@ impl Runtime {
         }
         if now >= self.next_permissions {
             self.next_permissions = now + Duration::from_secs(2);
-            let permissions = permissions::check(false);
-            if permissions != self.permissions {
-                if !permissions.ready() {
-                    // 系统可能先禁用 tap 再让轮询发现撤权；无论 tap 是否仍 enabled 都取消旧捕获。
-                    with_engine(Engine::cancel_capture);
-                    events::remove();
-                    self.tap_failed = false;
+            // 同时最多一个静默探针；等待子进程放在工作线程，主线程继续处理输入。
+            if self.permission_probe.is_none() {
+                let (sender, receiver) = std::sync::mpsc::channel();
+                match std::thread::Builder::new().name("permission-probe".into()).spawn(move || {
+                    let _ = sender.send(permissions::check_fresh());
+                }) {
+                    Ok(_) => self.permission_probe = Some(receiver),
+                    Err(error) => crate::log!("启动权限探针失败: {error}"),
                 }
-                crate::log!(
-                    "权限状态: 辅助功能={}, 输入监控={}",
-                    permissions.accessibility,
-                    permissions.input_monitoring
-                );
-                self.permissions = permissions;
-                menu::request_refresh();
-            }
-            if self.permissions.ready() && !events::active() {
-                let installed = events::install();
-                if !installed && !self.tap_failed {
-                    crate::log!("创建事件 tap 失败；两秒后重试，请检查系统权限与图形登录会话");
-                }
-                self.tap_failed = !installed;
-                menu::request_refresh();
             }
             if host::refresh_screen(mtm) {
                 with_engine(Engine::on_display_change);
@@ -225,6 +265,60 @@ impl Runtime {
                 }
             }
         }
+        if let Some(result) = self.permission_probe.as_ref().and_then(|probe| match probe.try_recv() {
+            Ok(result) => Some(result),
+            Err(std::sync::mpsc::TryRecvError::Disconnected) => Some(None),
+            Err(std::sync::mpsc::TryRecvError::Empty) => None,
+        }) {
+            self.permission_probe = None;
+            let permissions = result.unwrap_or(Permissions { accessibility: false, input_monitoring: false });
+            let was_active = events::active();
+            if !permissions.accessibility || (!permissions.input_monitoring && was_active) {
+                with_engine(Engine::cancel_capture);
+                host::clear_replays();
+                // 仅撤权变化或活动 tap 才触发故障，持续缺权时不重复暂停和写日志。
+                if was_active || permissions != self.permissions {
+                    events::permission_revoked();
+                } else {
+                    events::remove();
+                }
+            } else if !events::active() {
+                with_engine(Engine::cancel_capture);
+                host::clear_replays();
+                // 预检缺少监听权限时仍可尝试安装；只有两个 tap 均成功才算就绪。
+                let installed = events::install(permissions);
+                if !installed && !self.tap_failed {
+                    crate::log!("创建事件 tap 失败；两秒后重试，请检查系统权限与图形登录会话");
+                }
+                self.tap_failed = !installed;
+                if installed {
+                    if let Some(paused) = self.fault_pause.take() {
+                        with_engine(|engine| engine.set_paused(paused));
+                        crate::log!("事件 tap 已恢复，故障暂停已解除，原暂停状态={paused}");
+                    }
+                }
+            }
+            if permissions != self.permissions {
+                crate::log!("权限状态: 辅助功能={}, 输入监控={}", permissions.accessibility, permissions.input_monitoring);
+                self.permissions = permissions;
+                menu::request_refresh();
+            }
+            instance::publish_input_state(events::active());
+            if events::active() != was_active { menu::request_refresh(); }
+        }
+        // 辅助功能授权后给正常安装留四秒，仍缺监听或 tap 安装失败才显示输入监控兜底。
+        let fallback = self.permissions.accessibility && !events::active()
+            && (!self.permissions.input_monitoring || self.tap_failed);
+        let required = if fallback {
+            now.saturating_duration_since(*self.listen_missing_since.get_or_insert(now)) >= Duration::from_secs(4)
+        } else {
+            self.listen_missing_since = None;
+            false
+        };
+        if required != self.input_monitoring_required {
+            self.input_monitoring_required = required;
+            menu::request_refresh();
+        }
         if let Some(test) = self.selftest.as_mut() {
             test.tick(events::active());
         }
@@ -238,7 +332,7 @@ impl Runtime {
             self.menu.set_update(self.update_version.as_deref());
             let paused = with_engine(|engine| engine.is_paused()).unwrap_or(false);
             self.menu
-                .refresh(mtm, self.permissions, events::active(), paused);
+                .refresh(mtm, self.permissions, events::active(), paused, self.input_monitoring_required);
         }
         if QUIT.with(Cell::get).is_some() {
             stop(mtm);
@@ -283,8 +377,18 @@ pub fn run() -> Result<i32, String> {
 pub fn run_with_config(config: Option<std::path::PathBuf>) -> Result<i32, String> {
     let mtm = MainThreadMarker::new().ok_or_else(|| t(keys::MAC_ERROR_MAIN_THREAD).to_string())?;
     log::init().map_err(|error| error.to_string())?;
+    mousetroke_engine::log::prepare_deferred();
     mousetroke_engine::log::set_observer(crate::selftest::observe);
+    // 默认 panic hook 会同步写 stderr；tap 内的异常也必须先进入本地日志缓冲。
+    let previous_hook = std::panic::take_hook();
+    std::panic::set_hook(Box::new(|info| {
+        let message = info.payload().downcast_ref::<&str>().copied()
+            .or_else(|| info.payload().downcast_ref::<String>().map(String::as_str))
+            .unwrap_or("未知异常"); // i18n:allow 仅供异常日志的非字符串 payload 占位
+        crate::log!("Rust panic: {message}，位置={:?}", info.location());
+    }));
     let result = autoreleasepool(|_| run_main(mtm, config));
+    std::panic::set_hook(previous_hook);
     // 启动失败也写进日志：从 Finder/open 启动时看不到 stderr。
     if let Err(error) = &result {
         mousetroke_engine::log!("运行失败：{error}");
@@ -295,6 +399,10 @@ pub fn run_with_config(config: Option<std::path::PathBuf>) -> Result<i32, String
 
 fn run_main(mtm: MainThreadMarker, config_path: Option<std::path::PathBuf>) -> Result<i32, String> {
     let selftest = std::env::var_os("MOUSETROKE_SELFTEST").as_deref() == Some(OsStr::new("1"));
+    // 安装对话框先于锁、配置写盘和任何权限相关初始化；重启的已安装副本不会被本实例阻挡。
+    if !selftest && crate::first_run::handle_install(mtm) {
+        return Ok(0);
+    }
     let path = config_path.unwrap_or_else(default_config_path);
     crate::settings::initialize(path.clone());
     // 引擎单实例锁固定在应用目录，设置中的自定义配置不会绕过检测。
@@ -307,6 +415,9 @@ fn run_main(mtm: MainThreadMarker, config_path: Option<std::path::PathBuf>) -> R
         crate::log!("已有实例运行，退出第二个实例");
         return Ok(if selftest { 1 } else { 0 });
     };
+    let _control = crate::control::Observer::new(mtm);
+    instance::publish_input_state(false);
+    let first_run = !path.exists();
     let config = if selftest {
         let config = Config::builtin();
         if !path.exists() {
@@ -339,9 +450,11 @@ fn run_main(mtm: MainThreadMarker, config_path: Option<std::path::PathBuf>) -> R
     host::refresh_target();
     host::refresh_screen(mtm);
     input::initialize(selftest);
+    events::prepare();
     crate::lua::initialize();
     let displays = DisplayObserver::new();
     let automatic_updates = config.settings.update_check;
+    let restart_path = path.clone();
     let update_path = path.clone();
     let engine = Engine::new(
         config,
@@ -353,24 +466,11 @@ fn run_main(mtm: MainThreadMarker, config_path: Option<std::path::PathBuf>) -> R
     mousetroke_engine::install(engine);
     if !selftest {
         crate::update::start_automatic(update_path, automatic_updates);
-        if std::env::current_exe().is_ok_and(|path| crate::first_run::needs_install(&path)) {
-            crate::log!("从 AppTranslocation 或 DMG 启动，请拖入 Applications 后再打开");
-            mousetroke_engine::push_toast(t(keys::MAC_FIRST_RUN_INSTALL).into(), 8000);
-        }
     }
-    let prompt = match OpenOptions::new()
-        .write(true)
-        .create_new(true)
-        .open(dir.join("permission-prompted"))
-    {
-        Ok(_) => true,
-        Err(error) if error.kind() == std::io::ErrorKind::AlreadyExists => false,
-        Err(error) => {
-            crate::log!("无法记录首次权限请求: {error}");
-            false
-        }
-    };
-    let permissions = permissions::check(prompt);
+    let permissions = permissions::check();
+    if !selftest && (first_run || !permissions.ready()) {
+        crate::settings::open_setup();
+    }
     crate::log!(
         "权限状态: 辅助功能={}, 输入监控={}",
         permissions.accessibility,
@@ -383,8 +483,12 @@ fn run_main(mtm: MainThreadMarker, config_path: Option<std::path::PathBuf>) -> R
             menu,
             permissions,
             next_permissions: now,
+            permission_probe: None,
+            listen_missing_since: None,
+            input_monitoring_required: false,
             next_engine_tick: now,
             tap_failed: false,
+            fault_pause: None,
             selftest: selftest.then(|| SelfTest::new(expected.0, expected.1)),
             _displays: displays,
             update_version: None,
@@ -431,5 +535,12 @@ fn run_main(mtm: MainThreadMarker, config_path: Option<std::path::PathBuf>) -> R
     drop(mousetroke_engine::uninstall());
     let code = QUIT.with(|slot| slot.take()).unwrap_or(0);
     crate::log!("Mousetroke 退出: {code}");
+    if RESTART.swap(false, Ordering::Relaxed) {
+        // 清理完成并显式释放 flock 后再启动；新进程运行引擎，设置窗口继续保留。
+        drop(_lock);
+        let exe = std::env::current_exe().map_err(|error| error.to_string())?;
+        std::process::Command::new(exe).arg("run").arg("--config").arg(restart_path)
+            .spawn().map_err(|error| error.to_string())?;
+    }
     Ok(code)
 }

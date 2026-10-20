@@ -126,6 +126,8 @@ export interface EngineStatus {
 export interface InitState {
   platform: "windows" | "macos";
   about?: boolean;
+  setup?: boolean;
+  permissions?: PermissionStatus;
   configPath: string;
   config: Config;
   configExists: boolean;
@@ -136,6 +138,15 @@ export interface InitState {
   /** 后端按 language + 系统语言解析出的语言标签。 */
   resolvedLang: string;
 }
+
+export interface PermissionStatus {
+  accessibility: boolean;
+  // 监听访问可由辅助功能提供，不等同于单独授予输入监控。
+  input_monitoring: boolean;
+  engine_ready?: boolean | null;
+}
+
+export type PermissionName = "accessibility" | "input_monitoring";
 
 export interface RunningApp {
   exe: string;

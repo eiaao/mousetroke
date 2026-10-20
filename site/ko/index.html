@@ -62,7 +62,7 @@
       "sameAs": ["https://github.com/eiaao/mousetroke"],
       "fileSize": "Windows: 13.1 MB; Mac: 8.1 MB",
       "memoryRequirements": "Windows: 작업 집합 약 19 MB. Mac: 물리 메모리 사용량 약 13 MB",
-      "softwareRequirements": "Windows 설정 창: Microsoft Edge WebView2(Windows 11 기본 제공). Mac 설정 창: 시스템 WebKit. Mac은 손쉬운 사용 및 입력 모니터링 권한 필요",
+      "softwareRequirements": "Windows 설정 창: Microsoft Edge WebView2(Windows 11 기본 제공). Mac 설정 창: 시스템 WebKit. Mac은 손쉬운 사용 권한 필요. 입력 모니터링은 안내에서 요청할 때만 허용",
       "license": "https://opensource.org/licenses/MIT",
       "isAccessibleForFree": true,
       "inLanguage": ["en", "zh-CN", "es", "fr", "de", "ja", "pt-BR", "ru", "it", "ko"],
@@ -93,7 +93,7 @@
       "mainEntity": [
         {"@type": "Question", "name": "Mousetroke를 써도 오른쪽 클릭 메뉴가 되나요?", "acceptedAnswer": {"@type": "Answer", "text": "네. 드래그하지 않은 오른쪽 클릭은 그대로 시스템에 전달되어 평소처럼 메뉴가 열립니다. 설정한 대기 시간(기본 0.5초, 변경 가능)을 넘겨 움직이지 않고 누르면 일반 오른쪽 드래그로 처리합니다."}},
         {"@type": "Question", "name": "게임이나 원격 데스크톱에서 오작동하지 않나요?", "acceptedAnswer": {"@type": "Answer", "text": "Windows: 전체 화면 게임·동영상·발표 중에는 제스처가 자동으로 일시 정지됩니다. 원격 데스크톱, AnyDesk, Blender, AutoCAD처럼 오른쪽·가운데 끌기를 직접 쓰는 프로그램은 처음 실행할 때 클릭 한 번으로 제외할 수 있습니다. Win+Esc로 언제든 정지할 수 있습니다. Mac: 전체 화면 게임·동영상·프레젠테이션 중에는 제스처가 자동으로 일시 정지됩니다. 설정에서 원격 데스크톱·가상 머신·3D 앱을 제외할 수 있습니다. 기본 일시 정지 단축키는 ⌃⌥⌘P이며 바꿀 수 있습니다."}},
-        {"@type": "Question", "name": "어떤 운영 체제를 지원하나요?", "acceptedAnswer": {"@type": "Answer", "text": "Windows: Windows 10 1809 이상과 Windows 11, 64비트입니다. 제스처 엔진은 런타임 의존성이 없고, 설정 창은 Microsoft Edge WebView2를 사용합니다(Windows 11에 기본 포함, 대부분의 Windows 10 PC에는 Edge와 함께 있음). Mac: Apple silicon 및 Intel의 macOS 11 이상을 지원합니다. 네이티브 엔진은 AppKit과 CGEventTap, 설정 창은 시스템 WebKit을 사용합니다. 처음 열 때 손쉬운 사용과 입력 모니터링을 허용하세요."}},
+        {"@type": "Question", "name": "어떤 운영 체제를 지원하나요?", "acceptedAnswer": {"@type": "Answer", "text": "Windows: Windows 10 1809 이상과 Windows 11, 64비트입니다. 제스처 엔진은 런타임 의존성이 없고, 설정 창은 Microsoft Edge WebView2를 사용합니다(Windows 11에 기본 포함, 대부분의 Windows 10 PC에는 Edge와 함께 있음). Mac: Apple silicon 및 Intel의 macOS 11 이상을 지원합니다. 네이티브 엔진은 AppKit과 CGEventTap, 설정 창은 시스템 WebKit을 사용합니다. 처음 열 때 손쉬운 사용을 허용하세요. 이전 macOS에서 설정 안내가 요청할 때만 입력 모니터링도 켜세요."}},
         {"@type": "Question", "name": "Mousetroke는 무료인가요?", "acceptedAnswer": {"@type": "Answer", "text": "네. MIT 라이선스의 오픈 소스이며 광고나 계정이 없습니다. 하루에 한 번 GitHub에 새 버전이 있는지 확인합니다(환경 설정에서 끌 수 있음). 그 외에는 아무 정보도 보내지 않으며 텔레메트리도 없습니다."}},
         {"@type": "Question", "name": "메모리와 CPU를 얼마나 쓰나요?", "acceptedAnswer": {"@type": "Answer", "text": "Windows: 상주 엔진은 작업 집합 약 19 MB(전용 약 10 MB)를 쓰고 유휴 시 CPU는 쓰지 않습니다. 설정 창은 열려 있는 동안만 도는 별도 프로세스입니다. Mac: 상주 엔진의 물리 메모리 사용량은 활성 상태 보기에서 약 13 MB이며, 대기 중에는 CPU를 쓰지 않습니다. 설정은 메뉴 막대 메뉴에서 엽니다."}},
         {"@type": "Question", "name": "제스처를 직접 만들 수 있나요?", "acceptedAnswer": {"@type": "Answer", "text": "네. 설정에서 새 제스처를 만들고 편집기 패드에 한 번 그리면 됩니다. 마우스 버튼·휠·키·화면 가장자리를 조합하거나 앱마다 따로 제스처를 정할 수도 있습니다."}},
@@ -358,7 +358,7 @@
       <div class="faq">
         <details open><summary>Mousetroke를 써도 오른쪽 클릭 메뉴가 되나요?</summary><div class="ans"><p>네. 드래그하지 않은 오른쪽 클릭은 그대로 시스템에 전달되어 평소처럼 메뉴가 열립니다. 설정한 대기 시간(기본 0.5초, 변경 가능)을 넘겨 움직이지 않고 누르면 일반 오른쪽 드래그로 처리합니다.</p></div></details>
         <details><summary>게임이나 원격 데스크톱에서 오작동하지 않나요?</summary><div class="ans"><p><span class="os-win">Windows: 전체 화면 게임·동영상·발표 중에는 제스처가 자동으로 일시 정지됩니다. 원격 데스크톱, AnyDesk, Blender, AutoCAD처럼 오른쪽·가운데 끌기를 직접 쓰는 프로그램은 처음 실행할 때 클릭 한 번으로 제외할 수 있습니다. Win+Esc로 언제든 정지할 수 있습니다.</span><span class="os-mac" hidden>Mac: 전체 화면 게임·동영상·프레젠테이션 중에는 제스처가 자동으로 일시 정지됩니다. 설정에서 원격 데스크톱·가상 머신·3D 앱을 제외할 수 있습니다. 기본 일시 정지 단축키는 ⌃⌥⌘P이며 바꿀 수 있습니다.</span></p></div></details>
-        <details><summary>어떤 운영 체제를 지원하나요?</summary><div class="ans"><p><span class="os-win">Windows: Windows 10 1809 이상과 Windows 11, 64비트입니다. 제스처 엔진은 런타임 의존성이 없고, 설정 창은 Microsoft Edge WebView2를 사용합니다(Windows 11에 기본 포함, 대부분의 Windows 10 PC에는 Edge와 함께 있음).</span><span class="os-mac" hidden>Mac: Apple silicon 및 Intel의 macOS 11 이상을 지원합니다. 네이티브 엔진은 AppKit과 CGEventTap, 설정 창은 시스템 WebKit을 사용합니다. 처음 열 때 손쉬운 사용과 입력 모니터링을 허용하세요.</span></p></div></details>
+        <details><summary>어떤 운영 체제를 지원하나요?</summary><div class="ans"><p><span class="os-win">Windows: Windows 10 1809 이상과 Windows 11, 64비트입니다. 제스처 엔진은 런타임 의존성이 없고, 설정 창은 Microsoft Edge WebView2를 사용합니다(Windows 11에 기본 포함, 대부분의 Windows 10 PC에는 Edge와 함께 있음).</span><span class="os-mac" hidden>Mac: Apple silicon 및 Intel의 macOS 11 이상을 지원합니다. 네이티브 엔진은 AppKit과 CGEventTap, 설정 창은 시스템 WebKit을 사용합니다. 처음 열 때 손쉬운 사용을 허용하세요. 이전 macOS에서 설정 안내가 요청할 때만 입력 모니터링도 켜세요.</span></p></div></details>
         <details><summary>Mousetroke는 무료인가요?</summary><div class="ans"><p>네. MIT 라이선스의 오픈 소스이며 광고나 계정이 없습니다. 하루에 한 번 GitHub에 새 버전이 있는지 확인합니다(환경 설정에서 끌 수 있음). 그 외에는 아무 정보도 보내지 않으며 텔레메트리도 없습니다.</p></div></details>
         <details><summary>메모리와 CPU를 얼마나 쓰나요?</summary><div class="ans"><p><span class="os-win">Windows: 상주 엔진은 작업 집합 약 19 MB(전용 약 10 MB)를 쓰고 유휴 시 CPU는 쓰지 않습니다. 설정 창은 열려 있는 동안만 도는 별도 프로세스입니다.</span><span class="os-mac" hidden>Mac: 상주 엔진의 물리 메모리 사용량은 활성 상태 보기에서 약 13 MB이며, 대기 중에는 CPU를 쓰지 않습니다. 설정은 메뉴 막대 메뉴에서 엽니다.</span></p></div></details>
         <details><summary>제스처를 직접 만들 수 있나요?</summary><div class="ans"><p>네. 설정에서 새 제스처를 만들고 편집기 패드에 한 번 그리면 됩니다. 마우스 버튼·휠·키·화면 가장자리를 조합하거나 앱마다 따로 제스처를 정할 수도 있습니다.</p></div></details>
@@ -376,7 +376,7 @@
         <h2 id="h-get">Mousetroke 다운로드</h2>
         <p><span class="os-win">설치 프로그램이 없습니다. 알림 영역에 아이콘이 나타나며, 왼쪽 클릭은 설정, 오른쪽 클릭은 일시 정지나 종료입니다. 처음 실행할 때 4단계 안내가 함께합니다.</span><span class="os-mac" hidden>메뉴 막대 메뉴에서 설정을 열거나 일시 정지·종료할 수 있습니다. 로그인 시 실행은 시스템 설정에서 관리합니다.</span></p>
         <h3 class="mac-first-title os-mac" hidden>Mac에서 처음 열기</h3>
-        <p class="mac-first-text os-mac" hidden>Mousetroke를 응용 프로그램으로 드래그하고 거기서 여세요. 이 베타는 공증되지 않았습니다. macOS가 차단하면 시스템 설정 → 개인정보 보호 및 보안 → 확인 없이 열기를 선택하세요 (이전 macOS는 오른쪽 클릭 → 열기). 그런 다음 손쉬운 사용과 입력 모니터링을 허용하세요.</p>
+        <p class="mac-first-text os-mac" hidden>Mousetroke를 응용 프로그램으로 드래그하여 여세요. 공증되지 않은 베타이므로 차단되면 시스템 설정 → 개인정보 보호 및 보안 → 확인 없이 열기를 선택하세요. 설정 안내에 따라 손쉬운 사용을 허용하고 준비 완료를 확인하세요. 입력 모니터링은 안내에서 요청할 때만 켜세요. 이후 업데이트는 정보에서 지금 업데이트를 눌러 추가로 그래도 열기 없이 설치할 수 있으며, 직접 다운로드도 가능합니다.</p>
       </div>
       <div>
         <div class="split">

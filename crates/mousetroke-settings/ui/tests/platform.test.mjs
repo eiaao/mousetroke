@@ -11,8 +11,9 @@ after(() => server.close());
 const platform = await server.ssrLoadModule("/src/platform.ts");
 const keys = await server.ssrLoadModule("/src/gesture.ts");
 const { t } = await server.ssrLoadModule("/src/i18n/index.ts");
-const { About } = await server.ssrLoadModule("/src/components/About.tsx");
+const { About, UpdateStatus } = await server.ssrLoadModule("/src/components/About.tsx");
 const { ActionEditor } = await server.ssrLoadModule("/src/components/ActionEditor.tsx");
+const { Guide, PermissionRows, permissionsReady } = await server.ssrLoadModule("/src/components/Guide.tsx");
 const event = (code, mods = {}) => ({ code, ctrlKey: false, altKey: false, shiftKey: false, metaKey: false, ...mods });
 
 test("Windows display and identities retain their existing behavior", () => {
@@ -84,4 +85,92 @@ test("macOS editor hides elevation and disables topmost without altering Windows
   assert.ok(!render({ type: "launch_app", exe: "" }).includes(t("ui.action.elevate")));
   assert.match(render({ type: "window_op", op: "minimize" }), /disabled=""/);
   assert.ok(render({ type: "launch_app", exe: "com.apple.Safari", elevate: true }).includes(t("mac.ui.action.repair")));
+});
+
+test("Mac and Windows updates share installation and busy states with a Mac manual fallback", () => {
+  const update = { current: "0.2.0", latest: "0.2.1", newer: true, notes_url: "", notes: ["<script>plain text</script>"] };
+  for (const os of ["windows", "macos"]) {
+    platform.initPlatform(os);
+    let installed = 0, downloaded = 0;
+    const props = { update, busy: null, error: null, onInstall() { installed++; }, onDownload() { downloaded++; }, onNotes() {} };
+    const render = (extra = {}) => renderToStaticMarkup(createElement(UpdateStatus, { ...props, ...extra }));
+    const html = render();
+    assert.match(html, /update-install/);
+    assert.ok(html.includes(t("ui.update.install")));
+    assert.match(html, /&lt;script&gt;plain text&lt;\/script&gt;/);
+    assert.equal(html.includes("update-download"), os === "macos");
+    // 遍历真实组件返回的按钮，确认主要操作与手动下载的回调没有接反。
+    const buttons = [];
+    function visit(element) {
+      if (!element || typeof element !== "object") return;
+      if (element.type === "button") buttons.push(element);
+      for (const child of [element.props?.children].flat(Infinity)) visit(child);
+    }
+    visit(UpdateStatus(props));
+    buttons.find(b => b.props.className.includes("update-install")).props.onClick();
+    assert.equal(installed, 1);
+    assert.equal(downloaded, 0);
+    if (os === "macos") {
+      buttons.find(b => b.props.className.includes("update-download")).props.onClick();
+      assert.equal(downloaded, 1);
+    }
+    assert.ok(render({ busy: "install" }).includes(t("ui.update.installing")));
+    assert.doesNotMatch(render({ busy: "install" }), /update-install|update-download/);
+    assert.match(render({ busy: "check" }), /disabled=""/);
+    for (const key of ["update.error.not_writable", "update.error.replace", "mac.update.error.signature"]) {
+      const failed = render({ error: { key, params: {} } });
+      assert.ok(failed.includes(t(key)));
+      assert.match(failed, /update-download/);
+      assert.doesNotMatch(failed, /update-install/);
+    }
+    assert.ok(render({ update: { ...update, newer: false } }).includes(t("ui.update.current")));
+  }
+});
+
+test("permission setup adds a Mac step and preserves the four Windows steps", () => {
+  const props = { pauseHotkey: "^%#p", onDisableApps() {}, onClose() {} };
+  const render = (extra) => renderToStaticMarkup(createElement(Guide, { ...props, ...extra }));
+  platform.initPlatform("windows");
+  const windows = render({});
+  assert.equal(render({ setup: true, initialPermissions: { accessibility: false, input_monitoring: false } }), windows);
+  assert.equal((windows.match(/role="tab"/g) ?? []).length, 4);
+  platform.initPlatform("macos");
+  const missing = render({ initialPermissions: { accessibility: true, input_monitoring: false } });
+  assert.ok(missing.includes(t("mac.setup.permissions")));
+  assert.equal((missing.match(/role="tab"/g) ?? []).length, 5);
+  const granted = { accessibility: true, input_monitoring: true, engine_ready: true };
+  assert.equal((render({ initialPermissions: granted }).match(/role="tab"/g) ?? []).length, 4);
+  assert.equal((render({ initialPermissions: { ...granted, engine_ready: false } }).match(/role="tab"/g) ?? []).length, 5);
+  const setup = render({ setup: true, initialPermissions: granted });
+  assert.ok(setup.includes(t("mac.setup.ready")));
+  assert.equal((setup.match(/role="tab"/g) ?? []).length, 5);
+});
+
+test("permission setup asks only for Accessibility and waits for an active tap", () => {
+  platform.initPlatform("macos");
+  const status = { accessibility: true, input_monitoring: false };
+  const html = renderToStaticMarkup(createElement(PermissionRows, { status, requesting: null, onGrant() {} }));
+  assert.ok(html.includes(t("mac.setup.accessibility_why")));
+  assert.ok(!html.includes(t("mac.setup.input_monitoring_why")));
+  assert.ok(html.includes(t("mac.setup.granted")));
+  assert.equal((html.match(/<button/g) ?? []).length, 1);
+  assert.equal((html.match(/disabled=""/g) ?? []).length, 1);
+  for (const accessibility of [false, true]) for (const input_monitoring of [false, true]) {
+    for (const engine_ready of [undefined, null, false, true]) {
+      assert.equal(permissionsReady({ accessibility, input_monitoring, engine_ready }), engine_ready === true);
+    }
+  }
+});
+
+test("Input Monitoring fallback remains actionable even when preflight succeeds but tap fails", () => {
+  for (const input_monitoring of [false, true]) {
+    const html = renderToStaticMarkup(createElement(PermissionRows, {
+      status: { accessibility: true, input_monitoring, engine_ready: false },
+      showInputMonitoring: true, requesting: null, onGrant() {},
+    }));
+    assert.equal((html.match(/<button/g) ?? []).length, 2);
+    assert.equal((html.match(/disabled=""/g) ?? []).length, 1);
+    assert.ok(html.includes(t("mac.setup.input_monitoring_why")));
+    assert.ok(html.includes(t(input_monitoring ? "mac.setup.checking" : "mac.setup.pending")));
+  }
 });

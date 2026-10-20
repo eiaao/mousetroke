@@ -1,4 +1,4 @@
-import { initPlatform, primaryModifier, appIdentity } from "./platform";
+import { initPlatform, primaryModifier, appIdentity, isMac } from "./platform";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { getCurrentWindow } from "@tauri-apps/api/window";
 import { listen } from "@tauri-apps/api/event";
@@ -15,7 +15,7 @@ import { Prefs } from "./components/Prefs";
 import { AppPicker, DataPage, Toast } from "./components/Dialogs";
 import { NavIcon } from "./components/Icons";
 import { TipLayer } from "./components/Tip";
-import { Guide, guideUnseen } from "./components/Guide";
+import { Guide, guideUnseen, permissionsReady } from "./components/Guide";
 import { About } from "./components/About";
 
 export function App() {
@@ -82,7 +82,36 @@ function Main({ init }: { init: InitState }) {
   const [toast, setToast] = useState<ToastMsg | null>(null);
   const [picking, setPicking] = useState(false);
   const [loadError, setLoadError] = useState(init.loadError);
-  const [guide, setGuide] = useState(guideUnseen);
+  const [setup, setSetup] = useState(() => isMac() && (!!init.setup || !!init.permissions && !permissionsReady(init.permissions)));
+  const [guide, setGuide] = useState(() => guideUnseen() || (isMac() && (!!init.setup || !!init.permissions && !permissionsReady(init.permissions))));
+  const [guideRequest, setGuideRequest] = useState(0);
+  const guideOpen = useRef(guide);
+  guideOpen.current = guide;
+  useEffect(() => {
+    if (!isMac()) return;
+    // 先订阅再消费暂存请求，覆盖 init_state 返回到 React 订阅之间的启动竞态。
+    let disposed = false;
+    const openSetup = () => {
+      if (disposed) return;
+      guideOpen.current = true;
+      setSetup(true);
+      setGuide(true);
+      setGuideRequest((n) => n + 1);
+    };
+    const consumeSetup = () => {
+      if (disposed) return;
+      api.takeSetupRequest().then((requested) => { if (requested) openSetup(); }).catch(() => {});
+    };
+    const off = listen("show-setup", consumeSetup);
+    const offSettings = listen("show-settings", () => {
+      if (disposed) return;
+      api.getPermissions().then((status) => {
+        if (!guideOpen.current && !permissionsReady(status)) openSetup();
+      }).catch(() => {});
+    });
+    Promise.all([off, offSettings]).then(consumeSetup).catch(() => {});
+    return () => { disposed = true; void off.then((f) => f()); void offSettings.then((f) => f()); };
+  }, []);
 
   const notify = useCallback((text: string, action?: string, onAction?: () => void) => setToast({ id: Date.now(), text, action, onAction }), []);
 
@@ -382,12 +411,15 @@ function Main({ init }: { init: InitState }) {
       )}
       {guide && (
         <Guide
+          key={guideRequest}
+          setup={setup}
+          initialPermissions={setup && guideRequest === 0 ? init.permissions : undefined}
           pauseHotkey={config.settings.pause_hotkey}
           onDisableApps={(apps) => {
             addApps(apps.map((a) => a.exe), true, false, Object.fromEntries(apps.flatMap((a) => (a.name_key ? [[a.exe, a.name_key]] : []))) as Record<string, string>);
             notify(t("toast.apps_disabled", { count: apps.length }), t("common.undo"), undo);
           }}
-          onClose={() => setGuide(false)}
+          onClose={() => { setGuide(false); setSetup(false); }}
         />
       )}
       <TipLayer />

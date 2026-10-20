@@ -48,14 +48,16 @@ define_class!(
             guard(|| SELECTED.with(|s| s.set(usize::try_from(sender.tag()).ok())));
         }
         #[unsafe(method(togglePause:))]
-        fn toggle_pause(&self, _sender: Option<&NSObject>) { guard(crate::app::toggle_pause); }
+        fn toggle_pause(&self, _sender: Option<&NSObject>) {
+            guard(|| { crate::app::request_toggle_pause(); crate::app::wake(); });
+        }
         #[unsafe(method(grantAccessibility:))]
         fn grant_accessibility(&self, _sender: Option<&NSObject>) {
-            guard(|| open_url("x-apple.systempreferences:com.apple.preference.security?Privacy_Accessibility"));
+            guard(|| grant_permission(true));
         }
         #[unsafe(method(grantInputMonitoring:))]
         fn grant_input_monitoring(&self, _sender: Option<&NSObject>) {
-            guard(|| open_url("x-apple.systempreferences:com.apple.preference.security?Privacy_ListenEvent"));
+            guard(|| grant_permission(false));
         }
         #[unsafe(method(openLog:))]
         fn open_log(&self, _sender: Option<&NSObject>) {
@@ -136,11 +138,9 @@ pub fn popup(
         .and_then(|i| actions.get(i).cloned())
 }
 
-fn open_url(text: &str) {
-    if !NSURL::URLWithString(&NSString::from_str(text))
-        .is_some_and(|url| NSWorkspace::sharedWorkspace().openURL(&url))
-    {
-        crate::log!("打开系统权限设置失败");
+fn grant_permission(accessibility: bool) {
+    if let Err(error) = crate::permissions::request(accessibility) {
+        crate::log!("打开系统权限设置失败: {error}");
     }
 }
 
@@ -190,6 +190,7 @@ impl Menu {
         );
         let accessibility = entry(Some(sel!(grantAccessibility:)));
         let input_monitoring = entry(Some(sel!(grantInputMonitoring:)));
+        input_monitoring.setHidden(true);
         let open_log = entry(Some(sel!(openLog:)));
         let settings = entry(Some(sel!(openSettings:)));
         settings.setKeyEquivalent(ns_string!(","));
@@ -256,9 +257,10 @@ impl Menu {
         permissions: Permissions,
         active: bool,
         paused: bool,
+        input_monitoring_required: bool,
     ) {
         self.item.setVisible(VISIBLE.with(Cell::get));
-        let key = if !permissions.ready() || !active {
+        let key = if !active {
             keys::MAC_STATUS_PERMISSION
         } else if paused {
             keys::MAC_STATUS_PAUSED
@@ -274,14 +276,14 @@ impl Menu {
         self.input_monitoring
             .setTitle(&NSString::from_str(t(keys::MAC_GRANT_INPUT_MONITORING)));
         self.input_monitoring
-            .setHidden(permissions.input_monitoring);
+            .setHidden(!input_monitoring_required);
         self.open_log
             .setTitle(&NSString::from_str(t(keys::UI_ABOUT_OPEN_LOG)));
         self.settings.setTitle(&NSString::from_str(t(keys::TRAY_MENU_SETTINGS)));
         self.about.setTitle(&NSString::from_str(t(keys::MAC_MENU_ABOUT)));
         self.quit.setTitle(&NSString::from_str(t(keys::TRAY_MENU_QUIT)));
         if let Some(button) = self.item.button(mtm) {
-            button.setAppearsDisabled(paused || !permissions.ready() || !active);
+            button.setAppearsDisabled(paused || !active);
             button.setToolTip(Some(&NSString::from_str(t(key))));
         }
     }

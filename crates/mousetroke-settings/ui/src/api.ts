@@ -1,5 +1,5 @@
 import { invoke } from "@tauri-apps/api/core";
-import type { AppInfo, Config, EngineStatus, InitState, PresetApp, RunningApp } from "./types";
+import type { AppInfo, Config, EngineStatus, InitState, PermissionStatus, PresetApp, RunningApp } from "./types";
 import { t, type MsgKey } from "./i18n";
 import zh from "../../../../i18n/zh-CN.json";
 
@@ -37,6 +37,10 @@ export const api = {
   downloadUpdate: () => invoke<void>("download_update"),
   installUpdate: () => invoke<void>("install_update"),
   takeAboutRequest: () => invoke<boolean>("take_about_request"),
+  takeSetupRequest: () => invoke<boolean>("take_setup_request"),
+  getPermissions: () => invoke<PermissionStatus>("get_permissions"),
+  restartEngine: () => invoke<void>("restart_engine"),
+  requestPermission: (permission: "accessibility" | "input_monitoring") => invoke<void>("request_permission", { permission }),
   openPath: (what: "log" | "config_dir" | "homepage" | "github" | "issues" | "releases") => invoke<void>("open_path", { what }),
   appIcons: (exes: string[]) => invoke<Record<string, string | null>>("app_icons", { exes }),
   setAutostart: (on: boolean) => invoke<EngineStatus>("set_autostart", { on }),

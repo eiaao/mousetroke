@@ -1,6 +1,6 @@
 # Mousetroke
 
-macOS 测试版现提供 [通用 DMG](https://github.com/eiaao/mousetroke/releases/latest/download/Mousetroke.dmg)，支持 macOS 11+、Apple silicon 和 Intel。首次打开请先拖入“应用程序”；测试版未公证，如被拦截，到“系统设置 → 隐私与安全性 → 仍要打开”（旧系统右键 → 打开），再授予辅助功能和输入监控权限。关于页可检查更新并用浏览器下载新版；偏好设置控制每日检查。更新前退出并覆盖原位置，同一发布证书用于保留权限。
+macOS 测试版提供 [通用 DMG](https://github.com/eiaao/mousetroke/releases/latest/download/Mousetroke.dmg)，支持 macOS 11+、Apple silicon 和 Intel。拖入“应用程序”并打开；从 DMG 打开时也可选择“移到应用程序”，安装后自动重新打开，共享目录不可写时改用 `~/Applications`。测试版未公证，如被拦截，到“系统设置 → 隐私与安全性 → 仍要打开”（旧系统右键 → 打开）。跟随设置引导，点击“授权…”开启辅助功能，让 Mousetroke 看见鼠标手势、操作窗口和发送快捷键；引擎事件 tap 启用后显示“准备就绪”，再试着按住右键画 `←`。也可以跳过，以后从菜单栏授权。引擎每两秒静默获取新鲜权限状态，运行中撤权也能检测；辅助功能开启几秒后仍无法监听或启用 tap，引导和菜单栏才显示输入监控兜底项，旧系统按提示开启即可。若授权后仍未生效，引导会自动重启一次，失败后提供“重启 Mousetroke”，保留设置窗口。无需屏幕录制权限。关于页“立即更新”会下载并验证 SHA-256、标识、版本和同一证书的签名要求，原地替换后自动重启，旧版在旧进程退出后移到废纸篓。替换或重启交接失败会回滚；应用内下载不带浏览器隔离属性，更新无需再次“仍要打开”，同一路径和签名要求用于保留权限。目录不可写或更新失败时可选择“手动下载”，浏览器下载的副本可能仍需“仍要打开”。偏好设置控制每日检查。
 
 Mac 卸载：从菜单栏退出，删除应用、`~/Library/Application Support/mousetroke`、`~/Library/Logs/mousetroke`，并在系统设置中移除登录项。构建、签名与验收见 [Mac 指南](crates/mousetroke-mac/README.md)。
 

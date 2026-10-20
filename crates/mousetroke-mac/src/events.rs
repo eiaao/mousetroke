@@ -24,6 +24,11 @@ thread_local! {
     static FAULTED: Cell<bool> = const { Cell::new(false) };
     static SCROLL: Cell<f64> = const { Cell::new(0.0) };
     static EDGE_SETTLE: Cell<Option<(i32, i32, Instant)>> = const { Cell::new(None) };
+    static DISABLED: Cell<Option<(Kind, Instant)>> = const { Cell::new(None) };
+    static SUSPENDED: Cell<bool> = const { Cell::new(false) };
+    static TIMEOUTS: Cell<[Option<Instant>; 2]> = const { Cell::new([None; 2]) };
+    static RETRY_AFTER: Cell<Option<Instant>> = const { Cell::new(None) };
+    static NEEDS_FRESH_PERMISSION: Cell<bool> = const { Cell::new(false) };
 }
 
 struct Tap {
@@ -62,7 +67,15 @@ const FILTERED: &[Kind] = &[
 /// 引擎对移动一律放行，无需同步等待。
 const LISTENED: &[Kind] = &[Kind::MouseMoved];
 
-pub fn install() -> bool {
+pub fn install(permissions: crate::permissions::Permissions) -> bool {
+    if RETRY_AFTER.with(Cell::get).is_some_and(|until| Instant::now() < until) {
+        return false;
+    }
+    if NEEDS_FRESH_PERMISSION.with(Cell::get)
+        && !permissions.ready()
+    {
+        return false;
+    }
     if active() {
         return true;
     }
@@ -74,8 +87,29 @@ pub fn install() -> bool {
         return false;
     };
     TAPS.with(|slot| *slot.borrow_mut() = Some([filter, listen]));
+    SUSPENDED.with(|flag| flag.set(false));
+    NEEDS_FRESH_PERMISSION.with(|flag| flag.set(false));
     crate::log!("事件 tap 已启用（主 run loop）");
     true
+}
+
+pub(crate) fn prepare() {
+    let _ = trace_events();
+}
+
+/// 只在用户点击输入监控授权时探测；临时监听端口立即销毁，不接管任何输入。
+pub(crate) fn register_input_monitoring() {
+    unsafe extern "C-unwind" fn pass(
+        _: CGEventTapProxy, _: Kind, event: NonNull<CGEvent>, _: *mut c_void,
+    ) -> *mut CGEvent { event.as_ptr() }
+    // 安全：不加入 run loop；回调只原样放行，端口在本函数内销毁。
+    if let Some(port) = unsafe {
+        CGEvent::tap_create(CGEventTapLocation::SessionEventTap,
+            CGEventTapPlacement::HeadInsertEventTap, CGEventTapOptions::ListenOnly,
+            1 << Kind::MouseMoved.0, Some(pass), ptr::null_mut())
+    } {
+        port.invalidate();
+    }
 }
 
 fn create(options: CGEventTapOptions, kinds: &[Kind]) -> Option<Tap> {
@@ -112,6 +146,7 @@ fn create(options: CGEventTapOptions, kinds: &[Kind]) -> Option<Tap> {
 }
 
 pub fn active() -> bool {
+    if SUSPENDED.with(Cell::get) { return false; }
     TAPS.with(|slot| {
         slot.borrow().as_ref().is_some_and(|taps| {
             taps.iter()
@@ -121,6 +156,8 @@ pub fn active() -> bool {
 }
 pub fn remove() {
     EDGE_SETTLE.with(|slot| slot.set(None));
+    HOTKEY_HELD.with(|slot| slot.set(false));
+    SCROLL.with(|slot| slot.set(0.0));
     TAPS.with(|slot| {
         slot.borrow_mut().take();
     });
@@ -129,22 +166,66 @@ pub fn take_fault() -> bool {
     FAULTED.with(|flag| flag.replace(false))
 }
 
+/// 静默轮询发现撤权时走同一故障恢复路径，不能靠现存端口覆盖新鲜预检结果。
+pub(crate) fn permission_revoked() {
+    remove();
+    SUSPENDED.with(|flag| flag.set(true));
+    FAULTED.with(|flag| flag.set(true));
+    NEEDS_FRESH_PERMISSION.with(|flag| flag.set(true));
+}
+
 pub fn is_tagged(tag: i64) -> bool {
     tag == INJECT_TAG
 }
 
-fn reenable(kind: Kind) {
+/// 禁用通知先返回，下一拍立即查 TCC；不能在回调中进行权限 IPC 或盲目重新启用。
+pub(crate) fn service_disabled() -> Option<crate::permissions::Permissions> {
+    let (kind, occurred) = DISABLED.with(|slot| slot.replace(None))?;
+    // 先关闭两个端口再查权限，探针即使启动较慢也没有可拦截 tap 在等待本线程。
+    TAPS.with(|slot| {
+        for tap in slot.borrow().iter().flatten() { CGEvent::tap_enable(&tap.port, false); }
+    });
+    let permissions = crate::permissions::check_fresh().unwrap_or(crate::permissions::Permissions {
+        accessibility: false, input_monitoring: false,
+    });
+    let now = Instant::now();
+    // 按通知发生时刻计算窗口，探针耗时不能把刚好三十秒内的第二次超时挤出窗口。
+    let ages = TIMEOUTS.with(Cell::get).map(|at| at.map(|at| occurred.saturating_duration_since(at)));
+    let history: Vec<_> = ages.into_iter().flatten()
+        .filter_map(|age| crate::tap_recovery::WINDOW.checked_sub(age)).collect();
+    let action = crate::tap_recovery::decide(permissions.ready(), &history, crate::tap_recovery::WINDOW);
+    crate::log!("事件 tap 被系统禁用: {}，即时权限状态: 辅助功能={}, 输入监控={}，决策={action:?}",
+        kind.0, permissions.accessibility, permissions.input_monitoring);
+    if action == crate::tap_recovery::Action::Fault {
+        remove();
+        FAULTED.with(|flag| flag.set(true));
+        NEEDS_FRESH_PERMISSION.with(|flag| flag.set(true));
+        // 即便 TCC 返回缓存的 true，连续超时也不能被两秒安装轮询立即绕过。
+        if crate::tap_recovery::decide(true, &history, crate::tap_recovery::WINDOW)
+            == crate::tap_recovery::Action::Fault
+        {
+            RETRY_AFTER.with(|slot| slot.set(Some(now + crate::tap_recovery::WINDOW)));
+        }
+        crate::log!("已移除全部事件 tap 并请求故障暂停；等待权限就绪和冷却后重装");
+        return Some(permissions);
+    }
     TAPS.with(|slot| {
         if let Ok(slot) = slot.try_borrow() {
             for tap in slot.iter().flatten() {
                 if !CGEvent::tap_is_enabled(&tap.port) {
                     CGEvent::tap_enable(&tap.port, true);
-                    let enabled = CGEvent::tap_is_enabled(&tap.port);
-                    crate::log!("事件 tap 被系统禁用: {}，重新启用: {enabled}", kind.0);
                 }
             }
         }
     });
+    SUSPENDED.with(|flag| flag.set(false));
+    if !active() {
+        remove();
+        FAULTED.with(|flag| flag.set(true));
+        NEEDS_FRESH_PERMISSION.with(|flag| flag.set(true));
+        RETRY_AFTER.with(|slot| slot.set(Some(now + crate::tap_recovery::WINDOW)));
+    }
+    Some(permissions)
 }
 
 unsafe extern "C-unwind" fn callback(
@@ -154,12 +235,18 @@ unsafe extern "C-unwind" fn callback(
     _info: *mut c_void,
 ) -> *mut CGEvent {
     // 安全：系统在回调期间借出 event；禁用通知先处理，不读取其事件字段。
-    let result = catch_unwind(AssertUnwindSafe(|| {
+    let result = mousetroke_engine::log::defer(|| catch_unwind(AssertUnwindSafe(|| {
         if kind == Kind::TapDisabledByTimeout || kind == Kind::TapDisabledByUserInput {
-            reenable(kind);
+            let occurred = Instant::now();
+            SUSPENDED.with(|flag| flag.set(true));
+            DISABLED.with(|slot| slot.set(Some((kind, occurred))));
+            if kind == Kind::TapDisabledByTimeout {
+                TIMEOUTS.with(|slot| slot.set([slot.get()[1], Some(occurred)]));
+            }
+            crate::app::note_input();
             return event.as_ptr();
         }
-        crate::app::wake();
+        crate::app::note_input();
         let event_ref = unsafe { event.as_ref() };
         if is_tagged(CGEvent::integer_value_field(
             Some(event_ref),
@@ -168,7 +255,7 @@ unsafe extern "C-unwind" fn callback(
             crate::selftest::tagged_echo(kind);
             return event.as_ptr();
         }
-        if FAULTED.with(Cell::get) {
+        if FAULTED.with(Cell::get) || SUSPENDED.with(Cell::get) {
             return event.as_ptr();
         }
         let key = CGEvent::integer_value_field(Some(event_ref), Field::KeyboardEventKeycode) as u16;
@@ -181,7 +268,7 @@ unsafe extern "C-unwind" fn callback(
             && pause.is_some_and(|(_, mods)| HOTKEY_HELD.with(Cell::get) || pause_chord(flags, mods))
         {
             if !HOTKEY_HELD.with(|held| held.replace(true)) {
-                crate::app::toggle_pause();
+                crate::app::request_toggle_pause();
             }
             return ptr::null_mut();
         }
@@ -225,11 +312,13 @@ unsafe extern "C-unwind" fn callback(
         } else {
             event.as_ptr()
         }
-    }));
+    })));
     result.unwrap_or_else(|_| {
         // 失败后先放行；下一次主线程计时器取消捕获并暂停，不让 unwind 越过 FFI。
         FAULTED.with(|flag| flag.set(true));
-        crate::log!("事件回调发生 panic，已放行并请求暂停");
+        SUSPENDED.with(|flag| flag.set(true));
+        NEEDS_FRESH_PERMISSION.with(|flag| flag.set(true));
+        RETRY_AFTER.with(|slot| slot.set(Some(Instant::now() + crate::tap_recovery::WINDOW)));
         event.as_ptr()
     })
 }
