@@ -67,7 +67,7 @@ fn acceptance_candidate_table() {
     // Rank once, then scan thresholds without changing the fixtures or random streams.
     let row = |sample: &[i32], training: &[Vec<Vec<i32>>]| {
         // Re-enter through normalization, as match_chain_path does for actual mouse input.
-        let raw: Vec<_> = sample.chunks_exact(2).map(|p| (p[0] as f64, p[1] as f64)).collect();
+        let raw: Vec<_> = sample.as_chunks::<2>().0.iter().map(|&[x, y]| (x as f64, y as f64)).collect();
         let path = shape::normalize(&raw).unwrap();
         (classify_normalized_stroke(&path), ranked(&path, training))
     };
@@ -281,7 +281,7 @@ fn templates() -> Vec<Vec<Vec<i32>>> {
 
 // 在每个拐角切去一小段，用二次曲线连起来，再加入尺寸、速度和手抖变化。
 fn hand_drawn_trace(encoded: &[i32], rng: &mut Xorshift) -> Vec<Point> {
-    let vertices: Vec<_> = encoded.chunks_exact(2).map(|p| (p[0] as f64, p[1] as f64)).collect();
+    let vertices: Vec<_> = encoded.as_chunks::<2>().0.iter().map(|&[x, y]| (x as f64, y as f64)).collect();
     let mut path = vec![vertices[0]];
     for i in 1..vertices.len() {
         let a = *path.last().unwrap();
@@ -351,7 +351,7 @@ fn stroke_classification_default_traces_and_curves() {
     for (name, samples) in data.classes.iter().map(|(k, v)| (k.as_str(), v)).chain(std::iter::once(("engine G", &data.engine_g))) {
         let mut correct = 0;
         for sample in samples {
-            let raw: Vec<_> = sample.chunks_exact(2).map(|p| (p[0] as f64, p[1] as f64)).collect();
+            let raw: Vec<_> = sample.as_chunks::<2>().0.iter().map(|&[x, y]| (x as f64, y as f64)).collect();
             correct += usize::from(classify_stroke(&raw) == StrokeKind::Shape);
         }
         println!("real curve {name}: {correct}/{}", samples.len());
@@ -400,7 +400,7 @@ fn normalized_classification_agrees_with_raw() {
     let data = real_shapes();
     let mut real = 0;
     for sample in data.classes.values().flatten().chain(&data.engine_g).chain(&data.engine_straight) {
-        let raw: Vec<_> = sample.chunks_exact(2).map(|p| (p[0] as f64, p[1] as f64)).collect();
+        let raw: Vec<_> = sample.as_chunks::<2>().0.iter().map(|&[x, y]| (x as f64, y as f64)).collect();
         check("real", &raw);
         // Stored fixture coordinates are already normalized but quantized: test them directly too.
         assert_eq!(classify_stroke(&raw), classify_normalized_stroke(&shape::decode(sample).unwrap()));
@@ -610,11 +610,11 @@ fn real_engine_strokes_use_tiered_acceptance_through_match_chain() {
     let scope = scope(data.classes.iter().map(|(name, templates)| binding(name, vec![RIGHT, Step::Shape { templates: templates.clone() }])).collect());
     let built = matcher::build_steps(Trigger::Button(MouseButton::Right), &[], Some(0));
     for sample in &data.engine_g {
-        let raw: Vec<_> = sample.chunks_exact(2).map(|p| (p[0] as f64, p[1] as f64)).collect();
+        let raw: Vec<_> = sample.as_chunks::<2>().0.iter().map(|&[x, y]| (x as f64, y as f64)).collect();
         assert_eq!(matcher::match_chain_path(&[&scope], &built, &segments(&raw), Some(&raw)).unwrap().0.name, "G");
     }
     for sample in &data.engine_straight {
-        let raw: Vec<_> = sample.chunks_exact(2).map(|p| (p[0] as f64, p[1] as f64)).collect();
+        let raw: Vec<_> = sample.as_chunks::<2>().0.iter().map(|&[x, y]| (x as f64, y as f64)).collect();
         assert!(matcher::match_chain_path(&[&scope], &built, &segments(&raw), Some(&raw)).is_none());
     }
 }
