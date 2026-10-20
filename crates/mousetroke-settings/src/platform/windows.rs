@@ -70,7 +70,6 @@ pub fn enter_instance(about: bool) -> MsgResult<bool> {
 }
 pub fn setup(_app: &tauri::App) {}
 pub fn refresh_texts(_window: &tauri::WebviewWindow) {}
-pub fn unsupported_keys(_keys: &mousetroke_core::keyseq::KeySeq) -> bool { false }
 pub fn running_apps() -> Vec<RunningApp> {
     mousetroke_win::targeting::running_apps().into_iter().map(|(exe, title)| RunningApp { exe, title }).collect()
 }

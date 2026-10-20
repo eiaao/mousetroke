@@ -1,5 +1,6 @@
 import assert from "node:assert/strict";
 import { after, test } from "node:test";
+import { readFileSync } from "node:fs";
 import { createServer } from "vite";
 import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
@@ -54,13 +55,11 @@ test("unsupported imported actions require an explicit repair", () => {
   assert.equal(original.elevate, true);
   assert.equal(platform.unsupportedAction(repaired), false);
   assert.equal(repaired.if_running, "activate");
-  for (const action of [
-    { type: "window_op", op: "toggle_topmost" },
-    { type: "key_sequence", keys: "{MOUSE_LEFT}", mode: "mapping" },
-    { type: "menu", columns: 2, items: [] },
-  ]) {
-    assert.equal(platform.unsupportedAction(action), true);
-    assert.equal(platform.unsupportedAction(platform.supportedAction(action)), false);
+  // 与 Rust 的 mousetroke_core::caps 共用用例，任何一端规则漂移都会失败
+  const cases = JSON.parse(readFileSync(new URL("../../../mousetroke-core/tests/fixtures/mac-caps.json", import.meta.url), "utf8"));
+  for (const { action, repaired } of cases) {
+    assert.equal(platform.unsupportedAction(action), !!repaired, JSON.stringify(action));
+    assert.deepEqual(platform.supportedAction(action), repaired ?? action);
   }
 });
 

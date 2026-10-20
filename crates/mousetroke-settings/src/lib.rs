@@ -16,6 +16,7 @@ use std::path::{Path, PathBuf};
 use mousetroke_core::i18n::{keys, t};
 use mousetroke_core::schema::{Config, Step};
 use mousetroke_core::shape;
+use mousetroke_core::caps;
 use serde::Serialize;
 use tauri::{Manager, State, WebviewWindow};
 
@@ -147,7 +148,7 @@ fn get_engine_status() -> EngineStatus {
 #[tauri::command]
 fn validate_keys(keys: String) -> Option<Msg> {
     let parsed = mousetroke_core::keyseq::parse(&keys, false);
-    if parsed.as_ref().is_ok_and(platform::unsupported_keys) {
+    if parsed.as_ref().is_ok_and(|seq| !caps::keys_supported(seq, caps::Platform::CURRENT)) {
         return Some(Msg::new(keys::MAC_SETTINGS_KEYS_UNSUPPORTED, &[]));
     }
     parsed.err().map(|e| {

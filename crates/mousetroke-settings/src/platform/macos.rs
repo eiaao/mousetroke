@@ -50,19 +50,6 @@ pub fn refresh_texts(window: &tauri::WebviewWindow) {
     menu::refresh(window.app_handle());
 }
 
-pub fn unsupported_keys(keys: &mousetroke_core::keyseq::KeySeq) -> bool {
-    use mousetroke_core::keyseq::{Action, Key};
-    keys.actions.iter().any(|action| match action {
-        Action::Key {
-            key: Key::Vk(vk), ..
-        } => mousetroke_core::keymap::vk_to_kvk(*vk).is_none(),
-        Action::Key {
-            key: Key::Mouse(_), ..
-        } => true,
-        _ => false,
-    })
-}
-
 pub fn running_apps() -> Vec<RunningApp> {
     use objc2_app_kit::NSApplicationActivationPolicy;
     NSWorkspace::sharedWorkspace()

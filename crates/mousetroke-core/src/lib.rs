@@ -18,6 +18,7 @@
 
 pub mod edge;
 pub mod i18n;
+pub mod caps;
 pub mod keymap;
 pub mod legacy;
 pub mod keyseq;

@@ -8,7 +8,8 @@ export function isMac() { return platform === "macos"; }
 export function primaryModifier(e: { ctrlKey: boolean; metaKey: boolean }) { return isMac() ? e.metaKey : e.ctrlKey; }
 export function appIdentity(value: string) { return isMac() ? value : value.split(/[\\/]/).pop() ?? value; }
 
-/** 保留导入的原值并明确提示，用户点击修复后才移除不支持的选项。 */
+/** 保留导入的原值并明确提示，用户点击修复后才移除不支持的选项。
+ *  规则以 mousetroke_core::caps 为准，两端共用 mac-caps.json 用例校验。 */
 export function unsupportedAction(a: Action): boolean {
   if (!isMac()) return false;
   switch (a.type) {

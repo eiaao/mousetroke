@@ -495,10 +495,14 @@ impl Config {
     /// 内置默认配置：首次运行（还没有配置文件）时使用并写盘。
     /// Windows 与 macOS 各自使用内置资源；名称按当前界面语言本地化。
     pub fn builtin() -> Self {
-        let source = if cfg!(target_os = "macos") {
-            include_str!("../assets/default-config-macos.json")
-        } else {
-            include_str!("../assets/default-config.json")
+        Self::builtin_for(crate::caps::Platform::CURRENT)
+    }
+
+    /// 指定平台的内置默认配置（设置界面与测试可取另一平台的默认值）。
+    pub fn builtin_for(platform: crate::caps::Platform) -> Self {
+        let source = match platform {
+            crate::caps::Platform::Macos => include_str!("../assets/default-config-macos.json"),
+            crate::caps::Platform::Windows => include_str!("../assets/default-config.json"),
         };
         let mut cfg = Self::from_json(source).expect("内置配置必须能解析"); // i18n:allow 内置资源损坏属于编译期错误，测试覆盖
         crate::names::localize_builtin(&mut cfg);
