@@ -143,6 +143,7 @@ code { font-family: "Cascadia Code", "JetBrains Mono", Consolas, monospace; font
 }
 .lede { font-size: clamp(17px, 1.6vw, 20px); color: var(--ink-2); max-width: 30em; margin: 0 0 30px; }
 .cta { display: flex; gap: 12px; flex-wrap: wrap; align-items: center; }
+.cta .btn[hidden] { display: none; }
 .meta { margin-top: 22px; color: var(--muted); font-size: 14px; display: flex; flex-wrap: wrap; gap: 6px 18px; padding: 0; list-style: none; }
 .meta li { display: flex; align-items: center; gap: 6px; }
 .meta li::before { content: ""; width: 6px; height: 6px; border-radius: 50%; background: var(--ok); }
@@ -574,6 +575,7 @@ body { position: relative; }
 @media (max-width: 480px) { .changelog-main { padding-top: 40px; } }
 
 /* Mac 下载与首次打开说明复用下载区排版。 */
-.get .mac-download { margin-top: 22px; }
+.get .sys + .btn { margin-top: 22px; }
+.get .btn:not(.primary) { background: transparent; color: var(--bg); border-color: color-mix(in srgb, var(--bg) 45%, transparent); }
 .get .mac-first-title { margin: 24px 0 8px; font-size: 18px; }
 .get .mac-first-text { font-size: 15px; line-height: 1.65; }

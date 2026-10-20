@@ -15,6 +15,20 @@
     get(k) { try { return localStorage.getItem(k); } catch { return null; } },
     set(k, v) { try { localStorage.setItem(k, v); } catch { /* 隐私模式等 */ } },
   };
+  // 按访客系统推荐下载：Mac 访客首屏换成 Mac 版，下载区 Mac 版排第一并作为主按钮。
+  // iPad 也报 MacIntel，用触屏点数排除；不跑脚本时保持 Windows 优先、两个都可下载。
+  const isMac = (navigator.userAgentData?.platform === "macOS" || /Mac/.test(navigator.platform || "")) && navigator.maxTouchPoints < 2;
+  if (isMac) {
+    $$(".cta .dl-win").forEach((a) => { a.hidden = true; });
+    $$(".cta .dl-mac").forEach((a) => { a.hidden = false; });
+    const win = $(".get a.dl-win"), mac = $(".get a.dl-mac");
+    if (win && mac) {
+      const macSys = mac.nextElementSibling;
+      win.before(mac, macSys);
+      win.classList.remove("primary");
+    }
+  }
+
   // 在语言菜单里手动选过语言后记住选择，首页不再按浏览器语言自动跳转（见 _worker.js）
   $$(".langdrop a[hreflang]").forEach((a) => a.addEventListener("click", () => {
     document.cookie = `mt_lang=${encodeURIComponent(a.hreflang)}; path=/; max-age=31536000; SameSite=Lax`;
