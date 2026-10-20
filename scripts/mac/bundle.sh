@@ -35,6 +35,9 @@ else
 fi
 mkdir -p "$bundle/Contents/MacOS" || exit 1
 cp "$binary" "$bundle/Contents/MacOS/mousetroke" || exit 1
+# Dock、访达与“仍要打开”对话框显示的图标；由 scripts/gen_icon.py 生成
+mkdir -p "$bundle/Contents/Resources" || exit 1
+cp "$root/crates/mousetroke-settings/icons/icon.icns" "$bundle/Contents/Resources/AppIcon.icns" || exit 1
 chmod +x "$bundle/Contents/MacOS/mousetroke" || exit 1
 print_plist > "$bundle/Contents/Info.plist" || exit 1
 plutil -lint "$bundle/Contents/Info.plist" || exit 1
