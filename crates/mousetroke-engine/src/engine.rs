@@ -343,6 +343,11 @@ impl Engine {
         self.abort_capture();
     }
 
+    /// 覆盖层当前覆盖的虚拟屏 (x, y, w, h)。
+    pub fn virtual_rect(&self) -> (i32, i32, i32, i32) {
+        self.overlay.virtual_rect()
+    }
+
     /// 显示器布局变化（WM_DISPLAYCHANGE）：重建覆盖层以匹配新的虚拟屏。
     pub fn on_display_change(&mut self) {
         self.abort_capture();
