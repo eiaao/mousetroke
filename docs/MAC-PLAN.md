@@ -79,7 +79,7 @@ Rust 生态：`objc2` + `objc2-app-kit` / `objc2-foundation` / `objc2-core-graph
 - **正式版（有账号后）**：Developer ID Application 证书 + 加固运行时（hardened runtime）→ `notarytool` 公证 → `stapler` 装订，双击即可打开。只改 CI，不改代码。
 - CI：在 `macos-latest` 上跑 core / engine 测试和构建；发布流程增加 macOS 任务，证书和公证凭据放 GitHub Secrets（证书 p12、密码、Team ID、App Store Connect API 密钥）。
 - 后续：Homebrew Cask；自动更新用 Sparkle（可放到 1.0 之后）。
-- 产品页、README、llms.txt 增加 macOS 下载与系统要求。
+- 独立网站仓库的产品页、llms.txt，以及本仓库的 README 增加 macOS 下载与系统要求。
 
 ## 8. 里程碑
 

@@ -49,7 +49,9 @@ cargo test --workspace       :: engine, importer, i18n and settings tests
 | `crates/mousetroke-settings` | Settings window (Tauri 2 + React); runs as a separate process only while open |
 | `crates/mousetroke` | The `mousetroke.exe` entry point and CLI |
 | `i18n/` | Shared UI strings for every language (see `i18n/README.md`) |
-| `site/` | Product web page (static) |
+
+The [website](https://mousetroke.pages.dev/) is maintained and deployed from a separate repository.
+Its changelog reads `CHANGELOG.md` from this repository's `main` branch on raw.githubusercontent.com.
 
 ## macOS beta
 
