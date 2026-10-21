@@ -61,6 +61,15 @@ jobs:
       CARGO_TARGET_DIR: ${{ github.workspace }}/target
     steps:
       - uses: actions/checkout@v7
+      - name: Check forbidden product name
+        shell: bash
+        # 拆开拼写，工作流文件自身不含该词
+        run: |
+          pattern="wges""tures"
+          if git grep -n -i "$pattern"; then
+            echo "::error::仓库中出现了禁用的产品名"
+            exit 1
+          fi
       - uses: Swatinem/rust-cache@v2
       - uses: actions/setup-node@v7
         with:
