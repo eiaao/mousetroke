@@ -559,6 +559,6 @@ update, and quit the review app before removing the disposable checkout via git 
 - Run `bash -n scripts/mac/*.sh` with a loop and shellcheck if available; CI also runs
   universal + ad-hoc DMG smoke tests. Locally remove either release secret in a test workflow
   and confirm the mac job fails and publish never starts (do not create a public test tag).
-- Measure the final signed DMG size, fill `@@MAC_DMG_SIZE@@` in the site sources, regenerate
-  all pages and require `python site/check.py` without the pre-release allowance before
-  deploying the site. Keep version/changelog updates for the actual release.
+- Measure the final signed DMG size and update the website repository before deploying
+  the [website](https://mousetroke.pages.dev/), which is maintained separately.
+  Keep version/changelog updates for the actual release.

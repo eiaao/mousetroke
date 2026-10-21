@@ -39,7 +39,7 @@
 
 ## Windows 侧验证
 
-构建环境：`CARGO_TARGET_DIR=D:\project\reaWGestures2\.claude\worktrees\target-mac-install`，`CARGO_BUILD_JOBS=4`，沿用该 target 目录中的 Zig 交叉 C 工具链。
+构建环境：以工作树下的 `target/mac-install` 作为 `CARGO_TARGET_DIR`，`CARGO_BUILD_JOBS=4`，沿用该 target 目录中的 Zig 交叉 C 工具链。
 
 | 检查 | 结果 |
 | --- | --- |
@@ -50,4 +50,4 @@
 | `node tools/uitest/mac-setup.mjs` | 通过，真实构建 UI 的单行授权、延迟兜底及十种语言正常／兜底布局 |
 | `python scripts/i18n_lint.py --check` | 通过；更新全部十种语言的授权与恢复文案 |
 | `python -m unittest discover -s scripts -p test_mac_packaging.py` | 通过，33 项 |
-| `python site/gen.py` / `python site/check.py --allow-mac-size-placeholder` | 八种翻译均为 0 missed，十语言页面一致；沿用未测量 DMG 大小占位符 |
+| 产品主页（现由独立网站仓库维护和部署） | 当时八种翻译均为 0 missed，十语言页面一致；沿用未测量 DMG 大小占位符 |

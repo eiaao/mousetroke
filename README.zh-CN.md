@@ -41,6 +41,9 @@ cargo test --workspace       :: 引擎、导入器、多语言与设置界面的
 
 目录说明见 [README.md](README.md#build-from-source)。
 
+[产品主页](https://mousetroke.pages.dev/) 在独立仓库中维护和部署。
+网站更新日志从 raw.githubusercontent.com 读取本仓库 `main` 分支的 `CHANGELOG.md`。
+
 ## 安全
 
 "运行命令"和 Lua 脚本拥有你的用户权限，只导入可信来源的配置。程序做了什么、怎么报告漏洞，见 [SECURITY.md](SECURITY.md)。
