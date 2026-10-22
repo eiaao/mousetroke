@@ -1,8 +1,9 @@
 //! Windows Lua 平台适配与旧 WG / User32 / luanet 兼容层。
 use crate::input;
 use mlua::{Lua, Table, Value};
+use mousetroke_core::keyseq::{Key, ModKey};
 pub use mousetroke_lua::LuaCtx;
-use mousetroke_lua::{KeyPhase, LuaPlatform};
+use mousetroke_lua::{required_keys, KeyPhase, LuaPlatform, RequiredKey};
 use windows::Win32::Foundation::HWND;
 
 pub fn run_lua(code: &str, ctx: &LuaCtx) {
@@ -10,6 +11,20 @@ pub fn run_lua(code: &str, ctx: &LuaCtx) {
 }
 
 struct WindowsPlatform;
+
+fn keys_pressed(seq: &mousetroke_core::keyseq::KeySeq, pressed: impl Fn(u16) -> bool) -> bool {
+    required_keys(seq).is_some_and(|keys| {
+        keys.into_iter().all(|key| match key {
+            RequiredKey::Vk(vk) => pressed(vk),
+            RequiredKey::Modifier(modifier) => match modifier {
+                ModKey::Ctrl => pressed(0x11),
+                ModKey::Alt => pressed(0x12),
+                ModKey::Shift => pressed(0x10),
+                ModKey::Win => pressed(0x5B) || pressed(0x5C),
+            },
+        })
+    })
+}
 
 impl LuaPlatform for WindowsPlatform {
     fn log(&self, message: &str) {
@@ -35,7 +50,7 @@ impl LuaPlatform for WindowsPlatform {
         }
     }
     fn is_keys_pressed(&self, seq: &mousetroke_core::keyseq::KeySeq) -> Option<bool> {
-        Some(seq.actions.iter().all(|a| matches!(a, mousetroke_core::keyseq::Action::Key { key, .. } if input::is_vk_pressed(*key))))
+        Some(keys_pressed(seq, |vk| input::is_vk_pressed(Key::Vk(vk))))
     }
     fn open_url(&self, url: &str) {
         input::open_url(url, None);
@@ -110,10 +125,10 @@ impl LuaPlatform for WindowsPlatform {
         )
     }
     fn get_brightness(&self, x: i32, y: i32) -> Option<i64> {
-        Some(crate::brightness::get(x, y).map_or(-1, |v| v as i64))
+        crate::brightness::get(x, y).map(i64::from)
     }
     fn adjust_brightness(&self, x: i32, y: i32, delta: i32) -> Option<i64> {
-        Some(crate::brightness::adjust(x, y, delta).map_or(-1, |v| v as i64))
+        crate::brightness::adjust(x, y, delta).map(i64::from)
     }
 }
 
@@ -142,8 +157,6 @@ fn install_legacy(lua: &Lua, ms: &Table) -> mlua::Result<()> {
         ("Open", "open"),
         ("Run", "run"),
         ("Cmd", "cmd"),
-        ("GetBrightness", "get_brightness"),
-        ("SetBrightness", "set_brightness"),
         ("GetWinState", "get_win_state"),
         ("KeysDown", "keys_down"),
         ("KeysUp", "keys_up"),
@@ -153,6 +166,19 @@ fn install_legacy(lua: &Lua, ms: &Table) -> mlua::Result<()> {
         if let Ok(v) = ms.get::<Value>(*ms_name) {
             let _ = legacy.set(*old_name, v);
         }
+    }
+    // 仅旧格式亮度包装保留失败值 -1，ms 表统一使用 nil。
+    for (old_name, ms_name) in [
+        ("GetBrightness", "get_brightness"),
+        ("SetBrightness", "set_brightness"),
+    ] {
+        let function: mlua::Function = ms.get(ms_name)?;
+        legacy.set(
+            old_name,
+            lua.create_function(move |_, args: mlua::MultiValue| {
+                Ok(function.call::<Option<i64>>(args)?.unwrap_or(-1))
+            })?,
+        )?;
     }
     // 旧格式脚本能引用但暂未实现的方法 → 记录日志的空操作
     for stub in [
@@ -198,8 +224,7 @@ fn install_legacy(lua: &Lua, ms: &Table) -> mlua::Result<()> {
         lua.create_function(|_l, (_t, name): (Value, String)| Ok(name))?,
     )?;
     let _ = lua.globals().set("luanet", luanet);
-    lua
-        .globals()
+    lua.globals()
         .set("import", lua.create_function(|_l, _m: String| Ok(()))?)?;
     Ok(())
 }
@@ -252,8 +277,7 @@ mod tests {
                 FocusWin = 'focus_win', SetWinState = 'set_win_state', GetScreen = 'get_screen',
                 GetMousePos = 'get_mouse_pos', SetMousePos = 'set_mouse_pos',
                 GetClipboardText = 'get_clipboard_text', SetClipboardText = 'set_clipboard_text',
-                Open = 'open', Run = 'run', Cmd = 'cmd', GetBrightness = 'get_brightness',
-                SetBrightness = 'set_brightness', GetWinState = 'get_win_state',
+                Open = 'open', Run = 'run', Cmd = 'cmd', GetWinState = 'get_win_state',
                 KeysDown = 'keys_down', KeysUp = 'keys_up',
             }
             assert(type(ms) == 'table' and type(WG) == 'table')
@@ -267,6 +291,103 @@ mod tests {
                 'ToggleKeys', 'GetClipboardData', 'SetClipboardData',
             }) do
                 assert(type(WG[name]) == 'function', name)
+            end
+        "#,
+        )
+        .exec()
+        .unwrap();
+    }
+
+    #[test]
+    fn pressed_sequences_require_the_union_of_keys_and_modifiers() {
+        use mousetroke_core::keyseq::parse;
+        use RequiredKey::{Modifier, Vk};
+        for (sequence, expected) in [
+            ("^a", vec![Modifier(ModKey::Ctrl), Vk(0x41)]),
+            (
+                "^%+#a",
+                vec![
+                    Modifier(ModKey::Ctrl),
+                    Modifier(ModKey::Alt),
+                    Modifier(ModKey::Shift),
+                    Modifier(ModKey::Win),
+                    Vk(0x41),
+                ],
+            ),
+            (
+                "^(ab){a 3}",
+                vec![Modifier(ModKey::Ctrl), Vk(0x41), Vk(0x42)],
+            ),
+            (
+                "^{+}",
+                vec![Modifier(ModKey::Shift), Modifier(ModKey::Ctrl), Vk(0xBB)],
+            ),
+            ("{RCTRL}a", vec![Vk(0xA3), Vk(0x41)]),
+            ("", vec![]),
+        ] {
+            assert_eq!(
+                required_keys(&parse(sequence, false).unwrap()),
+                Some(expected),
+                "{sequence}"
+            );
+        }
+        let seq = parse("^a", false).unwrap();
+        assert!(!keys_pressed(&seq, |vk| vk == 0x41));
+        assert!(keys_pressed(&seq, |vk| [0x11, 0x41].contains(&vk)));
+        assert!(!keys_pressed(&parse("^ab", false).unwrap(), |vk| [
+            0x11, 0x41
+        ]
+        .contains(&vk)));
+        // Win 没有通用 VK，前缀必须分别接受左侧和右侧。
+        for side in [0x5B, 0x5C] {
+            assert!(keys_pressed(&parse("#a", false).unwrap(), |vk| [
+                side, 0x41
+            ]
+            .contains(&vk)));
+        }
+        assert!(!keys_pressed(&parse("{RCTRL}a", false).unwrap(), |vk| [
+            0xA2, 0x41
+        ]
+        .contains(&vk)));
+        assert!(keys_pressed(&parse("", false).unwrap(), |_| false));
+        for sequence in ["a{SLEEP 1}", "{MOUSE_LEFT}", "{MOUSE_WHEEL 120}"] {
+            assert!(!keys_pressed(&parse(sequence, false).unwrap(), |_| true));
+        }
+        assert!(!keys_pressed(&parse("text", true).unwrap(), |_| true));
+    }
+
+    #[test]
+    fn brightness_legacy_wrappers_alone_keep_negative_failure_values() {
+        struct Brightness;
+        impl LuaPlatform for Brightness {
+            fn log(&self, _: &str) {}
+            fn cursor_pos(&self) -> (i32, i32) {
+                (0, 0)
+            }
+            fn install_extensions(&self, lua: &Lua, ms: &Table) -> mlua::Result<()> {
+                install_legacy(lua, ms)
+            }
+            fn get_brightness(&self, x: i32, _: i32) -> Option<i64> {
+                (x == 1).then_some(0)
+            }
+            fn adjust_brightness(&self, _: i32, _: i32, delta: i32) -> Option<i64> {
+                (delta >= 0).then_some(i64::from(delta).min(100))
+            }
+        }
+        let lua = Lua::new();
+        let platform: std::sync::Arc<dyn LuaPlatform> = std::sync::Arc::new(Brightness);
+        mousetroke_lua::install_ms_table(&lua, &LuaCtx::default(), &platform).unwrap();
+        lua.load(
+            r#"
+            assert(ms.get_brightness() == nil)
+            assert(WG.GetBrightness() == -1)
+            assert(ms.get_brightness({x=1, y=0}) == 0)
+            assert(WG.GetBrightness({x=1, y=0}) == 0)
+            assert(ms.set_brightness(nil, -1) == nil)
+            assert(WG.SetBrightness(nil, -1) == -1)
+            for _, value in ipairs({0, 55, 100}) do
+                assert(ms.set_brightness(nil, value) == value)
+                assert(WG.SetBrightness(nil, value) == value)
             end
         "#,
         )

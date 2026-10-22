@@ -107,6 +107,10 @@ pub fn screen_rect(x: i32, y: i32) -> Option<(i32, i32, i32, i32)> {
             })
     })
 }
+/// Lua 的缩放状态以屏幕工作区为准；缓存只能从主线程读取。
+pub(crate) fn work_areas() -> Vec<Rect> {
+    SCREEN.with(|slot| slot.borrow().displays.iter().map(|d| d.visible).collect())
+}
 pub fn cursor_pos() -> Option<CGPoint> {
     CGEvent::new(None).map(|event| CGEvent::location(Some(&event)))
 }

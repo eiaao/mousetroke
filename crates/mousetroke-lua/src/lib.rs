@@ -3,7 +3,41 @@
 use mlua::{Function, Lua, Table, Value};
 use std::sync::Arc;
 mod platform;
+use mousetroke_core::keyseq::{Action, Key, KeySeq, ModKey};
 pub use platform::{KeyPhase, LuaPlatform};
+
+/// 按键查询的要求；前缀修饰键接受任意一侧，显式左右键保留侧别。
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum RequiredKey {
+    Vk(u16),
+    Modifier(ModKey),
+}
+
+/// 多步序列取所有键和修饰键的并集；非键盘动作不能查询按下状态。
+pub fn required_keys(seq: &KeySeq) -> Option<Vec<RequiredKey>> {
+    let mut required = Vec::new();
+    for action in &seq.actions {
+        let Action::Key {
+            key: Key::Vk(vk),
+            mods,
+            ..
+        } = action
+        else {
+            return None;
+        };
+        for key in mods
+            .iter()
+            .copied()
+            .map(RequiredKey::Modifier)
+            .chain(std::iter::once(RequiredKey::Vk(*vk)))
+        {
+            if !required.contains(&key) {
+                required.push(key);
+            }
+        }
+    }
+    Some(required)
+}
 
 fn callback<A: mlua::FromLuaMulti, R: mlua::IntoLuaMulti>(
     lua: &Lua,
@@ -27,9 +61,21 @@ pub struct LuaCtx {
 
 impl LuaCtx {
     /// 由手势目标与动作变量组装；缺失的变量取空串。
-    pub fn from_vars(pos: (i32, i32), wid: usize, pid: u32, vars: &mousetroke_core::vars::Vars) -> Self {
+    pub fn from_vars(
+        pos: (i32, i32),
+        wid: usize,
+        pid: u32,
+        vars: &mousetroke_core::vars::Vars,
+    ) -> Self {
         let get = |key: &str| vars.get(key).cloned().unwrap_or_default();
-        LuaCtx { pos, wid, pid, exe: get("MS_EXE"), title: get("MS_WIN_NAME"), mode: get("MS_TARGET_MODE") }
+        LuaCtx {
+            pos,
+            wid,
+            pid,
+            exe: get("MS_EXE"),
+            title: get("MS_WIN_NAME"),
+            mode: get("MS_TARGET_MODE"),
+        }
     }
 }
 
@@ -525,7 +571,8 @@ mod tests {
             ms.set_mouse_pos(-12.75, 3.25)
             ms.keys('中文', true)
             ms.show_toast('message', 42.75)
-            assert(ms.get_brightness() == nil and ms.get_win_state(1) == nil)
+            assert(ms.get_brightness() == nil and ms.set_brightness(nil, 5) == nil)
+            assert(ms.get_win_state(1) == nil)
             assert(ms.find_win_by_class('x') == nil and ms.find_win_by_title('x') == nil)
             assert(ms.is_keys_pressed('a') == nil)
         "#,

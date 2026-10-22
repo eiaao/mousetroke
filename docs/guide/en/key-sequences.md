@@ -23,6 +23,8 @@ Characters normally mean keys at US keyboard positions. `abc` presses A, B, C in
 
 A prefix applies to the next key or parenthesized group. `^+t` sends Ctrl+Shift+T. `^(ac)` applies Ctrl to both A and C. `^ac` applies Ctrl only to A. Groups can nest; use balanced parentheses. Group modifiers attach to each key action, so do not rely on the modifier remaining continuously held between keys. A bare trailing modifier is not a key press: use `{CTRL}`, for example, when you need the modifier key itself.
 
+Lua `ms.is_keys_pressed` checks the union of all keys and modifiers at query time on both platforms: `^ac` requires Control, A and C down together. Either side satisfies a prefix; explicit `{LCTRL}` / `{RCTRL}` names retain their side. Repeats are ignored; sleep, text, mouse or wheel steps return false. It does not recognize a sequence of past presses.
+
 ## Named keys, repeats and delays
 
 Use `{ENTER}` for Enter. Names are case-insensitive. `{LEFT 3}` presses Left three times. A positive count repeats a key; zero or a negative count falls back to one. `{SLEEP 100}` waits 100 ms; it requires a nonnegative integer. Separate a name and its argument with a space.

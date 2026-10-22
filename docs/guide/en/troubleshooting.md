@@ -42,6 +42,8 @@ For punctuation-heavy text, non-Latin text or apps with unusual IME handling, us
 
 Make sure the code defines `function ms_action(...) ... end`. The runtime writes load and execution errors to the [runtime log](config.md#file-locations). Open it through **About → Open log**. Use `ms.log` for values and `ms.show_toast` for a brief on-screen checkpoint. An unsupported Mac function may only log a warning and return `nil`; do not treat a missing value as success.
 
+Mac window discovery/state calls require Accessibility permission; key-state queries return false without it. Check that permission first if results are missing. Cross-app topmost and numeric brightness remain unsupported; built-in brightness key actions do not provide a percentage. On both platforms, `ms.get_brightness` / `ms.set_brightness` return nil on failure.
+
 The Lua allocation limit is 8 MiB. There is no script execution timeout; avoid infinite loops and see [Lua basics](lua-basics.md#runtime-and-limits) for blocking behavior.
 
 ## Remote desktop and games

@@ -79,11 +79,9 @@ impl LuaPlatform for Stub {
         self.record(format!("top:{top}"));
     }
     fn window_state(&self, _: i64) -> Option<String> {
-        assert!(!self.mac, "recipe must not query window state on Mac");
         Some("normal".into())
     }
     fn set_window_state(&self, _: i64, state: &str) {
-        assert!(!self.mac, "recipe must not set window state on Mac");
         self.record(format!("state:{state}"));
     }
     fn adjust_brightness(&self, _: i32, _: i32, _: i32) -> Option<i64> {
