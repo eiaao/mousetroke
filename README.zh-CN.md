@@ -11,6 +11,8 @@ Mac 卸载：从菜单栏退出，删除应用、`~/Library/Application Support/
 
 **[产品主页](https://mousetroke.pages.dev/) · [下载](https://github.com/eiaao/mousetroke/releases/latest) · [English](README.md)**
 
+文档 / Documentation：[使用指南](docs/guide/zh-CN/index.md) · [User guide](docs/guide/en/index.md)
+
 ![Mousetroke 设置界面](docs/images/settings-zh.png)
 
 - 内置五十多个手势，全部可改；在设置里画一遍就能录一个自己的

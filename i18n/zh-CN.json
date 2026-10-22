@@ -215,6 +215,8 @@
   "ui.action.browser_label": "浏览器",
   "ui.action.browser_ph": "留空使用默认浏览器",
   "ui.action.shell_help": "在隐藏的 cmd 窗口中运行。",
+  "ui.action.lua_docs": "Lua 帮助",
+  "ui.keys.syntax_help": "语法说明",
   "ui.action.lua_help": "入口函数 ms_action()；可用 ms.keys、ms.show_toast、ms.run 等。旧格式脚本的 WG.* 写法也能直接运行。",
   "ui.action.menu_empty": "菜单还是空的。",
   "ui.action.menu_item_ph": "菜单项名称",

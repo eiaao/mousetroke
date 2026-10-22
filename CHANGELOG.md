@@ -2,6 +2,16 @@
 
 Each version lists its highlights in English, then in Chinese. The release page, the in-app update notes and the website changelog are all generated from this file.
 
+## Unreleased
+
+### English
+
+- Complete English and Simplified Chinese user guides, with Lua and send-keys help links in the action editor.
+
+### 中文
+
+- 新增完整的简体中文和英文使用指南，并在动作编辑器中加入 Lua 帮助和按键语法说明链接。
+
 ## 0.2.1 — 2026-10-20
 
 ### English
