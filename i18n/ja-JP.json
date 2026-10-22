@@ -215,6 +215,8 @@
   "ui.action.browser_label": "ブラウザー",
   "ui.action.browser_ph": "空欄で既定のブラウザー",
   "ui.action.shell_help": "非表示の cmd ウィンドウで実行します。",
+  "ui.action.lua_docs": "Lua ヘルプ",
+  "ui.keys.syntax_help": "構文ヘルプ",
   "ui.action.lua_help": "入口は ms_action()。ms.keys、ms.show_toast、ms.run などが使えます。旧形式のスクリプト（WG.*）もそのまま動きます。",
   "ui.action.menu_empty": "メニューは空です。",
   "ui.action.menu_item_ph": "メニュー項目名",

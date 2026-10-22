@@ -9,6 +9,8 @@ opens the context menu.
 
 **[Website](https://mousetroke.pages.dev/) · [Download](https://github.com/eiaao/mousetroke/releases/latest) · [简体中文](README.zh-CN.md)**
 
+Documentation / 文档: [User guide](docs/guide/en/index.md) · [使用指南](docs/guide/zh-CN/index.md)
+
 ![Mousetroke settings](docs/images/settings-en.png)
 
 - About 50 built-in gestures, all editable; record your own by drawing it once

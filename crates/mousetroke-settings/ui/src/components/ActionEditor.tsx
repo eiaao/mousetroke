@@ -74,6 +74,9 @@ function ActionFields({ action, onChange, depth }: { action: Action; onChange: (
       return (
         <div className="fields">
           <KeysInput value={action.keys} onChange={(keys) => onChange({ ...action, keys }, "keys")} />
+          <p className="field-help">
+            <button type="button" className="link" onClick={() => api.openPath("key_sequences")}>{t("ui.keys.syntax_help")}</button>
+          </p>
           <label className="check">
             <input type="checkbox" checked={!!action.activate_target} onChange={(e) => onChange({ ...action, activate_target: e.target.checked })} />
             {t("ui.action.activate_first")}
@@ -197,7 +200,10 @@ function ActionFields({ action, onChange, depth }: { action: Action; onChange: (
             }}
             onChange={(e) => onChange({ ...action, code: e.target.value }, "lua")}
           />
-          <p className="field-help">{t("ui.action.lua_help")}</p>
+          <p className="field-help">
+            {t("ui.action.lua_help")}{" "}
+            <button type="button" className="link" onClick={() => api.openPath("lua_basics")}>{t("ui.action.lua_docs")}</button>
+          </p>
         </div>
       );
     case "menu":

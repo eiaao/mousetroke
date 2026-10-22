@@ -385,6 +385,16 @@ fn project_url(what: &str, lang: &str) -> Option<&'static str> {
         "github" => Some(GITHUB_URL),
         "issues" => Some(ISSUES_URL),
         "releases" => Some(platform::update::RELEASES_URL),
+        "lua_basics" => Some(if lang == "zh-CN" {
+            "https://mousetroke.pages.dev/docs/lua-basics/"
+        } else {
+            "https://mousetroke.pages.dev/en/docs/lua-basics/"
+        }),
+        "key_sequences" => Some(if lang == "zh-CN" {
+            "https://mousetroke.pages.dev/docs/key-sequences/"
+        } else {
+            "https://mousetroke.pages.dev/en/docs/key-sequences/"
+        }),
         _ => None,
     }
 }
@@ -642,6 +652,10 @@ mod tests {
             assert_eq!(project_url("github", tag), Some("https://github.com/eiaao/mousetroke"));
             assert_eq!(project_url("issues", tag), Some("https://github.com/eiaao/mousetroke/issues"));
             assert_eq!(project_url("releases", tag), Some(platform::update::RELEASES_URL));
+            let docs_prefix = if tag == "zh-CN" { "" } else { "en/" };
+            for (what, slug) in [("lua_basics", "lua-basics"), ("key_sequences", "key-sequences")] {
+                assert_eq!(project_url(what, tag), Some(format!("https://mousetroke.pages.dev/{docs_prefix}docs/{slug}/").as_str()));
+            }
         }
         for what in ["", "https://example.com", "file:///C:/Windows", "Homepage", "github/issues"] {
             assert_eq!(project_url(what, "en-US"), None);

@@ -215,6 +215,8 @@
   "ui.action.browser_label": "Navigateur",
   "ui.action.browser_ph": "Laisser vide pour le navigateur par défaut",
   "ui.action.shell_help": "S’exécute dans une fenêtre cmd masquée.",
+  "ui.action.lua_docs": "Aide Lua",
+  "ui.keys.syntax_help": "Aide sur la syntaxe",
   "ui.action.lua_help": "Point d’entrée ms_action() ; ms.keys, ms.show_toast, ms.run et d’autres sont disponibles. Les scripts de l’ancien format (WG.*) fonctionnent tels quels.",
   "ui.action.menu_empty": "Le menu est vide.",
   "ui.action.menu_item_ph": "Nom de l’élément",

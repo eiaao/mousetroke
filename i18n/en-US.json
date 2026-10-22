@@ -215,6 +215,8 @@
   "ui.action.browser_label": "Browser",
   "ui.action.browser_ph": "Leave empty for the default browser",
   "ui.action.shell_help": "Runs in a hidden cmd window.",
+  "ui.action.lua_docs": "Lua help",
+  "ui.keys.syntax_help": "Syntax help",
   "ui.action.lua_help": "Entry point ms_action(); ms.keys, ms.show_toast, ms.run and more are available. Scripts from the legacy format (WG.*) also run as-is.",
   "ui.action.menu_empty": "The menu is empty.",
   "ui.action.menu_item_ph": "Menu item name",

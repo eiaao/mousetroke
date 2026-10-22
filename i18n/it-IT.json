@@ -215,6 +215,8 @@
   "ui.action.browser_label": "Browser",
   "ui.action.browser_ph": "Vuoto per il browser predefinito",
   "ui.action.shell_help": "Viene eseguito in una finestra cmd nascosta.",
+  "ui.action.lua_docs": "Guida a Lua",
+  "ui.keys.syntax_help": "Guida alla sintassi",
   "ui.action.lua_help": "Punto d’ingresso ms_action(); disponibili ms.keys, ms.show_toast, ms.run e altri. Gli script del vecchio formato (WG.*) funzionano così come sono.",
   "ui.action.menu_empty": "Il menu è vuoto.",
   "ui.action.menu_item_ph": "Nome della voce di menu",

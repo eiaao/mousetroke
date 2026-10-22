@@ -215,6 +215,8 @@
   "ui.action.browser_label": "Браузер",
   "ui.action.browser_ph": "Пусто — браузер по умолчанию",
   "ui.action.shell_help": "Выполняется в скрытом окне cmd.",
+  "ui.action.lua_docs": "Справка по Lua",
+  "ui.keys.syntax_help": "Справка по синтаксису",
   "ui.action.lua_help": "Точка входа ms_action(); доступны ms.keys, ms.show_toast, ms.run и другие. Скрипты старого формата (WG.*) работают как есть.",
   "ui.action.menu_empty": "Меню пусто.",
   "ui.action.menu_item_ph": "Название пункта меню",
