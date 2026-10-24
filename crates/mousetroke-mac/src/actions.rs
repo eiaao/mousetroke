@@ -142,6 +142,8 @@ pub fn tick() {
     let Some(request) = request else {
         return;
     };
+    let Some(action) = mousetroke_engine::prepare_action(request.action, mousetroke_core::caps::Platform::Macos, mousetroke_core::i18n::lang()) else { return };
+    let request = Request { action, ..request };
     if dry_run {
         if matches!(request.action, Action::KeySequence { .. }) {
             crate::input::enqueue(request.action);
@@ -471,6 +473,8 @@ fn dispatch(request: Request) {
                 crate::lua::run(code, ctx);
             });
         }
+        // 队列消费时已展开；未识别的动作不进入平台执行器。
+        Action::Preset { .. } | Action::Unknown(_) => {}
     }
 }
 #[allow(deprecated)] // macOS 11 起的兼容激活入口；新激活 API 不能覆盖最低系统版本。

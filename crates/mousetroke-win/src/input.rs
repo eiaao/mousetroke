@@ -470,7 +470,16 @@ pub fn launch_app(
     if_running: IfRunning,
 ) {
     // 已在运行 → 按策略处理
-    if let Some(hwnd) = find_window_by(win_class, win_title, use_regex) {
+    let running = find_window_by(win_class, win_title, use_regex).or_else(|| {
+        // 未指定窗口筛选时按程序身份激活，文件关联动作使用 RunAgain 绕过此分支。
+        if if_running == IfRunning::RunAgain || win_class.is_some() || win_title.is_some() { return None; }
+        crate::targeting::visible_windows().into_iter().find_map(|(hwnd, _)| {
+            let mut pid = 0;
+            unsafe { windows::Win32::UI::WindowsAndMessaging::GetWindowThreadProcessId(hwnd, Some(&mut pid)); }
+            crate::targeting::exe_of(pid).filter(|path| app_exe_matches(exe, path)).map(|_| hwnd)
+        })
+    });
+    if let Some(hwnd) = running {
         match if_running {
             IfRunning::Activate => {
                 focus_window(hwnd);
@@ -490,6 +499,14 @@ pub fn launch_app(
     };
     if !ok {
         crate::log!("应用启动失败: {exe}");
+    }
+}
+
+fn app_exe_matches(requested: &str, running: &str) -> bool {
+    if requested.contains(['/', '\\']) {
+        requested.replace('/', "\\").eq_ignore_ascii_case(&running.replace('/', "\\"))
+    } else {
+        requested.eq_ignore_ascii_case(mousetroke_core::matcher::file_name(running))
     }
 }
 
@@ -797,4 +814,17 @@ pub fn is_vk_pressed(key: mousetroke_core::keyseq::Key) -> bool {
         _ => return false,
     };
     (unsafe { GetAsyncKeyState(vk) } as u16 & 0x8000) != 0
+}
+
+#[cfg(test)]
+mod app_identity_tests {
+    use super::app_exe_matches;
+
+    #[test]
+    fn activation_matches_names_and_full_paths_without_confusing_apps() {
+        assert!(app_exe_matches("EDITOR.EXE", "tools/editor.exe"));
+        assert!(app_exe_matches("tools/editor.exe", "tools\\EDITOR.EXE"));
+        assert!(!app_exe_matches("editor.exe", "tools/other-editor.exe"));
+        assert!(!app_exe_matches("tools/editor.exe", "other/editor.exe"));
+    }
 }

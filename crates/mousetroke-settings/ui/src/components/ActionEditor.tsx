@@ -1,8 +1,10 @@
 import { isMac, unsupportedAction, supportedAction } from "../platform";
 import { useRef } from "react";
-import type { Action, MenuItem } from "../types";
+import type { Action, AdvancedAction, MenuItem } from "../types";
+import { isAdvancedAction, isPresetAction } from "../types";
+import { presetDefinition, presetSummary } from "../actions";
 import { ACTION_ORDER, SYSTEM_KEYS, WINDOW_OPS, actionName, defaultAction } from "../gesture";
-import { t } from "../i18n";
+import { t, type MsgKey } from "../i18n";
 import { api } from "../api";
 import { KeysInput } from "./KeysInput";
 
@@ -19,8 +21,20 @@ const VARS: { v: string; key: "ui.var.selected_text" | "ui.var.clipboard" | "ui.
  * 记忆按 `memoryKey`（通常是绑定标识）隔离。
  */
 export function ActionEditor({ action, onChange, depth = 0 }: { action: Action; onChange: (a: Action, coalesce?: string) => void; depth?: number }) {
-  const memory = useRef<Partial<Record<Action["type"], Action>>>({});
-  const switchTo = (tp: Action["type"]) => {
+  const memory = useRef<Partial<Record<AdvancedAction["type"], AdvancedAction>>>({});
+  if (!isAdvancedAction(action)) {
+    const preset = presetDefinition(action);
+    const implementation = preset && (isMac() ? preset.macos : preset.windows);
+    return <div className="action-editor">
+      <strong>{presetSummary(action)}</strong>
+      {isPresetAction(action) && <p><code>{action.id}</code></p>}
+      {preset && <p className="field-help">{t(preset.description_key as MsgKey)}</p>}
+      {implementation && implementation.status !== "implemented" && <p className="field-warn">{t(implementation.value.reason_key as MsgKey)}</p>}
+      <p className="field-help">{t("preset.ui.read_only")}</p>
+      <textarea readOnly rows={5} aria-label={t("preset.ui.read_only")} value={JSON.stringify(action, null, 2)} />
+    </div>;
+  }
+  const switchTo = (tp: AdvancedAction["type"]) => {
     if (tp === action.type) return;
     memory.current[action.type] = action;
     onChange(memory.current[tp] ?? defaultAction(tp));
@@ -67,7 +81,7 @@ function insertAt(el: HTMLInputElement | HTMLTextAreaElement | null, value: stri
   return value.slice(0, s) + ins + value.slice(e);
 }
 
-function ActionFields({ action, onChange, depth }: { action: Action; onChange: (a: Action, coalesce?: string) => void; depth: number }) {
+function ActionFields({ action, onChange, depth }: { action: AdvancedAction; onChange: (a: Action, coalesce?: string) => void; depth: number }) {
   const textRef = useRef<HTMLTextAreaElement & HTMLInputElement>(null);
   switch (action.type) {
     case "key_sequence":

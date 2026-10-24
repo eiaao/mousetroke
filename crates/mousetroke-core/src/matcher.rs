@@ -241,6 +241,8 @@ pub fn action_kind(a: &Action) -> &'static str {
         Action::LaunchApp { .. } => "launch_app",
         Action::WindowOp { .. } => "window_op",
         Action::SystemKey { .. } => "system_key",
+        Action::Preset { .. } => "preset",
+        Action::Unknown(_) => "unknown",
     }
 }
 

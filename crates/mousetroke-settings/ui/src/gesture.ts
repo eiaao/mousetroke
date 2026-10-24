@@ -1,5 +1,7 @@
 import { isMac } from "./platform";
-import type { Action, Binding, KeyTag, MouseButton, Step } from "./types";
+import type { Action, AdvancedAction, Binding, KeyTag, MouseButton, Step } from "./types";
+import { isAdvancedAction } from "./types";
+import { presetSummary } from "./actions";
 import { t } from "./i18n";
 import type { MsgKey } from "./i18n";
 
@@ -278,11 +280,11 @@ export function conflicts(bindings: Binding[]): Map<number, number[]> {
 // ---------------------------------------------------------------- 动作
 
 /** 动作类型的显示名（按需取词条）。 */
-export function actionName(type: Action["type"]): string {
+export function actionName(type: AdvancedAction["type"]): string {
   return t(`action.${type}` as MsgKey);
 }
 
-export const ACTION_ORDER: Action["type"][] = [
+export const ACTION_ORDER: AdvancedAction["type"][] = [
   "key_sequence",
   "window_op",
   "launch_app",
@@ -293,7 +295,7 @@ export const ACTION_ORDER: Action["type"][] = [
   "lua",
 ];
 
-export function defaultAction(type: Action["type"]): Action {
+export function defaultAction(type: AdvancedAction["type"]): AdvancedAction {
   switch (type) {
     case "key_sequence":
       return { type, keys: "", activate_target: false };
@@ -334,6 +336,7 @@ export const SYSTEM_KEYS: { key: string; i18n: MsgKey }[] = [
 
 /** 动作的一行摘要。 */
 export function actionSummary(a: Action): string {
+  if (!isAdvancedAction(a)) return presetSummary(a);
   switch (a.type) {
     case "key_sequence":
       return isMac() ? keyseqToCaps(a.keys).map((group) => group.join("+")).join(" ") : a.keys;

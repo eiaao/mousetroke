@@ -13,8 +13,25 @@ const keys = await server.ssrLoadModule("/src/gesture.ts");
 const { t } = await server.ssrLoadModule("/src/i18n/index.ts");
 const { About, UpdateStatus } = await server.ssrLoadModule("/src/components/About.tsx");
 const { ActionEditor } = await server.ssrLoadModule("/src/components/ActionEditor.tsx");
+const { initActionCatalog } = await server.ssrLoadModule("/src/actions.ts");
 const { Guide, PermissionRows, permissionsReady } = await server.ssrLoadModule("/src/components/Guide.tsx");
 const event = (code, mods = {}) => ({ code, ctrlKey: false, altKey: false, shiftKey: false, metaKey: false, ...mods });
+
+test("preset and future actions render read-only and preserve their raw payloads", () => {
+  initActionCatalog({ presets: [{ id: "edit.copy", name_key: "preset.action.edit.copy.name", description_key: "preset.action.edit.copy.description", windows: { status: "implemented" }, macos: { status: "implemented" } }] });
+  for (const action of [
+    { type: "preset", id: "edit.copy", params: { future: [1, true] } },
+    { type: "preset", id: "future.preset", params: { service: "future" } },
+    { type: "future_action", payload: { nested: ["^%+#", null, 42] } },
+  ]) {
+    const before = structuredClone(action);
+    const html = renderToStaticMarkup(createElement(ActionEditor, { action, onChange: () => assert.fail("read-only action must not change") }));
+    assert.match(html, /readonly/i);
+    assert.ok(html.includes(action.id === "edit.copy" ? t("preset.action.edit.copy.name") : t("preset.status.unknown")));
+    assert.deepEqual(action, before);
+    assert.equal(keys.actionSummary(action), action.id === "edit.copy" ? t("preset.action.edit.copy.name") : t("preset.status.unknown"));
+  }
+});
 
 test("Windows display and identities retain their existing behavior", () => {
   platform.initPlatform("windows");

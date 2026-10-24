@@ -5,6 +5,7 @@ import { listen } from "@tauri-apps/api/event";
 import { getCurrentWebview } from "@tauri-apps/api/webview";
 import type { Binding, Config, EngineStatus, InitState, Scope, Step } from "./types";
 import { api, errText } from "./api";
+import { initActionCatalog } from "./actions";
 import { conflicts, decompose, fileName, newBinding, uid } from "./gesture";
 import { displayName, initLang, t, useLang } from "./i18n";
 import { updateBinding, updateScope, useConfigStore } from "./store";
@@ -26,6 +27,7 @@ export function App() {
     api.initState().then(
       (s) => {
         initPlatform(s.platform ?? "windows");
+        initActionCatalog(s.actionCatalog);
         document.documentElement.dataset.platform = s.platform ?? "windows";
         initLang({ setting: s.config.settings.language, systemLangs: s.systemLangs });
         setInit(s);

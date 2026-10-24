@@ -427,7 +427,7 @@ fn run_main(mtm: MainThreadMarker, config_path: Option<std::path::PathBuf>) -> R
     } else {
         let (config, saved) = Config::load_or_init(&path)?;
         if let Some(error) = saved {
-            crate::log!("首次写入默认配置失败: {error}");
+            crate::log!("配置回落诊断: {error}");
         }
         config
     };
@@ -435,10 +435,14 @@ fn run_main(mtm: MainThreadMarker, config_path: Option<std::path::PathBuf>) -> R
         .all_bindings()
         .find(|binding| binding.name_key.as_deref() == Some(keys::BUILTIN_GESTURE_CLOSE_TAB))
         .map(|binding| {
+            let action = match &binding.action {
+                mousetroke_core::schema::Action::Preset { id, params } => mousetroke_core::presets::actions::expand(id, mousetroke_core::caps::Platform::Macos, params, mousetroke_core::i18n::lang()).ok(),
+                action => Some(action.clone()),
+            };
             (
                 binding.name.clone(),
-                match &binding.action {
-                    mousetroke_core::schema::Action::KeySequence { keys, .. } => keys.clone(),
+                match action {
+                    Some(mousetroke_core::schema::Action::KeySequence { keys, .. }) => keys,
                     _ => String::new(),
                 },
             )

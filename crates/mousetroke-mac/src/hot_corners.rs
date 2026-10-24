@@ -87,10 +87,7 @@ mod tests {
     }
     #[test]
     fn only_enabled_bindings_and_system_actions_conflict() {
-        let mut config = Config::from_json(include_str!(
-            "../../mousetroke-core/assets/default-config-macos.json"
-        ))
-        .unwrap();
+        let mut config = Config::builtin_for(mousetroke_core::caps::Platform::Macos);
         assert!(conflicts(&config, [0, 1, 0, 1]).is_empty());
         assert_eq!(
             conflicts(&config, [2; 4]),

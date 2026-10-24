@@ -2,10 +2,12 @@
 //! 引擎仅在安装输入钩子的线程使用，计时沿用标准库的单调时钟。
 
 mod engine;
+mod actions;
 mod host;
 pub mod log;
 mod slot;
 
 pub use engine::{push_toast, Engine, InputEvent, Reload, Verdict, PAUSED};
+pub use actions::prepare_action;
 pub use host::{Canvas, Host, Target};
 pub use slot::{install, uninstall, with_engine};

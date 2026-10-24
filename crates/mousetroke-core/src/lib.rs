@@ -4,7 +4,7 @@
 //! - **Scope**：手势的作用域（global / app / special）
 //! - **Binding**：一条手势绑定 = `Pattern + Action`
 //! - **Pattern**：手势模式，由若干 `Step` 组成（press / trace / shape / edge / wheel）
-//! - **Action**：识别成功后执行的动作（8 种）
+//! - **Action**：识别成功后执行的动作（含预置动作与未来类型的原始 JSON）
 //!
 //! 模块：
 //! - [`schema`]：原生配置 schema（我们自己的 snake_case JSON 格式）

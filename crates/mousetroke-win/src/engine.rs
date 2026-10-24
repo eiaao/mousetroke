@@ -137,6 +137,7 @@ pub fn sync_display() {
 
 /// 执行动作（工作线程）。
 fn execute(action: Action, target: Option<targeting::Target>, vars: Vars, pos: (i32, i32)) {
+    let Some(action) = mousetroke_engine::prepare_action(action, mousetroke_core::caps::Platform::Windows, mousetroke_core::i18n::lang()) else { return };
     match action {
         Action::KeySequence { keys, activate_target, .. } => {
             if activate_target {
@@ -197,6 +198,8 @@ fn execute(action: Action, target: Option<targeting::Target>, vars: Vars, pos: (
             );
             std::thread::spawn(move || crate::lua::run_lua(&code, &ctx));
         }
+        // prepare_action 已处理；保守跳过，避免将未来动作送入旧执行器。
+        Action::Preset { .. } | Action::Unknown(_) => {}
     }
 }
 

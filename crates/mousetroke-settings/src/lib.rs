@@ -18,7 +18,8 @@ use std::path::{Path, PathBuf};
 use std::sync::atomic::{AtomicBool, Ordering};
 
 use mousetroke_core::i18n::{keys, t};
-use mousetroke_core::schema::{Config, Step};
+use mousetroke_core::schema::{Action, Config, Step};
+use mousetroke_core::presets::actions::{self as action_presets, Params};
 use mousetroke_core::shape;
 use mousetroke_core::caps;
 use serde::Serialize;
@@ -91,6 +92,33 @@ struct InitState {
     system_langs: Vec<String>,
     /// 后端按配置 + 系统语言解析出的语言标签。
     resolved_lang: String,
+    action_catalog: ActionCatalog,
+}
+
+/// 未知动作的原始 JSON 仍在 config 内；此处给选择器与只读展示提供判定和词条。
+#[derive(Serialize)]
+#[serde(rename_all = "camelCase")]
+struct ActionCatalog {
+    presets: &'static [action_presets::Preset],
+    defaults: BTreeMap<&'static str, Params>,
+    known_action_types: &'static [&'static str],
+    unknown_action_key: &'static str,
+}
+
+#[tauri::command]
+fn action_catalog() -> ActionCatalog {
+    ActionCatalog {
+        presets: action_presets::REGISTRY,
+        defaults: action_presets::REGISTRY.iter().map(|p| (p.id, p.default_params(mousetroke_core::i18n::lang()))).collect(),
+        known_action_types: Action::KNOWN_TYPES,
+        unknown_action_key: "preset.status.unknown",
+    }
+}
+
+#[tauri::command]
+fn expand_preset(id: String, params: Params, ui_lang: String) -> MsgResult<Action> {
+    let lang = mousetroke_core::i18n::Lang::from_tag(&ui_lang).unwrap_or_else(mousetroke_core::i18n::lang);
+    action_presets::expand(&id, caps::Platform::CURRENT, &params, lang).map_err(|e| Msg::new(e.reason_key(), &[]))
 }
 
 #[derive(Serialize)]
@@ -137,6 +165,7 @@ fn init_state(paths: State<AppPaths>) -> InitState {
         engine: engine_status(),
         system_langs,
         resolved_lang: resolved.tag().into(),
+        action_catalog: action_catalog(),
     }
 }
 
@@ -146,7 +175,10 @@ fn config_snapshot(path: &Path) -> (Config, bool, Option<String>) {
     let (config, load_error) = if exists {
         match Config::load(path) {
             Ok(c) => (c, None),
-            Err(e) => (Config::default(), Some(e)),
+            Err(e) => {
+                eprintln!("{e}");
+                (Config::builtin(), Some(e))
+            }
         }
     } else {
         // 首次运行（引擎还没生成配置文件）：展示内置默认手势，保存时写盘
@@ -564,6 +596,8 @@ pub fn run(config: Option<PathBuf>) {
         .manage(AppPaths { config })
         .invoke_handler(tauri::generate_handler![
             init_state,
+            action_catalog,
+            expand_preset,
             save_config,
             get_engine_status,
             set_ui_lang,
@@ -619,6 +653,34 @@ pub fn run(config: Option<PathBuf>) {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn settings_never_saves_fallback_defaults_over_an_unparseable_file() {
+        let dir = std::env::temp_dir().join(format!("mousetroke-settings-protection-{}", std::process::id()));
+        std::fs::create_dir(&dir).unwrap();
+        let path = dir.join("config.json");
+        let original = "{ invalid JSON";
+        std::fs::write(&path, original).unwrap();
+        let (config, exists, error) = config_snapshot(&path);
+        assert!(exists && error.is_some());
+        assert!(config.all_bindings().count() >= 40);
+        assert!(save_config_at(&path, &config).is_err());
+        assert_eq!(std::fs::read_to_string(&path).unwrap(), original);
+        assert_eq!(std::fs::read_dir(&dir).unwrap().count(), 1);
+        std::fs::remove_file(&path).unwrap();
+        std::fs::remove_dir(&dir).unwrap();
+    }
+
+    #[test]
+    fn settings_catalog_exposes_future_action_presentation_and_expansion() {
+        let catalog = serde_json::to_value(action_catalog()).unwrap();
+        assert_eq!(catalog["presets"].as_array().unwrap().len(), 87);
+        assert_eq!(catalog["unknownActionKey"], "preset.status.unknown");
+        assert!(catalog["knownActionTypes"].as_array().unwrap().contains(&serde_json::json!("preset")));
+        assert!(expand_preset("edit.copy".into(), Params::new(), "en-US".into()).is_ok());
+        assert_eq!(expand_preset("future.preset".into(), Params::new(), "en-US".into()).unwrap_err().key, "preset.status.unknown");
+        assert_eq!(expand_preset("window.snap_left".into(), Params::new(), "en-US".into()).unwrap_err().key, "preset.status.pending");
+    }
 
     #[cfg(target_os = "macos")]
     #[test]

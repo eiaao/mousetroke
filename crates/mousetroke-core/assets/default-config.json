@@ -1,5 +1,5 @@
 {
-  "version": 1,
+  "version": 2,
   "scopes": [
     {
       "id": "general",
@@ -26,8 +26,8 @@
             }
           ],
           "action": {
-            "type": "key_sequence",
-            "keys": "%{LEFT}"
+            "type": "preset",
+            "id": "browser.back"
           },
           "execute_on_match": false,
           "hide_label": false,
@@ -52,8 +52,8 @@
             }
           ],
           "action": {
-            "type": "key_sequence",
-            "keys": "%{RIGHT}"
+            "type": "preset",
+            "id": "browser.forward"
           },
           "execute_on_match": false,
           "hide_label": false,
@@ -80,8 +80,8 @@
             }
           ],
           "action": {
-            "type": "key_sequence",
-            "keys": "^t"
+            "type": "preset",
+            "id": "browser.new_tab"
           },
           "execute_on_match": false,
           "hide_label": false,
@@ -112,8 +112,8 @@
             }
           ],
           "action": {
-            "type": "key_sequence",
-            "keys": "^+t"
+            "type": "preset",
+            "id": "browser.reopen_tab"
           },
           "execute_on_match": false,
           "hide_label": false,
@@ -140,8 +140,8 @@
             }
           ],
           "action": {
-            "type": "key_sequence",
-            "keys": "^w"
+            "type": "preset",
+            "id": "browser.close_tab"
           },
           "execute_on_match": false,
           "hide_label": false,
@@ -170,8 +170,8 @@
             }
           ],
           "action": {
-            "type": "key_sequence",
-            "keys": "{F5}"
+            "type": "preset",
+            "id": "browser.reload"
           },
           "execute_on_match": false,
           "hide_label": false,
@@ -198,8 +198,8 @@
             }
           ],
           "action": {
-            "type": "key_sequence",
-            "keys": "^+{TAB}"
+            "type": "preset",
+            "id": "browser.prev_tab"
           },
           "execute_on_match": false,
           "hide_label": false,
@@ -226,8 +226,8 @@
             }
           ],
           "action": {
-            "type": "key_sequence",
-            "keys": "^{TAB}"
+            "type": "preset",
+            "id": "browser.next_tab"
           },
           "execute_on_match": false,
           "hide_label": false,
@@ -247,8 +247,8 @@
             }
           ],
           "action": {
-            "type": "key_sequence",
-            "keys": "^+{TAB}"
+            "type": "preset",
+            "id": "browser.prev_tab"
           },
           "execute_on_match": false,
           "hide_label": false,
@@ -268,8 +268,8 @@
             }
           ],
           "action": {
-            "type": "key_sequence",
-            "keys": "^{TAB}"
+            "type": "preset",
+            "id": "browser.next_tab"
           },
           "execute_on_match": false,
           "hide_label": false,
@@ -296,8 +296,8 @@
             }
           ],
           "action": {
-            "type": "key_sequence",
-            "keys": "^{HOME}"
+            "type": "preset",
+            "id": "view.top"
           },
           "execute_on_match": false,
           "hide_label": false,
@@ -324,8 +324,8 @@
             }
           ],
           "action": {
-            "type": "key_sequence",
-            "keys": "^{END}"
+            "type": "preset",
+            "id": "view.bottom"
           },
           "execute_on_match": false,
           "hide_label": false,
@@ -350,8 +350,8 @@
             }
           ],
           "action": {
-            "type": "key_sequence",
-            "keys": "^c"
+            "type": "preset",
+            "id": "edit.copy"
           },
           "execute_on_match": false,
           "hide_label": false,
@@ -376,8 +376,8 @@
             }
           ],
           "action": {
-            "type": "key_sequence",
-            "keys": "^v"
+            "type": "preset",
+            "id": "edit.paste"
           },
           "execute_on_match": false,
           "hide_label": false,
@@ -406,8 +406,8 @@
             }
           ],
           "action": {
-            "type": "key_sequence",
-            "keys": "^x"
+            "type": "preset",
+            "id": "edit.cut"
           },
           "execute_on_match": false,
           "hide_label": false,
@@ -436,8 +436,8 @@
             }
           ],
           "action": {
-            "type": "key_sequence",
-            "keys": "^v{ENTER}"
+            "type": "preset",
+            "id": "edit.paste_enter"
           },
           "execute_on_match": false,
           "hide_label": false,
@@ -464,9 +464,8 @@
             }
           ],
           "action": {
-            "type": "open_url",
-            "url_template": "https://www.bing.com/search?q=%MS_SELECTED_TEXT%",
-            "browser": null
+            "type": "preset",
+            "id": "text.search"
           },
           "execute_on_match": false,
           "hide_label": false,
@@ -495,8 +494,8 @@
             }
           ],
           "action": {
-            "type": "key_sequence",
-            "keys": "{ENTER}"
+            "type": "preset",
+            "id": "key.enter"
           },
           "execute_on_match": false,
           "hide_label": false,
@@ -523,8 +522,8 @@
             }
           ],
           "action": {
-            "type": "key_sequence",
-            "keys": "{BACKSPACE}"
+            "type": "preset",
+            "id": "key.backspace"
           },
           "execute_on_match": false,
           "hide_label": false,
@@ -551,8 +550,8 @@
             }
           ],
           "action": {
-            "type": "key_sequence",
-            "keys": "{DELETE}"
+            "type": "preset",
+            "id": "key.delete"
           },
           "execute_on_match": false,
           "hide_label": false,
@@ -581,8 +580,8 @@
             }
           ],
           "action": {
-            "type": "key_sequence",
-            "keys": "{ESC}"
+            "type": "preset",
+            "id": "key.escape"
           },
           "execute_on_match": false,
           "hide_label": false,
@@ -613,8 +612,8 @@
             }
           ],
           "action": {
-            "type": "key_sequence",
-            "keys": "#+s"
+            "type": "preset",
+            "id": "capture.region"
           },
           "execute_on_match": false,
           "hide_label": false,
@@ -639,8 +638,8 @@
             }
           ],
           "action": {
-            "type": "window_op",
-            "op": "minimize"
+            "type": "preset",
+            "id": "window.minimize"
           },
           "execute_on_match": false,
           "hide_label": false,
@@ -665,8 +664,8 @@
             }
           ],
           "action": {
-            "type": "window_op",
-            "op": "toggle_maximize"
+            "type": "preset",
+            "id": "window.toggle_maximize"
           },
           "execute_on_match": false,
           "hide_label": false,
@@ -695,8 +694,8 @@
             }
           ],
           "action": {
-            "type": "key_sequence",
-            "keys": "{F11}"
+            "type": "preset",
+            "id": "view.fullscreen"
           },
           "execute_on_match": false,
           "hide_label": false,
@@ -723,8 +722,8 @@
             }
           ],
           "action": {
-            "type": "window_op",
-            "op": "close"
+            "type": "preset",
+            "id": "window.close"
           },
           "execute_on_match": false,
           "hide_label": false,
@@ -755,8 +754,8 @@
             }
           ],
           "action": {
-            "type": "shell",
-            "script": "taskkill /F /PID %MS_PID%"
+            "type": "preset",
+            "id": "app.kill"
           },
           "execute_on_match": false,
           "hide_label": false,
@@ -785,8 +784,8 @@
             }
           ],
           "action": {
-            "type": "window_op",
-            "op": "toggle_topmost"
+            "type": "preset",
+            "id": "window.toggle_topmost"
           },
           "execute_on_match": false,
           "hide_label": false,
@@ -811,8 +810,8 @@
             }
           ],
           "action": {
-            "type": "system_key",
-            "key": "PREVIOUS"
+            "type": "preset",
+            "id": "media.previous"
           },
           "execute_on_match": false,
           "hide_label": false,
@@ -837,8 +836,8 @@
             }
           ],
           "action": {
-            "type": "system_key",
-            "key": "NEXT"
+            "type": "preset",
+            "id": "media.next"
           },
           "execute_on_match": false,
           "hide_label": false,
@@ -863,8 +862,8 @@
             }
           ],
           "action": {
-            "type": "key_sequence",
-            "keys": "^#{LEFT}"
+            "type": "preset",
+            "id": "desktop.prev"
           },
           "execute_on_match": false,
           "hide_label": false,
@@ -889,8 +888,8 @@
             }
           ],
           "action": {
-            "type": "key_sequence",
-            "keys": "^#{RIGHT}"
+            "type": "preset",
+            "id": "desktop.next"
           },
           "execute_on_match": false,
           "hide_label": false,
@@ -906,8 +905,8 @@
             }
           ],
           "action": {
-            "type": "key_sequence",
-            "keys": "^{ESC}"
+            "type": "preset",
+            "id": "desktop.launcher"
           },
           "execute_on_match": false,
           "hide_label": false,
@@ -923,8 +922,8 @@
             }
           ],
           "action": {
-            "type": "key_sequence",
-            "keys": "#d"
+            "type": "preset",
+            "id": "desktop.show"
           },
           "execute_on_match": false,
           "hide_label": false,
@@ -940,8 +939,8 @@
             }
           ],
           "action": {
-            "type": "key_sequence",
-            "keys": "%{TAB}"
+            "type": "preset",
+            "id": "desktop.switch_app"
           },
           "execute_on_match": false,
           "hide_label": false,
@@ -957,8 +956,8 @@
             }
           ],
           "action": {
-            "type": "key_sequence",
-            "keys": "#{TAB}"
+            "type": "preset",
+            "id": "desktop.task_view"
           },
           "execute_on_match": false,
           "hide_label": false,
@@ -978,8 +977,8 @@
             }
           ],
           "action": {
-            "type": "system_key",
-            "key": "VOLUME_UP"
+            "type": "preset",
+            "id": "media.volume_up"
           },
           "execute_on_match": false,
           "hide_label": false,
@@ -999,8 +998,8 @@
             }
           ],
           "action": {
-            "type": "system_key",
-            "key": "VOLUME_DOWN"
+            "type": "preset",
+            "id": "media.volume_down"
           },
           "execute_on_match": false,
           "hide_label": false,
@@ -1020,8 +1019,8 @@
             }
           ],
           "action": {
-            "type": "system_key",
-            "key": "MUTE"
+            "type": "preset",
+            "id": "media.mute"
           },
           "execute_on_match": false,
           "hide_label": false,
@@ -1041,8 +1040,8 @@
             }
           ],
           "action": {
-            "type": "system_key",
-            "key": "PLAY_PAUSE"
+            "type": "preset",
+            "id": "media.play_pause"
           },
           "execute_on_match": false,
           "hide_label": false,
@@ -1062,8 +1061,8 @@
             }
           ],
           "action": {
-            "type": "system_key",
-            "key": "BRIGHTNESS_UP"
+            "type": "preset",
+            "id": "display.brightness_up"
           },
           "execute_on_match": false,
           "hide_label": false,
@@ -1083,8 +1082,8 @@
             }
           ],
           "action": {
-            "type": "system_key",
-            "key": "BRIGHTNESS_DOWN"
+            "type": "preset",
+            "id": "display.brightness_down"
           },
           "execute_on_match": false,
           "hide_label": false,
@@ -1115,8 +1114,8 @@
             }
           ],
           "action": {
-            "type": "key_sequence",
-            "keys": "^+{ESC}"
+            "type": "preset",
+            "id": "system.task_manager"
           },
           "execute_on_match": false,
           "hide_label": false,
@@ -1149,8 +1148,8 @@
             }
           ],
           "action": {
-            "type": "key_sequence",
-            "keys": "#i"
+            "type": "preset",
+            "id": "system.settings"
           },
           "execute_on_match": false,
           "hide_label": false,
@@ -1179,8 +1178,8 @@
             }
           ],
           "action": {
-            "type": "key_sequence",
-            "keys": "^="
+            "type": "preset",
+            "id": "view.zoom_in"
           },
           "execute_on_match": false,
           "hide_label": false,
@@ -1209,8 +1208,8 @@
             }
           ],
           "action": {
-            "type": "key_sequence",
-            "keys": "^-"
+            "type": "preset",
+            "id": "view.zoom_out"
           },
           "execute_on_match": false,
           "hide_label": false,
@@ -1239,8 +1238,8 @@
             }
           ],
           "action": {
-            "type": "key_sequence",
-            "keys": "^0"
+            "type": "preset",
+            "id": "view.zoom_reset"
           },
           "execute_on_match": false,
           "hide_label": false,
@@ -1281,8 +1280,8 @@
             }
           ],
           "action": {
-            "type": "key_sequence",
-            "keys": "^n"
+            "type": "preset",
+            "id": "browser.new_window"
           },
           "execute_on_match": false,
           "hide_label": false,
@@ -1373,6 +1372,126 @@
           "secured": false
         }
       ]
+    },
+    {
+      "id": "disabled-parallels",
+      "name": "Parallels Desktop",
+      "name_key": "preset.app.parallels",
+      "kind": "app",
+      "app": {
+        "exe": "com.parallels.desktop.console"
+      },
+      "inherit_global": false,
+      "disabled": true,
+      "bindings": []
+    },
+    {
+      "id": "disabled-fusion",
+      "name": "VMware Fusion",
+      "name_key": "preset.app.fusion",
+      "kind": "app",
+      "app": {
+        "exe": "com.vmware.fusion"
+      },
+      "inherit_global": false,
+      "disabled": true,
+      "bindings": []
+    },
+    {
+      "id": "disabled-windows_app",
+      "name": "Windows App",
+      "name_key": "preset.app.windows_app",
+      "kind": "app",
+      "app": {
+        "exe": "com.microsoft.rdc.macos"
+      },
+      "inherit_global": false,
+      "disabled": true,
+      "bindings": []
+    },
+    {
+      "id": "disabled-screen_sharing",
+      "name": "屏幕共享",
+      "name_key": "preset.app.screen_sharing",
+      "kind": "app",
+      "app": {
+        "exe": "com.apple.ScreenSharing"
+      },
+      "inherit_global": false,
+      "disabled": true,
+      "bindings": []
+    },
+    {
+      "id": "disabled-virtualboxvm",
+      "name": "VirtualBox",
+      "name_key": "preset.app.virtualboxvm",
+      "kind": "app",
+      "app": {
+        "exe": "org.virtualbox.app.VirtualBoxVM"
+      },
+      "inherit_global": false,
+      "disabled": true,
+      "bindings": []
+    },
+    {
+      "id": "disabled-blender",
+      "name": "Blender",
+      "name_key": "preset.app.blender",
+      "kind": "app",
+      "app": {
+        "exe": "org.blenderfoundation.blender"
+      },
+      "inherit_global": false,
+      "disabled": true,
+      "bindings": []
+    },
+    {
+      "id": "disabled-cinema_4d",
+      "name": "Cinema 4D",
+      "name_key": "preset.app.cinema_4d",
+      "kind": "app",
+      "app": {
+        "exe": "net.maxon.cinema4d"
+      },
+      "inherit_global": false,
+      "disabled": true,
+      "bindings": []
+    },
+    {
+      "id": "disabled-maya",
+      "name": "Maya",
+      "name_key": "preset.app.maya",
+      "kind": "app",
+      "app": {
+        "exe": "com.autodesk.Maya"
+      },
+      "inherit_global": false,
+      "disabled": true,
+      "bindings": []
+    },
+    {
+      "id": "disabled-unity",
+      "name": "Unity",
+      "name_key": "preset.app.unity",
+      "kind": "app",
+      "app": {
+        "exe": "com.unity3d.UnityEditor"
+      },
+      "inherit_global": false,
+      "disabled": true,
+      "bindings": []
+    },
+    {
+      "id": "disabled-unrealeditor",
+      "name": "Unreal Editor",
+      "name_key": "preset.app.unrealeditor",
+      "kind": "app",
+      "app": {
+        "exe": "com.epicgames.UnrealEditor"
+      },
+      "inherit_global": false,
+      "disabled": true,
+      "bindings": []
     }
   ]
 }

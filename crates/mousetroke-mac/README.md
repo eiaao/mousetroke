@@ -70,7 +70,7 @@ The frontmost app's first layer-0 window is compared with each full screen frame
 
 ## macOS defaults
 
-`Config::builtin()` selects `assets/default-config-macos.json` on macOS. The general-scope gestures share the configuration schema; macOS corner names and enabled rules are platform-specific; explorer/cmd scopes are omitted. Existing saved configurations, including M1 configs, are preserved. Self-test uses new defaults in memory. For interactive testing, quit the app, back up `~/Library/Application Support/mousetroke/config.json`, then copy `crates/mousetroke-core/assets/default-config-macos.json` there before restarting.
+`Config::builtin()` uses the shared `assets/default-config.json` preset library. Presets expand for the current platform; macOS keeps its pause shortcut, corner names and enabled rules. App scopes are filtered for each platform: Explorer/cmd on Windows, disabled-app suggestions on Mac. Existing saved configurations, including M1 configs, are preserved. Self-test uses new defaults in memory. For interactive testing, quit the app, back up and remove the configuration file, then restart to initialize the shared defaults.
 
 | Gestures | macOS decision |
 | --- | --- |
@@ -80,7 +80,7 @@ The frontmost app's first layer-0 window is compared with each full screen frame
 | Top / bottom | ⌘↑ / ⌘↓ |
 | Copy / paste / cut / paste + Enter | ⌘C / ⌘V / ⌘X / ⌘V then Return |
 | Enter / backspace / forward delete / Esc | Return / Delete / Forward Delete / Esc |
-| Screenshot / minimize / full screen / close window | ⌘⇧4 / AXMinimized / ⌃⌘F / ⌘⇧W (browser window shortcut) |
+| Screenshot / minimize / full screen / close window | ⌘⇧4 / AXMinimized / ⌃⌘F / AX close button |
 | Previous / next desktop | ⌃← / ⌃→ |
 | Corners / edge combinations | See the M3b table below; new defaults apply to fresh configurations |
 | Zoom in / out / reset | ⌘= / ⌘− / ⌘0 |

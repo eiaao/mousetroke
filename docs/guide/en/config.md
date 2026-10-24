@@ -25,7 +25,9 @@ Before editing JSON manually, export a backup. For a direct restore, quit the en
 
 The engine watches the configuration's file timestamp. Windows checks about once per second; Mac checks in the maintenance branch scheduled every two seconds. A change received during a gesture is applied after capture ends. Invalid JSON leaves the previous active configuration in use and records an error in the log.
 
-The current settings UI has no reset-to-defaults button. To start with built-in defaults, quit Mousetroke and close settings, back up and remove or rename `config.json`, then reopen. A missing file is initialized with platform-specific defaults. A malformed file is not a request to reset.
+The current settings UI has no reset-to-defaults button. To start with built-in defaults, quit Mousetroke and close settings, back up and remove or rename `config.json`, then reopen. A missing file is initialized from shared defaults, with presets resolved for the current platform. A malformed file is kept intact: startup uses defaults in memory and settings refuses to save over it. Restore or rename the file before saving again.
+
+Existing version-1 configurations remain readable and are not rewritten on startup. Saving a configuration containing presets writes version 2. Before the first version-2 save over a version-1 file, Mousetroke keeps the original bytes in `config.v1.bak.json` beside it; an existing backup is retained. Unknown action types and unknown preset IDs are preserved when saving and skipped during execution.
 
 ## Updates
 

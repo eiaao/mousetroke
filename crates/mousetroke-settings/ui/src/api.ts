@@ -1,5 +1,5 @@
 import { invoke } from "@tauri-apps/api/core";
-import type { AppInfo, Config, EngineStatus, InitState, PermissionStatus, PresetApp, RunningApp } from "./types";
+import type { Action, ActionCatalog, AppInfo, Config, EngineStatus, InitState, PermissionStatus, PresetApp, RunningApp } from "./types";
 import { t, type MsgKey } from "./i18n";
 import zh from "../../../../i18n/zh-CN.json";
 
@@ -12,6 +12,8 @@ export interface Msg {
 // 后端命令的薄封装（命令定义见 src/main.rs）。
 export const api = {
   initState: () => invoke<InitState>("init_state"),
+  actionCatalog: () => invoke<ActionCatalog>("action_catalog"),
+  expandPreset: (id: string, params: Record<string, unknown>, uiLang: string) => invoke<Action>("expand_preset", { id, params, uiLang }),
   saveConfig: (config: Config) => invoke<void>("save_config", { config }),
   engineStatus: () => invoke<EngineStatus>("get_engine_status"),
   setUiLang: (tag: string) => invoke<void>("set_ui_lang", { tag }),

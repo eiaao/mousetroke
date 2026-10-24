@@ -35,7 +35,7 @@ export type SendMode = "down_up" | "mapping" | "toggle" | "down" | "up";
 export type IfRunning = "activate" | "send_keys" | "run_again";
 export type WindowOpKind = "toggle_maximize" | "minimize" | "close" | "toggle_topmost";
 
-export type Action =
+export type AdvancedAction =
   | { type: "key_sequence"; keys: string; mode?: SendMode; secured?: boolean; activate_target?: boolean }
   | { type: "shell"; script: string }
   | { type: "lua"; code: string }
@@ -54,6 +54,42 @@ export type Action =
   | { type: "window_op"; op: WindowOpKind; allow_child?: boolean }
   | { type: "system_key"; key: string };
 
+export interface PresetAction { type: "preset"; id: string; params?: Record<string, unknown> }
+/** 原始未来类型直接往返；界面通过类型守卫展示只读卡片，不增加 JSON 包装。 */
+export interface UnknownAction { type: string; [key: string]: unknown }
+export type Action = AdvancedAction | PresetAction | UnknownAction;
+
+export const ADVANCED_ACTION_TYPES = ["key_sequence", "shell", "lua", "open_url", "menu", "launch_app", "window_op", "system_key"] as const;
+export function isAdvancedAction(action: Action): action is AdvancedAction {
+  return (ADVANCED_ACTION_TYPES as readonly string[]).includes(action.type);
+}
+export function isPresetAction(action: Action): action is PresetAction {
+  return action.type === "preset" && "id" in action && typeof action.id === "string";
+}
+
+export type PresetParamKind =
+  | { type: "text" | "multiline_text" | "url" | "app" }
+  | { type: "choice"; choices: { value: string; label_key: string }[] }
+  | { type: "path"; kind: "folder" | "file" };
+export type PresetImplementation =
+  | { status: "implemented"; value: { type: string; value?: unknown } }
+  | { status: "unsupported" | "pending"; value: { reason_key: string } };
+export interface ActionPreset {
+  id: string;
+  category: "browser" | "edit" | "text" | "window" | "desktop" | "media" | "open" | "mousetroke";
+  name_key: string;
+  description_key: string;
+  aliases_key: string;
+  params: { name: string; label_key: string; kind: PresetParamKind; default: { kind: "literal"; value: string } | { kind: "search_engine" } }[];
+  windows: PresetImplementation;
+  macos: PresetImplementation;
+}
+export interface ActionCatalog {
+  presets: ActionPreset[];
+  defaults: Record<string, Record<string, unknown>>;
+  knownActionTypes: string[];
+  unknownActionKey: string;
+}
 
 export interface MenuItem {
   label: string;
@@ -137,6 +173,7 @@ export interface InitState {
   systemLangs: string[];
   /** 后端按 language + 系统语言解析出的语言标签。 */
   resolvedLang: string;
+  actionCatalog?: ActionCatalog;
 }
 
 export interface PermissionStatus {
