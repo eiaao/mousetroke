@@ -16,6 +16,7 @@ unsafe extern "C" {
     fn CFArrayGetTypeID() -> usize;
     fn CFDictionaryGetTypeID() -> usize;
     fn CFNumberGetTypeID() -> usize;
+    fn CFBooleanGetTypeID() -> usize;
     fn CFStringCreateWithCString(allocator: Raw, text: *const c_char, encoding: u32) -> Raw;
     fn CFStringGetLength(value: Raw) -> isize;
     fn CFStringGetMaximumSizeForEncoding(length: isize, encoding: u32) -> isize;
@@ -25,6 +26,7 @@ unsafe extern "C" {
     fn CFDictionaryGetValue(value: Raw, key: Raw) -> Raw;
     fn CFNumberGetValue(value: Raw, kind: isize, result: *mut c_void) -> bool;
     static kCFBooleanTrue: Raw;
+    static kCFBooleanFalse: Raw;
 }
 #[link(name = "ApplicationServices", kind = "framework")]
 unsafe extern "C" {
@@ -90,6 +92,36 @@ impl Cf {
         if unsafe { AXUIElementSetMessagingTimeout(self.0, 0.1) } != 0 {
             crate::log!("设置 AX 消息超时失败");
         }
+    }
+    fn boolean(&self, name: &str) -> Option<bool> {
+        let value = self.attr(name)?;
+        // 安全：先校验 CFBoolean 类型，再比较系统单例地址。
+        unsafe {
+            (CFGetTypeID(value.0) == CFBooleanGetTypeID()).then_some(value.0 == kCFBooleanTrue)
+        }
+    }
+    fn set_boolean(&self, name: &str, value: bool) -> i32 {
+        let key = Self::key(name);
+        // 安全：有效 AX 代理、属性字符串及系统 CFBoolean 常量。
+        unsafe {
+            AXUIElementSetAttributeValue(
+                self.0,
+                key.0,
+                if value {
+                    kCFBooleanTrue
+                } else {
+                    kCFBooleanFalse
+                },
+            )
+        }
+    }
+    fn perform(&self, name: &str) -> i32 {
+        let action = Self::key(name);
+        // 安全：只执行公开 AX 动作，错误由目标应用返回。
+        unsafe { AXUIElementPerformAction(self.0, action.0) }
+    }
+    fn press_button(&self, name: &str) -> Option<i32> {
+        Some(self.attr(name)?.perform("AXPress"))
     }
 }
 
@@ -258,11 +290,7 @@ pub fn apply(pid: u32, expected: Option<&Window>, pos: (i32, i32), op: WindowOpK
         return;
     };
     let status = match op {
-        WindowOpKind::Minimize => {
-            let key = Cf::key("AXMinimized");
-            // 安全：窗口 AX 代理、属性与 CFBoolean 系统常量有效。
-            unsafe { AXUIElementSetAttributeValue(window.0, key.0, kCFBooleanTrue) }
-        }
+        WindowOpKind::Minimize => window.set_boolean("AXMinimized", true),
         WindowOpKind::ToggleMaximize | WindowOpKind::Close => {
             if op == WindowOpKind::ToggleMaximize {
                 let minimized = window.attr("AXMinimized");
@@ -272,7 +300,7 @@ pub fn apply(pid: u32, expected: Option<&Window>, pos: (i32, i32), op: WindowOpK
                     return;
                 }
             }
-            let Some(button) = window.attr(if op == WindowOpKind::Close {
+            let Some(status) = window.press_button(if op == WindowOpKind::Close {
                 "AXCloseButton"
             } else {
                 "AXZoomButton"
@@ -280,11 +308,85 @@ pub fn apply(pid: u32, expected: Option<&Window>, pos: (i32, i32), op: WindowOpK
                 crate::log!("目标窗口没有所需 AX 按钮，跳过动作");
                 return;
             };
-            let press = Cf::key("AXPress");
-            // 安全：对已取得的 AX 按钮执行公开 AXPress 操作。
-            unsafe { AXUIElementPerformAction(button.0, press.0) }
+            status
         }
         WindowOpKind::ToggleTopmost => return,
     };
     crate::log!("AX 窗口动作完成: status={status}");
+}
+
+fn lua_window(expected: &Window) -> Option<Cf> {
+    window(
+        expected.pid,
+        Some(expected),
+        (expected.bounds.x as i32, expected.bounds.y as i32),
+    )
+}
+pub(crate) fn lua_window_title(expected: &Window) -> Option<String> {
+    let window = lua_window(expected)?;
+    Some(
+        window
+            .attr("AXTitle")
+            .and_then(|v| v.string())
+            .unwrap_or_default(),
+    )
+}
+fn zoomed(window: &Cf, work_areas: &[Rect]) -> Option<bool> {
+    let frame = bounds(window)?;
+    Some(work_areas.iter().any(|area| covers(frame, *area)))
+}
+/// 与内建动作共用 AX 窗口定位和按钮操作；所有跨进程调用留在 Lua 工作线程。
+pub(crate) fn lua_window_state(expected: &Window, work_areas: &[Rect]) -> Option<String> {
+    let window = lua_window(expected)?;
+    Some(
+        if window.boolean("AXMinimized")? {
+            "min"
+        } else if window.boolean("AXFullScreen") == Some(true) {
+            "fullscreen"
+        } else if zoomed(&window, work_areas)? {
+            "max"
+        } else {
+            "normal"
+        }
+        .into(),
+    )
+}
+pub(crate) fn lua_set_window_state(expected: &Window, state: &str, work_areas: &[Rect]) {
+    let Some(window) = lua_window(expected) else {
+        return;
+    };
+    let status = match state {
+        "min" => Some(window.set_boolean("AXMinimized", true)),
+        "fullscreen" => Some(window.set_boolean("AXFullScreen", true)),
+        "max" | "normal" | "norm" | "restore" => {
+            if window.boolean("AXFullScreen") == Some(true)
+                && window.set_boolean("AXFullScreen", false) != 0
+            {
+                return;
+            }
+            if window.boolean("AXMinimized") == Some(true)
+                && window.set_boolean("AXMinimized", false) != 0
+            {
+                return;
+            }
+            match zoomed(&window, work_areas) {
+                Some(is_max) if is_max != (state == "max") => window.press_button("AXZoomButton"),
+                _ => None,
+            }
+        }
+        _ => return,
+    };
+    if let Some(status) = status {
+        crate::log!("Lua AX 窗口状态操作完成: status={status}");
+    }
+}
+pub(crate) fn lua_focus_window(expected: &Window) -> bool {
+    let Some(window) = lua_window(expected) else {
+        return false;
+    };
+    if window.boolean("AXMinimized") == Some(true) && window.set_boolean("AXMinimized", false) != 0
+    {
+        return false;
+    }
+    window.perform("AXRaise") == 0
 }

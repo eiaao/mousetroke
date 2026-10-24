@@ -88,10 +88,12 @@ pub trait LuaPlatform: Send + Sync + 'static {
         self.unsupported("get_win_state");
         None
     }
+    /// 成功为 0..=100 的百分比；失败或不支持统一返回 None。
     fn get_brightness(&self, _x: i32, _y: i32) -> Option<i64> {
         self.unsupported("get_brightness");
         None
     }
+    /// delta 为百分点，成功返回调整后的百分比，失败返回 None。
     fn adjust_brightness(&self, _x: i32, _y: i32, _delta: i32) -> Option<i64> {
         self.unsupported("set_brightness");
         None

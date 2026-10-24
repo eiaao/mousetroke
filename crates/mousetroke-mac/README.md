@@ -129,12 +129,17 @@ Each gesture starts a fresh VM on a worker, after obtaining the captured target'
 | `ms.open`, `ms.run`, `ms.cmd` | M3a NSWorkspace URL/app launch and `/bin/zsh -c`; run args use the existing quoted word parser |
 | `ms.is_paused`, `ms.set_paused`, `ms.show_toast` | Supported; state writes are dispatched to the main thread; toast uses the engine queue |
 | `ms.get_clipboard_text`, `ms.set_clipboard_text` | String pasteboard on the main thread; set replaces current contents |
-| `ms.focus_win(wid)` | Activates the captured application for the captured CGWindowID; does not raise a particular AX window |
-| `ms.find_win_by_class`, `ms.find_win_by_title`, `ms.set_win_state`, `ms.get_win_state`, `ms.set_win_top` | Unsupported in the Lua backend; nil + one log per API per process (normal WindowOp actions still use M3a AX) |
-| `ms.get_brightness`, `ms.set_brightness` | Unsupported Lua brightness reads/adjustments; nil + one log; media brightness actions remain separate |
+| `ms.focus_win(wid)` | Raises/unminimizes a captured or discovered CGWindowID through the existing worker AX lookup, then activates its app on the main thread |
+| `ms.find_win_by_class`, `ms.find_win_by_title` | On-screen CG windows, Rust regex on bundle ID or AX title; up to 32 `{text, hwnd}` entries; AX on worker, app identity on main thread |
+| `ms.set_win_state`, `ms.get_win_state` | AX minimized/fullscreen attributes and built-in zoom button on worker; main-thread work-area geometry identifies `max`; app-defined content-sized zoom may still report `normal` |
+| `ms.set_win_top` | No operation + one log: no public API for cross-app topmost, as with the built-in action |
+| `ms.get_brightness`, `ms.set_brightness` | nil + one log: existing backend only sends built-in-display brightness keys, with no numeric readback or percentage-point control; no external DDC |
 | `ms.show_settings` | Opens the independent settings process using the current engine config |
-| `ms.is_keys_pressed`, `ms.keys_down`, `ms.keys_up` | Unsupported; nil + one log |
+| `ms.is_keys_pressed` | Combined-session CG key state and modifier flags; all listed keys/modifiers must be down together; missing Accessibility permission returns false + one log |
+| `ms.keys_down`, `ms.keys_up` | Unsupported; no operation + one log |
 | `WG`, `User32`, `luanet`, `import` | Windows-only shims, absent on macOS |
+
+Window discovery/state calls require Accessibility; missing permission returns nil for queries and skips writes, with one permission log. CGWindowID-to-AX matching reuses PID/bounds, so identical overlapping bounds remain ambiguous. `min`, `max`, `normal`/`norm`/`restore` and `fullscreen` are accepted on Mac; other state names are ignored. `max` recognizes frames within 2 logical points of a work area. Content-sized zoom has no universal public AX state flag: repeated `max` may toggle it and restore cannot reliably undo it; use the built-in toggle for those apps. Numeric brightness failures now return nil in `ms.*` on both platforms; only Windows legacy brightness wrappers retain -1.
 
 Compatibility deliberately retains the existing Windows execution policy: **there is no wall-clock timeout or cancellation hook**. Load/entry errors stop that VM invocation, memory errors respect the 8 MiB limit, and sleep blocks only its worker. An infinite loop can consume a worker until process exit; changing this policy on both platforms is separate work. `Lua::new` is not an untrusted-code security boundary. In self-test, Lua actions log their dry-run kind before any AX, clipboard or VM work.
 

@@ -115,10 +115,10 @@ ms.keys_up("{SHIFT}")
 
 `ms.is_keys_pressed(sequence: string) -> boolean | nil`
 
-Windows 返回解析序列中每个主键盘键是否都已按下。**不会检查前缀修饰符**，`"^a"` 只检查 A；检测 Ctrl 和 A 请写 `"{CTRL}a"`。鼠标／滚轮、延时或文本动作会使结果为假；空序列为真。无效语法返回 false。Mac 对有效序列返回 `nil`（不支持），无效语法仍返回 false。
+两平台均检查每个键盘键**及其前缀修饰键**，`"^a"` 要求 Control 与 A 同时按下。前缀接受任意一侧，`{RCTRL}` 等显式名称要求指定侧。Mac 上 `^` = Control、`%` = Option、`+` = Shift、`#` = Command。多步序列要求所有列出的键与修饰键同时按下，不检查按下顺序；重复次数不增加要求。鼠标／滚轮、延时或文本动作使结果为假；空序列为真。无效语法返回 false。Mac 读取合并会话状态，缺少辅助功能权限时返回 false，并仅记录一次日志。
 
 ```lua
-if ms.is_keys_pressed("{CTRL}a") then
+if ms.is_keys_pressed("^a") then
   ms.show_toast("Ctrl 和 A 均已按下")
 end
 ```
@@ -163,7 +163,7 @@ ms.log(text and #text or 0)
 
 `ms.find_win_by_class(pattern: string) -> table | nil`
 
-Windows 按类名的 Rust 正则表达式查找可见顶层窗口，返回从 1 开始的数组，最多 32 项，每项 `{text=标题, hwnd=窗口标识}`，未命中为空表。默认区分大小写，可用 `(?i)` 等标志。无效正则无结果。Mac 返回 `nil` 并记录不支持。
+使用 **Rust 正则表达式**查找可见顶层窗口：Windows 匹配窗口类名，Mac 匹配应用 **bundle ID**（例如 Lua 字符串 `^com\\.apple\\.Safari$`）。返回从 1 开始的数组，最多 32 项，每项 `{text=标题, hwnd=窗口标识}`；未命中或正则无效时为空表。默认区分大小写，可用 `(?i)` 等标志，不使用 Lua 模式。Mac 通过辅助功能读取标题，缺少权限返回 nil 并仅记录一次日志；`hwnd` 是 `focus_win` 和窗口状态 API 接受的 CGWindowID。Mac 仅搜索当前屏幕上可见的窗口。
 
 ```lua
 local wins = ms.find_win_by_class("^Notepad$")
@@ -174,7 +174,7 @@ if wins and wins[1] then ms.focus_win(wins[1].hwnd) end
 
 `ms.find_win_by_title(pattern: string) -> table | nil`
 
-Windows 按标题的 Rust 正则表达式查找可见顶层窗口，返回与 `find_win_by_class` 相同的、从 1 开始的 `{text, hwnd}` 数组，最多 32 项。无效正则为空表。Mac 返回 `nil` 并记录不支持。
+两平台按标题的 Rust 正则表达式查找窗口，返回与 `find_win_by_class` 相同的、从 1 开始的 `{text, hwnd}` 数组，最多 32 项。无效正则为空表。Mac 使用 AX 窗口标题，需要辅助功能权限，仅搜索当前屏幕上可见的窗口。
 
 ```lua
 local wins = ms.find_win_by_title("(?i)notepad")
@@ -185,7 +185,7 @@ if wins then ms.log(#wins) end
 
 `ms.focus_win(wid: integer) -> nil`
 
-激活窗口／程序，无返回值或成功标志。Windows 接受 HWND。Mac 仅在 `wid` 等于入口参数且目标 PID 非零时激活本次目标程序，其他 ID 被忽略，不能指定任意 Mac 窗口。
+激活窗口／程序，无返回值或成功标志。Windows 接受 HWND。Mac 接受手势目标或查找得到的 CGWindowID，取消最小化并提升对应 AX 窗口，再经主线程桥接激活所属应用。Mac AX 调用在脚本工作线程执行，复用内建动作按 PID／边界定位窗口的逻辑，需要辅助功能权限；忽略失效 ID 或不可用的 AX 窗口。边界完全相同的重叠窗口可能存在定位歧义。
 
 ```lua
 if wid ~= 0 then ms.focus_win(wid) end
@@ -195,7 +195,9 @@ if wid ~= 0 then ms.focus_win(wid) end
 
 `ms.set_win_state(wid: integer, state: string) -> nil`
 
-仅 Windows：`"min"` 最小化，`"max"` 最大化；**其他任意字符串都执行还原**，包括 `"normal"` 和 `"norm"`。值区分大小写。无返回值。Mac 记录不支持并无操作，请改用编辑器“窗口操作”。
+Windows：`"min"` 最小化，`"max"` 最大化；**其他任意字符串都执行还原**，包括 `"normal"` 和 `"norm"`。Mac：`"min"` 使用 AXMinimized；`"max"` 取消最小化／退出全屏，窗口未填满屏幕工作区时按下与内建动作相同的 AXZoomButton。`"normal"`、`"norm"`、`"restore"` 取消最小化／退出全屏，并撤销填满工作区的缩放。Mac 另支持 `"fullscreen"`，通过 AXFullScreen 请求应用全屏（取决于应用支持）；其他名称忽略并仅记录一次日志。值区分大小写，无返回值。Mac 需要辅助功能权限；AX 在工作线程执行，经主线程桥接读取屏幕几何信息。状态转换可能异步完成。
+
+Mac 的缩放行为由应用决定：按内容大小缩放后可能仍报告 `"normal"`，此时本 API 无法可靠还原，重复请求 `"max"` 可能切换缩放。此类应用请用内建“最大化 / 还原”切换动作。公开 AX 接口没有统一的缩放状态标志。
 
 ```lua
 if wid ~= 0 then ms.set_win_state(wid, "max") end
@@ -205,7 +207,7 @@ if wid ~= 0 then ms.set_win_state(wid, "max") end
 
 `ms.get_win_state(wid: integer) -> string | nil`
 
-Windows 返回 `"min"`、`"max"` 或 `"normal"`，不查询置顶，也不校验失效句柄，失效句柄可能表现为 normal。Mac 返回 `nil` 并记录不支持。
+Windows 返回 `"min"`、`"max"` 或 `"normal"`，不查询置顶，也不校验失效句柄，失效句柄可能表现为 normal。Mac 返回 `"min"`、`"fullscreen"`、`"max"`（边界与某屏工作区的差不超过 2 个逻辑点）或 `"normal"`。公开 AX 接口没有通用的缩放状态查询，按内容大小缩放的窗口报告 normal。Mac 缺少权限、AX 窗口／状态不可用或 ID 失效时返回 nil；权限拒绝仅记录一次日志。
 
 ```lua
 if wid ~= 0 then ms.log(ms.get_win_state(wid)) end
@@ -215,7 +217,7 @@ if wid ~= 0 then ms.log(ms.get_win_state(wid)) end
 
 `ms.set_win_top(wid: integer, top: boolean) -> nil`
 
-Windows 用 `true` 设置、`false` 取消置顶，不移动或改变窗口大小，无返回值。这是设置状态，不是切换，也不会返回原状态。Mac 记录不支持并无操作。需要切换时，Windows 编辑器选择“窗口操作 → 置顶 / 取消置顶”。
+Windows 用 `true` 设置、`false` 取消置顶，不移动或改变窗口大小，无返回值。这是设置状态，不是切换，也不会返回原状态。Mac 无操作并仅记录一次日志：系统没有公开的跨应用窗口置顶 API，内建置顶动作同样不支持。需要切换时，Windows 编辑器选择“窗口操作 → 置顶 / 取消置顶”。
 
 ```lua
 if wid ~= 0 then ms.set_win_top(wid, true) end
@@ -261,18 +263,18 @@ if s then ms.log(s.right - s.left, s.bottom - s.top) end
 
 `ms.get_brightness(pos?: table) -> integer | nil`
 
-可选 `{x=整数,y=整数}` 指定屏幕，省略／nil 或位置不完整时使用当前鼠标。Windows 使用 DDC/CI，失败回退 WMI，返回 0–100，失败为 **-1**。WMI 使用第一个亮度设备，并未按鼠标所在显示器匹配。Mac 返回 `nil` 并记录不支持。
+可选 `{x=整数,y=整数}` 指定屏幕，省略／nil 或位置不完整时使用当前鼠标。两平台统一为**成功返回 0–100 的亮度百分比，失败返回 nil**。Windows 使用 DDC/CI，失败回退 WMI；WMI 使用第一个亮度设备，并未按鼠标所在显示器匹配。Mac 当前返回 nil 并仅记录一次日志：现有亮度后端仅发送内建屏幕亮度键，不能读取百分比，也不支持外接 DDC。仅 Windows 旧接口 `WG.GetBrightness` 保留失败返回 -1。
 
 ```lua
 local value = ms.get_brightness()
-if value and value >= 0 then ms.show_toast(tostring(value)) end
+if value ~= nil then ms.show_toast(tostring(value)) end
 ```
 
 ### `ms.set_brightness`
 
 `ms.set_brightness(pos: table | nil, delta: integer) -> integer | nil`
 
-虽然叫 set，但它是增减 `delta` 个百分点，不是设置绝对亮度。第一参传命名字段表 `{x=...,y=...}`，或**明确传 nil** 使用当前鼠标。Windows 的 DDC/CI 与 WMI 设备选择同 `get_brightness`，结果限制在 0–100，返回新亮度，失败为 -1。Mac 返回 `nil` 并记录不支持。Mac“媒体与系统”的亮度动作另行发送内置屏幕亮度键。
+虽然叫 set，但它是增减 `delta` 个百分点，不是设置绝对亮度。第一参传命名字段表 `{x=...,y=...}`，或**明确传 nil** 使用当前鼠标。成功返回限制在 **0–100 的新亮度百分比**，两平台失败均为 **nil**。Windows 的 DDC/CI 与 WMI 设备选择同 `get_brightness`；仅 Windows 旧接口 `WG.SetBrightness` 保留失败返回 -1。Mac 返回 nil 并仅记录一次日志：现有“媒体与系统”后端只发送内建屏幕亮度键，没有数值读回或按百分点控制能力。本 Lua 调用不改变亮度；亮度键请使用内建动作，外接 DDC 仍不支持。
 
 ```lua
 local value = ms.set_brightness(nil, 5)

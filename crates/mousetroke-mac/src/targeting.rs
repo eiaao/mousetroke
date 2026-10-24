@@ -39,8 +39,13 @@ struct Snapshot {
 thread_local! { static SNAPSHOT: RefCell<Snapshot> = RefCell::new(Snapshot::default()); }
 
 fn list() -> Vec<Window> {
-    // 安全：公开选项 OnScreenOnly(1)|ExcludeDesktopElements(16)，接管 Copy 引用。
-    let Some(list) = (unsafe { Cf::owned(CGWindowListCopyWindowInfo(1 | 16, 0)) }) else {
+    lua_windows(true)
+}
+/// Lua 操作按需读取新快照；查询状态和还原时也需要最小化窗口。
+pub(crate) fn lua_windows(on_screen_only: bool) -> Vec<Window> {
+    let options = if on_screen_only { 1 | 16 } else { 16 };
+    // 安全：公开选项 OnScreenOnly(1)/All(0)|ExcludeDesktopElements(16)，接管 Copy 引用。
+    let Some(list) = (unsafe { Cf::owned(CGWindowListCopyWindowInfo(options, 0)) }) else {
         crate::log!("读取 CG 窗口快照失败");
         return Vec::new();
     };

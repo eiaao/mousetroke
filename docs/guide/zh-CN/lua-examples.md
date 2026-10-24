@@ -142,21 +142,21 @@ end
 
 ## 最大化或还原
 
-用途：在 Windows 切换目标窗口的最大化状态。
+用途：在 Windows 切换目标窗口的最大化状态，在 Mac 切换填满工作区的缩放。
 
 ```lua
 function ms_action(pos, wid)
-  if package.config:sub(1, 1) ~= "\\" then
-    ms.show_toast("Mac 请使用窗口操作中的最大化 / 还原")
-    return
-  end
   if wid == 0 then return end
   local state = ms.get_win_state(wid)
+  if state == nil then
+    ms.show_toast("窗口不可用；Mac 请检查辅助功能权限")
+    return
+  end
   ms.set_win_state(wid, state == "max" and "normal" or "max")
 end
 ```
 
-Mac 请选“窗口操作 → 最大化 / 还原”，内置动作使用辅助功能，Lua 窗口状态 API 尚不支持。当前没有可将窗口移动到另一显示器的 Lua 位置／大小 API。
+Mac 使用与内建窗口动作相同的 AX 缩放按钮。状态查询识别填满工作区的窗口；按内容大小缩放的应用可能仍报告 normal，此类应用请用“窗口操作 → 最大化 / 还原”。缺少辅助功能权限或窗口不可用时返回 nil。当前没有可将窗口移动到另一显示器的 Lua 位置／大小 API。
 
 ## 调整鼠标所在屏幕亮度
 
@@ -166,7 +166,7 @@ Mac 请选“窗口操作 → 最大化 / 还原”，内置动作使用辅助�
 function ms_action()
   local p = ms.get_mouse_pos()
   local value = ms.set_brightness(p, 5)
-  if value and value >= 0 then
+  if value ~= nil then
     ms.show_toast("亮度：" .. value)
   else
     ms.show_toast("当前屏幕或平台无法使用亮度 API")
@@ -174,7 +174,7 @@ function ms_action()
 end
 ```
 
-将 `5` 改成 `-5` 可另建调暗手势。Windows 需要可用的 DDC/CI 或 WMI 硬件支持，WMI 回退会选择第一个亮度设备，可能是另一块屏幕。Mac 此处返回 nil；可用“媒体与系统 → 亮度 +”／“亮度 −”发送内置屏幕亮度键，不支持按鼠标选择屏幕或外接 DDC/CI。
+将 `5` 改成 `-5` 可另建调暗手势。Windows 需要可用的 DDC/CI 或 WMI 硬件支持，WMI 回退会选择第一个亮度设备，可能是另一块屏幕。成功返回 0–100 的百分比，两平台失败均为 nil。Mac 此处返回 nil：现有后端仅发送亮度键，不能返回百分比或按百分点调整。可用“媒体与系统 → 亮度 +”／“亮度 −”发送内置屏幕亮度键，不支持按鼠标选择屏幕或外接 DDC/CI。
 
 ## 打开文件夹
 

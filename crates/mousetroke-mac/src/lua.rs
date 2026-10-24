@@ -1,13 +1,20 @@
 //! Lua 只在工作线程运行；主线程只分片处理桥接请求，从不等待脚本结束。
-use mousetroke_core::{keyseq::KeySeq, schema::IfRunning};
-use mousetroke_lua::{KeyPhase, LuaCtx, LuaPlatform};
-use objc2_app_kit::{NSPasteboard, NSPasteboardTypeString};
-use objc2_core_graphics::{CGEvent, CGEventTapLocation, CGEventType};
+use mousetroke_core::{
+    keymap::vk_to_kvk,
+    keyseq::{KeySeq, ModKey},
+    schema::IfRunning,
+};
+use mousetroke_lua::{required_keys, KeyPhase, LuaCtx, LuaPlatform, RequiredKey};
+use objc2_app_kit::{NSPasteboard, NSPasteboardTypeString, NSRunningApplication};
+use objc2_core_graphics::{
+    CGEvent, CGEventFlags as Flags, CGEventSource, CGEventSourceStateID, CGEventTapLocation,
+    CGEventType,
+};
 use objc2_foundation::NSString;
 use std::{
     cell::RefCell,
     collections::BTreeSet,
-    sync::{mpsc, Arc, Mutex, OnceLock},
+    sync::{mpsc, Arc, Mutex, Once, OnceLock},
     time::Duration,
 };
 
@@ -48,20 +55,49 @@ fn on_main<R: Send + 'static>(f: impl FnOnce() -> R + Send + 'static) -> Option<
 
 pub fn run(code: String, ctx: LuaCtx) {
     // 调用方已在采集 AX 标题的工作线程；VM 不会移动到主线程。
-    mousetroke_lua::run_lua(
-        &code,
-        &ctx,
-        Arc::new(MacPlatform {
-            wid: ctx.wid,
-            pid: ctx.pid,
-        }),
-    );
+    mousetroke_lua::run_lua(&code, &ctx, Arc::new(MacPlatform));
 }
 
-struct MacPlatform {
-    wid: usize,
-    pid: u32,
+fn accessibility() -> bool {
+    if crate::permissions::check().accessibility {
+        return true;
+    }
+    static WARNED: Once = Once::new();
+    WARNED.call_once(|| crate::log!("Lua: 需要辅助功能权限，跳过按键状态或 AX 窗口调用"));
+    false
 }
+
+fn window_by_id(wid: i64) -> Option<crate::helpers::Window> {
+    let wid = usize::try_from(wid).ok().filter(|wid| *wid != 0)?;
+    crate::targeting::lua_windows(false)
+        .into_iter()
+        .find(|w| w.wid == wid && w.layer == 0)
+}
+
+fn modifier_flag(modifier: ModKey) -> Flags {
+    match modifier {
+        ModKey::Ctrl => Flags::MaskControl,
+        ModKey::Alt => Flags::MaskAlternate,
+        ModKey::Shift => Flags::MaskShift,
+        ModKey::Win => Flags::MaskCommand,
+    }
+}
+
+fn keys_pressed(seq: &KeySeq, flags: Flags, pressed: impl Fn(u16) -> bool) -> bool {
+    required_keys(seq).is_some_and(|keys| {
+        keys.into_iter().all(|key| match key {
+            RequiredKey::Modifier(modifier) => flags.contains(modifier_flag(modifier)),
+            RequiredKey::Vk(vk) => match vk {
+                0x10 => flags.contains(Flags::MaskShift),
+                0x11 => flags.contains(Flags::MaskControl),
+                0x12 => flags.contains(Flags::MaskAlternate),
+                _ => vk_to_kvk(vk).is_some_and(&pressed),
+            },
+        })
+    })
+}
+
+struct MacPlatform;
 impl LuaPlatform for MacPlatform {
     fn log(&self, message: &str) {
         crate::log!("{message}");
@@ -69,7 +105,14 @@ impl LuaPlatform for MacPlatform {
     fn unsupported(&self, name: &str) {
         static WARNED: Mutex<BTreeSet<String>> = Mutex::new(BTreeSet::new());
         if WARNED.lock().is_ok_and(|mut seen| seen.insert(name.into())) {
-            crate::log!("Lua {name}: not supported on macOS");
+            // i18n:allow-begin 仅写运行日志的 Lua 能力诊断，不用于界面。
+            let reason = match name {
+                "set_win_top" => "macOS 没有公开的跨应用置顶 API",
+                "get_brightness" | "set_brightness" => "现有 macOS 亮度后端仅发送内建屏幕亮度键，不能读取百分比或按百分点调整；不支持外接 DDC",
+                _ => "not supported on macOS",
+            };
+            // i18n:allow-end
+            crate::log!("Lua {name}: {reason}");
         }
     }
     fn cursor_pos(&self) -> (i32, i32) {
@@ -108,6 +151,16 @@ impl LuaPlatform for MacPlatform {
         while on_main(crate::input::busy) == Some(true) {
             std::thread::sleep(Duration::from_millis(10));
         }
+    }
+    fn is_keys_pressed(&self, seq: &KeySeq) -> Option<bool> {
+        if !accessibility() {
+            return Some(false);
+        }
+        let state = CGEventSourceStateID::CombinedSessionState;
+        let flags = CGEventSource::flags_state(state);
+        Some(keys_pressed(seq, flags, |code| {
+            CGEventSource::key_state(state, code)
+        }))
     }
     fn open_url(&self, url: &str) {
         let url = url.to_owned();
@@ -152,18 +205,134 @@ impl LuaPlatform for MacPlatform {
             unsafe { board.setString_forType(&NSString::from_str(&text), NSPasteboardTypeString) };
         });
     }
+    fn find_windows(
+        &self,
+        class: Option<&str>,
+        title: Option<&str>,
+    ) -> Option<Vec<(String, isize)>> {
+        if !accessibility() {
+            return None;
+        }
+        let matcher = |pattern: Option<&str>| pattern.map(regex::Regex::new).transpose();
+        let (Ok(class), Ok(title)) = (matcher(class), matcher(title)) else {
+            return Some(Vec::new());
+        };
+        let windows = crate::targeting::lua_windows(true);
+        let candidates = on_main(move || {
+            windows
+                .into_iter()
+                .filter(|w| w.layer == 0)
+                .filter_map(|w| {
+                    let app = NSRunningApplication::runningApplicationWithProcessIdentifier(
+                        w.pid as i32,
+                    )?;
+                    let bundle = app
+                        .bundleIdentifier()
+                        .map(|s| s.to_string())
+                        .unwrap_or_default();
+                    class
+                        .as_ref()
+                        .is_none_or(|pattern| pattern.is_match(&bundle))
+                        .then_some(w)
+                })
+                .collect::<Vec<_>>()
+        })?;
+        Some(
+            candidates
+                .into_iter()
+                .filter_map(|w| {
+                    let text = crate::ax::lua_window_title(&w)?;
+                    title
+                        .as_ref()
+                        .is_none_or(|pattern| pattern.is_match(&text))
+                        .then_some((text, w.wid as isize))
+                })
+                .take(32)
+                .collect(),
+        )
+    }
     fn focus_window(&self, wid: i64) {
-        if wid as usize != self.wid || self.pid == 0 {
+        if !accessibility() {
             return;
         }
-        let pid = self.pid;
-        on_main(move || crate::actions::activate(pid));
+        let Some(window) = window_by_id(wid) else {
+            return;
+        };
+        if crate::ax::lua_focus_window(&window) {
+            on_main(move || crate::actions::activate(window.pid));
+        }
+    }
+    fn set_window_state(&self, wid: i64, state: &str) {
+        if !matches!(
+            state,
+            "min" | "max" | "normal" | "norm" | "restore" | "fullscreen"
+        ) {
+            self.unsupported("set_win_state: unknown macOS state");
+            return;
+        }
+        if !accessibility() {
+            return;
+        }
+        let Some(window) = window_by_id(wid) else {
+            return;
+        };
+        let Some(work_areas) = on_main(crate::host::work_areas) else {
+            return;
+        };
+        crate::ax::lua_set_window_state(&window, state, &work_areas);
+    }
+    fn window_state(&self, wid: i64) -> Option<String> {
+        if !accessibility() {
+            return None;
+        }
+        let window = window_by_id(wid)?;
+        let work_areas = on_main(crate::host::work_areas)?;
+        crate::ax::lua_window_state(&window, &work_areas)
+    }
+    fn set_topmost(&self, _wid: i64, _top: bool) {
+        self.unsupported("set_win_top");
+    }
+    fn get_brightness(&self, _x: i32, _y: i32) -> Option<i64> {
+        self.unsupported("get_brightness");
+        None
+    }
+    fn adjust_brightness(&self, _x: i32, _y: i32, _delta: i32) -> Option<i64> {
+        self.unsupported("set_brightness");
+        None
     }
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
+    #[test]
+    fn key_queries_distinguish_control_command_and_explicit_sides() {
+        let query = |text: &str, flags, codes: &[u16]| {
+            keys_pressed(
+                &mousetroke_core::keyseq::parse(text, false).unwrap(),
+                flags,
+                |code| codes.contains(&code),
+            )
+        };
+        assert!(!query("^a", Flags::empty(), &[0x00]));
+        assert!(query("^a", Flags::MaskControl, &[0x00]));
+        assert!(!query("^a", Flags::MaskCommand, &[0x00]));
+        assert!(query("#a", Flags::MaskCommand, &[0x00]));
+        assert!(query(
+            "%+a",
+            Flags::MaskAlternate | Flags::MaskShift,
+            &[0x00]
+        ));
+        assert!(query("{CTRL}", Flags::MaskControl, &[]));
+        assert!(query("{RCTRL}a", Flags::MaskControl, &[0x3E, 0x00]));
+        assert!(!query("{RCTRL}a", Flags::MaskControl, &[0x3B, 0x00]));
+        assert!(!query("^ab", Flags::MaskControl, &[0x00]));
+        assert!(query("^ab", Flags::MaskControl, &[0x00, 0x0B]));
+        assert!(!query("{INSERT}", Flags::empty(), &[]));
+        assert!(!query("a{SLEEP 1}", Flags::empty(), &[0x00]));
+        assert!(query("", Flags::empty(), &[]));
+    }
+
     #[test]
     fn bridge_yields_to_main_timer_and_disconnects_on_shutdown() {
         initialize();

@@ -142,21 +142,21 @@ Use `false` instead of `true` for a separate unpin gesture. A Lua global boolean
 
 ## Maximize or restore
 
-Purpose: toggle the target window's maximized state on Windows.
+Purpose: toggle the target window's maximized state on Windows or work-area zoom on Mac.
 
 ```lua
 function ms_action(pos, wid)
-  if package.config:sub(1, 1) ~= "\\" then
-    ms.show_toast("Use Window actions: Maximize / restore on Mac")
-    return
-  end
   if wid == 0 then return end
   local state = ms.get_win_state(wid)
+  if state == nil then
+    ms.show_toast("Window unavailable; check Accessibility permission on Mac")
+    return
+  end
   ms.set_win_state(wid, state == "max" and "normal" or "max")
 end
 ```
 
-On Mac choose **Window actions → Maximize / restore**; the built-in action uses Accessibility, while the Lua state APIs are unsupported. There is no Lua window-position/size API for moving a window to another monitor.
+Mac uses the same AX zoom button as the built-in window action. The state query recognizes work-area-sized windows; apps that zoom to their content size may still report normal, so use **Window actions → Maximize / restore** for those apps. Missing Accessibility permission or an unavailable window gives nil. There is no Lua window-position/size API for moving a window to another monitor.
 
 ## Brightness under the cursor
 
@@ -166,7 +166,7 @@ Purpose: raise the cursor's screen brightness by 5 percentage points on Windows.
 function ms_action()
   local p = ms.get_mouse_pos()
   local value = ms.set_brightness(p, 5)
-  if value and value >= 0 then
+  if value ~= nil then
     ms.show_toast("Brightness: " .. value)
   else
     ms.show_toast("Brightness API unavailable for this screen/platform")
@@ -174,7 +174,7 @@ function ms_action()
 end
 ```
 
-Change `5` to `-5` for a second, dimmer gesture. Windows needs compatible DDC/CI or WMI hardware; WMI falls back to its first brightness device, which may be a different screen. Mac returns nil here; use **Media & system → Brightness up / Brightness down** for built-in-screen brightness keys, without cursor-screen selection or external DDC/CI.
+Change `5` to `-5` for a second, dimmer gesture. Windows needs compatible DDC/CI or WMI hardware; WMI falls back to its first brightness device, which may be a different screen. Success is a 0–100 percentage; failure is nil on both platforms. Mac returns nil here: its existing backend only sends brightness keys and cannot return a percentage or apply a percentage-point delta. Use **Media & system → Brightness up / Brightness down** for built-in-screen brightness keys, without cursor-screen selection or external DDC/CI.
 
 ## Open a folder
 
