@@ -1,4 +1,5 @@
 //! 动作只在下一轮主线程计时器执行；延时和重复均分片推进，不阻塞 tap 或 run loop。
+pub(crate) mod preset_text;
 use std::cell::RefCell;
 use std::collections::VecDeque;
 use std::time::{Duration, Instant};

@@ -1,4 +1,5 @@
 //! AX 与 CF 的小型所有权封装。跨进程 AX 消息只在工作线程发送，不阻塞事件 tap。
+pub(crate) mod preset_layout;
 use crate::{
     helpers::{covers, Window},
     overlay::geometry::Rect,

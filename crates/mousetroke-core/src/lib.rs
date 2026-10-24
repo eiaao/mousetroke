@@ -16,6 +16,9 @@
 //! - [`shape`]：曲线轨迹归一化与形状模板匹配
 //! - [`vars`]：`%MS_*%` 变量系统（含旧格式占位符转换）
 
+pub mod action_datetime;
+pub mod action_geometry;
+pub mod action_text;
 pub mod edge;
 pub mod i18n;
 pub mod caps;
