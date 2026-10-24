@@ -1,12 +1,13 @@
 import { isMac, unsupportedAction, supportedAction } from "../platform";
-import { useRef } from "react";
-import type { Action, AdvancedAction, MenuItem } from "../types";
+import { useRef, useState } from "react";
+import type { Action, ActionPreset, AdvancedAction, MenuItem, PresetAction } from "../types";
 import { isAdvancedAction, isPresetAction } from "../types";
-import { presetDefinition, presetSummary } from "../actions";
+import { presetDefinition } from "../actions";
 import { ACTION_ORDER, SYSTEM_KEYS, WINDOW_OPS, actionName, defaultAction } from "../gesture";
-import { t, type MsgKey } from "../i18n";
-import { api } from "../api";
+import { currentLang, t, type MsgKey } from "../i18n";
+import { api, errText } from "../api";
 import { KeysInput } from "./KeysInput";
+import { ActionPicker } from "./ActionPicker";
 
 const VARS: { v: string; key: "ui.var.selected_text" | "ui.var.clipboard" | "ui.var.app_name" | "ui.var.pid" | "ui.var.win_title" }[] = [
   { v: "%MS_SELECTED_TEXT%", key: "ui.var.selected_text" },
@@ -20,39 +21,160 @@ const VARS: { v: string; key: "ui.var.selected_text" | "ui.var.clipboard" | "ui.
  * 动作编辑。切换类型时记住各类型上次的内容（切回来不丢），
  * 记忆按 `memoryKey`（通常是绑定标识）隔离。
  */
-export function ActionEditor({ action, onChange, depth = 0 }: { action: Action; onChange: (a: Action, coalesce?: string) => void; depth?: number }) {
+export function ActionEditor({ action, onChange, depth = 0, autoPick }: { action: Action; onChange: (a: Action, coalesce?: string) => void; depth?: number; autoPick?: boolean }) {
   const memory = useRef<Partial<Record<AdvancedAction["type"], AdvancedAction>>>({});
+  const [picking, setPicking] = useState(!!autoPick);
   if (!isAdvancedAction(action)) {
     const preset = presetDefinition(action);
-    const implementation = preset && (isMac() ? preset.macos : preset.windows);
-    return <div className="action-editor">
-      <strong>{presetSummary(action)}</strong>
-      {isPresetAction(action) && <p><code>{action.id}</code></p>}
-      {preset && <p className="field-help">{t(preset.description_key as MsgKey)}</p>}
-      {implementation && implementation.status !== "implemented" && <p className="field-warn">{t(implementation.value.reason_key as MsgKey)}</p>}
-      <p className="field-help">{t("preset.ui.read_only")}</p>
-      <textarea readOnly rows={5} aria-label={t("preset.ui.read_only")} value={JSON.stringify(action, null, 2)} />
-    </div>;
+    if (isPresetAction(action) && preset) return <PresetCard action={action} preset={preset} onChange={onChange} depth={depth} />;
+    return <UnknownActionCard action={action} onChange={onChange} depth={depth} />;
   }
   const switchTo = (tp: AdvancedAction["type"]) => {
     if (tp === action.type) return;
     memory.current[action.type] = action;
     onChange(memory.current[tp] ?? defaultAction(tp));
   };
+  /** 选择器里选了别的动作：高级类型走记忆，预置/未知动作直接替换。 */
+  const pick = (a: Action) => {
+    setPicking(false);
+    if (!isAdvancedAction(a) || a.type !== action.type) {
+      if (isAdvancedAction(a)) {
+        memory.current[action.type] = action;
+        onChange(memory.current[a.type] ?? a);
+      } else {
+        onChange(a);
+      }
+    }
+  };
+  // 尚未选择动作（空的 key_sequence）：只显示"选择动作"
+  const unselected = action.type === "key_sequence" && !action.keys;
+  if (unselected) {
+    return (
+      <div className="action-editor">
+        <div className="action-card">
+          <p className="field-help">{t("ui.actpick.empty_hint")}</p>
+          <div className="action-card-tools">
+            <button type="button" className="btn primary small" onClick={() => setPicking(true)}>
+              {t("ui.actpick.choose")}
+            </button>
+          </div>
+        </div>
+        {picking && <ActionPicker current={action} depth={depth} onPick={pick} onClose={() => setPicking(false)} />}
+      </div>
+    );
+  }
   return (
     <div className="action-editor">
-      <div className={`action-types ${depth ? "compact" : ""}`} role="radiogroup" aria-label={t("ui.action.type_aria")}>
-        {ACTION_ORDER.filter((tp) => !(depth && tp === "menu")).map((tp) => (
-          <button key={tp} type="button" role="radio" aria-checked={action.type === tp} className={action.type === tp ? "on" : ""} onClick={() => switchTo(tp)}>
-            {actionName(tp)}
-          </button>
-        ))}
+      <div className="action-picker-bar">
+        <button type="button" className="btn small" onClick={() => setPicking(true)}>
+          {t("ui.actpick.change")}
+        </button>
       </div>
+      {picking && <ActionPicker current={action} depth={depth} onPick={pick} onClose={() => setPicking(false)} />}
+      <details className="action-types-fold">
+        <summary className="muted">{t("ui.actpick.change_type")}</summary>
+        <div className={`action-types ${depth ? "compact" : ""}`} role="radiogroup" aria-label={t("ui.action.type_aria")}>
+          {ACTION_ORDER.filter((tp) => !(depth && tp === "menu")).map((tp) => (
+            <button key={tp} type="button" role="radio" aria-checked={action.type === tp} className={action.type === tp ? "on" : ""} onClick={() => switchTo(tp)}>
+              {actionName(tp)}
+            </button>
+          ))}
+        </div>
+      </details>
       {unsupportedAction(action) && <div className="field-warn" role="alert">
         <p>{t("mac.ui.action.unsupported")}</p>
         <button type="button" className="btn small" onClick={() => onChange(supportedAction(action))}>{t("mac.ui.action.repair")}</button>
       </div>}
       <ActionFields action={action} onChange={onChange} depth={depth} />
+    </div>
+  );
+}
+
+/** 预置动作卡片："名称 · 说明"，可更换或转为高级动作（单向，需确认）。 */
+function PresetCard({ action, preset, onChange, depth = 0 }: { action: PresetAction; preset: ActionPreset; onChange: (a: Action, coalesce?: string) => void; depth?: number }) {
+  const [picking, setPicking] = useState(false);
+  const [confirming, setConfirming] = useState(false);
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const impl = isMac() ? preset.macos : preset.windows;
+  const filled = preset.params
+    .map((param) => {
+      const value = typeof action.params?.[param.name] === "string" ? (action.params[param.name] as string) : "";
+      const choice = param.kind.type === "choice" ? param.kind.choices.find((c) => c.value === value) : undefined;
+      const display = choice ? t(choice.label_key as MsgKey) : value;
+      return { label: t(param.label_key as MsgKey), display };
+    })
+    .filter((x) => x.display.trim());
+  const paramsText = filled.map((x) => `${x.label}: ${x.display.length > 40 ? `${x.display.slice(0, 40)}…` : x.display}`).join(" · ");
+  const convert = async () => {
+    setBusy(true);
+    setError(null);
+    try {
+      onChange(await api.expandPreset(action.id, action.params ?? {}, currentLang()));
+    } catch (e) {
+      setError(errText(e));
+      setConfirming(false);
+    } finally {
+      setBusy(false);
+    }
+  };
+  return (
+    <div className="action-editor">
+      <div className="action-card">
+        <div>
+          <strong>{t(preset.name_key as MsgKey)}</strong>
+          <span className="action-card-desc"> · {t(preset.description_key as MsgKey)}</span>
+        </div>
+        {filled.length > 0 && (
+          <p className="action-card-params">{paramsText}</p>
+        )}
+        {impl.status !== "implemented" && (
+          <p className="field-warn">{t((impl.value.reason_key as MsgKey) ?? "preset.status.pending")}</p>
+        )}
+        {confirming ? (
+          <div className="action-card-confirm">
+            <span>{t("ui.actpick.to_advanced_confirm")}</span>
+            <button type="button" className="btn small primary" disabled={busy} onClick={convert}>
+              {t("common.ok")}
+            </button>
+            <button type="button" className="btn small" disabled={busy} onClick={() => setConfirming(false)}>
+              {t("common.cancel")}
+            </button>
+          </div>
+        ) : (
+          <div className="action-card-tools">
+            <button type="button" className="btn small" onClick={() => setPicking(true)}>
+              {t("ui.actpick.change")}
+            </button>
+            {impl.status === "implemented" && (
+              <button type="button" className="btn small" onClick={() => setConfirming(true)}>
+                {t("ui.actpick.to_advanced")}
+              </button>
+            )}
+          </div>
+        )}
+        {error && <p className="field-error">{error}</p>}
+      </div>
+      {picking && <ActionPicker current={action} depth={depth} initialId={action.id} onPick={(a) => (setPicking(false), onChange(a))} onClose={() => setPicking(false)} />}
+    </div>
+  );
+}
+
+/** 未知动作（来自更新版本）：保留原始 JSON 只读展示，可"更换"成别的动作。 */
+function UnknownActionCard({ action, onChange, depth = 0 }: { action: Action; onChange: (a: Action, coalesce?: string) => void; depth?: number }) {
+  const [picking, setPicking] = useState(false);
+  return (
+    <div className="action-editor">
+      <strong>{t("preset.status.unknown")}</strong>
+      {isPresetAction(action) && <p><code>{action.id}</code></p>}
+      <p className="field-help">{t("preset.ui.read_only")}</p>
+      <textarea readOnly rows={5} aria-label={t("preset.ui.read_only")} value={JSON.stringify(action, null, 2)} />
+      <div className="action-card-tools">
+        <button type="button" className="btn small" onClick={() => setPicking(true)}>
+          {t("ui.actpick.change")}
+        </button>
+      </div>
+      {picking && <ActionPicker depth={depth} onPick={(a) => (setPicking(false), onChange(a))} onClose={() => setPicking(false)} />}
     </div>
   );
 }

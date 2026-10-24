@@ -17,19 +17,35 @@ const { initActionCatalog } = await server.ssrLoadModule("/src/actions.ts");
 const { Guide, PermissionRows, permissionsReady } = await server.ssrLoadModule("/src/components/Guide.tsx");
 const event = (code, mods = {}) => ({ code, ctrlKey: false, altKey: false, shiftKey: false, metaKey: false, ...mods });
 
-test("preset and future actions render read-only and preserve their raw payloads", () => {
-  initActionCatalog({ presets: [{ id: "edit.copy", name_key: "preset.action.edit.copy.name", description_key: "preset.action.edit.copy.description", windows: { status: "implemented" }, macos: { status: "implemented" } }] });
+test("known presets render as a changeable card and future actions stay read-only", () => {
+  initActionCatalog({
+    presets: [{ id: "edit.copy", name_key: "preset.action.edit.copy.name", description_key: "preset.action.edit.copy.description", params: [], windows: { status: "implemented", value: { type: "keys", value: "^c" } }, macos: { status: "implemented", value: { type: "keys", value: "#c" } } }],
+    defaults: {},
+    commonPresetIds: [],
+    knownActionTypes: ["preset"],
+    unknownActionKey: "preset.status.unknown",
+  });
+  // 已知预置动作：动作卡片，可"更换/转为高级动作"，不再是只读
+  const known = { type: "preset", id: "edit.copy", params: { future: [1, true] } };
+  const html = renderToStaticMarkup(createElement(ActionEditor, { action: known, onChange: () => assert.fail("known preset card must not change by itself") }));
+  assert.ok(!/readonly/i.test(html));
+  assert.ok(html.includes(t("preset.action.edit.copy.name")));
+  assert.ok(html.includes(t("preset.action.edit.copy.description")));
+  assert.ok(html.includes(t("ui.actpick.change")));
+  assert.ok(html.includes(t("ui.actpick.to_advanced")));
+  assert.equal(keys.actionSummary(known), t("preset.action.edit.copy.name"));
+  // 未知动作（含未收录的预置 ID）：只读保留原始 JSON，提供"更换"
   for (const action of [
-    { type: "preset", id: "edit.copy", params: { future: [1, true] } },
     { type: "preset", id: "future.preset", params: { service: "future" } },
     { type: "future_action", payload: { nested: ["^%+#", null, 42] } },
   ]) {
     const before = structuredClone(action);
-    const html = renderToStaticMarkup(createElement(ActionEditor, { action, onChange: () => assert.fail("read-only action must not change") }));
-    assert.match(html, /readonly/i);
-    assert.ok(html.includes(action.id === "edit.copy" ? t("preset.action.edit.copy.name") : t("preset.status.unknown")));
+    const h = renderToStaticMarkup(createElement(ActionEditor, { action, onChange: () => assert.fail("read-only action must not change") }));
+    assert.match(h, /readonly/i);
+    assert.ok(h.includes(t("preset.status.unknown")));
+    assert.ok(h.includes(t("ui.actpick.change")));
     assert.deepEqual(action, before);
-    assert.equal(keys.actionSummary(action), action.id === "edit.copy" ? t("preset.action.edit.copy.name") : t("preset.status.unknown"));
+    assert.equal(keys.actionSummary(action), t("preset.status.unknown"));
   }
 });
 

@@ -76,6 +76,7 @@ function Main({ init }: { init: InitState }) {
     return () => void off.then((f) => f());
   }, []);
   const [selected, setSelected] = useState<number | null>(null);
+  const [autoPickKey, setAutoPickKey] = useState<string | null>(null);
   // 分类与筛选跨作用域保留（切到某个程序时仍停在「触发角」）
   const [listTab, setListTab] = useState<ListTab>("gesture");
   const [listFilter, setListFilter] = useState<ListFilter>("all");
@@ -117,9 +118,10 @@ function Main({ init }: { init: InitState }) {
 
   const notify = useCallback((text: string, action?: string, onAction?: () => void) => setToast({ id: Date.now(), text, action, onAction }), []);
 
-  // ---- 语言变化 → 后端窗口标题与少量原生文字跟着换
+  // ---- 语言变化 → 后端窗口标题与少量原生文字跟着换；动作目录的默认值（搜索引擎）也按新语言重取
   useEffect(() => {
     api.setUiLang(lang).catch(() => {});
+    api.actionCatalog().then(initActionCatalog).catch(() => {});
   }, [lang]);
 
   // ---- 自动保存（防抖；引擎约 1 秒内热加载）
@@ -199,6 +201,7 @@ function Main({ init }: { init: InitState }) {
     const b = { ...newBinding(), pattern, name: pattern[0]?.type === "edge" ? t("ui.app.new_edge") : t("ui.app.new_gesture") };
     edit((c) => updateScope(c, scopeIdx, (s) => ({ ...s, bindings: [...s.bindings, b] })));
     setSelected(scope.bindings.length);
+    setAutoPickKey(`${scope.id}-${scope.bindings.length}`);
   };
   const deleteBinding = (i: number) => {
     if (!scope) return;
@@ -382,6 +385,7 @@ function Main({ init }: { init: InitState }) {
         <Editor
           binding={binding}
           bindingKey={`${scope!.id}-${sel}`}
+          autoPickAction={autoPickKey === `${scope!.id}-${sel}`}
           conflictWith={conflictNames}
           otherBindings={otherBindings}
           onChange={(f, k) => edit((c) => updateBinding(c, scopeIdx, sel, f), k && `b-${scopeIdx}-${sel}-${k}`)}

@@ -1,5 +1,6 @@
 import type { Action, Binding, Step } from "../types";
-import { displayName, t } from "../i18n";
+import { displayName, t, type MsgKey } from "../i18n";
+import { presetDefinition } from "../actions";
 import { ActionEditor } from "./ActionEditor";
 import { PatternEditor } from "./PatternEditor";
 
@@ -9,6 +10,8 @@ export interface EditorProps {
   bindingKey: string;
   conflictWith: string[];
   otherBindings: Binding[];
+  /** 新建手势首次打开编辑器时自动弹出动作选择器。 */
+  autoPickAction?: boolean;
   onChange: (f: (b: Binding) => Binding, coalesce?: string) => void;
   onDuplicate: () => void;
   onDelete: () => void;
@@ -20,7 +23,17 @@ function quoteJoin(names: string[]): string {
   return names.map((n) => `${t("ui.editor.q_open")}${n}${t("ui.editor.q_close")}`).join(t("ui.editor.q_sep"));
 }
 
-export function Editor({ binding, bindingKey, conflictWith, otherBindings, onChange, onDuplicate, onDelete, onClose }: EditorProps) {
+/** 手势的默认名（新建/新触发角）的当前译文。 */
+function defaultBindingName(binding: Binding): string {
+  return binding.pattern[0]?.type === "edge" ? t("ui.app.new_edge") : t("ui.app.new_gesture");
+}
+
+/** 当前动作是未知预置 ID（不在注册表里）。 */
+function isUnknownPreset(b: Binding): boolean {
+  return b.action.type === "preset" && !presetDefinition(b.action);
+}
+
+export function Editor({ binding, bindingKey, conflictWith, otherBindings, autoPickAction, onChange, onDuplicate, onDelete, onClose }: EditorProps) {
   const conflict = conflictWith.length ? (
     <span className="warn">{t("ui.editor.conflict", { names: quoteJoin(conflictWith.map((n) => n)) })}</span>
   ) : null;
@@ -59,7 +72,31 @@ export function Editor({ binding, bindingKey, conflictWith, otherBindings, onCha
         {conflict && <p className="field-warn">{conflict}</p>}
 
         <h3 className="editor-section">{t("ui.editor.section_action")}</h3>
-        <ActionEditor key={`a-${bindingKey}`} action={binding.action} onChange={(action: Action, c?: string) => onChange((b) => ({ ...b, action }), c && `action-${c}`)} />
+        <ActionEditor
+          key={`a-${bindingKey}`}
+          action={binding.action}
+          autoPick={autoPickAction}
+          onChange={(action: Action, c?: string) =>
+            onChange((b) => {
+              const preset = presetDefinition(action);
+              const next: Binding = { ...b, action };
+              if (preset) {
+                const name = t(preset.name_key as MsgKey);
+                // 空名、默认名、或等于上一次自动填入的动作名时，跟随新动作名；手动改过的名字不动
+                const auto = !b.name || b.name === defaultBindingName(b) || b.name === b.lastActionName;
+                if (auto) {
+                  next.name = name;
+                  next.lastActionName = name;
+                } else {
+                  next.lastActionName = undefined;
+                }
+              } else if (isUnknownPreset(b)) {
+                next.lastActionName = undefined;
+              }
+              return next;
+            }, c && `action-${c}`)
+          }
+        />
 
         <h3 className="editor-section">{t("ui.editor.section_options")}</h3>
         <div className="fields">

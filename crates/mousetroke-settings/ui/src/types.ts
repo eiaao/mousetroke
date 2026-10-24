@@ -87,6 +87,8 @@ export interface ActionPreset {
 export interface ActionCatalog {
   presets: ActionPreset[];
   defaults: Record<string, Record<string, unknown>>;
+  /** "常用"分类：内置默认配置用到的预置动作，加上输入文字、搜索选中文字、打开网站。 */
+  commonPresetIds: string[];
   knownActionTypes: string[];
   unknownActionKey: string;
 }
@@ -100,6 +102,8 @@ export interface Binding {
   name: string;
   /** 内置名称的词条键；存在且未被用户改名时按当前语言显示。 */
   name_key?: string;
+  /** 上一次自动填入的动作名（用户没改名时跟随新动作）。 */
+  lastActionName?: string;
   pattern: Step[];
   action: Action;
   execute_on_match: boolean;

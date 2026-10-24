@@ -101,8 +101,27 @@ struct InitState {
 struct ActionCatalog {
     presets: &'static [action_presets::Preset],
     defaults: BTreeMap<&'static str, Params>,
+    /// "常用"分类：内置默认配置用到的预置动作，加上输入文字、搜索选中文字、打开网站。
+    common_preset_ids: Vec<&'static str>,
     known_action_types: &'static [&'static str],
     unknown_action_key: &'static str,
+}
+
+/// 常用动作 ID：默认配置（当前平台）里出现的预置动作 ∪ 三个高频带参数动作，
+/// 按注册表顺序排列；配置里的未知 ID 不会出现（前端遇到时按未知动作处理）。
+fn common_preset_ids() -> Vec<&'static str> {
+    let mut used = std::collections::BTreeSet::new();
+    for binding in Config::builtin().all_bindings() {
+        binding.action.visit(&mut |a| {
+            if let Action::Preset { id, .. } = a {
+                used.insert(id.clone());
+            }
+        });
+    }
+    for extra in ["text.type", "text.search", "open.website"] {
+        used.insert(extra.into());
+    }
+    action_presets::REGISTRY.iter().map(|p| p.id).filter(|id| used.contains(*id)).collect()
 }
 
 #[tauri::command]
@@ -110,6 +129,7 @@ fn action_catalog() -> ActionCatalog {
     ActionCatalog {
         presets: action_presets::REGISTRY,
         defaults: action_presets::REGISTRY.iter().map(|p| (p.id, p.default_params(mousetroke_core::i18n::lang()))).collect(),
+        common_preset_ids: common_preset_ids(),
         known_action_types: Action::KNOWN_TYPES,
         unknown_action_key: "preset.status.unknown",
     }
@@ -680,6 +700,31 @@ mod tests {
         assert!(expand_preset("edit.copy".into(), Params::new(), "en-US".into()).is_ok());
         assert_eq!(expand_preset("future.preset".into(), Params::new(), "en-US".into()).unwrap_err().key, "preset.status.unknown");
         assert_eq!(expand_preset("window.snap_left".into(), Params::new(), "en-US".into()).unwrap_err().key, "preset.status.pending");
+    }
+
+    #[test]
+    fn settings_catalog_common_actions_follow_builtin_defaults_and_expand_with_params() {
+        let common = &action_catalog().common_preset_ids;
+        assert!(common.contains(&"browser.close_tab"));
+        // 常用 = 默认配置用到的动作 + 输入文字、搜索选中文字、打开网站
+        for extra in ["text.type", "text.search", "open.website"] {
+            assert!(common.contains(&extra), "{extra} 应在常用分类里");
+        }
+        for id in common.iter() {
+            assert!(action_presets::find(id).is_some(), "{id} 不在注册表");
+        }
+        // 与注册表顺序一致（选择器按注册表顺序展示）
+        let registry_order: Vec<_> = action_presets::REGISTRY.iter().map(|p| p.id).filter(|id| common.contains(id)).collect();
+        assert_eq!(common.as_slice(), registry_order.as_slice());
+
+        // 带参数展开：搜索引擎默认值随界面语言，必填参数缺失时报错
+        let search = expand_preset("text.search".into(), serde_json::json!({ "engine": "baidu" }).as_object().unwrap().clone(), "zh-CN".into()).unwrap();
+        assert!(serde_json::to_string(&search).unwrap().contains("baidu.com"));
+        let translate = expand_preset("text.translate".into(), serde_json::json!({ "service": "deepl", "target_language": "en-US" }).as_object().unwrap().clone(), "zh-CN".into()).unwrap();
+        assert!(serde_json::to_string(&translate).unwrap().contains("deepl.com"));
+        let mut empty = Params::new();
+        empty.insert("url".into(), serde_json::json!(""));
+        assert_eq!(expand_preset("open.website".into(), empty, "en-US".into()).unwrap_err().key, "preset.status.invalid_param");
     }
 
     #[cfg(target_os = "macos")]
