@@ -340,7 +340,7 @@
   "ui.about.open_link": "Abrir",
   "ui.about.star_prompt": "O Mousetroke é gratuito e de código aberto. Se ele te ajuda, deixar uma estrela no GitHub não custa nada e ajuda mais pessoas a descobri-lo.",
   "ui.about.star_button": "Dar uma estrela no GitHub",
-  "ui.about.homepage_address": "mousetroke.pages.dev",
+  "ui.about.homepage_address": "mousetroke.com",
   "ui.about.source_address": "github.com/eiaao/mousetroke",
   "ui.about.files_group": "Locais dos arquivos",
   "ui.about.config_file": "Arquivo de configuração",

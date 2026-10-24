@@ -6,11 +6,13 @@ Each version lists its highlights in English, then in Chinese. The release page,
 
 ### English
 
+- Website moved to [mousetroke.com](https://mousetroke.com/).
 - Lua: add Mac key-state queries and AX window discovery/state control; check shortcut modifiers on both platforms and return nil on brightness failure (legacy Windows wrappers retain -1). Mac topmost and numeric brightness remain unsupported.
 - Complete English and Simplified Chinese user guides, with Lua and send-keys help links in the action editor.
 
 ### 中文
 
+- 网站迁至 [mousetroke.com](https://mousetroke.com/)。
 - Lua：补齐 Mac 按键状态查询及 AX 窗口查找／状态控制，两平台检查快捷键修饰键，亮度失败统一返回 nil（Windows 旧接口保留 -1）；Mac 置顶和数值亮度控制仍不支持。
 - 新增完整的简体中文和英文使用指南，并在动作编辑器中加入 Lua 帮助和按键语法说明链接。
 

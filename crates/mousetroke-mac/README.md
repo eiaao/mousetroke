@@ -565,5 +565,5 @@ update, and quit the review app before removing the disposable checkout via git 
   universal + ad-hoc DMG smoke tests. Locally remove either release secret in a test workflow
   and confirm the mac job fails and publish never starts (do not create a public test tag).
 - Measure the final signed DMG size and update the website repository before deploying
-  the [website](https://mousetroke.pages.dev/), which is maintained separately.
+  the [website](https://mousetroke.com/), which is maintained separately.
   Keep version/changelog updates for the actual release.

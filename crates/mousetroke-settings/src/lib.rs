@@ -363,40 +363,42 @@ fn app_info(paths: State<AppPaths>) -> AppInfo {
     }
 }
 
-const HOMEPAGES: [(&str, &str); 10] = [
-    ("zh-CN", "https://mousetroke.pages.dev/"),
-    ("en-US", "https://mousetroke.pages.dev/en/"),
-    ("es-ES", "https://mousetroke.pages.dev/es/"),
-    ("fr-FR", "https://mousetroke.pages.dev/fr/"),
-    ("de-DE", "https://mousetroke.pages.dev/de/"),
-    ("ja-JP", "https://mousetroke.pages.dev/ja/"),
-    ("pt-BR", "https://mousetroke.pages.dev/pt/"),
-    ("ru-RU", "https://mousetroke.pages.dev/ru/"),
-    ("it-IT", "https://mousetroke.pages.dev/it/"),
-    ("ko-KR", "https://mousetroke.pages.dev/ko/"),
+const WEBSITE_ORIGIN: &str = "https://mousetroke.com";
+const HOMEPAGE_PATHS: [(&str, &str); 10] = [
+    ("zh-CN", "/"),
+    ("en-US", "/en/"),
+    ("es-ES", "/es/"),
+    ("fr-FR", "/fr/"),
+    ("de-DE", "/de/"),
+    ("ja-JP", "/ja/"),
+    ("pt-BR", "/pt/"),
+    ("ru-RU", "/ru/"),
+    ("it-IT", "/it/"),
+    ("ko-KR", "/ko/"),
 ];
 const GITHUB_URL: &str = "https://github.com/eiaao/mousetroke";
 const ISSUES_URL: &str = "https://github.com/eiaao/mousetroke/issues";
 
 /// 链接仅由后端白名单决定；没有对应首页的语言回退到英文。
-fn project_url(what: &str, lang: &str) -> Option<&'static str> {
-    match what {
-        "homepage" => Some(HOMEPAGES.iter().find(|(tag, _)| *tag == lang).unwrap_or(&HOMEPAGES[1]).1),
-        "github" => Some(GITHUB_URL),
-        "issues" => Some(ISSUES_URL),
-        "releases" => Some(platform::update::RELEASES_URL),
-        "lua_basics" => Some(if lang == "zh-CN" {
-            "https://mousetroke.pages.dev/docs/lua-basics/"
+fn project_url(what: &str, lang: &str) -> Option<String> {
+    let path = match what {
+        "homepage" => HOMEPAGE_PATHS.iter().find(|(tag, _)| *tag == lang).unwrap_or(&HOMEPAGE_PATHS[1]).1,
+        "github" => return Some(GITHUB_URL.into()),
+        "issues" => return Some(ISSUES_URL.into()),
+        "releases" => return Some(platform::update::RELEASES_URL.into()),
+        "lua_basics" => if lang == "zh-CN" {
+            "/docs/lua-basics/"
         } else {
-            "https://mousetroke.pages.dev/en/docs/lua-basics/"
-        }),
-        "key_sequences" => Some(if lang == "zh-CN" {
-            "https://mousetroke.pages.dev/docs/key-sequences/"
+            "/en/docs/lua-basics/"
+        },
+        "key_sequences" => if lang == "zh-CN" {
+            "/docs/key-sequences/"
         } else {
-            "https://mousetroke.pages.dev/en/docs/key-sequences/"
-        }),
-        _ => None,
-    }
+            "/en/docs/key-sequences/"
+        },
+        _ => return None,
+    };
+    Some(format!("{WEBSITE_ORIGIN}{path}"))
 }
 
 /// 用默认程序打开日志、配置文件夹或白名单中的项目链接。
@@ -418,7 +420,7 @@ fn open_path(what: String, paths: State<AppPaths>) -> MsgResult<()> {
             let Some(url) = project_url(&what, mousetroke_core::i18n::lang().tag()) else {
                 return Err(Msg::new(keys::ERROR_UNKNOWN_LOCATION, &[("what", what)]));
             };
-            platform::open_url(url)?;
+            platform::open_url(&url)?;
         }
     }
     Ok(())
@@ -648,16 +650,16 @@ mod tests {
             ("de-DE", "de/"), ("ja-JP", "ja/"), ("pt-BR", "pt/"), ("ru-RU", "ru/"),
             ("it-IT", "it/"), ("ko-KR", "ko/"), ("qps-ploc", "en/"), ("unknown", "en/"),
         ] {
-            assert_eq!(project_url("homepage", tag), Some(format!("https://mousetroke.pages.dev/{suffix}").as_str()));
-            assert_eq!(project_url("github", tag), Some("https://github.com/eiaao/mousetroke"));
-            assert_eq!(project_url("issues", tag), Some("https://github.com/eiaao/mousetroke/issues"));
-            assert_eq!(project_url("releases", tag), Some(platform::update::RELEASES_URL));
+            assert_eq!(project_url("homepage", tag).as_deref(), Some(format!("https://mousetroke.com/{suffix}").as_str()));
+            assert_eq!(project_url("github", tag).as_deref(), Some("https://github.com/eiaao/mousetroke"));
+            assert_eq!(project_url("issues", tag).as_deref(), Some("https://github.com/eiaao/mousetroke/issues"));
+            assert_eq!(project_url("releases", tag).as_deref(), Some(platform::update::RELEASES_URL));
             let docs_prefix = if tag == "zh-CN" { "" } else { "en/" };
             for (what, slug) in [("lua_basics", "lua-basics"), ("key_sequences", "key-sequences")] {
-                assert_eq!(project_url(what, tag), Some(format!("https://mousetroke.pages.dev/{docs_prefix}docs/{slug}/").as_str()));
+                assert_eq!(project_url(what, tag).as_deref(), Some(format!("https://mousetroke.com/{docs_prefix}docs/{slug}/").as_str()));
             }
         }
-        for what in ["", "https://example.com", "file:///C:/Windows", "Homepage", "github/issues"] {
+        for what in ["", "https://example.com", "https://mousetroke.com/", "file:///C:/Windows", "Homepage", "github/issues"] {
             assert_eq!(project_url(what, "en-US"), None);
         }
     }

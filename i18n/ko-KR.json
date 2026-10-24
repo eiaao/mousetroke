@@ -337,7 +337,7 @@
   "ui.about.open_link": "열기",
   "ui.about.star_prompt": "Mousetroke는 무료 오픈 소스 소프트웨어입니다. 유용하게 쓰고 계신다면 GitHub에서 Star를 눌러 주세요. 비용 없이 응원하고 더 많은 사람에게 알릴 수 있어요.",
   "ui.about.star_button": "GitHub에서 Star 누르기",
-  "ui.about.homepage_address": "mousetroke.pages.dev",
+  "ui.about.homepage_address": "mousetroke.com",
   "ui.about.source_address": "github.com/eiaao/mousetroke",
   "ui.about.files_group": "파일 위치",
   "ui.about.config_file": "설정 파일",

@@ -346,7 +346,7 @@
   "ui.about.open_link": "Открыть",
   "ui.about.star_prompt": "Mousetroke — бесплатная программа с открытым исходным кодом. Если она вам помогает, поставьте звезду на GitHub: это бесплатно и поможет другим узнать о ней.",
   "ui.about.star_button": "Поставить звезду на GitHub",
-  "ui.about.homepage_address": "mousetroke.pages.dev",
+  "ui.about.homepage_address": "mousetroke.com",
   "ui.about.source_address": "github.com/eiaao/mousetroke",
   "ui.about.files_group": "Расположение файлов",
   "ui.about.config_file": "Файл настроек",

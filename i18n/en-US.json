@@ -340,7 +340,7 @@
   "ui.about.open_link": "Open",
   "ui.about.star_prompt": "Mousetroke is free and open source. If it helps you, a star on GitHub costs nothing and helps more people find it.",
   "ui.about.star_button": "Star on GitHub",
-  "ui.about.homepage_address": "mousetroke.pages.dev",
+  "ui.about.homepage_address": "mousetroke.com",
   "ui.about.source_address": "github.com/eiaao/mousetroke",
   "ui.about.files_group": "File locations",
   "ui.about.config_file": "Config file",

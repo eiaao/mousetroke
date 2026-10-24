@@ -340,7 +340,7 @@
   "ui.about.open_link": "打开",
   "ui.about.star_prompt": "Mousetroke 免费开源。觉得好用的话，去 GitHub 点个 Star 吧——不花钱，还能让更多人发现它。",
   "ui.about.star_button": "去 GitHub 点 Star",
-  "ui.about.homepage_address": "mousetroke.pages.dev",
+  "ui.about.homepage_address": "mousetroke.com",
   "ui.about.source_address": "github.com/eiaao/mousetroke",
   "ui.about.files_group": "文件位置",
   "ui.about.config_file": "配置文件",
