@@ -391,6 +391,21 @@ fn project_url(what: &str, lang: &str) -> Option<String> {
         } else {
             "/en/docs/lua-basics/"
         },
+        "lua_api" => if lang == "zh-CN" {
+            "/docs/lua-api/"
+        } else {
+            "/en/docs/lua-api/"
+        },
+        "lua_examples" => if lang == "zh-CN" {
+            "/docs/lua-examples/"
+        } else {
+            "/en/docs/lua-examples/"
+        },
+        "variables" => if lang == "zh-CN" {
+            "/docs/actions/#variables"
+        } else {
+            "/en/docs/actions/#variables"
+        },
         "key_sequences" => if lang == "zh-CN" {
             "/docs/key-sequences/"
         } else {
@@ -655,11 +670,15 @@ mod tests {
             assert_eq!(project_url("issues", tag).as_deref(), Some("https://github.com/eiaao/mousetroke/issues"));
             assert_eq!(project_url("releases", tag).as_deref(), Some(platform::update::RELEASES_URL));
             let docs_prefix = if tag == "zh-CN" { "" } else { "en/" };
-            for (what, slug) in [("lua_basics", "lua-basics"), ("key_sequences", "key-sequences")] {
-                assert_eq!(project_url(what, tag).as_deref(), Some(format!("https://mousetroke.com/{docs_prefix}docs/{slug}/").as_str()));
+            for (what, destination) in [
+                ("lua_basics", "lua-basics/"), ("lua_api", "lua-api/"),
+                ("lua_examples", "lua-examples/"), ("variables", "actions/#variables"),
+                ("key_sequences", "key-sequences/"),
+            ] {
+                assert_eq!(project_url(what, tag).as_deref(), Some(format!("https://mousetroke.com/{docs_prefix}docs/{destination}").as_str()));
             }
         }
-        for what in ["", "https://example.com", "https://mousetroke.com/", "file:///C:/Windows", "Homepage", "github/issues"] {
+        for what in ["", "https://example.com", "https://mousetroke.com/", "file:///C:/Windows", "Homepage", "github/issues", "lua_api/../", "variables#other"] {
             assert_eq!(project_url(what, "en-US"), None);
         }
     }
