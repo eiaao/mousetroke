@@ -7,7 +7,7 @@ back, `↓→` closes the tab, `↙` minimizes the window. Push the cursor into 
 the Start menu, or scroll along the top edge to change the volume. A plain right-click still
 opens the context menu.
 
-**[Website](https://mousetroke.pages.dev/) · [Download](https://github.com/eiaao/mousetroke/releases/latest) · [简体中文](README.zh-CN.md)**
+**[Website](https://mousetroke.com/) · [Download](https://github.com/eiaao/mousetroke/releases/latest) · [简体中文](README.zh-CN.md)**
 
 Documentation / 文档: [User guide](docs/guide/en/index.md) · [使用指南](docs/guide/zh-CN/index.md)
 
@@ -52,7 +52,7 @@ cargo test --workspace       :: engine, importer, i18n and settings tests
 | `crates/mousetroke` | The `mousetroke.exe` entry point and CLI |
 | `i18n/` | Shared UI strings for every language (see `i18n/README.md`) |
 
-The [website](https://mousetroke.pages.dev/) is maintained and deployed from a separate repository.
+The [website](https://mousetroke.com/) is maintained and deployed from a separate repository.
 Its changelog reads `CHANGELOG.md` from this repository's `main` branch on raw.githubusercontent.com.
 
 ## macOS beta

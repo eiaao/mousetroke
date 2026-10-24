@@ -290,7 +290,7 @@ ms.log(value)
 使用默认处理程序打开 URL，无返回值或成功标志。Windows 使用 Shell 打开，也接受文件／文件夹路径。Mac 需要 URL，文件可用正确编码的 `file://` URL，或通过 `ms.cmd` 用 `/usr/bin/open` 打开路径。不做变量替换。
 
 ```lua
-ms.open("https://mousetroke.pages.dev/")
+ms.open("https://mousetroke.com/")
 ```
 
 ### `ms.run`

@@ -159,7 +159,10 @@ function ActionFields({ action, onChange, depth }: { action: Action; onChange: (
             <label className="field-label">{t("ui.action.url_label")}</label>
             <input ref={textRef} value={action.url_template} spellCheck={false} onChange={(e) => onChange({ ...action, url_template: e.target.value }, "url")} />
             <VarChips onInsert={(v) => onChange({ ...action, url_template: insertAt(textRef.current, action.url_template, v) })} />
-            <p className="field-help">{t("ui.action.url_help")}</p>
+            <p className="field-help">
+              {t("ui.action.url_help")}{" "}
+              <button type="button" className="link" onClick={() => api.openPath("variables")}>{t("ui.action.variables_docs")}</button>
+            </p>
           </div>
           <div className="field">
             <label className="field-label">{t("ui.action.browser_label")}</label>
@@ -180,7 +183,10 @@ function ActionFields({ action, onChange, depth }: { action: Action; onChange: (
             onChange={(e) => onChange({ ...action, script: e.target.value }, "script")}
           />
           <VarChips onInsert={(v) => onChange({ ...action, script: insertAt(textRef.current, action.script, v) })} />
-          <p className="field-help">{t("ui.action.shell_help")}</p>
+          <p className="field-help">
+            {t("ui.action.shell_help")}{" "}
+            <button type="button" className="link" onClick={() => api.openPath("variables")}>{t("ui.action.variables_docs")}</button>
+          </p>
         </div>
       );
     case "lua":
@@ -203,6 +209,10 @@ function ActionFields({ action, onChange, depth }: { action: Action; onChange: (
           <p className="field-help">
             {t("ui.action.lua_help")}{" "}
             <button type="button" className="link" onClick={() => api.openPath("lua_basics")}>{t("ui.action.lua_docs")}</button>
+            {" · "}
+            <button type="button" className="link" onClick={() => api.openPath("lua_api")}>{t("ui.action.lua_api_docs")}</button>
+            {" · "}
+            <button type="button" className="link" onClick={() => api.openPath("lua_examples")}>{t("ui.action.lua_examples_docs")}</button>
           </p>
         </div>
       );

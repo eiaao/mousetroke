@@ -69,7 +69,9 @@ Windows 亮度每次增减 10 个百分点，使用 DDC/CI，失败时回退 WMI
 
 ## Lua 脚本
 
-粘贴定义了 `ms_action` 的完整脚本。“Lua 帮助”打开 [Lua 入门](lua-basics.md)。文本框中按 Tab 会插入两个空格。更多内容见 [API 参考](lua-api.md)和[实用示例](lua-examples.md)。
+粘贴定义了 `ms_action` 的完整脚本。编辑器提供 [Lua 入门](lua-basics.md)、[API 参考](lua-api.md)和[示例](lua-examples.md)链接。文本框中按 Tab 会插入两个空格。
+
+<a id="variables"></a>
 
 ## 变量
 

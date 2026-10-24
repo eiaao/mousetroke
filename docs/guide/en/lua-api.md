@@ -290,7 +290,7 @@ ms.log(value)
 Opens a URL with the default handler; no return value or success flag. Windows uses shell open and also accepts a file/folder path. Mac expects a URL; use a properly encoded `file://` URL for a file, or `ms.cmd` to invoke `/usr/bin/open` on a path. No variable substitution is performed.
 
 ```lua
-ms.open("https://mousetroke.pages.dev/")
+ms.open("https://mousetroke.com/")
 ```
 
 ### `ms.run`

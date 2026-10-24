@@ -69,7 +69,9 @@ Click **+ Add a menu item**, enter **Menu item name**, then choose an action ins
 
 ## Lua script
 
-Paste a complete script defining `ms_action`. The editor's **Lua help** opens [Lua basics](lua-basics.md). The text area accepts Tab as two spaces. See the [API reference](lua-api.md) and [recipes](lua-examples.md).
+Paste a complete script defining `ms_action`. The editor links to [Lua basics](lua-basics.md), the [API reference](lua-api.md) and [examples](lua-examples.md). The text area accepts Tab as two spaces.
+
+<a id="variables"></a>
 
 ## Variables
 

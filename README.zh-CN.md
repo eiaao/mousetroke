@@ -9,7 +9,7 @@ Mac 卸载：从菜单栏退出，删除应用、`~/Library/Application Support/
 **免费开源的 Windows 鼠标手势工具。** 按住右键画一笔：`←` 后退，`↓→` 关闭标签页，`↙` 最小化窗口。
 鼠标推到屏幕左下角打开开始菜单，贴着上边滚动滚轮调音量。只是单击右键时，菜单照常弹出。
 
-**[产品主页](https://mousetroke.pages.dev/) · [下载](https://github.com/eiaao/mousetroke/releases/latest) · [English](README.md)**
+**[产品主页](https://mousetroke.com/) · [下载](https://github.com/eiaao/mousetroke/releases/latest) · [English](README.md)**
 
 文档 / Documentation：[使用指南](docs/guide/zh-CN/index.md) · [User guide](docs/guide/en/index.md)
 
@@ -43,7 +43,7 @@ cargo test --workspace       :: 引擎、导入器、多语言与设置界面的
 
 目录说明见 [README.md](README.md#build-from-source)。
 
-[产品主页](https://mousetroke.pages.dev/) 在独立仓库中维护和部署。
+[产品主页](https://mousetroke.com/) 在独立仓库中维护和部署。
 网站更新日志从 raw.githubusercontent.com 读取本仓库 `main` 分支的 `CHANGELOG.md`。
 
 ## 安全

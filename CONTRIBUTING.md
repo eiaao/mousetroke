@@ -25,7 +25,7 @@ button will fight each other. 运行开发版前先退出其他鼠标手势软�
   fails the build on hard-coded text. See `i18n/README.md` for adding strings or languages.
   界面文字一律走词条，见 `i18n/README.md`。
 - **Built-in gestures**: `crates/mousetroke-core/assets/default-config.json`. Keep the
-  [website](https://mousetroke.pages.dev/) in sync in its separate repository when they change.
+  [website](https://mousetroke.com/) in sync in its separate repository when they change.
   产品主页在独立仓库中维护和部署；内置手势改动要同步网站仓库。
 - **Security**: never log key codes, typed text, clipboard or selected text. Start system programs
   by full path (`input::system_exe`). 日志不能记录按键、文字、剪贴板；系统程序用完整路径启动。
