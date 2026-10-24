@@ -50,6 +50,7 @@ export type AdvancedAction =
       win_title?: string | null;
       regex?: boolean;
       if_running?: IfRunning;
+      activate_by_identity?: boolean;
     }
   | { type: "window_op"; op: WindowOpKind; allow_child?: boolean }
   | { type: "system_key"; key: string };
@@ -80,7 +81,8 @@ export interface ActionPreset {
   name_key: string;
   description_key: string;
   aliases_key: string;
-  params: { name: string; label_key: string; kind: PresetParamKind; default: { kind: "literal"; value: string } | { kind: "search_engine" } }[];
+  platform_notes?: { windows: string | null; macos: string | null };
+  params: { name: string; label_key: string; kind: PresetParamKind; visible_when?: { param: string; equals: string } | null; default: { kind: "literal"; value: string } | { kind: "search_engine" } }[];
   windows: PresetImplementation;
   macos: PresetImplementation;
   advanced_expansion: { windows: boolean; macos: boolean; reason_key: string };
@@ -100,6 +102,9 @@ export interface MenuItem {
 }
 
 export interface Binding {
+  /** 仅界面使用；写入和导出时移除。 */
+  uiId?: string;
+  actionUnselected?: boolean;
   name: string;
   /** 内置名称的词条键；存在且未被用户改名时按当前语言显示。 */
   name_key?: string;

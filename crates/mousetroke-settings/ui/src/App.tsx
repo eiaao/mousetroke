@@ -85,6 +85,7 @@ function Main({ init }: { init: InitState }) {
   const [toast, setToast] = useState<ToastMsg | null>(null);
   const [picking, setPicking] = useState(false);
   const [loadError, setLoadError] = useState(init.loadError);
+  const [recovering, setRecovering] = useState(false);
   const [setup, setSetup] = useState(() => isMac() && (!!init.setup || !!init.permissions && !permissionsReady(init.permissions)));
   const [guide, setGuide] = useState(() => guideUnseen() || (isMac() && (!!init.setup || !!init.permissions && !permissionsReady(init.permissions))));
   const [guideRequest, setGuideRequest] = useState(0);
@@ -127,7 +128,7 @@ function Main({ init }: { init: InitState }) {
   // ---- 自动保存（防抖；引擎约 1 秒内热加载）
   const lastSaved = useRef(store.revision);
   useEffect(() => {
-    if (store.revision === lastSaved.current) return;
+    if (loadError || store.revision === lastSaved.current) return;
     if (hasIncompleteStroke(config)) {
       setSaveState("incomplete");
       return;
@@ -145,14 +146,14 @@ function Main({ init }: { init: InitState }) {
       }
     }, 350);
     return () => clearTimeout(t0);
-  }, [store.revision, config, notify]);
+  }, [store.revision, config, notify, loadError]);
 
   // ---- 关闭窗口前（含托盘「退出」）把防抖中尚未写盘的修改存掉
-  const pending = useRef({ config, revision: store.revision });
-  pending.current = { config, revision: store.revision };
+  const pending = useRef({ config, revision: store.revision, loadError });
+  pending.current = { config, revision: store.revision, loadError };
   useEffect(() => {
     const off = getCurrentWindow().onCloseRequested(async () => {
-      if (pending.current.revision !== lastSaved.current && !hasIncompleteStroke(pending.current.config)) {
+      if (!pending.current.loadError && pending.current.revision !== lastSaved.current && !hasIncompleteStroke(pending.current.config)) {
         await api.saveConfig(pending.current.config).catch(() => {});
       }
     });
@@ -201,7 +202,7 @@ function Main({ init }: { init: InitState }) {
     const b = { ...newBinding(), pattern, name: pattern[0]?.type === "edge" ? t("ui.app.new_edge") : t("ui.app.new_gesture") };
     edit((c) => updateScope(c, scopeIdx, (s) => ({ ...s, bindings: [...s.bindings, b] })));
     setSelected(scope.bindings.length);
-    setAutoPickKey(`${scope.id}-${scope.bindings.length}`);
+    setAutoPickKey(b.uiId!);
   };
   const deleteBinding = (i: number) => {
     if (!scope) return;
@@ -220,7 +221,7 @@ function Main({ init }: { init: InitState }) {
   const duplicateBinding = (i: number) => {
     if (!scope) return;
     const src = scope.bindings[i];
-    const copy: Binding = { ...structuredClone(src), name: t("ui.app.copy_of", { name: displayName(src.name, src.name_key) }), name_key: undefined };
+    const copy: Binding = { ...structuredClone(src), uiId: uid(), name: t("ui.app.copy_of", { name: displayName(src.name, src.name_key) }), name_key: undefined };
     edit((c) => updateScope(c, scopeIdx, (s) => ({ ...s, bindings: [...s.bindings.slice(0, i + 1), copy, ...s.bindings.slice(i + 1)] })));
     setSelected(i + 1);
   };
@@ -342,7 +343,23 @@ function Main({ init }: { init: InitState }) {
 
       <main className="main">
         {loadError && (
-          <div className="banner error">{t("ui.app.load_error", { error: loadError })}</div>
+          <div className="banner error" role="alert">
+            <p>{t("ui.app.load_error", { error: loadError })}</p>
+            <div className="action-card-tools">
+              <button type="button" className="btn small" onClick={() => api.openPath("config_dir").catch((e) => notify(errText(e)))}>{t("ui.app.open_config_folder")}</button>
+              <button type="button" className="btn small" disabled={recovering} onClick={async () => {
+                setRecovering(true);
+                try {
+                  const defaults = await api.recoverConfig();
+                  lastSaved.current = store.revision;
+                  store.load(defaults, false);
+                  setSelected(null); setAutoPickKey(null); setLoadError(null); setSaveState("saved");
+                  setView({ kind: "scope", index: Math.max(0, defaults.scopes.findIndex((scope) => scope.kind === "global")) });
+                } catch (e) { notify(errText(e)); }
+                finally { setRecovering(false); }
+              }}>{t("ui.app.recover_defaults")}</button>
+            </div>
+          </div>
         )}
 
         {view.kind === "scope" && scope && (
@@ -384,8 +401,9 @@ function Main({ init }: { init: InitState }) {
       {binding && sel != null && (
         <Editor
           binding={binding}
-          bindingKey={`${scope!.id}-${sel}`}
-          autoPickAction={autoPickKey === `${scope!.id}-${sel}`}
+          bindingKey={binding.uiId!}
+          autoPickAction={autoPickKey === binding.uiId}
+          onPickerShown={() => setAutoPickKey((key) => key === binding.uiId ? null : key)}
           conflictWith={conflictNames}
           otherBindings={otherBindings}
           onChange={(f, k) => edit((c) => updateBinding(c, scopeIdx, sel, f), k && `b-${scopeIdx}-${sel}-${k}`)}

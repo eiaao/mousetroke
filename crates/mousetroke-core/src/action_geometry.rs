@@ -180,6 +180,16 @@ pub fn from_bottom_left(rect: Rect, primary_top: f64) -> Option<Rect> {
     result.valid().then_some(result)
 }
 
+/// 桌面与系统外壳不是可调整布局的普通窗口；Finder 的普通窗口仍可操作。
+pub fn layout_target_allowed(platform: crate::caps::Platform, is_desktop: bool, class: &str, layer: i32) -> bool {
+    if is_desktop { return false; }
+    match platform {
+        crate::caps::Platform::Windows => !matches!(class, "Progman" | "WorkerW" | "SHELLDLL_DefView" | "Shell_TrayWnd" | "Shell_SecondaryTrayWnd"),
+        crate::caps::Platform::Macos => class != "com.apple.dock" && !(class == "com.apple.finder" && layer != 0),
+    }
+}
+
+
 #[cfg(test)]
 mod tests {
     use super::*;

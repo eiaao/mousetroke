@@ -1870,13 +1870,37 @@ select.lang-select {
   margin-bottom: 10px;
 }
 
+.act-pick {
+  height: min(760px, calc(100dvh - 160px));
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.act-detail {
+  min-height: 2.8em;
+  margin: 0;
+  font-size: 12.5px;
+  overflow-y: auto;
+  flex-shrink: 0;
+}
+
+.act-group {
+  padding: 8px 10px;
+  color: var(--muted);
+  font-size: 12px;
+}
+
 .act-cats {
   display: flex;
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
+  overflow-x: auto;
+  flex-shrink: 0;
   gap: 6px;
 }
 
 .act-cat {
+  flex-shrink: 0;
   padding: 2px 10px;
   border: 1px solid var(--line);
   border-radius: 12px;
@@ -1899,12 +1923,13 @@ select.lang-select {
   padding: 0;
   list-style: none;
   overflow-y: auto;
-  max-height: 42vh;
+  flex: 1;
+  min-height: 80px;
 }
 
 .act-list li > button {
   display: flex;
-  align-items: baseline;
+  align-items: center;
   justify-content: space-between;
   gap: 12px;
   width: 100%;
@@ -1916,8 +1941,7 @@ select.lang-select {
   font-size: 13.5px;
 }
 
-.act-list li.on > button,
-.act-list li > button:hover:not(:disabled) {
+.act-list li.on > button {
   background: var(--trail-soft);
 }
 
@@ -1941,6 +1965,9 @@ select.lang-select {
 }
 
 .act-form {
+  flex-shrink: 0;
+  max-height: 42%;
+  overflow-y: auto;
   display: flex;
   flex-direction: column;
   gap: 10px;
@@ -2005,11 +2032,11 @@ select.lang-select {
 
 .action-card-confirm {
   display: flex;
-  flex-wrap: wrap;
-  align-items: center;
+  flex-direction: column;
+  align-items: flex-start;
   gap: 8px;
   font-size: 12.5px;
-  color: var(--hit);
+  color: var(--ink);
 }
 
 .sr-only {

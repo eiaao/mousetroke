@@ -1,12 +1,15 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import type { Action, ActionPreset } from "../types";
-import { isPresetAction } from "../types";
 import {
   ADVANCED_PICKS,
   CATEGORY_ORDER,
   cleanPresetParams,
   findPreset,
-  isCommonPreset,
+  pickerInitial,
+  presetName,
+  presetKeys,
+  presetDescription,
+  visibleParams,
   matchAdvancedPick,
   missingRequiredParams,
   pickerNav,
@@ -21,6 +24,7 @@ import { defaultAction } from "../gesture";
 import { t, type MsgKey } from "../i18n";
 import { api } from "../api";
 import { Modal } from "./Dialogs";
+import { Caps } from "./KeysInput";
 
 /**
  * 动作选择器：按"我想做什么"选动作。搜索框自动聚焦；
@@ -42,14 +46,12 @@ export function ActionPicker({
   onPick: (a: Action) => void;
   onClose: () => void;
 }) {
-  const initialPreset = initialId ? findPreset(initialId) : undefined;
+  const initial = pickerInitial(current, initialId);
   const [q, setQ] = useState("");
-  // "更换"时定位到当前动作的分类；in "常用"则选"常用"
-  const [cat, setCat] = useState<PickerCategory>(() => (initialPreset ? (isCommonPreset(initialPreset.id) ? "common" : initialPreset.category) : "common"));
-  const [active, setActive] = useState(0);
-  // initialId 直接展开参数表单（SSR 测试里 useEffect 不执行，所以用惰性初始化）
-  const [formId, setFormId] = useState<string | null>(initialPreset && initialPreset.params.length ? initialPreset.id : null);
-  const [values, setValues] = useState<Record<string, string>>(() => (formId && findPreset(formId) ? presetParamValues(findPreset(formId)!) : {}));
+  const [cat, setCat] = useState<PickerCategory>(initial.category);
+  const [active, setActive] = useState(initial.active);
+  const [formId, setFormId] = useState<string | null>(initialId && initial.preset?.params.length ? initial.preset.id : null);
+  const [values, setValues] = useState<Record<string, string>>(() => initial.preset ? presetParamValues(initial.preset, current) : {});
   const [announce, setAnnounce] = useState("");
   const listRef = useRef<HTMLUListElement>(null);
   const bodyRef = useRef<HTMLDivElement>(null);
@@ -62,15 +64,13 @@ export function ActionPicker({
   const searching = q.trim() !== "";
   const advancedVisible = searching
     ? advanced.filter((a) => matchAdvancedPick(a.nameKey, a.descKey, q))
-    : cat === "advanced"
-      ? advanced
-      : [];
+    : advanced;
   const rowCount = presets.length + advancedVisible.length;
   const selectable = useMemo(() => {
     return [...presets.map((p) => presetPlatformStatus(p) === "implemented"), ...advancedVisible.map(() => true)];
   }, [presets, advancedVisible]);
   const activeRow = Math.min(active, Math.max(0, rowCount - 1));
-  const formPreset = formId ? presets.find((p) => p.id === formId) : undefined;
+  const formPreset = formId ? findPreset(formId) : undefined;
   const missing = formPreset ? missingRequiredParams(formPreset, values) : [];
 
   // 打开时显式聚焦搜索框（不依赖 Modal 的默认聚焦）
@@ -95,23 +95,16 @@ export function ActionPicker({
 
   // 高亮行与表单动作不一致时，切换高亮即收起原表单
   useEffect(() => {
-    if (formPreset && presets[activeRow] && presets[activeRow].id !== formPreset.id) {
+    if (formPreset && presets[activeRow]?.id !== formPreset.id) {
       setFormId(null);
     }
   }, [activeRow, presets, formPreset]);
 
   const openForm = (p: ActionPreset) => {
-    const base = presetParamValues(p);
-    // 更换同 id 动作时保留现有参数
-    if (current && isPresetAction(current) && current.id === p.id) {
-      for (const name of Object.keys(base)) {
-        const v = current.params?.[name];
-        if (typeof v === "string") base[name] = v;
-      }
-    }
+    const base = presetParamValues(p, current);
     setFormId(p.id);
     setValues(base);
-    setAnnounce(t("ui.actpick.form_opened", { name: t(p.name_key as MsgKey) }));
+    setAnnounce(t("ui.actpick.form_opened", { name: presetName(p) }));
   };
 
   const announceBlocked = (p: ActionPreset) => {
@@ -133,6 +126,7 @@ export function ActionPicker({
 
   /** 确认一行：无参数的动作直接选中；带参数的展开表单，再按一次回车/点"选用"确认。 */
   const activate = (index: number) => {
+    setActive(index);
     if (index < presets.length) {
       const p = presets[index];
       switch (presetPickResult(p, formId === p.id, values)) {
@@ -192,7 +186,7 @@ export function ActionPicker({
         return;
       }
       // 搜索框/列表区域的回车
-      if (target.tagName === "INPUT" || target.tagName === "BUTTON") {
+      if (target === searchRef.current || target === listRef.current) {
         e.preventDefault();
         activate(activeRow);
       }
@@ -200,6 +194,7 @@ export function ActionPicker({
     }
     // 参数表单内的多行文字框里上下键是编辑文本；choice 的 radiogroup 用左右键切换
     if (inForm && (target.tagName === "TEXTAREA" || target.tagName === "SELECT" || target.closest("[role=radiogroup]"))) return;
+    if (target !== searchRef.current && target !== listRef.current && !target.closest(".act-list")) return;
     const next = pickerNav(activeRow, rowCount, e.key, selectable);
     if (next !== null && next !== activeRow) {
       e.preventDefault();
@@ -210,11 +205,14 @@ export function ActionPicker({
 
   // 打开参数表单后聚焦表单里的第一个输入
   useEffect(() => {
-    if (formId) (bodyRef.current?.querySelector(".act-form input, .act-form textarea") as HTMLElement | null)?.focus();
+    if (formId) bodyRef.current?.querySelector<HTMLElement>('.act-form [data-param]:not([role="radio"]), .act-form [role="radio"][aria-checked="true"]')?.focus();
   }, [formId]);
 
   return (
-    <Modal title={t("ui.actpick.title")} onClose={onClose} wide>
+    <Modal title={t("ui.actpick.title")} onClose={onClose} wide onEscape={() => {
+      if (!formId) return false;
+      setFormId(null); setValues({}); searchRef.current?.focus(); return true;
+    }}>
       <div ref={bodyRef} className="modal-body act-pick" onKeyDown={onKeyDown}>
         <input
           ref={searchRef}
@@ -234,43 +232,44 @@ export function ActionPicker({
             <button
               key={c}
               type="button"
-              aria-pressed={cat === c}
-              className={`act-cat ${cat === c ? "on" : ""}`}
-              onClick={() => setCat(c)}
+              aria-pressed={!searching && cat === c}
+              className={`act-cat ${!searching && cat === c ? "on" : ""}`}
+              onClick={() => { setQ(""); setCat(c); }}
             >
               {t(categoryKey(c))}
             </button>
           ))}
         </div>
-        {searching && <p className="act-search-hint muted">{t("ui.actpick.search_all_cats")}</p>}
-        <ul ref={listRef} id="actpick-list" className="act-list" role="listbox" aria-label={t("ui.actpick.list_aria")}>
+        <p className="act-search-hint muted" aria-live="polite">{searching ? t("ui.actpick.search_all_cats") : "\u00a0"}</p>
+        <ul ref={listRef} id="actpick-list" className="act-list" role="listbox" tabIndex={0} aria-label={t("ui.actpick.list_aria")}>
           {presets.map((p, i) => {
             const status = presetPlatformStatus(p);
             const reason = presetStatusReason(p);
             const active = i === activeRow;
             return (
-              <li key={p.id} id={`actpick-opt-${i}`} className={active ? "on" : ""} role="option" aria-selected={active}>
+              <li key={p.id} id={`actpick-opt-${i}`} className={active ? "on" : ""} role="option" aria-selected={active} onMouseMove={() => setActive(i)}>
                 <button
                   type="button"
                   tabIndex={-1}
                   disabled={status !== "implemented"}
+                  title={presetDescription(p)}
                   onClick={() => activate(i)}
-                  onMouseEnter={() => setActive(i)}
                 >
-                  <span className="act-name">{t(p.name_key as MsgKey)}</span>
+                  <span className="act-name">{presetName(p)}{p.params.length ? "…" : ""}</span>
                   <span className="act-desc">
-                    {status === "pending" ? t("ui.actpick.soon") : reason ? t(reason) : t(p.description_key as MsgKey)}
+                    {status === "pending" ? t("ui.actpick.soon") : reason ? t(reason) : presetKeys(p) ? <Caps keys={presetKeys(p)!} compact /> : null}
                   </span>
                 </button>
               </li>
             );
           })}
+          {advancedVisible.length > 0 && <li className="act-group" role="presentation">{t("ui.actpick.cat_advanced")}</li>}
           {advancedVisible.map((a, j) => {
             const i = presets.length + j;
             const active = i === activeRow;
             return (
-              <li key={a.type} id={`actpick-opt-${i}`} className={active ? "on" : ""} role="option" aria-selected={active}>
-                <button type="button" tabIndex={-1} onClick={() => activate(i)} onMouseEnter={() => setActive(i)}>
+              <li key={a.type} id={`actpick-opt-${i}`} className={active ? "on" : ""} role="option" aria-selected={active} onMouseMove={() => setActive(i)}>
+                <button type="button" tabIndex={-1} onClick={() => activate(i)}>
                   <span className="act-name">{t(a.nameKey)}</span>
                   <span className="act-desc">{t(a.descKey)}</span>
                 </button>
@@ -279,9 +278,10 @@ export function ActionPicker({
           })}
           {rowCount === 0 && <li className="muted act-none">{t("ui.actpick.no_match")}</li>}
         </ul>
+        <p className="act-detail muted">{presets[activeRow] ? presetDescription(presets[activeRow]) : "\u00a0"}</p>
         {formPreset && (
           <div className="act-form">
-            {formPreset.params.map((param) => (
+            {visibleParams(formPreset, values).map((param) => (
               <ParamField
                 key={param.name}
                 param={param}
@@ -309,7 +309,11 @@ function categoryKey(c: PickerCategory): MsgKey {
 
 /** 按参数类型渲染表单字段；路径带"浏览"，程序带"浏览/点选窗口"。 */
 function ParamField({ param, value, onChange }: { param: ActionPreset["params"][number]; value: string; onChange: (v: string) => void }) {
+  const inputRef = useRef<HTMLInputElement>(null);
   const label = t(param.label_key as MsgKey);
+  const selectionLabel = `{${t("ui.var.selected_text")}}`;
+  const customUrl = param.label_key === "preset.param.search_url";
+  const displayValue = customUrl ? value.replaceAll("%MS_SELECTED_TEXT%", selectionLabel) : value;
   const required = param.default.kind === "literal" && param.default.value === "";
   const empty = required && !(param.kind.type === "multiline_text" ? value : value.trim());
   const error = empty ? <span className="field-error">{t("ui.actpick.required")}</span> : null;
@@ -370,7 +374,7 @@ function ParamField({ param, value, onChange }: { param: ActionPreset["params"][
               type="button"
               className="btn small"
               onClick={async () => {
-                const p = await api.pickFile("any", false, label);
+                const p = param.kind.type === "path" && param.kind.kind === "folder" ? await api.pickFolder(label) : await api.pickFile("any", false, label);
                 if (p) onChange(p);
               }}
             >
@@ -424,14 +428,25 @@ function ParamField({ param, value, onChange }: { param: ActionPreset["params"][
         <div className="field">
           <label className="field-label" htmlFor={`param-${param.name}`}>{label}</label>
           <input
+            ref={inputRef}
             id={`param-${param.name}`}
-            value={value}
+            value={displayValue}
             spellCheck={false}
             aria-required={required}
             aria-invalid={empty}
             data-param={param.name}
-            onChange={(e) => onChange(e.target.value)}
+            onChange={(e) => onChange(customUrl ? e.target.value.replaceAll(selectionLabel, "%MS_SELECTED_TEXT%") : e.target.value)}
           />
+          {customUrl && <div className="field-help">
+            <p>{t("ui.actpick.selected_text_hint", { selection: selectionLabel })}</p>
+            <button type="button" className="chip chip-var" onClick={() => {
+              const el = inputRef.current;
+              const start = el?.selectionStart ?? displayValue.length, end = el?.selectionEnd ?? start;
+              const variable = selectionLabel;
+              onChange((displayValue.slice(0, start) + variable + displayValue.slice(end)).replaceAll(selectionLabel, "%MS_SELECTED_TEXT%"));
+              requestAnimationFrame(() => { el?.focus(); el?.setSelectionRange(start + variable.length, start + variable.length); });
+            }}>{t("ui.actpick.insert_selected_text")}</button>
+          </div>}
           {error}
         </div>
       );

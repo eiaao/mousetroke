@@ -286,6 +286,9 @@ pub enum Action {
         regex: bool,
         #[serde(default)]
         if_running: IfRunning,
+        /// 仅预置“打开应用”按程序身份激活；旧动作仍按窗口条件查找。
+        #[serde(default, skip_serializing_if = "std::ops::Not::not")]
+        activate_by_identity: bool,
     },
     /// 控制目标窗口。
     WindowOp {
@@ -345,6 +348,8 @@ enum KnownAction {
         regex: bool,
         #[serde(default)]
         if_running: IfRunning,
+        #[serde(default)]
+        activate_by_identity: bool,
     },
     WindowOp {
         op: WindowOpKind,
@@ -415,6 +420,11 @@ pub struct MenuItem {
 }
 
 impl Action {
+    /// 带参数的启动必须交给程序处理，不能只聚焦已有窗口。
+    pub fn activates_app_identity(&self) -> bool {
+        matches!(self, Self::LaunchApp { activate_by_identity: true, args, win_class: None, win_title: None, if_running: IfRunning::Activate, .. } if args.is_none())
+    }
+
     pub const KNOWN_TYPES: &'static [&'static str] = &[
         "key_sequence", "shell", "lua", "open_url", "menu", "launch_app", "window_op", "system_key", "preset",
     ];
@@ -629,16 +639,16 @@ impl Config {
     }
 
     /// 读取配置；首次运行（文件不存在）写入内置默认值，设置界面随后读到的也是这一份。
-    /// 第二项是读取失败或首次写盘失败的原因（不影响本次运行，调用方记录即可）。
+    /// 第二项是读取失败或首次写盘失败的原因；调用方须通知用户并暂停设置写盘。
     pub fn load_or_init(path: &std::path::Path) -> Result<(Self, Option<String>), String> {
         match Self::load_existing(path) {
             Ok(Some(cfg)) => return Ok((cfg, None)),
-            // 损坏文件留给用户恢复；只在内存回落，由调用方记录诊断。
+            // 损坏文件留给用户恢复；只在内存回落，由调用方显示诊断。
             Err(error) => return Ok((Self::builtin(), Some(error))),
             Ok(None) => {}
         }
         let cfg = Self::builtin();
-        let saved = cfg.save(path).err();
+        let saved = cfg.save_live(path).err();
         Ok((cfg, saved))
     }
 
@@ -650,7 +660,11 @@ impl Config {
 
     /// 原子写入配置文件（先写临时文件再改名，避免引擎热加载读到半截内容）。
     pub fn save(&self, path: &std::path::Path) -> Result<(), String> {
-        // 设置界面、导入、导出共用此保护，不能用内存默认值覆盖坏文件。
+        self.write_atomic(path)
+    }
+
+    /// 引擎与设置的当前配置才需要损坏保护和 v1 备份；导出可覆盖普通文件。
+    pub fn save_live(&self, path: &std::path::Path) -> Result<(), String> {
         if path.exists() {
             let original = std::fs::read(path).map_err(|e| e.to_string())?;
             let text = std::str::from_utf8(&original).map_err(|e| e.to_string())?;
@@ -660,6 +674,10 @@ impl Config {
                 backup_v1(path, &original)?;
             }
         }
+        self.write_atomic(path)
+    }
+
+    fn write_atomic(&self, path: &std::path::Path) -> Result<(), String> {
         if let Some(dir) = path.parent() {
             std::fs::create_dir_all(dir).map_err(|e| format!("创建目录 {} 失败: {e}", dir.display()))?; // i18n:allow 配置损坏时的诊断信息（serde 原文混排，不进词条）
         }
@@ -667,6 +685,42 @@ impl Config {
         std::fs::write(&tmp, self.to_json()).map_err(|e| format!("写入 {} 失败: {e}", tmp.display()))?; // i18n:allow 配置损坏时的诊断信息（serde 原文混排，不进词条）
         std::fs::rename(&tmp, path).map_err(|e| format!("替换 {} 失败: {e}", path.display())) // i18n:allow 配置损坏时的诊断信息（serde 原文混排，不进词条）
     }
+
+    /// 显式恢复：先完整保留坏文件，再写默认值；失败时恢复原文件。
+    pub fn recover_defaults(path: &std::path::Path, now: std::time::SystemTime) -> Result<Self, String> {
+        if Self::load(path).is_ok() {
+            return Err(crate::i18n::t("config.recovery_readable").into());
+        }
+        let backup = path.with_file_name(format!("config.broken-{}.json", backup_timestamp(now)?));
+        // 独占创建避免同一秒内的第二次恢复覆盖上次保留的原件。
+        let reservation = std::fs::OpenOptions::new().write(true).create_new(true).open(&backup).map_err(|e| e.to_string())?;
+        drop(reservation);
+        if let Err(error) = std::fs::rename(path, &backup) {
+            let _ = std::fs::remove_file(&backup);
+            return Err(error.to_string());
+        }
+        let defaults = Self::builtin();
+        if let Err(error) = defaults.save_live(path) {
+            let _ = std::fs::rename(&backup, path);
+            return Err(error);
+        }
+        Ok(defaults)
+    }
+}
+
+/// UTC 时间戳，避免依赖平台时区 API；公历换算以 400 年为周期。
+fn backup_timestamp(now: std::time::SystemTime) -> Result<String, String> {
+    let seconds = now.duration_since(std::time::UNIX_EPOCH).map_err(|e| e.to_string())?.as_secs();
+    let days = i64::try_from(seconds / 86400).map_err(|e| e.to_string())? + 719468;
+    let era = days / 146097;
+    let day = days - era * 146097;
+    let year_in_era = (day - day / 1460 + day / 36524 - day / 146096) / 365;
+    let day_of_year = day - (365 * year_in_era + year_in_era / 4 - year_in_era / 100);
+    let month_index = (5 * day_of_year + 2) / 153;
+    let date = day_of_year - (153 * month_index + 2) / 5 + 1;
+    let month = month_index + if month_index < 10 { 3 } else { -9 };
+    let year = year_in_era + era * 400 + i64::from(month <= 2);
+    Ok(format!("{year:04}{month:02}{date:02}-{:02}{:02}{:02}", seconds / 3600 % 24, seconds / 60 % 60, seconds % 60))
 }
 
 impl Serialize for Config {

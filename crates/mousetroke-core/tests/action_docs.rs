@@ -64,8 +64,15 @@ fn parameters(preset: &Preset, lang: Lang, catalog: &BTreeMap<String, String>) -
             } else {
                 format!("default {default_label}")
             };
+            let condition = param.visible_when.map(|condition| {
+                let field = preset.params.iter().find(|p| p.name == condition.param).unwrap();
+                let ParamKind::Choice { choices } = field.kind else { panic!() };
+                let choice = choices.iter().find(|c| c.value == condition.equals).unwrap();
+                if zh { format!("；仅当{}为{}时", cell(&catalog[field.label_key]), cell(&catalog[choice.label_key])) }
+                else { format!("; only when {} is {}", cell(&catalog[field.label_key]), cell(&catalog[choice.label_key])) }
+            }).unwrap_or_default();
             format!(
-                "{label} (`{}`): {}{detail}",
+                "{label} (`{}`): {}{detail}{condition}",
                 param.name,
                 if choices.is_empty() {
                     String::new()
@@ -78,13 +85,14 @@ fn parameters(preset: &Preset, lang: Lang, catalog: &BTreeMap<String, String>) -
         .join("<br>")
 }
 
-fn availability(implementation: Implementation, catalog: &BTreeMap<String, String>) -> String {
-    match implementation {
+fn availability(implementation: Implementation, note: Option<&str>, catalog: &BTreeMap<String, String>) -> String {
+    let availability: String = match implementation {
         Implementation::Implemented(_) => "✓".into(),
         Implementation::Unsupported { reason_key } | Implementation::Pending { reason_key } => {
             cell(&catalog[reason_key])
         }
-    }
+    };
+    match note { Some(key) if matches!(implementation, Implementation::Implemented(_)) => format!("{availability}<br>{}", cell(&catalog[key])), _ => availability }
 }
 
 fn catalogue(lang: Lang, catalog: &BTreeMap<String, String>) -> String {
@@ -117,8 +125,8 @@ fn catalogue(lang: Lang, catalog: &BTreeMap<String, String>) -> String {
             } else {
                 parameters(preset, lang, catalog)
             },
-            availability(preset.windows, catalog),
-            availability(preset.macos, catalog)
+            availability(preset.windows, preset.platform_notes.windows, catalog),
+            availability(preset.macos, preset.platform_notes.macos, catalog)
         )
         .unwrap();
     }

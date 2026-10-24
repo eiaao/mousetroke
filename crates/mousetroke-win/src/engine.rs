@@ -149,6 +149,7 @@ fn execute(action: Action, target: Option<targeting::Target>, vars: Vars, pos: (
             return;
         }
     };
+    let activate_identity = action.activates_app_identity();
     match action {
         Action::KeySequence { keys, activate_target, .. } => {
             if activate_target {
@@ -177,12 +178,14 @@ fn execute(action: Action, target: Option<targeting::Target>, vars: Vars, pos: (
             fill_lazy_vars(&url_template, &mut v);
             input::open_url(&vars::expand_url(&url_template, &v), browser.as_deref());
         }
-        Action::LaunchApp { exe, args, elevate, win_class, win_title, regex, if_running } => {
+        Action::LaunchApp { exe, args, elevate, win_class, win_title, regex, if_running, .. } => {
             let mut v = vars.clone();
             fill_lazy_vars(&exe, &mut v);
             fill_lazy_vars(args.as_deref().unwrap_or(""), &mut v);
+            let exe = vars::expand(&exe, &v);
+            if activate_identity && input::activate_app_by_identity(&exe) { return; }
             input::launch_app(
-                &vars::expand(&exe, &v),
+                &exe,
                 Some(vars::expand(args.as_deref().unwrap_or(""), &v)).filter(|s| !s.is_empty()).as_deref(),
                 elevate,
                 win_class.as_deref(),

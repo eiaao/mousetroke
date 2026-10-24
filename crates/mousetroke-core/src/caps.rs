@@ -66,9 +66,10 @@ pub fn repair(action: Action, platform: Platform) -> Action {
             op: if op == WindowOpKind::ToggleTopmost { WindowOpKind::Minimize } else { op },
             allow_child: false,
         },
-        Action::LaunchApp { exe, args, if_running, .. } => Action::LaunchApp {
+        Action::LaunchApp { exe, args, if_running, activate_by_identity, .. } => Action::LaunchApp {
             exe,
             args,
+            activate_by_identity,
             elevate: false,
             win_class: None,
             win_title: None,

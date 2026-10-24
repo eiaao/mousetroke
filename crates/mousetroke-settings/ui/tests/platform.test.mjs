@@ -6,7 +6,7 @@ import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 
 // 使用与产物相同的 Vite 转换，不复制待测试的按键与平台实现。
-const server = await createServer({ server: { middlewareMode: true }, appType: "custom" });
+const server = await createServer({ server: { middlewareMode: true, hmr: false, ws: false }, appType: "custom" });
 after(() => server.close());
 const platform = await server.ssrLoadModule("/src/platform.ts");
 const keys = await server.ssrLoadModule("/src/gesture.ts");

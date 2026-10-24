@@ -702,6 +702,7 @@ mod tests {
                 win_class: None,
                 win_title: None,
                 regex: false,
+                activate_by_identity: false,
                 if_running: IfRunning::RunAgain,
             },
             Action::Lua {

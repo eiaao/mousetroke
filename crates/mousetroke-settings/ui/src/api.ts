@@ -1,3 +1,4 @@
+import { persistedConfig } from "./store";
 import { invoke } from "@tauri-apps/api/core";
 import type { Action, ActionCatalog, AppInfo, Config, EngineStatus, InitState, PermissionStatus, PresetApp, RunningApp } from "./types";
 import { t, type MsgKey } from "./i18n";
@@ -14,7 +15,7 @@ export const api = {
   initState: () => invoke<InitState>("init_state"),
   actionCatalog: () => invoke<ActionCatalog>("action_catalog"),
   expandPreset: (id: string, params: Record<string, unknown>, uiLang: string) => invoke<Action>("expand_preset", { id, params, uiLang }),
-  saveConfig: (config: Config) => invoke<void>("save_config", { config }),
+  saveConfig: (config: Config) => invoke<void>("save_config", { config: persistedConfig(config) }),
   engineStatus: () => invoke<EngineStatus>("get_engine_status"),
   setUiLang: (tag: string) => invoke<void>("set_ui_lang", { tag }),
   /** 校验结果直接给出已翻译的错误文本；合法返回 null。 */
@@ -27,9 +28,11 @@ export const api = {
   shapeLimits: (sample: number[]) => invoke<{ accept: number; margin: number }>("shape_limits", { sample }),
   importLegacy: (gestures: string, prefs: string | null) => invoke<Config>("import_legacy", { gestures, prefs }),
   loadConfigFile: (path: string) => invoke<Config>("load_config_file", { path }),
-  exportConfig: (path: string, config: Config) => invoke<void>("export_config", { path, config }),
+  exportConfig: (path: string, config: Config) => invoke<void>("export_config", { path, config: persistedConfig(config) }),
   pickFile: (kind: "json" | "exe" | "any", save: boolean, title: string) =>
     invoke<string | null>("pick_file", { kind, save, title }),
+  pickFolder: (title: string) => invoke<string | null>("pick_folder", { title }),
+  recoverConfig: () => invoke<Config>("recover_config"),
   runningApps: () => invoke<RunningApp[]>("running_apps"),
   resolveApp: (path: string) => invoke<string>("resolve_app", { path }),
   pickWindow: () => invoke<{ exe: string; title: string } | null>("pick_window"),

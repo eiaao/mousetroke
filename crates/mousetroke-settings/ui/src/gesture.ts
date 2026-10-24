@@ -264,11 +264,16 @@ export function patternKey(pattern: Step[]): string {
   return pattern.map(stepKey).join(" ");
 }
 
+/** 单独按下触发键和空轨迹都还不是手势。 */
+export function hasGesturePattern(pattern: Step[]): boolean {
+  return pattern.some((step) => step.type === "edge" || step.type === "wheel" || (step.type === "trace" && step.points.length >= 4) || (step.type === "shape" && step.templates.some((sample) => sample.length > 0))) || pattern.filter((step) => step.type === "press").length > 1;
+}
+
 /** 作用域内的冲突：指纹 → 绑定下标列表（仅含 ≥2 个的）。 */
 export function conflicts(bindings: Binding[]): Map<number, number[]> {
   const groups = new Map<string, number[]>();
   bindings.forEach((b, i) => {
-    if (b.disabled) return; // 停用的不参与，也就不算重复
+    if (b.disabled || !hasGesturePattern(b.pattern)) return; // 停用的不参与，也就不算重复
     const k = patternKey(b.pattern);
     groups.set(k, [...(groups.get(k) ?? []), i]);
   });
@@ -363,6 +368,8 @@ export function fileName(path: string): string {
 
 export function newBinding(): Binding {
   return {
+    uiId: uid(),
+    actionUnselected: true,
     name: t("ui.app.new_gesture"),
     pattern: [{ type: "press", key: "mouse:right" }],
     action: defaultAction("key_sequence"),

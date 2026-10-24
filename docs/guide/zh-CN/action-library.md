@@ -17,7 +17,7 @@ order: 5.5
 
 打开选择器后焦点位于搜索框。上下键在可用结果中移动，回车选中；Esc 先收起参数表单，再关闭选择器。多行文字框中用 Ctrl+Enter 或 Command+Enter 确认表单。
 
-“转为高级动作”把预置动作替换成当前平台可编辑的按键、窗口操作、网址、程序、命令或系统功能键。确认后是单向转换，结果不再跟随预置动作的平台或语言默认值。原生布局、电源、字面文字、日期时间、纯文本复制、暂停与设置动作继续保留为预置动作，卡片会简短说明无法转换的原因。“高级”分类保留发送按键、运行命令、Lua 和弹出菜单；已有编辑器的用法见[高级动作说明](actions.md)。
+“转为高级动作”把预置动作替换成当前平台可编辑的按键、窗口操作、网址、程序、命令或系统功能键。确认后是单向转换，结果不再跟随预置动作的平台或语言默认值。原生布局、电源、字面文字、日期时间、纯文本复制、暂停与设置动作继续保留为预置动作，卡片会简短说明无法转换的原因。列表末尾的“高级”分组保留发送按键、运行命令、Lua 和弹出菜单；已有编辑器的用法见[高级动作说明](actions.md)。
 
 ## 文字、窗口与电源
 
@@ -82,10 +82,10 @@ order: 5.5
 
 | 动作 / ID | 用途与适用范围 | 参数 | Windows | Mac |
 |---|---|---|---|---|
-| 输入一段文字…<br>`text.type` | 可输入文字的程序；默认粘贴后恢复剪贴板。 | 文字 (`text`): 必填<br>输入方式 (`method`): 粘贴并恢复剪贴板 (`paste`) / 逐字输入 (`type`); 默认 粘贴并恢复剪贴板 | ✓ | ✓ |
-| 插入日期时间…<br>`text.datetime` | 可输入文字的程序；使用本地日期和时间。 | 日期时间格式 (`format`): 2026-10-24 (`date_iso`) / 2026年10月24日 (`date_local`) / 10/24/2026 (`date_us`) / 14:30 (`time`) / 2026-10-24 14:30 (`datetime`) / 自定义 (`custom`); 默认 2026-10-24<br>自定义格式 (`custom_format`): 默认 `YYYY-MM-DD`<br>输入方式 (`method`): 粘贴并恢复剪贴板 (`paste`) / 逐字输入 (`type`); 默认 粘贴并恢复剪贴板 | ✓ | ✓ |
-| 搜索选中文字…<br>`text.search` | 使用默认浏览器；先在当前程序中选中文字。 | 搜索引擎 (`engine`): Bing (`bing`) / Google (`google`) / 百度 (`baidu`) / DuckDuckGo (`duckduckgo`) / 自定义 (`custom`); 简体中文界面默认百度，其他语言默认 Google<br>自定义网址（含 %MS_SELECTED_TEXT%） (`url`): 默认 `https://www.google.com/search?q=%MS_SELECTED_TEXT%` | ✓ | ✓ |
-| 翻译选中文字…<br>`text.translate` | 使用默认浏览器；先在当前程序中选中文字。 | 翻译服务 (`service`): Google 翻译 (`google`) / DeepL (`deepl`) / 必应翻译 (`bing`); 默认 Google 翻译<br>目标语言 (`target_language`): 跟随界面语言 (`ui`) / 简体中文 (`zh-CN`) / English (`en-US`) / español (`es-ES`) / Français (`fr-FR`) / Deutsch (`de-DE`) / 日本語 (`ja-JP`) / Português (Brasil) (`pt-BR`) / Русский (`ru-RU`) / Italiano (`it-IT`) / 한국어 (`ko-KR`); 默认 跟随界面语言 | ✓ | ✓ |
+| 输入一段文字<br>`text.type` | 可输入文字的程序；默认粘贴后恢复剪贴板。 | 文字 (`text`): 必填<br>输入方式 (`method`): 粘贴并恢复剪贴板 (`paste`) / 逐字输入 (`type`); 默认 粘贴并恢复剪贴板 | ✓ | ✓ |
+| 插入日期时间<br>`text.datetime` | 可输入文字的程序；使用本地日期和时间。 | 日期时间格式 (`format`): 2026-10-24 (`date_iso`) / 2026年10月24日 (`date_local`) / 10/24/2026 (`date_us`) / 14:30 (`time`) / 2026-10-24 14:30 (`datetime`) / 自定义 (`custom`); 默认 2026-10-24<br>自定义格式 (`custom_format`): 默认 `YYYY-MM-DD`；仅当日期时间格式为自定义时<br>输入方式 (`method`): 粘贴并恢复剪贴板 (`paste`) / 逐字输入 (`type`); 默认 粘贴并恢复剪贴板 | ✓ | ✓ |
+| 搜索选中文字<br>`text.search` | 使用默认浏览器；先在当前程序中选中文字。 | 搜索引擎 (`engine`): Bing (`bing`) / Google (`google`) / 百度 (`baidu`) / DuckDuckGo (`duckduckgo`) / 自定义 (`custom`); 简体中文界面默认百度，其他语言默认 Google<br>自定义网址 (`url`): 默认 `https://www.google.com/search?q=%MS_SELECTED_TEXT%`；仅当搜索引擎为自定义时 | ✓ | ✓ |
+| 翻译选中文字<br>`text.translate` | 使用默认浏览器；先在当前程序中选中文字。 | 翻译服务 (`service`): Google 翻译 (`google`) / DeepL (`deepl`) / 必应翻译 (`bing`); 默认 Google 翻译<br>目标语言 (`target_language`): 跟随界面语言 (`ui`) / 简体中文 (`zh-CN`) / English (`en-US`) / español (`es-ES`) / Français (`fr-FR`) / Deutsch (`de-DE`) / 日本語 (`ja-JP`) / Português (Brasil) (`pt-BR`) / Русский (`ru-RU`) / Italiano (`it-IT`) / 한국어 (`ko-KR`); 默认 跟随界面语言 | ✓ | ✓ |
 | 打开选中的网址<br>`text.open_selected_url` | 使用默认浏览器；先在当前程序中选中文字。 | — | ✓ | ✓ |
 | 复制选中文字的纯文本<br>`text.copy_plain` | 适用于能复制文字的程序；去除剪贴板中的格式。 | — | ✓ | ✓ |
 
@@ -93,17 +93,17 @@ order: 5.5
 
 | 动作 / ID | 用途与适用范围 | 参数 | Windows | Mac |
 |---|---|---|---|---|
-| 最小化<br>`window.minimize` | 作用于手势目标窗口；Mac 需辅助功能权限。 | — | ✓ | ✓ |
-| 最大化/还原<br>`window.toggle_maximize` | 作用于手势目标窗口；Mac 需辅助功能权限。 | — | ✓ | ✓ |
-| 关闭窗口<br>`window.close` | 作用于手势目标窗口；Mac 需辅助功能权限。 | — | ✓ | ✓ |
-| 退出程序<br>`app.quit` | 作用于手势目标窗口；Mac 需辅助功能权限。 | — | ✓ | ✓ |
+| 最小化<br>`window.minimize` | 作用于手势目标窗口。 | — | ✓ | ✓<br>需要辅助功能权限。 |
+| 最大化/还原<br>`window.toggle_maximize` | 作用于手势目标窗口。 | — | ✓ | ✓<br>需要辅助功能权限。 |
+| 关闭窗口<br>`window.close` | 作用于手势目标窗口。 | — | ✓ | ✓<br>需要辅助功能权限。 |
+| 退出程序<br>`app.quit` | 作用于手势目标窗口。 | — | ✓ | ✓ |
 | 强制结束程序<br>`app.kill` | 作用于手势目标程序；未保存的内容会丢失。 | — | ✓ | ✓ |
-| 窗口置顶<br>`window.toggle_topmost` | 仅 Windows。 | — | ✓ | 此动作仅支持 Windows。 |
-| 贴到左半屏<br>`window.snap_left` | 作用于手势目标窗口；Mac 需辅助功能权限。 | — | ✓ | ✓ |
-| 贴到右半屏<br>`window.snap_right` | 作用于手势目标窗口；Mac 需辅助功能权限。 | — | ✓ | ✓ |
-| 窗口居中<br>`window.center` | 作用于手势目标窗口；Mac 需辅助功能权限。 | — | ✓ | ✓ |
-| 移到下一个显示器<br>`window.next_monitor` | 作用于手势目标窗口；Mac 需辅助功能权限。 | — | ✓ | ✓ |
-| 隐藏当前程序<br>`app.hide` | 仅 macOS。 | — | 此动作仅支持 macOS。 | ✓ |
+| 窗口置顶<br>`window.toggle_topmost` | 切换手势目标窗口的置顶状态。 | — | ✓ | 此动作仅支持 Windows。 |
+| 贴到左半屏<br>`window.snap_left` | 作用于手势目标窗口。 | — | ✓ | ✓<br>需要辅助功能权限。 |
+| 贴到右半屏<br>`window.snap_right` | 作用于手势目标窗口。 | — | ✓ | ✓<br>需要辅助功能权限。 |
+| 窗口居中<br>`window.center` | 作用于手势目标窗口。 | — | ✓ | ✓<br>需要辅助功能权限。 |
+| 移到下一个显示器<br>`window.next_monitor` | 作用于手势目标窗口。 | — | ✓ | ✓<br>需要辅助功能权限。 |
+| 隐藏当前程序<br>`app.hide` | 隐藏当前应用。 | — | 此动作仅支持 macOS。 | ✓ |
 
 ### 桌面与系统
 
@@ -119,12 +119,12 @@ order: 5.5
 | 截图<br>`capture.region` | 系统功能；部分行为取决于系统快捷键设置。 | — | ✓ | ✓ |
 | 截取全屏并保存<br>`capture.screen` | 系统功能；部分行为取决于系统快捷键设置。 | — | ✓ | ✓ |
 | 截图与录屏工具<br>`capture.tool` | 系统功能；部分行为取决于系统快捷键设置。 | — | ✓ | ✓ |
-| 剪贴板历史<br>`desktop.clipboard_history` | 仅 Windows。 | — | ✓ | 此动作仅支持 Windows。 |
+| 剪贴板历史<br>`desktop.clipboard_history` | 打开系统剪贴板历史。 | — | ✓ | 此动作仅支持 Windows。 |
 | 表情与符号面板<br>`desktop.emoji` | 系统功能；部分行为取决于系统快捷键设置。 | — | ✓ | ✓ |
-| 通知中心<br>`desktop.notifications` | 仅 Windows。 | — | ✓ | 此动作仅支持 Windows。 |
+| 通知中心<br>`desktop.notifications` | 打开通知中心。 | — | ✓ | 此动作仅支持 Windows。 |
 | 锁屏<br>`system.lock` | 系统功能；部分行为取决于系统快捷键设置。 | — | ✓ | ✓ |
 | 任务管理器 / 活动监视器<br>`system.task_manager` | 系统功能；部分行为取决于系统快捷键设置。 | — | ✓ | ✓ |
-| 强制退出窗口<br>`system.force_quit_dialog` | 仅 macOS。 | — | 此动作仅支持 macOS。 | ✓ |
+| 强制退出窗口<br>`system.force_quit_dialog` | 打开强制退出应用对话框。 | — | 此动作仅支持 macOS。 | ✓ |
 | 系统设置<br>`system.settings` | 系统功能；部分行为取决于系统快捷键设置。 | — | ✓ | ✓ |
 | 计算器<br>`system.calculator` | 系统功能；部分行为取决于系统快捷键设置。 | — | ✓ | ✓ |
 | 关闭显示器<br>`system.display_off` | 系统功能；部分行为取决于系统快捷键设置。 | — | ✓ | ✓ |
@@ -147,10 +147,10 @@ order: 5.5
 
 | 动作 / ID | 用途与适用范围 | 参数 | Windows | Mac |
 |---|---|---|---|---|
-| 打开网站…<br>`open.website` | 使用默认浏览器打开指定网址。 | 网址 (`url`): 默认 `https://mousetroke.com/` | ✓ | ✓ |
-| 打开文件夹…<br>`open.folder` | 使用系统默认程序打开指定路径。 | 路径 (`path`): 必填 | ✓ | ✓ |
-| 打开文件…<br>`open.file` | 使用系统默认程序打开指定路径。 | 路径 (`path`): 必填 | ✓ | ✓ |
-| 打开或切换到程序…<br>`open.app` | 打开指定程序；已有窗口时切换到该程序。 | 程序 (`app`): 必填 | ✓ | ✓ |
+| 打开网站<br>`open.website` | 使用默认浏览器打开指定网址。 | 网址 (`url`): 默认 `https://mousetroke.com/` | ✓ | ✓ |
+| 打开文件夹<br>`open.folder` | 使用系统默认程序打开指定路径。 | 路径 (`path`): 必填 | ✓ | ✓ |
+| 打开文件<br>`open.file` | 使用系统默认程序打开指定路径。 | 路径 (`path`): 必填 | ✓ | ✓ |
+| 打开或切换到程序<br>`open.app` | 打开指定程序；已有窗口时切换到该程序。 | 程序 (`app`): 必填 | ✓ | ✓ |
 
 ### Mousetroke
 

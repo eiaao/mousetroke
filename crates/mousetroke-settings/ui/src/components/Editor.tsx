@@ -1,6 +1,6 @@
 import type { Action, Binding, Step } from "../types";
-import { displayName, t, type MsgKey } from "../i18n";
-import { presetDefinition } from "../actions";
+import { displayName, t } from "../i18n";
+import { presetDefinition, presetName } from "../actions";
 import { ActionEditor } from "./ActionEditor";
 import { PatternEditor } from "./PatternEditor";
 
@@ -12,6 +12,7 @@ export interface EditorProps {
   otherBindings: Binding[];
   /** 新建手势首次打开编辑器时自动弹出动作选择器。 */
   autoPickAction?: boolean;
+  onPickerShown?: () => void;
   onChange: (f: (b: Binding) => Binding, coalesce?: string) => void;
   onDuplicate: () => void;
   onDelete: () => void;
@@ -33,7 +34,7 @@ function isUnknownPreset(b: Binding): boolean {
   return b.action.type === "preset" && !presetDefinition(b.action);
 }
 
-export function Editor({ binding, bindingKey, conflictWith, otherBindings, autoPickAction, onChange, onDuplicate, onDelete, onClose }: EditorProps) {
+export function Editor({ binding, bindingKey, conflictWith, otherBindings, autoPickAction, onPickerShown, onChange, onDuplicate, onDelete, onClose }: EditorProps) {
   const conflict = conflictWith.length ? (
     <span className="warn">{t("ui.editor.conflict", { names: quoteJoin(conflictWith.map((n) => n)) })}</span>
   ) : null;
@@ -76,12 +77,14 @@ export function Editor({ binding, bindingKey, conflictWith, otherBindings, autoP
           key={`a-${bindingKey}`}
           action={binding.action}
           autoPick={autoPickAction}
+          unselected={!!binding.actionUnselected}
+          onPickerShown={onPickerShown}
           onChange={(action: Action, c?: string) =>
             onChange((b) => {
               const preset = presetDefinition(action);
-              const next: Binding = { ...b, action };
+              const next: Binding = { ...b, action, actionUnselected: undefined };
               if (preset) {
-                const name = t(preset.name_key as MsgKey);
+                const name = presetName(preset);
                 // 空名、默认名、或等于上一次自动填入的动作名时，跟随新动作名；手动改过的名字不动
                 const auto = !b.name || b.name === defaultBindingName(b) || b.name === b.lastActionName;
                 if (auto) {

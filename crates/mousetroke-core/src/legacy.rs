@@ -330,6 +330,7 @@ fn convert_command(c: &LegacyCommand) -> Action {
             win_title: fields.get("MatchWinTitle").and_then(|v| v.as_str()).map(str::to_string),
             regex: fields.get("IsRegex").and_then(|v| v.as_bool()).unwrap_or(false),
             if_running: IfRunning::default(),
+            activate_by_identity: false,
         },
         LegacyCommand::WindowControl { command, allow_child_window } => Action::WindowOp {
             op: match command.as_str() {

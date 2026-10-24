@@ -1,5 +1,7 @@
 import { useCallback, useReducer } from "react";
 import type { Config } from "./types";
+import { persistedAction } from "./actions";
+import { uid } from "./gesture";
 
 // 配置编辑状态：不可变更新 + 撤销/重做。
 // 同一字段的连续输入（相同 coalesce 键、间隔 < 1s）合并为一步撤销。
@@ -40,7 +42,7 @@ function reducer(s: State, m: Msg): State {
     }
     case "load":
       return {
-        config: m.config,
+        config: withBindingIds(m.config),
         past: m.keepHistory ? [...s.past.slice(-HISTORY + 1), s.config] : [],
         future: [],
         revision: m.keepHistory ? s.revision + 1 : s.revision,
@@ -62,7 +64,7 @@ function reducer(s: State, m: Msg): State {
 
 export function useConfigStore(initial: Config) {
   const [s, dispatch] = useReducer(reducer, {
-    config: initial,
+    config: withBindingIds(initial),
     past: [],
     future: [],
     revision: 0,
@@ -92,4 +94,13 @@ export function updateBinding(c: Config, scopeIdx: number, bindingIdx: number, f
 
 export function updateScope(c: Config, scopeIdx: number, f: (s: Config["scopes"][0]) => Config["scopes"][0]): Config {
   return { ...c, scopes: c.scopes.map((s, i) => (i === scopeIdx ? f(s) : s)) };
+}
+
+/** 稳定标识跨编辑与排序保留，持久化前清除。 */
+export function withBindingIds(config: Config): Config {
+  return { ...config, scopes: config.scopes.map((scope) => ({ ...scope, bindings: scope.bindings.map((binding) => ({ ...binding, uiId: binding.uiId ?? uid() })) })) };
+}
+
+export function persistedConfig(config: Config): Config {
+  return { ...config, scopes: config.scopes.map((scope) => ({ ...scope, bindings: scope.bindings.map(({ uiId: _id, actionUnselected: _unselected, lastActionName: _name, ...binding }) => ({ ...binding, action: persistedAction(binding.action) })) })) };
 }

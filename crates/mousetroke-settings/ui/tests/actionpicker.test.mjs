@@ -1,11 +1,13 @@
 import assert from "node:assert/strict";
 import { after, test } from "node:test";
 import { createServer } from "vite";
-import { createElement } from "react";
+import { act, createElement, useState } from "react";
+import { readFileSync } from "node:fs";
+import { JSDOM } from "jsdom";
 import { renderToStaticMarkup } from "react-dom/server";
 
 // 使用与产物相同的 Vite 转换，测试动作选择器的搜索、分类、键盘与参数校验。
-const server = await createServer({ server: { middlewareMode: true }, appType: "custom" });
+const server = await createServer({ server: { middlewareMode: true, hmr: false, ws: false }, appType: "custom" });
 after(() => server.close());
 const platform = await server.ssrLoadModule("/src/platform.ts");
 const actions = await server.ssrLoadModule("/src/actions.ts");
@@ -13,6 +15,10 @@ const keys = await server.ssrLoadModule("/src/gesture.ts");
 const { t } = await server.ssrLoadModule("/src/i18n/index.ts");
 const { ActionPicker } = await server.ssrLoadModule("/src/components/ActionPicker.tsx");
 const { ActionEditor } = await server.ssrLoadModule("/src/components/ActionEditor.tsx");
+const { Modal } = await server.ssrLoadModule("/src/components/Dialogs.tsx");
+const { BindingList } = await server.ssrLoadModule("/src/components/BindingList.tsx");
+const { persistedConfig, withBindingIds } = await server.ssrLoadModule("/src/store.ts");
+const { api } = await server.ssrLoadModule("/src/api.ts");
 const { Editor } = await server.ssrLoadModule("/src/components/Editor.tsx");
 
 /** 与后端 action_catalog 序列化形状一致的迷你目录（真实词条键，t() 可取到译文）。 */
@@ -39,8 +45,8 @@ const fixture = {
       id: "text.search", category: "text",
       name_key: "preset.action.text.search.name", description_key: "preset.action.text.search.description", aliases_key: "preset.action.text.search.aliases",
       params: [
-        { name: "engine", label_key: "preset.param.engine", kind: { type: "choice", choices: [{ value: "google", label_key: "preset.choice.google" }, { value: "baidu", label_key: "preset.choice.baidu" }] }, default: { kind: "search_engine" } },
-        { name: "url", label_key: "preset.param.search_url", kind: { type: "url" }, default: { kind: "literal", value: "https://www.google.com/search?q=%MS_SELECTED_TEXT%" } },
+        { name: "engine", label_key: "preset.param.engine", kind: { type: "choice", choices: [{ value: "google", label_key: "preset.choice.google" }, { value: "baidu", label_key: "preset.choice.baidu" }, { value: "custom", label_key: "preset.choice.custom" }] }, default: { kind: "search_engine" } },
+        { name: "url", label_key: "preset.param.search_url", visible_when: { param: "engine", equals: "custom" }, kind: { type: "url" }, default: { kind: "literal", value: "https://www.google.com/search?q=%MS_SELECTED_TEXT%" } },
       ],
       windows: { status: "implemented", value: { type: "search" } },
       macos: { status: "implemented", value: { type: "search" } },
@@ -241,6 +247,7 @@ test("empty gesture names are filled with the picked action name (A)", () => {
   assert.equal(named.name, t("preset.action.browser.close_tab.name"));
   assert.equal(named.lastActionName, t("preset.action.browser.close_tab.name"));
   assert.equal(named.action.id, "browser.close_tab");
+  assert.equal(apply(binding, { type: "preset", id: "text.search" }).name.endsWith("…"), false);
   // 已有名字时不覆盖
   const kept = apply({ ...binding, name: "我的手势" }, { type: "preset", id: "browser.close_tab" });
   assert.equal(kept.name, "我的手势");
@@ -266,8 +273,335 @@ test("advanced editor hides type bar behind a folded details (B)", () => {
 
 test("unselected action shows a prominent pick button and hint (A)", () => {
   setup();
-  const html = render(createElement(ActionEditor, { action: { type: "key_sequence", keys: "" }, onChange() {} }));
+  const html = render(createElement(ActionEditor, { action: { type: "key_sequence", keys: "" }, unselected: true, onChange() {} }));
   assert.ok(html.includes(t("ui.actpick.empty_hint")), "未选择时显示提示");
   assert.ok(html.includes(t("ui.actpick.choose")), "未选择时显示选择动作按钮");
   assert.ok(!html.includes(t("ui.actpick.change_type")), "未选择时不显示折叠的类型条");
+});
+
+
+// 事件与焦点使用真实 DOM 挂载；静态渲染无法验证 Escape 的冒泡顺序。
+const dom = new JSDOM("<!doctype html><html><body></body></html>", { url: "http://localhost/" });
+Object.assign(globalThis, { window: dom.window, document: dom.window.document, HTMLElement: dom.window.HTMLElement, HTMLInputElement: dom.window.HTMLInputElement, Event: dom.window.Event, location: dom.window.location, requestAnimationFrame: (fn) => setTimeout(fn, 0), IS_REACT_ACT_ENVIRONMENT: true });
+Object.defineProperty(globalThis, "navigator", { value: dom.window.navigator, configurable: true });
+let scrolled;
+dom.window.HTMLElement.prototype.scrollIntoView = function () { scrolled = this; };
+const { createRoot } = await import("react-dom/client");
+after(() => dom.window.close());
+api.validateKeys = async () => null;
+
+async function mount(element) {
+  const container = document.createElement("div");
+  document.body.append(container);
+  const root = createRoot(container);
+  await act(async () => root.render(element));
+  return {
+    el: container,
+    async render(element) { await act(async () => root.render(element)); },
+    async close() { await act(async () => root.unmount()); container.remove(); },
+  };
+}
+async function click(el) { assert.ok(el); await act(async () => el.click()); }
+async function key(el, value) { assert.ok(el); await act(async () => el.dispatchEvent(new dom.window.KeyboardEvent("keydown", { key: value, bubbles: true, cancelable: true }))); }
+async function input(el, value) {
+  await act(async () => {
+    Object.getOwnPropertyDescriptor(dom.window.HTMLInputElement.prototype, "value").set.call(el, value);
+    el.dispatchEvent(new dom.window.Event("input", { bubbles: true }));
+  });
+}
+const button = (el, text) => [...el.querySelectorAll("button")].find((b) => b.textContent === text);
+
+test("current preset selects its actual row and scrolls into view (UI 1)", async () => {
+  setup();
+  const action = { type: "preset", id: "open.website", params: { url: "https://example.org/current" } };
+  assert.ok(actions.pickerInitial(action).active > 0);
+  const view = await mount(createElement(ActionPicker, { current: action, onPick() {}, onClose() {} }));
+  assert.equal(view.el.querySelector('[aria-selected="true"] .act-name').textContent, t("preset.action.open.website.name") + "…");
+  assert.equal(scrolled, view.el.querySelector('[aria-selected="true"]'));
+  const other = view.el.querySelector('[role="option"]');
+  await act(async () => other.dispatchEvent(new dom.window.MouseEvent("mouseover", { bubbles: true })));
+  assert.equal(view.el.querySelector('[aria-selected="true"] .act-name').textContent, t("preset.action.open.website.name") + "…", "静止指针不能覆盖打开时的当前动作");
+  assert.equal(view.el.querySelector('[aria-pressed="true"]').textContent, t("preset.category.common"));
+  await view.close();
+  const nonCommon = actions.pickerInitial({ type: "preset", id: "text.search" });
+  assert.equal(nonCommon.category, "text");
+});
+
+test("shortcut matching compares complete modifier sets and main keys (UI 2)", () => {
+  setup();
+  const desktop = { ...actions.findPreset("browser.close_tab"), id: "desktop.prev", aliases_key: "preset.action.desktop.prev.aliases", windows: { status: "implemented", value: { type: "keys", value: "^#{LEFT}" } } };
+  for (const query of ["ctrl+w", "ctrlw", "Ctrl + W"]) assert.equal(actions.matchPreset(desktop, query), false);
+  for (const query of ["ctrl+win+left", "win+ctrl+left", "ctrl+win+←", "^#{LEFT}"]) assert.equal(actions.matchPreset(desktop, query), true);
+  assert.equal(actions.matchPreset(desktop, "cmd+w"), false);
+  const plain = { ...desktop, id: "plain", windows: { status: "implemented", value: { type: "keys", value: "{F5}" } } };
+  const modified = { ...plain, id: "modified", windows: { status: "implemented", value: { type: "keys", value: "^{F5}" } } };
+  assert.equal(actions.matchPreset(plain, "F5"), true);
+  assert.equal(actions.matchPreset(modified, "F5"), false);
+});
+
+test("initialId and row activation merge existing params over defaults (C3)", async () => {
+  setup();
+  const current = { type: "preset", id: "text.type", params: { text: "my current text" } };
+  assert.deepEqual(actions.presetParamValues(actions.findPreset(current.id), current), { text: "my current text", method: "paste" });
+  const view = await mount(createElement(ActionPicker, { current, initialId: current.id, onPick() {}, onClose() {} }));
+  assert.equal(view.el.querySelector("textarea").value, "my current text");
+  await key(document.activeElement, "Escape");
+  await click(view.el.querySelector('[aria-selected="true"] button'));
+  assert.equal(view.el.querySelector("textarea").value, "my current text");
+  await view.close();
+});
+
+test("hidden custom URL is absent from form, validation, summary and saved params (UI 5, 6)", async () => {
+  setup();
+  const preset = actions.findPreset("text.search");
+  const values = { engine: "baidu", url: "https://stale.invalid/" };
+  assert.deepEqual(actions.cleanPresetParams(preset, values), { engine: "baidu" });
+  assert.deepEqual(actions.persistedAction({ type: "preset", id: preset.id, params: { ...values, future: [1] } }).params, { engine: "baidu", future: [1] });
+  assert.deepEqual(actions.missingRequiredParams(preset, values), []);
+  const required = { ...preset, params: preset.params.map((p) => p.name === "url" ? { ...p, default: { kind: "literal", value: "" } } : p) };
+  assert.deepEqual(actions.missingRequiredParams(required, { engine: "baidu" }), []);
+  assert.deepEqual(actions.missingRequiredParams(required, { engine: "custom" }), ["url"]);
+  const current = { type: "preset", id: preset.id, params: values };
+  const card = render(createElement(ActionEditor, { action: current, onChange() {} }));
+  assert.ok(!card.includes("stale.invalid"));
+  const picked = [];
+  const view = await mount(createElement(ActionPicker, { current, initialId: preset.id, onPick: (a) => picked.push(a), onClose() {} }));
+  assert.equal(view.el.querySelector('#param-url'), null);
+  assert.equal(document.activeElement.textContent, t("preset.choice.baidu"));
+  await click(button(view.el, t("ui.actpick.apply")));
+  assert.deepEqual(picked[0].params, { engine: "baidu" });
+  await click(button(view.el, t("preset.choice.custom")));
+  assert.ok(view.el.querySelector('#param-url'));
+  const insert = button(view.el, t("ui.actpick.insert_selected_text"));
+  assert.ok(insert);
+  const field = view.el.querySelector('#param-url');
+  assert.equal(field.value, "https://stale.invalid/");
+  await input(field, "https://example.org/?q=");
+  field.setSelectionRange(field.value.length, field.value.length);
+  await click(insert);
+  await click(button(view.el, t("ui.actpick.apply")));
+  assert.equal(picked[1].params.url, "https://example.org/?q=%MS_SELECTED_TEXT%");
+  await view.close();
+});
+
+test("Escape first closes picker form, next closes picker; rerender preserves focus (C5)", async () => {
+  setup();
+  let closed = 0;
+  const props = { initialId: "open.website", onPick() {}, onClose: () => closed++ };
+  const view = await mount(createElement(ActionPicker, props));
+  const field = view.el.querySelector('#param-url');
+  field.focus(); field.setSelectionRange(3, 3);
+  await view.render(createElement(ActionPicker, { ...props, onClose: () => closed++ }));
+  assert.equal(document.activeElement, field);
+  assert.equal(field.selectionStart, 3);
+  await key(field, "Escape");
+  assert.equal(closed, 0);
+  assert.equal(view.el.querySelector('.act-form'), null);
+  assert.equal(document.activeElement, view.el.querySelector('.search'));
+  await key(document.activeElement, "Escape");
+  assert.equal(closed, 1);
+  await view.close();
+  const modal = await mount(createElement(Modal, { title: "test", onClose: () => closed++ }, createElement("input")));
+  await key(document.activeElement, "Escape");
+  assert.equal(closed, 2);
+  await modal.close();
+});
+
+test("Enter on category buttons never applies highlighted action (C8)", async () => {
+  setup();
+  let picked = 0;
+  const view = await mount(createElement(ActionPicker, { onPick: () => picked++, onClose() {} }));
+  const cat = button(view.el, t("preset.category.text"));
+  cat.focus();
+  await key(cat, "Enter");
+  await key(cat, " ");
+  assert.equal(picked, 0);
+  // DOM 不合成浏览器默认点击；显式点击校验按钮自身的动作。
+  await click(cat);
+  assert.equal(cat.getAttribute("aria-pressed"), "true");
+  view.el.querySelector('.search').focus();
+  await input(document.activeElement, "^w");
+  await key(document.activeElement, "Enter");
+  assert.equal(picked, 1);
+  await view.close();
+});
+
+test("hover and keyboard share one active row; search clears category selection (UI 10, 11)", async () => {
+  setup();
+  const view = await mount(createElement(ActionPicker, { onPick() {}, onClose() {} }));
+  const search = view.el.querySelector('.search');
+  await key(search, "ArrowDown");
+  const row = view.el.querySelectorAll('[role="option"]')[2];
+  await act(async () => row.dispatchEvent(new dom.window.MouseEvent("mousemove", { bubbles: true })));
+  assert.equal(view.el.querySelectorAll('li.on').length, 1);
+  assert.equal(view.el.querySelector('li.on'), row);
+  await input(search, "website");
+  assert.equal(view.el.querySelectorAll('.act-cat[aria-pressed="true"]').length, 0);
+  await click(button(view.el, t("preset.category.text")));
+  assert.equal(search.value, "");
+  assert.equal(view.el.querySelector('.act-cat[aria-pressed="true"]').textContent, t("preset.category.text"));
+  await view.close();
+});
+
+test("empty key sequence stays editable, including after clearing keys (C2)", async () => {
+  setup();
+  function Harness() {
+    const [action, change] = useState({ type: "key_sequence", keys: "^c" });
+    return createElement(ActionEditor, { action, onChange: change });
+  }
+  const view = await mount(createElement(Harness));
+  const field = view.el.querySelector('.keys-input input');
+  await input(field, "");
+  assert.equal(view.el.querySelector('.keys-input input'), field);
+  assert.equal(field.value, "");
+  assert.ok(!view.el.textContent.includes(t("ui.actpick.empty_hint")));
+  await view.close();
+  function Unselected() {
+    const [binding, update] = useState(keys.newBinding());
+    return createElement(ActionEditor, { action: binding.action, unselected: binding.actionUnselected, autoPick: true, onChange: (action) => update({ ...binding, action, actionUnselected: false }) });
+  }
+  const fresh = await mount(createElement(Unselected));
+  await click([...fresh.el.querySelectorAll('.act-list button')].find((b) => b.textContent.startsWith(t("action.key_sequence"))));
+  assert.ok(fresh.el.querySelector('.keys-input input'));
+  assert.ok(!fresh.el.querySelector('[role="dialog"]'));
+  await fresh.close();
+});
+
+test("auto picker request is consumed once by stable binding identity (C9)", async () => {
+  setup();
+  const original = keys.newBinding();
+  const later = keys.newBinding();
+  const config = { scopes: [{ id: "g", bindings: [original, later] }] };
+  const identified = withBindingIds(config);
+  assert.notEqual(identified.scopes[0].bindings[0].uiId, identified.scopes[0].bindings[1].uiId);
+  assert.equal(withBindingIds({ scopes: [{ id: "g", bindings: [later, { ...original, name: "edited" }] }] }).scopes[0].bindings[1].uiId, original.uiId);
+  let shows = 0;
+  function Harness({ binding }) {
+    const [pending, setPending] = useState(original.uiId);
+    return createElement(ActionEditor, { key: binding.uiId, action: binding.action, unselected: true, autoPick: pending === binding.uiId, onPickerShown: () => { shows++; setPending(null); }, onChange() {} });
+  }
+  const view = await mount(createElement(Harness, { binding: original }));
+  assert.equal(shows, 1);
+  assert.ok(view.el.querySelector('[role="dialog"]'));
+  await key(document.activeElement, "Escape");
+  await view.render(createElement(Harness, { binding: later }));
+  await view.render(createElement(Harness, { binding: original }));
+  assert.equal(shows, 1);
+  assert.equal(view.el.querySelector('[role="dialog"]'), null);
+  const persisted = persistedConfig(identified);
+  assert.equal(persisted.scopes[0].bindings[0].uiId, undefined);
+  assert.equal(persisted.scopes[0].bindings[0].actionUnselected, undefined);
+  assert.deepEqual(persisted.scopes[0].bindings[0].action, { type: "key_sequence", keys: "", activate_target: false });
+  await view.close();
+});
+
+test("unselected rows are muted and incomplete gestures do not conflict (C2, UI 7)", () => {
+  setup();
+  const binding = keys.newBinding();
+  assert.equal(keys.conflicts([binding, keys.newBinding()]).size, 0);
+  const trace = { ...binding, pattern: [{ type: "press", key: "mouse:right" }, { type: "trace", points: [] }] };
+  assert.equal(keys.conflicts([trace, trace]).size, 0);
+  const edge = { ...binding, pattern: [{ type: "edge", edge: 1 }] };
+  assert.equal(keys.conflicts([edge, edge]).size, 2);
+  const html = render(createElement(BindingList, { scope: { id: "g", kind: "global", name: "g", bindings: [binding] }, tab: "gesture", filter: "all", selected: null, clash: new Map(), onSelect() {}, onTab() {}, onFilter() {}, onAdd() {}, onDelete() {}, onDuplicate() {}, onToggle() {}, onScopeChange() {}, onDeleteScope() {} }));
+  assert.ok(html.includes('class="row-action-text muted"'));
+  assert.ok(html.includes(t("ui.actpick.unselected")));
+});
+
+
+test("unreadable config blocks all automatic and close-time saves until explicit recovery (C10)", async () => {
+  setup();
+  const { App } = await server.ssrLoadModule("/src/App.tsx");
+  const config = JSON.parse(readFileSync(new URL("../../../mousetroke-core/assets/default-config.json", import.meta.url), "utf8"));
+  config.settings = JSON.parse(readFileSync(new URL("../../../../tools/uitest/config.json", import.meta.url), "utf8")).settings;
+  config.scopes = config.scopes.slice(0, 1);
+  const listeners = new Map();
+  window.__TAURI_EVENT_PLUGIN_INTERNALS__ = { unregisterListener() {} };
+  window.__TAURI_INTERNALS__ = {
+    metadata: { currentWindow: { label: "main" }, currentWebview: { label: "main" } },
+    transformCallback: (fn) => fn,
+    invoke: async (cmd, args) => {
+      if (cmd === "plugin:event|listen") { listeners.set(args.event, args.handler); return listeners.size; }
+      return null;
+    },
+  };
+  const originalApi = { ...api };
+  const saved = [];
+  const opened = [];
+  let recovered = 0;
+  Object.assign(api, {
+    initState: async () => ({ platform: "windows", config, loadError: "line 2 column 14", configPath: "config.json", engine: { running: true, autostart: false, exeFound: true }, systemLangs: ["zh-CN"], actionCatalog: fixture }),
+    actionCatalog: async () => fixture,
+    setUiLang: async () => {},
+    appIcons: async () => ({}),
+    saveConfig: async (config) => saved.push(config),
+    openPath: async (what) => opened.push(what),
+    recoverConfig: async () => { recovered++; return config; },
+  });
+  const view = await mount(createElement(App));
+  try {
+    assert.ok(view.el.querySelector('.banner').textContent.includes("line 2 column 14"));
+    await click(view.el.querySelector('.rows .row .switch'));
+    await act(async () => new Promise((resolve) => setTimeout(resolve, 420)));
+    assert.equal(saved.length, 0);
+    await act(async () => listeners.get("tauri://close-requested")({ event: "tauri://close-requested", id: 1 }));
+    assert.equal(saved.length, 0);
+    await click(button(view.el, t("ui.app.open_config_folder")));
+    assert.deepEqual(opened, ["config_dir"]);
+    await click(button(view.el, t("ui.app.recover_defaults")));
+    assert.equal(recovered, 1);
+    assert.equal(view.el.querySelector('.banner'), null);
+    await click(view.el.querySelector('.rows .row .switch'));
+    await act(async () => new Promise((resolve) => setTimeout(resolve, 420)));
+    assert.equal(saved.length, 1);
+  } finally {
+    await view.close();
+    Object.assign(api, originalApi);
+  }
+});
+
+
+test("Folder and File parameters dispatch to distinct native pickers (C6)", async () => {
+  setup();
+  const template = actions.findPreset("open.website");
+  const paths = ["folder", "file"].map((kind) => ({ ...template, id: `open.${kind}`, params: [{ name: "path", label_key: "preset.param.path", kind: { type: "path", kind }, default: { kind: "literal", value: "" } }] }));
+  actions.initActionCatalog({ ...fixture, presets: [...fixture.presets, ...paths] });
+  const originalFolder = api.pickFolder, originalFile = api.pickFile;
+  const calls = [];
+  api.pickFolder = async () => { calls.push("folder"); return "chosen folder"; };
+  api.pickFile = async (kind) => { calls.push(kind); return "chosen file"; };
+  try {
+    for (const kind of ["folder", "file"]) {
+      const view = await mount(createElement(ActionPicker, { initialId: `open.${kind}`, onPick() {}, onClose() {} }));
+      await click(button(view.el, t("common.browse")));
+      assert.equal(view.el.querySelector('#param-path').value, `chosen ${kind}`);
+      await view.close();
+    }
+    assert.deepEqual(calls, ["folder", "any"]);
+  } finally { api.pickFolder = originalFolder; api.pickFile = originalFile; }
+});
+
+
+test("clicking a nonactive parameter row activates it before opening its form", async () => {
+  setup();
+  const view = await mount(createElement(ActionPicker, { onPick() {}, onClose() {} }));
+  await click([...view.el.querySelectorAll('.act-list button')].find((b) => b.textContent.startsWith(t("preset.action.text.type.name"))));
+  assert.ok(view.el.querySelector('.act-form textarea'));
+  assert.ok(view.el.querySelector('li.on').textContent.startsWith(t("preset.action.text.type.name")));
+  await view.close();
+});
+
+
+test("preset keycaps and platform notes use the current platform (UI 3, 8, 9, 16)", () => {
+  setup();
+  const preset = actions.findPreset("browser.close_tab");
+  assert.equal(actions.presetKeys(preset), "^w");
+  const card = render(createElement(ActionEditor, { action: { type: "preset", id: preset.id }, onChange() {} }));
+  assert.ok(card.includes("<kbd>Ctrl</kbd>"));
+  const noted = { ...preset, description_key: "preset.action.window.center.description", platform_notes: { windows: null, macos: "preset.note.accessibility" } };
+  assert.ok(!actions.presetDescription(noted).includes(t("preset.note.accessibility")));
+  assert.equal(actions.presetTypeLabel(actions.findPreset("open.website")), t("action.open_url"));
+  platform.initPlatform("macos");
+  assert.equal(actions.presetKeys(preset), "#w");
+  assert.ok(actions.presetDescription(noted).includes(t("preset.note.accessibility")));
 });

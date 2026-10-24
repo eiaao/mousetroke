@@ -43,6 +43,19 @@ pub struct Param {
     pub label_key: &'static str,
     pub kind: ParamKind,
     pub default: ParamDefault,
+    pub visible_when: Option<ParamCondition>,
+}
+
+#[derive(Debug, Clone, Copy, Serialize)]
+pub struct ParamCondition {
+    pub param: &'static str,
+    pub equals: &'static str,
+}
+
+impl Param {
+    pub fn visible(&self, values: &Params) -> bool {
+        self.visible_when.is_none_or(|condition| values.get(condition.param).and_then(Value::as_str) == Some(condition.equals))
+    }
 }
 
 #[derive(Debug, Clone, Copy, Serialize)]
@@ -87,11 +100,26 @@ pub struct Preset {
     pub category: Category,
     pub name_key: &'static str,
     pub description_key: &'static str,
+    pub platform_notes: PlatformNotes,
     pub aliases_key: &'static str,
     pub params: &'static [Param],
     pub windows: Implementation,
     pub macos: Implementation,
     pub advanced_expansion: AdvancedExpansion,
+}
+
+#[derive(Debug, Serialize)]
+pub struct PlatformNotes {
+    pub windows: Option<&'static str>,
+    pub macos: Option<&'static str>,
+}
+
+const fn platform_notes(id: &str) -> PlatformNotes {
+    // 窗口原生能力的权限说明只出现在 Mac；Windows 无额外备注。
+    let macos = if matches!(id.as_bytes(), b"window.snap_left" | b"window.snap_right" | b"window.center" | b"window.next_monitor" | b"window.minimize" | b"window.toggle_maximize" | b"window.close") {
+        Some("preset.note.accessibility")
+    } else { None };
+    PlatformNotes { windows: None, macos }
 }
 
 impl Preset {
@@ -114,22 +142,22 @@ macro_rules! choices {
     ($($value:literal),+ $(,)?) => { &[$(Choice { value: $value, label_key: concat!("preset.choice.", $value) }),+] };
 }
 
-const METHOD: Param = Param { name: "method", label_key: "preset.param.method", kind: ParamKind::Choice { choices: choices!["paste", "type"] }, default: ParamDefault::Literal("paste") };
+const METHOD: Param = Param { name: "method", label_key: "preset.param.method", kind: ParamKind::Choice { choices: choices!["paste", "type"] }, default: ParamDefault::Literal("paste"), visible_when: None };
 const TYPE_PARAMS: &[Param] = &[
-    Param { name: "text", label_key: "preset.param.text", kind: ParamKind::MultilineText, default: ParamDefault::Literal("") }, METHOD,
+    Param { name: "text", label_key: "preset.param.text", kind: ParamKind::MultilineText, default: ParamDefault::Literal(""), visible_when: None }, METHOD,
 ];
 const DATE_PARAMS: &[Param] = &[
-    Param { name: "format", label_key: "preset.param.format", kind: ParamKind::Choice { choices: choices!["date_iso", "date_local", "date_us", "time", "datetime", "custom"] }, default: ParamDefault::Literal("date_iso") },
-    Param { name: "custom_format", label_key: "preset.param.custom_format", kind: ParamKind::Text, default: ParamDefault::Literal("YYYY-MM-DD") }, METHOD,
+    Param { name: "format", label_key: "preset.param.format", kind: ParamKind::Choice { choices: choices!["date_iso", "date_local", "date_us", "time", "datetime", "custom"] }, default: ParamDefault::Literal("date_iso"), visible_when: None },
+    Param { name: "custom_format", label_key: "preset.param.custom_format", kind: ParamKind::Text, default: ParamDefault::Literal("YYYY-MM-DD"), visible_when: Some(ParamCondition { param: "format", equals: "custom" }) }, METHOD,
 ];
 const SEARCH_PARAMS: &[Param] = &[
-    Param { name: "engine", label_key: "preset.param.engine", kind: ParamKind::Choice { choices: choices!["bing", "google", "baidu", "duckduckgo", "custom"] }, default: ParamDefault::SearchEngine },
-    Param { name: "url", label_key: "preset.param.search_url", kind: ParamKind::Url, default: ParamDefault::Literal("https://www.google.com/search?q=%MS_SELECTED_TEXT%") },
+    Param { name: "engine", label_key: "preset.param.engine", kind: ParamKind::Choice { choices: choices!["bing", "google", "baidu", "duckduckgo", "custom"] }, default: ParamDefault::SearchEngine, visible_when: None },
+    Param { name: "url", label_key: "preset.param.search_url", kind: ParamKind::Url, default: ParamDefault::Literal("https://www.google.com/search?q=%MS_SELECTED_TEXT%"), visible_when: Some(ParamCondition { param: "engine", equals: "custom" }) },
 ];
 const TRANSLATE_PARAMS: &[Param] = &[
     Param { name: "service", label_key: "preset.param.service", kind: ParamKind::Choice { choices: &[
         Choice { value: "google", label_key: "preset.choice.google_translate" }, Choice { value: "deepl", label_key: "preset.choice.deepl" }, Choice { value: "bing", label_key: "preset.choice.bing_translate" },
-    ] }, default: ParamDefault::Literal("google") },
+    ] }, default: ParamDefault::Literal("google"), visible_when: None },
     Param { name: "target_language", label_key: "preset.param.target_language", kind: ParamKind::Choice { choices: &[
         Choice { value: "ui", label_key: "preset.choice.ui" },
         Choice { value: "zh-CN", label_key: "lang.name.zh_cn" }, Choice { value: "en-US", label_key: "lang.name.en_us" },
@@ -137,12 +165,12 @@ const TRANSLATE_PARAMS: &[Param] = &[
         Choice { value: "de-DE", label_key: "lang.name.de_de" }, Choice { value: "ja-JP", label_key: "lang.name.ja_jp" },
         Choice { value: "pt-BR", label_key: "lang.name.pt_br" }, Choice { value: "ru-RU", label_key: "lang.name.ru_ru" },
         Choice { value: "it-IT", label_key: "lang.name.it_it" }, Choice { value: "ko-KR", label_key: "lang.name.ko_kr" },
-    ] }, default: ParamDefault::Literal("ui") },
+    ] }, default: ParamDefault::Literal("ui"), visible_when: None },
 ];
-const WEBSITE_PARAMS: &[Param] = &[Param { name: "url", label_key: "preset.param.url", kind: ParamKind::Url, default: ParamDefault::Literal("https://mousetroke.com/") }];
-const FOLDER_PARAMS: &[Param] = &[Param { name: "path", label_key: "preset.param.path", kind: ParamKind::Path { kind: PathKind::Folder }, default: ParamDefault::Literal("") }];
-const FILE_PARAMS: &[Param] = &[Param { name: "path", label_key: "preset.param.path", kind: ParamKind::Path { kind: PathKind::File }, default: ParamDefault::Literal("") }];
-const APP_PARAMS: &[Param] = &[Param { name: "app", label_key: "preset.param.app", kind: ParamKind::App, default: ParamDefault::Literal("") }];
+const WEBSITE_PARAMS: &[Param] = &[Param { name: "url", label_key: "preset.param.url", kind: ParamKind::Url, default: ParamDefault::Literal("https://mousetroke.com/"), visible_when: None }];
+const FOLDER_PARAMS: &[Param] = &[Param { name: "path", label_key: "preset.param.path", kind: ParamKind::Path { kind: PathKind::Folder }, default: ParamDefault::Literal(""), visible_when: None }];
+const FILE_PARAMS: &[Param] = &[Param { name: "path", label_key: "preset.param.path", kind: ParamKind::Path { kind: PathKind::File }, default: ParamDefault::Literal(""), visible_when: None }];
+const APP_PARAMS: &[Param] = &[Param { name: "app", label_key: "preset.param.app", kind: ParamKind::App, default: ParamDefault::Literal(""), visible_when: None }];
 
 const fn keys(value: &'static str) -> Implementation { Implementation::Implemented(Expansion::Keys(value)) }
 const fn window(value: WindowOpKind) -> Implementation { Implementation::Implemented(Expansion::Window(value)) }
@@ -161,6 +189,7 @@ macro_rules! preset {
             id: $id, category: Category::$category,
             name_key: concat!("preset.action.", $id, ".name"),
             description_key: concat!("preset.action.", $id, ".description"),
+            platform_notes: platform_notes($id),
             aliases_key: concat!("preset.action.", $id, ".aliases"),
             windows: $win, macos: $mac, params: preset!(@params $($params)?),
             advanced_expansion: AdvancedExpansion { windows: can_expand($win), macos: can_expand($mac), reason_key: "preset.status.native_only" },
@@ -287,7 +316,10 @@ fn invalid(name: &'static str) -> PresetError { PresetError::InvalidParam { name
 
 /// 空文本是表单的合法初始值；真正执行路径、程序等时再检查是否填写。
 pub fn validate_params(preset: &Preset, params: &Params) -> Result<(), PresetError> {
+    let mut values = preset.default_params(Lang::EnUs);
+    values.extend(params.clone());
     for schema in preset.params {
+        if !schema.visible(&values) { continue; }
         let Some(value) = params.get(schema.name) else { continue };
         let text = value.as_str().ok_or_else(|| invalid(schema.name))?;
         if let ParamKind::Choice { choices } = schema.kind {
@@ -302,7 +334,7 @@ fn required<'a>(params: &'a Params, name: &'static str) -> Result<&'a str, Prese
 }
 
 fn launch_action(exe: &str, args: Option<String>) -> Action {
-    Action::LaunchApp { exe: exe.into(), args, elevate: false, win_class: None, win_title: None, regex: false, if_running: IfRunning::Activate }
+    Action::LaunchApp { exe: exe.into(), args, elevate: false, win_class: None, win_title: None, regex: false, if_running: IfRunning::Activate, activate_by_identity: false }
 }
 
 fn url_action(url: impl Into<String>) -> Action { Action::OpenUrl { url_template: url.into(), browser: None } }
@@ -385,7 +417,11 @@ pub fn resolve(id: &str, platform: Platform, params: &Params, ui_lang: Lang) -> 
                 }
             }
         }
-        Expansion::App => launch_action(required(&values, "app")?, None),
+        Expansion::App => {
+            let mut action = launch_action(required(&values, "app")?, None);
+            if let Action::LaunchApp { activate_by_identity, .. } = &mut action { *activate_by_identity = true; }
+            action
+        }
     }))
 }
 

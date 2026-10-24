@@ -5,7 +5,12 @@ use mousetroke_core::presets::native::{LayoutOp, NativeAction, TextMethod};
 pub(crate) fn execute(action: NativeAction, target: Option<&Target>) -> Result<(), String> {
     match action {
         NativeAction::Layout(op) => {
-            let hwnd = target.ok_or("Gesture target window is missing")?.hwnd;
+            let target = target.ok_or("Gesture target window is missing")?;
+            if !mousetroke_core::action_geometry::layout_target_allowed(mousetroke_core::caps::Platform::Windows, target.is_desktop, &target.class, 0) {
+                crate::log!("跳过桌面或外壳窗口的布局动作");
+                return Ok(());
+            }
+            let hwnd = target.hwnd;
             match op {
                 LayoutOp::SnapLeft => preset_layout::snap_left(hwnd),
                 LayoutOp::SnapRight => preset_layout::snap_right(hwnd),

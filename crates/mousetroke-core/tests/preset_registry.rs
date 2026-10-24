@@ -30,6 +30,7 @@ fn registry_is_complete_localized_and_has_valid_defaults() {
         let translated = |key: &str| assert!(catalog.get(key).is_some_and(|v| !v.trim().is_empty()), "{tag}: {key}");
         for preset in REGISTRY {
             for key in [preset.name_key, preset.description_key, preset.aliases_key] { translated(key); }
+            for key in [preset.platform_notes.windows, preset.platform_notes.macos].into_iter().flatten() { translated(key); }
             let defaults = preset.default_params(*lang);
             validate_params(preset, &defaults).unwrap();
             assert_eq!(defaults.len(), preset.params.len());
@@ -56,6 +57,55 @@ fn registry_is_complete_localized_and_has_valid_defaults() {
     assert_eq!(find("text.type").unwrap().default_params(Lang::EnUs)["method"], "paste");
     let ParamKind::Choice { choices } = find("text.type").unwrap().params[1].kind else { panic!() };
     assert_eq!(choices.iter().map(|c| c.value).collect::<Vec<_>>(), ["paste", "type"]);
+}
+
+#[test]
+fn app_identity_activation_is_explicit_and_never_skips_launch_arguments() {
+    for platform in [Platform::Windows, Platform::Macos] {
+        let params = serde_json::from_value(json!({"app":"editor"})).unwrap();
+        let mut preset = expand("open.app", platform, &params, Lang::EnUs).unwrap();
+        assert!(preset.activates_app_identity());
+        if let Action::LaunchApp { args, .. } = &mut preset { *args = Some("document.txt".into()); }
+        assert!(!preset.activates_app_identity());
+        if let Action::LaunchApp { args, .. } = &mut preset { *args = Some(String::new()); }
+        assert!(!preset.activates_app_identity());
+    }
+    for exe in ["explorer.exe", "notepad.exe", "code.exe", "com.apple.TextEdit"] {
+        for args in [Value::Null, json!("document.txt")] {
+            let legacy: Action = serde_json::from_value(json!({"type":"launch_app","exe":exe,"args":args})).unwrap();
+            assert!(!legacy.activates_app_identity());
+            assert!(serde_json::to_value(legacy).unwrap().get("activate_by_identity").is_none());
+        }
+    }
+}
+
+#[test]
+fn conditional_params_only_validate_for_their_visible_option() {
+    let search = find("text.search").unwrap();
+    let hidden: Params = serde_json::from_value(json!({"engine":"baidu","url":false})).unwrap();
+    assert!(validate_params(search, &hidden).is_ok());
+    assert!(expand(search.id, Platform::Windows, &hidden, Lang::EnUs).is_ok());
+    let visible: Params = serde_json::from_value(json!({"engine":"custom","url":false})).unwrap();
+    assert!(validate_params(search, &visible).is_err());
+    let date = find("text.datetime").unwrap();
+    assert!(!date.params[1].visible(&date.default_params(Lang::EnUs)));
+    assert_eq!(find("text.translate").unwrap().params.iter().filter(|p| p.visible_when.is_some()).count(), 0);
+    assert_eq!(find("text.type").unwrap().params.iter().filter(|p| p.visible_when.is_some()).count(), 0);
+}
+
+#[test]
+fn layout_excludes_both_shells_without_blocking_normal_app_windows() {
+    use mousetroke_core::action_geometry::layout_target_allowed as allowed;
+    for class in ["Progman", "WorkerW", "SHELLDLL_DefView", "Shell_TrayWnd", "Shell_SecondaryTrayWnd"] {
+        assert!(!allowed(Platform::Windows, false, class, 0));
+    }
+    assert!(!allowed(Platform::Windows, true, "", 0));
+    assert!(allowed(Platform::Windows, false, "CabinetWClass", 0));
+    assert!(!allowed(Platform::Macos, false, "com.apple.dock", 0));
+    assert!(!allowed(Platform::Macos, false, "com.apple.finder", -2147483623));
+    assert!(!allowed(Platform::Macos, true, "com.apple.finder", 0));
+    assert!(allowed(Platform::Macos, false, "com.apple.finder", 0));
+    assert!(allowed(Platform::Macos, false, "com.apple.TextEdit", 0));
 }
 
 #[test]

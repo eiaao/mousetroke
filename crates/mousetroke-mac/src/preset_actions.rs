@@ -27,6 +27,10 @@ pub(crate) fn execute(
     match action {
         NativeAction::Layout(op) => {
             let target = target.ok_or("Gesture target window is missing")?;
+            if !mousetroke_core::action_geometry::layout_target_allowed(mousetroke_core::caps::Platform::Macos, target.is_desktop, &target.class, window.as_ref().map_or(-1, |w| w.layer)) {
+                crate::log!("跳过 Finder 桌面或 Dock 的布局动作");
+                return Ok(());
+            }
             let w = WindowTarget {
                 pid: target.pid,
                 window: window.as_ref(),

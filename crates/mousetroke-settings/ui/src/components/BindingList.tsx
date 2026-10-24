@@ -1,7 +1,7 @@
 import { primaryModifier } from "../platform";
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import type { Binding, MouseButton, Scope, Step } from "../types";
-import { isAdvancedAction } from "../types";
+import { actionKeys, presetDefinition, presetTypeLabel } from "../actions";
 import { EDGE, actionSummary, buttonName, decompose, describePattern, edgeName, fileName } from "../gesture";
 import { T, currentLang, displayName, t } from "../i18n";
 import { PatternGlyph } from "./Glyph";
@@ -326,7 +326,7 @@ function Row({ n, b, on, clash, onClick, onToggle }: { n: number; b: Binding; on
         <span className="row-pattern">{describePattern(b.pattern)}</span>
       </span>
       <span className="row-action">
-        {isAdvancedAction(b.action) && b.action.type === "key_sequence" && !b.secured ? <Caps keys={b.action.keys} compact /> : <span className="row-action-text">{b.secured ? "••••" : actionSummary(b.action)}</span>}
+        {b.actionUnselected ? <span className="row-action-text muted">{t("ui.actpick.unselected")}</span> : actionKeys(b.action) !== undefined && !b.secured ? <Caps keys={actionKeys(b.action)!} compact /> : <span className="row-action-text">{b.secured ? "••••" : actionSummary(b.action) === name && presetDefinition(b.action) ? presetTypeLabel(presetDefinition(b.action)!) : actionSummary(b.action)}</span>}
       </span>
       <input
         type="checkbox"

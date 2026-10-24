@@ -468,6 +468,9 @@ fn run_main(mtm: MainThreadMarker, config_path: Option<std::path::PathBuf>) -> R
     .ok_or_else(|| t(keys::MAC_ERROR_ENGINE).to_string())?;
     apply_settings(engine.config(), selftest);
     mousetroke_engine::install(engine);
+    if !selftest && restart_path.exists() && Config::load(&restart_path).is_err() {
+        mousetroke_engine::push_toast(t("config.unreadable_notice").into(), 8000);
+    }
     if !selftest {
         crate::update::start_automatic(update_path, automatic_updates);
     }

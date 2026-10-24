@@ -225,7 +225,7 @@ fn save_config(paths: State<AppPaths>, config: Config) -> MsgResult<()> {
 
 fn save_config_at(path: &Path, config: &Config) -> MsgResult<()> {
     validate_strokes(config)?;
-    config.save(path).map_err(|e| Msg::new(keys::ERROR_SAVE, &[("path", path.display().to_string()), ("err", e)]))
+    config.save_live(path).map_err(|e| Msg::new(keys::ERROR_SAVE, &[("path", path.display().to_string()), ("err", e)]))
 }
 
 #[tauri::command]
@@ -328,7 +328,19 @@ fn load_config_file(path: String) -> MsgResult<Config> {
 
 #[tauri::command]
 fn export_config(path: String, config: Config) -> MsgResult<()> {
-    save_config_at(Path::new(&path), &config)
+    validate_strokes(&config)?;
+    config.save(Path::new(&path)).map_err(|e| Msg::new(keys::ERROR_SAVE, &[("path", path), ("err", e)]))
+}
+
+#[tauri::command]
+fn recover_config(paths: State<AppPaths>) -> MsgResult<Config> {
+    Config::recover_defaults(&paths.config, std::time::SystemTime::now())
+        .map_err(|e| Msg::new(keys::ERROR_SAVE, &[("path", paths.config.display().to_string()), ("err", e)]))
+}
+
+#[tauri::command]
+async fn pick_folder(window: WebviewWindow, title: String) -> Option<String> {
+    rfd::FileDialog::new().set_title(&title).set_parent(&window).pick_folder().map(|p| p.to_string_lossy().into_owned())
 }
 
 /// 文件选择。`kind`：json | exe | any；`save` 为 true 时是保存对话框。
@@ -631,6 +643,8 @@ pub fn run(config: Option<PathBuf>) {
             load_config_file,
             export_config,
             pick_file,
+            pick_folder,
+            recover_config,
             running_apps,
             app_icons,
             resolve_app,

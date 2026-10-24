@@ -84,6 +84,9 @@ fn engine_main(cfg: Config, cfg_path: Option<std::path::PathBuf>) -> Result<(), 
     let update_check = cfg.settings.update_check;
     let engine = crate::engine::new(cfg, cfg_path.clone()).ok_or_else(|| mousetroke_core::i18n::t(mousetroke_core::i18n::keys::CLI_OVERLAY_INIT_FAILED).to_string())?;
     mousetroke_engine::install(engine);
+    if cfg_path.as_ref().is_some_and(|path| path.exists() && Config::load(path).is_err()) {
+        crate::engine::push_toast(mousetroke_core::i18n::t("config.unreadable_notice").into(), 8000);
+    }
 
     // 托盘 + 暂停热键
     let _tray = Tray::create(show_tray, &pause_hotkey, cfg_path.clone());

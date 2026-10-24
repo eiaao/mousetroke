@@ -225,7 +225,20 @@ fn place(hwnd: HWND, visible: Rect) -> Result<(), String> {
     }
 }
 
+fn windows_target_class(hwnd: HWND) -> String {
+    let mut name = [0u16; 256];
+    let n = unsafe { windows::Win32::UI::WindowsAndMessaging::GetClassNameW(hwnd, &mut name) };
+    String::from_utf16_lossy(&name[..n as usize])
+}
+
+fn excluded(class: String) -> bool {
+    let excluded = !geometry::layout_target_allowed(mousetroke_core::caps::Platform::Windows, false, &class, 0);
+    if excluded { crate::log!("跳过桌面或外壳窗口的布局动作"); }
+    excluded
+}
+
 fn layout(hwnd: HWND, target: impl FnOnce(Rect, Rect) -> Option<Rect>) -> Result<(), String> {
+    if excluded(windows_target_class(hwnd)) { return Ok(()); }
     let _dpi = DpiContext::enter()?;
     validate(hwnd)?;
     let work = monitor(unsafe { MonitorFromWindow(hwnd, MONITOR_DEFAULTTONEAREST) })?.work_area;
@@ -250,6 +263,7 @@ pub fn center(w: HWND) -> Result<(), String> {
 }
 
 pub fn move_to_next_monitor(w: HWND) -> Result<(), String> {
+    if excluded(windows_target_class(w)) { return Ok(()); }
     let _dpi = DpiContext::enter()?;
     validate(w)?;
     let rows = monitors()?;

@@ -17,7 +17,7 @@ Presets describe what you want to do, such as close a tab or center a window. Mo
 
 The search box receives focus when the picker opens. Use Up/Down to move through available results and Enter to select. Esc closes the parameter form first, then the picker. In multiline text, Ctrl+Enter or Command+Enter confirms the form.
 
-**Convert to advanced action** replaces a preset with its current platform's editable keys, window operation, URL, app, command or system key. The confirmation explains that this is one way: the result no longer follows the preset's platform or language defaults. Native layout, power, literal-text, date/time, plain-copy, pause and settings actions keep their preset form; their cards explain why conversion is unavailable. **Advanced** offers send keys, commands, Lua and menus; the [advanced action reference](actions.md) also covers the existing editors.
+**Convert to advanced action** replaces a preset with its current platform's editable keys, window operation, URL, app, command or system key. The confirmation explains that this is one way: the result no longer follows the preset's platform or language defaults. Native layout, power, literal-text, date/time, plain-copy, pause and settings actions keep their preset form; their cards explain why conversion is unavailable. The **Advanced** group at the end of the list offers send keys, commands, Lua and menus; the [advanced action reference](actions.md) also covers the existing editors.
 
 ## Text, windows and power
 
@@ -82,10 +82,10 @@ The tables below are generated from the registry and include all 87 entries. ✓
 
 | Action / ID | What it does / where it works | Parameters | Windows | Mac |
 |---|---|---|---|---|
-| Insert text…<br>`text.type` | Text fields in apps; pastes and restores the clipboard by default. | Text (`text`): required<br>Input method (`method`): Paste and restore clipboard (`paste`) / Type characters (`type`); default Paste and restore clipboard | ✓ | ✓ |
-| Insert date and time…<br>`text.datetime` | Text fields in apps; uses local date and time. | Date and time format (`format`): 2026-10-24 (`date_iso`) / 2026年10月24日 (`date_local`) / 10/24/2026 (`date_us`) / 14:30 (`time`) / 2026-10-24 14:30 (`datetime`) / Custom (`custom`); default 2026-10-24<br>Custom format (`custom_format`): default `YYYY-MM-DD`<br>Input method (`method`): Paste and restore clipboard (`paste`) / Type characters (`type`); default Paste and restore clipboard | ✓ | ✓ |
-| Web search…<br>`text.search` | Uses the default browser; first select text in the current app. | Search engine (`engine`): Bing (`bing`) / Google (`google`) / Baidu (`baidu`) / DuckDuckGo (`duckduckgo`) / Custom (`custom`); Baidu for Simplified Chinese UI; Google otherwise<br>Custom URL (with %MS_SELECTED_TEXT%) (`url`): default `https://www.google.com/search?q=%MS_SELECTED_TEXT%` | ✓ | ✓ |
-| Translate selected text…<br>`text.translate` | Uses the default browser; first select text in the current app. | Translation service (`service`): Google Translate (`google`) / DeepL (`deepl`) / Bing Translator (`bing`); default Google Translate<br>Target language (`target_language`): Follow UI language (`ui`) / 简体中文 (`zh-CN`) / English (`en-US`) / español (`es-ES`) / Français (`fr-FR`) / Deutsch (`de-DE`) / 日本語 (`ja-JP`) / Português (Brasil) (`pt-BR`) / Русский (`ru-RU`) / Italiano (`it-IT`) / 한국어 (`ko-KR`); default Follow UI language | ✓ | ✓ |
+| Insert text<br>`text.type` | Text fields in apps; pastes and restores the clipboard by default. | Text (`text`): required<br>Input method (`method`): Paste and restore clipboard (`paste`) / Type characters (`type`); default Paste and restore clipboard | ✓ | ✓ |
+| Insert date and time<br>`text.datetime` | Text fields in apps; uses local date and time. | Date and time format (`format`): 2026-10-24 (`date_iso`) / 2026年10月24日 (`date_local`) / 10/24/2026 (`date_us`) / 14:30 (`time`) / 2026-10-24 14:30 (`datetime`) / Custom (`custom`); default 2026-10-24<br>Custom format (`custom_format`): default `YYYY-MM-DD`; only when Date and time format is Custom<br>Input method (`method`): Paste and restore clipboard (`paste`) / Type characters (`type`); default Paste and restore clipboard | ✓ | ✓ |
+| Web search<br>`text.search` | Uses the default browser; first select text in the current app. | Search engine (`engine`): Bing (`bing`) / Google (`google`) / Baidu (`baidu`) / DuckDuckGo (`duckduckgo`) / Custom (`custom`); Baidu for Simplified Chinese UI; Google otherwise<br>Custom URL (`url`): default `https://www.google.com/search?q=%MS_SELECTED_TEXT%`; only when Search engine is Custom | ✓ | ✓ |
+| Translate selected text<br>`text.translate` | Uses the default browser; first select text in the current app. | Translation service (`service`): Google Translate (`google`) / DeepL (`deepl`) / Bing Translator (`bing`); default Google Translate<br>Target language (`target_language`): Follow UI language (`ui`) / 简体中文 (`zh-CN`) / English (`en-US`) / español (`es-ES`) / Français (`fr-FR`) / Deutsch (`de-DE`) / 日本語 (`ja-JP`) / Português (Brasil) (`pt-BR`) / Русский (`ru-RU`) / Italiano (`it-IT`) / 한국어 (`ko-KR`); default Follow UI language | ✓ | ✓ |
 | Open selected URL<br>`text.open_selected_url` | Uses the default browser; first select text in the current app. | — | ✓ | ✓ |
 | Copy selection as plain text<br>`text.copy_plain` | Apps that can copy text; removes clipboard formatting. | — | ✓ | ✓ |
 
@@ -93,17 +93,17 @@ The tables below are generated from the registry and include all 87 entries. ✓
 
 | Action / ID | What it does / where it works | Parameters | Windows | Mac |
 |---|---|---|---|---|
-| Minimize<br>`window.minimize` | Acts on the gesture target window; Mac needs Accessibility permission. | — | ✓ | ✓ |
-| Maximize / restore<br>`window.toggle_maximize` | Acts on the gesture target window; Mac needs Accessibility permission. | — | ✓ | ✓ |
-| Close window<br>`window.close` | Acts on the gesture target window; Mac needs Accessibility permission. | — | ✓ | ✓ |
-| Quit app<br>`app.quit` | Acts on the gesture target window; Mac needs Accessibility permission. | — | ✓ | ✓ |
+| Minimize<br>`window.minimize` | Applies to the gesture target window. | — | ✓ | ✓<br>Requires Accessibility permission. |
+| Maximize / restore<br>`window.toggle_maximize` | Applies to the gesture target window. | — | ✓ | ✓<br>Requires Accessibility permission. |
+| Close window<br>`window.close` | Applies to the gesture target window. | — | ✓ | ✓<br>Requires Accessibility permission. |
+| Quit app<br>`app.quit` | Applies to the gesture target window. | — | ✓ | ✓ |
 | Kill process<br>`app.kill` | Force-quits the target app; unsaved work will be lost. | — | ✓ | ✓ |
-| Always on top<br>`window.toggle_topmost` | Windows only. | — | ✓ | This action is only supported on Windows. |
-| Snap to left half<br>`window.snap_left` | Acts on the gesture target window; Mac needs Accessibility permission. | — | ✓ | ✓ |
-| Snap to right half<br>`window.snap_right` | Acts on the gesture target window; Mac needs Accessibility permission. | — | ✓ | ✓ |
-| Center window<br>`window.center` | Acts on the gesture target window; Mac needs Accessibility permission. | — | ✓ | ✓ |
-| Move to next display<br>`window.next_monitor` | Acts on the gesture target window; Mac needs Accessibility permission. | — | ✓ | ✓ |
-| Hide current app<br>`app.hide` | macOS only. | — | This action is only supported on macOS. | ✓ |
+| Always on top<br>`window.toggle_topmost` | Toggle always on top for the gesture target window. | — | ✓ | This action is only supported on Windows. |
+| Snap to left half<br>`window.snap_left` | Applies to the gesture target window. | — | ✓ | ✓<br>Requires Accessibility permission. |
+| Snap to right half<br>`window.snap_right` | Applies to the gesture target window. | — | ✓ | ✓<br>Requires Accessibility permission. |
+| Center window<br>`window.center` | Applies to the gesture target window. | — | ✓ | ✓<br>Requires Accessibility permission. |
+| Move to next display<br>`window.next_monitor` | Applies to the gesture target window. | — | ✓ | ✓<br>Requires Accessibility permission. |
+| Hide current app<br>`app.hide` | Hide the current application. | — | This action is only supported on macOS. | ✓ |
 
 ### Desktop & System
 
@@ -119,12 +119,12 @@ The tables below are generated from the registry and include all 87 entries. ✓
 | Snip<br>`capture.region` | System action; some behavior depends on system shortcut settings. | — | ✓ | ✓ |
 | Capture and save screen<br>`capture.screen` | System action; some behavior depends on system shortcut settings. | — | ✓ | ✓ |
 | Screenshot and recording tools<br>`capture.tool` | System action; some behavior depends on system shortcut settings. | — | ✓ | ✓ |
-| Clipboard history<br>`desktop.clipboard_history` | Windows only. | — | ✓ | This action is only supported on Windows. |
+| Clipboard history<br>`desktop.clipboard_history` | Open system clipboard history. | — | ✓ | This action is only supported on Windows. |
 | Emoji and symbols<br>`desktop.emoji` | System action; some behavior depends on system shortcut settings. | — | ✓ | ✓ |
-| Notification center<br>`desktop.notifications` | Windows only. | — | ✓ | This action is only supported on Windows. |
+| Notification center<br>`desktop.notifications` | Open Notification Center. | — | ✓ | This action is only supported on Windows. |
 | Lock screen<br>`system.lock` | System action; some behavior depends on system shortcut settings. | — | ✓ | ✓ |
 | Task Manager / Activity Monitor<br>`system.task_manager` | System action; some behavior depends on system shortcut settings. | — | ✓ | ✓ |
-| Force Quit dialog<br>`system.force_quit_dialog` | macOS only. | — | This action is only supported on macOS. | ✓ |
+| Force Quit dialog<br>`system.force_quit_dialog` | Open the Force Quit Applications dialog. | — | This action is only supported on macOS. | ✓ |
 | System settings<br>`system.settings` | System action; some behavior depends on system shortcut settings. | — | ✓ | ✓ |
 | Calculator<br>`system.calculator` | System action; some behavior depends on system shortcut settings. | — | ✓ | ✓ |
 | Turn off display<br>`system.display_off` | System action; some behavior depends on system shortcut settings. | — | ✓ | ✓ |
@@ -147,10 +147,10 @@ The tables below are generated from the registry and include all 87 entries. ✓
 
 | Action / ID | What it does / where it works | Parameters | Windows | Mac |
 |---|---|---|---|---|
-| Open website…<br>`open.website` | Opens the specified URL in the default browser. | URL (`url`): default `https://mousetroke.com/` | ✓ | ✓ |
-| Open folder…<br>`open.folder` | Opens the specified path with the system default app. | Path (`path`): required | ✓ | ✓ |
-| Open file…<br>`open.file` | Opens the specified path with the system default app. | Path (`path`): required | ✓ | ✓ |
-| Open or switch to app…<br>`open.app` | Opens the app, or activates its existing window. | App (`app`): required | ✓ | ✓ |
+| Open website<br>`open.website` | Opens the specified URL in the default browser. | URL (`url`): default `https://mousetroke.com/` | ✓ | ✓ |
+| Open folder<br>`open.folder` | Opens the specified path with the system default app. | Path (`path`): required | ✓ | ✓ |
+| Open file<br>`open.file` | Opens the specified path with the system default app. | Path (`path`): required | ✓ | ✓ |
+| Open or switch to app<br>`open.app` | Opens the app, or activates its existing window. | App (`app`): required | ✓ | ✓ |
 
 ### Mousetroke
 

@@ -494,15 +494,7 @@ pub fn launch_app(
     if_running: IfRunning,
 ) {
     // 已在运行 → 按策略处理
-    let running = find_window_by(win_class, win_title, use_regex).or_else(|| {
-        // 未指定窗口筛选时按程序身份激活，文件关联动作使用 RunAgain 绕过此分支。
-        if if_running == IfRunning::RunAgain || win_class.is_some() || win_title.is_some() { return None; }
-        crate::targeting::visible_windows().into_iter().find_map(|(hwnd, _)| {
-            let mut pid = 0;
-            unsafe { windows::Win32::UI::WindowsAndMessaging::GetWindowThreadProcessId(hwnd, Some(&mut pid)); }
-            crate::targeting::exe_of(pid).filter(|path| app_exe_matches(exe, path)).map(|_| hwnd)
-        })
-    });
+    let running = find_window_by(win_class, win_title, use_regex);
     if let Some(hwnd) = running {
         match if_running {
             IfRunning::Activate => {
@@ -524,6 +516,16 @@ pub fn launch_app(
     if !ok {
         crate::log!("应用启动失败: {exe}");
     }
+}
+
+/// 仅由预置打开应用的无参数路径调用。
+pub(crate) fn activate_app_by_identity(exe: &str) -> bool {
+    let running = crate::targeting::visible_windows().into_iter().find_map(|(hwnd, _)| {
+        let mut pid = 0;
+        unsafe { windows::Win32::UI::WindowsAndMessaging::GetWindowThreadProcessId(hwnd, Some(&mut pid)); }
+        crate::targeting::exe_of(pid).filter(|path| app_exe_matches(exe, path)).map(|_| hwnd)
+    });
+    if let Some(hwnd) = running { focus_window(hwnd); true } else { false }
 }
 
 fn app_exe_matches(requested: &str, running: &str) -> bool {

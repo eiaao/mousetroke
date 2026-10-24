@@ -1,12 +1,12 @@
 import { isMac, unsupportedAction, supportedAction } from "../platform";
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import type { Action, ActionPreset, AdvancedAction, MenuItem, PresetAction } from "../types";
 import { isAdvancedAction, isPresetAction } from "../types";
-import { presetCanExpand, presetDefinition } from "../actions";
+import { presetCanExpand, presetDefinition, presetName, presetKeys, presetDescription, presetParamValues, visibleParams } from "../actions";
 import { ACTION_ORDER, SYSTEM_KEYS, WINDOW_OPS, actionName, defaultAction } from "../gesture";
 import { currentLang, t, type MsgKey } from "../i18n";
 import { api, errText } from "../api";
-import { KeysInput } from "./KeysInput";
+import { Caps, KeysInput } from "./KeysInput";
 import { ActionPicker } from "./ActionPicker";
 
 const VARS: { v: string; key: "ui.var.selected_text" | "ui.var.clipboard" | "ui.var.app_name" | "ui.var.pid" | "ui.var.win_title" }[] = [
@@ -21,9 +21,12 @@ const VARS: { v: string; key: "ui.var.selected_text" | "ui.var.clipboard" | "ui.
  * 动作编辑。切换类型时记住各类型上次的内容（切回来不丢），
  * 记忆按 `memoryKey`（通常是绑定标识）隔离。
  */
-export function ActionEditor({ action, onChange, depth = 0, autoPick }: { action: Action; onChange: (a: Action, coalesce?: string) => void; depth?: number; autoPick?: boolean }) {
+export function ActionEditor({ action, onChange, depth = 0, autoPick, unselected = false, onPickerShown }: { action: Action; onChange: (a: Action, coalesce?: string) => void; depth?: number; autoPick?: boolean; unselected?: boolean; onPickerShown?: () => void }) {
   const memory = useRef<Partial<Record<AdvancedAction["type"], AdvancedAction>>>({});
   const [picking, setPicking] = useState(!!autoPick);
+  const shownRef = useRef(onPickerShown);
+  shownRef.current = onPickerShown;
+  useEffect(() => { if (autoPick) shownRef.current?.(); }, []);
   if (!isAdvancedAction(action)) {
     const preset = presetDefinition(action);
     if (isPresetAction(action) && preset) return <PresetCard action={action} preset={preset} onChange={onChange} depth={depth} />;
@@ -37,7 +40,7 @@ export function ActionEditor({ action, onChange, depth = 0, autoPick }: { action
   /** 选择器里选了别的动作：高级类型走记忆，预置/未知动作直接替换。 */
   const pick = (a: Action) => {
     setPicking(false);
-    if (!isAdvancedAction(a) || a.type !== action.type) {
+    if (unselected || !isAdvancedAction(a) || a.type !== action.type) {
       if (isAdvancedAction(a)) {
         memory.current[action.type] = action;
         onChange(memory.current[a.type] ?? a);
@@ -46,8 +49,7 @@ export function ActionEditor({ action, onChange, depth = 0, autoPick }: { action
       }
     }
   };
-  // 尚未选择动作（空的 key_sequence）：只显示"选择动作"
-  const unselected = action.type === "key_sequence" && !action.keys;
+  // 新手势的显式界面标记，不影响已选中的空按键动作。
   if (unselected) {
     return (
       <div className="action-editor">
@@ -98,9 +100,10 @@ function PresetCard({ action, preset, onChange, depth = 0 }: { action: PresetAct
   const [error, setError] = useState<string | null>(null);
   const impl = isMac() ? preset.macos : preset.windows;
   const canExpand = presetCanExpand(preset);
-  const filled = preset.params
+  const values = presetParamValues(preset, action);
+  const filled = visibleParams(preset, values)
     .map((param) => {
-      const value = typeof action.params?.[param.name] === "string" ? (action.params[param.name] as string) : "";
+      const value = values[param.name] ?? "";
       const choice = param.kind.type === "choice" ? param.kind.choices.find((c) => c.value === value) : undefined;
       const display = choice ? t(choice.label_key as MsgKey) : value;
       return { label: t(param.label_key as MsgKey), display };
@@ -123,9 +126,10 @@ function PresetCard({ action, preset, onChange, depth = 0 }: { action: PresetAct
     <div className="action-editor">
       <div className="action-card">
         <div>
-          <strong>{t(preset.name_key as MsgKey)}</strong>
-          <span className="action-card-desc"> · {t(preset.description_key as MsgKey)}</span>
+          <strong>{presetName(preset)}</strong>
+          <span className="action-card-desc"> · {presetDescription(preset)}</span>
         </div>
+        {presetKeys(preset) && <Caps keys={presetKeys(preset)!} />}
         {filled.length > 0 && (
           <p className="action-card-params">{paramsText}</p>
         )}
@@ -135,12 +139,12 @@ function PresetCard({ action, preset, onChange, depth = 0 }: { action: PresetAct
         {confirming ? (
           <div className="action-card-confirm">
             <span>{t("ui.actpick.to_advanced_confirm")}</span>
-            <button type="button" className="btn small primary" disabled={busy} onClick={convert}>
-              {t("common.ok")}
-            </button>
-            <button type="button" className="btn small" disabled={busy} onClick={() => setConfirming(false)}>
-              {t("common.cancel")}
-            </button>
+            <div className="action-card-tools">
+              <button type="button" className="btn small" disabled={busy} onClick={() => setConfirming(false)}>
+                {t("common.cancel")}
+              </button>
+              <button type="button" className="btn small primary" disabled={busy} onClick={convert}>{t("common.ok")}</button>
+            </div>
           </div>
         ) : (
           <div className="action-card-tools">

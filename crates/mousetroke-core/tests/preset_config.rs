@@ -16,7 +16,7 @@ impl Temp {
 }
 impl Drop for Temp {
     fn drop(&mut self) {
-        for file in std::fs::read_dir(&self.0).unwrap() { std::fs::remove_file(file.unwrap().path()).unwrap(); }
+        for file in std::fs::read_dir(&self.0).unwrap() { let path = file.unwrap().path(); if path.is_dir() { std::fs::remove_dir(path).unwrap(); } else { std::fs::remove_file(path).unwrap(); } }
         std::fs::remove_dir(&self.0).unwrap();
     }
 }
@@ -87,7 +87,7 @@ fn broken_configs_are_never_overwritten_or_renamed() {
         let (fallback, warning) = Config::load_or_init(&path).unwrap();
         assert!(warning.is_some());
         assert!(fallback.all_bindings().count() >= 40);
-        assert!(fallback.save(&path).is_err());
+        assert!(fallback.save_live(&path).is_err());
         assert_eq!(std::fs::read(&path).unwrap(), bytes);
         assert_eq!(std::fs::read_dir(&dir.0).unwrap().count(), 1);
     }
@@ -103,20 +103,20 @@ fn v1_is_preserved_until_a_preset_save_and_backup_is_created_once() {
     let (cfg, warning) = Config::load_or_init(&path).unwrap();
     assert!(warning.is_none());
     assert_eq!(std::fs::read_to_string(&path).unwrap(), original);
-    cfg.save(&path).unwrap();
+    cfg.save_live(&path).unwrap();
     assert_eq!(Config::load(&path).unwrap().version, 1);
     assert!(!backup.exists());
     std::fs::write(&path, original).unwrap();
     let mut upgraded = config_with(json!({"type":"preset","id":"edit.copy"}));
-    upgraded.save(&path).unwrap();
+    upgraded.save_live(&path).unwrap();
     assert_eq!(std::fs::read_to_string(&backup).unwrap(), original);
     assert_eq!(Config::load(&path).unwrap().version, 2);
     upgraded.settings.language = "en-US".into();
-    upgraded.save(&path).unwrap();
+    upgraded.save_live(&path).unwrap();
     assert_eq!(std::fs::read_to_string(&backup).unwrap(), original);
     // 已有备份在第二次 v1→v2 保存时同样保留。
     std::fs::write(&path, "{\"version\":1}").unwrap();
-    upgraded.save(&path).unwrap();
+    upgraded.save_live(&path).unwrap();
     assert_eq!(std::fs::read_to_string(&backup).unwrap(), original);
 }
 
@@ -128,10 +128,10 @@ fn explicit_v2_upgrade_and_failed_backup_are_safe() {
     let cfg = Config { version: 2, ..Config::default() };
     let backup = dir.0.join("config.v1.bak.json");
     std::fs::create_dir(&backup).unwrap();
-    assert!(cfg.save(&path).is_err());
+    assert!(cfg.save_live(&path).is_err());
     assert_eq!(std::fs::read_to_string(&path).unwrap(), "{}");
     std::fs::remove_dir(&backup).unwrap();
-    cfg.save(&path).unwrap();
+    cfg.save_live(&path).unwrap();
     assert_eq!(std::fs::read_to_string(dir.0.join("config.v1.bak.json")).unwrap(), "{}");
     let newer = Config { version: 7, ..Config::default() };
     assert_eq!(serde_json::to_value(newer).unwrap()["version"], 7);
@@ -150,4 +150,53 @@ fn unified_defaults_initialize_both_platforms() {
     let (cfg, warning) = Config::load_or_init(&dir.config()).unwrap();
     assert!(warning.is_none());
     assert_eq!(cfg, Config::load(&dir.config()).unwrap());
+}
+
+#[test]
+fn export_and_import_output_can_replace_invalid_files_without_backups() {
+    let dir = Temp::new();
+    let output = dir.0.join("export.json");
+    let cfg = Config::builtin();
+    for original in ["not json", "{\"version\":1}"] {
+        std::fs::write(&output, original).unwrap();
+        cfg.save(&output).unwrap();
+        assert_eq!(Config::load(&output).unwrap(), cfg);
+        assert_eq!(std::fs::read_dir(&dir.0).unwrap().count(), 1);
+    }
+}
+
+#[test]
+fn corrupt_config_reports_location_and_explicit_recovery_preserves_exact_bytes() {
+    use std::time::{Duration, UNIX_EPOCH};
+    let dir = Temp::new();
+    let path = dir.config();
+    let original = b"{\n  \"scopes\": [!\n}";
+    std::fs::write(&path, original).unwrap();
+    let (fallback, error) = Config::load_or_init(&path).unwrap();
+    assert!(error.unwrap().contains("line 2 column 14"));
+    assert_eq!(fallback, Config::builtin());
+    assert_eq!(std::fs::read(&path).unwrap(), original);
+    let now = UNIX_EPOCH + Duration::from_secs(1792886707);
+    let restored = Config::recover_defaults(&path, now).unwrap();
+    let backup = dir.0.join("config.broken-20261025-000507.json");
+    assert_eq!(std::fs::read(&backup).unwrap(), original);
+    assert_eq!(Config::load(&path).unwrap(), restored);
+    assert!(Config::recover_defaults(&path, now).is_err(), "可读文件不能被恢复入口覆盖");
+    std::fs::write(&path, b"another broken file").unwrap();
+    assert!(Config::recover_defaults(&path, now).is_err(), "同一秒的备份不能被覆盖");
+    assert_eq!(std::fs::read(&path).unwrap(), b"another broken file");
+    assert_eq!(std::fs::read(&backup).unwrap(), original);
+}
+
+#[test]
+fn failed_recovery_keeps_original_when_defaults_cannot_be_written() {
+    let dir = Temp::new();
+    let path = dir.config();
+    std::fs::write(&path, b"bad").unwrap();
+    let tmp = path.with_extension("json.tmp");
+    std::fs::create_dir(&tmp).unwrap();
+    assert!(Config::recover_defaults(&path, std::time::UNIX_EPOCH).is_err());
+    assert_eq!(std::fs::read(&path).unwrap(), b"bad");
+    assert!(!dir.0.join("config.broken-19700101-000000.json").exists());
+    std::fs::remove_dir(tmp).unwrap();
 }
