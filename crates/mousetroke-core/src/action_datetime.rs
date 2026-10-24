@@ -38,9 +38,6 @@ impl LocalDateTime {
 /// token：YYYY、MM、DD、HH、mm、ss，区分大小写，其余字符原样输出。
 /// 单引号包围字面文本（例如 'YYYY'），两个单引号输出一个；未闭合引号报错。
 pub fn format_now(format_id_or_custom: &str, now: LocalDateTime) -> Result<String, String> {
-    if !now.valid() {
-        return Err("Invalid local date/time".into());
-    }
     let pattern = match format_id_or_custom {
         "date" => "YYYY-MM-DD",
         "date_zh" => "YYYY年MM月DD日", // i18n:allow 日期模式为设计指定的输出内容，不是界面文案。
@@ -49,6 +46,14 @@ pub fn format_now(format_id_or_custom: &str, now: LocalDateTime) -> Result<Strin
         "datetime" => "YYYY-MM-DD HH:mm",
         custom => custom,
     };
+    format_pattern(pattern, now)
+}
+
+/// 直接解释模式，不把自定义文本误当作内置格式 ID。
+pub fn format_pattern(pattern: &str, now: LocalDateTime) -> Result<String, String> {
+    if !now.valid() {
+        return Err("Invalid local date/time".into());
+    }
     let tokens = [
         ("YYYY", format!("{:04}", now.year)),
         ("MM", format!("{:02}", now.month)),

@@ -982,5 +982,7 @@
   "preset.choice.time": "14:30",
   "preset.choice.datetime": "2026-10-24 14:30",
   "preset.choice.google_translate": "Google 翻訳",
-  "preset.choice.bing_translate": "Bing 翻訳"
+  "preset.choice.bing_translate": "Bing 翻訳",
+  "preset.status.native_only": "ネイティブ機能を使用するため、高度なアクションには変換できません。",
+  "preset.status.failed": "アクションに失敗しました：{error}"
 }

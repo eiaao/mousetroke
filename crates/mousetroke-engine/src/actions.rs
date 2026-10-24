@@ -1,13 +1,14 @@
 //! 两平台在工作线程/动作队列消费时调用，菜单选中的动作也走同一个入口。
 use mousetroke_core::{caps::Platform, i18n::{self, Lang}, presets::actions, schema::Action};
+use mousetroke_core::presets::native::PreparedAction;
 
-pub fn prepare_action(action: Action, platform: Platform, ui_lang: Lang) -> Option<Action> {
+pub fn prepare_action(action: Action, platform: Platform, ui_lang: Lang) -> Option<PreparedAction> {
     prepare_action_with_feedback(action, platform, ui_lang, |key| crate::push_toast(i18n::t(key).into(), 1600))
 }
 
-fn prepare_action_with_feedback(action: Action, platform: Platform, ui_lang: Lang, feedback: impl FnOnce(&'static str)) -> Option<Action> {
+fn prepare_action_with_feedback(action: Action, platform: Platform, ui_lang: Lang, feedback: impl FnOnce(&'static str)) -> Option<PreparedAction> {
     match action {
-        Action::Preset { id, params } => match actions::expand(&id, platform, &params, ui_lang) {
+        Action::Preset { id, params } => match actions::resolve(&id, platform, &params, ui_lang) {
             Ok(action) => Some(action),
             Err(error) => {
                 crate::log!("跳过预置动作 {id}: {error:?}");
@@ -20,8 +21,15 @@ fn prepare_action_with_feedback(action: Action, platform: Platform, ui_lang: Lan
             feedback("preset.status.unknown");
             None
         }
-        action => Some(action),
+        action => Some(PreparedAction::Advanced(action)),
     }
+}
+
+/// 平台能力只返回错误，由此统一记录一行并通过现有 Toast 队列提示。
+pub fn report_action_failure(id: &str, error: &str) {
+    let error = error.lines().collect::<Vec<_>>().join(" ");
+    crate::log!("预置动作 {id} 执行失败: {error}");
+    crate::push_toast(i18n::tf("preset.status.failed", &[("error", &error)]), 2400);
 }
 
 #[cfg(test)]
@@ -34,15 +42,16 @@ mod tests {
         let prepare_action = |action, platform, lang| prepare_action_with_feedback(action, platform, lang, |_| {});
         let preset = |id: &str| Action::Preset { id: id.into(), params: Default::default() };
         for (platform, keys) in [(Platform::Windows, "^c"), (Platform::Macos, "#c")] {
-            assert!(matches!(prepare_action(preset("edit.copy"), platform, Lang::EnUs), Some(Action::KeySequence { keys: actual, .. }) if actual == keys));
-            for id in ["future.preset", "window.snap_left", "mousetroke.cheatsheet"] {
+            assert!(matches!(prepare_action(preset("edit.copy"), platform, Lang::EnUs), Some(PreparedAction::Advanced(Action::KeySequence { keys: actual, .. })) if actual == keys));
+            assert!(matches!(prepare_action(preset("window.snap_left"), platform, Lang::EnUs), Some(PreparedAction::Native(_))));
+            for id in ["future.preset", "mousetroke.cheatsheet"] {
                 assert!(prepare_action(preset(id), platform, Lang::EnUs).is_none());
             }
             assert!(prepare_action(Action::Unknown(Default::default()), platform, Lang::EnUs).is_none());
         }
         assert!(prepare_action(preset("window.toggle_topmost"), Platform::Macos, Lang::EnUs).is_none());
         let menu = Action::Menu { columns: 1, items: vec![mousetroke_core::schema::MenuItem { label: "Copy".into(), action: preset("edit.copy") }] };
-        let Some(Action::Menu { items, .. }) = prepare_action(menu, Platform::Macos, Lang::EnUs) else { panic!() };
-        assert!(matches!(prepare_action(items[0].action.clone(), Platform::Macos, Lang::EnUs), Some(Action::KeySequence { keys, .. }) if keys == "#c"));
+        let Some(PreparedAction::Advanced(Action::Menu { items, .. })) = prepare_action(menu, Platform::Macos, Lang::EnUs) else { panic!() };
+        assert!(matches!(prepare_action(items[0].action.clone(), Platform::Macos, Lang::EnUs), Some(PreparedAction::Advanced(Action::KeySequence { keys, .. })) if keys == "#c"));
     }
 }

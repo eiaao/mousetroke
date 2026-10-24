@@ -695,11 +695,13 @@ mod tests {
     fn settings_catalog_exposes_future_action_presentation_and_expansion() {
         let catalog = serde_json::to_value(action_catalog()).unwrap();
         assert_eq!(catalog["presets"].as_array().unwrap().len(), 87);
+        assert_eq!(catalog["presets"][0]["advanced_expansion"]["windows"], true);
+        assert_eq!(catalog["presets"].as_array().unwrap().iter().find(|p| p["id"] == "window.snap_left").unwrap()["advanced_expansion"]["windows"], false);
         assert_eq!(catalog["unknownActionKey"], "preset.status.unknown");
         assert!(catalog["knownActionTypes"].as_array().unwrap().contains(&serde_json::json!("preset")));
         assert!(expand_preset("edit.copy".into(), Params::new(), "en-US".into()).is_ok());
         assert_eq!(expand_preset("future.preset".into(), Params::new(), "en-US".into()).unwrap_err().key, "preset.status.unknown");
-        assert_eq!(expand_preset("window.snap_left".into(), Params::new(), "en-US".into()).unwrap_err().key, "preset.status.pending");
+        assert_eq!(expand_preset("window.snap_left".into(), Params::new(), "en-US".into()).unwrap_err().key, "preset.status.native_only");
     }
 
     #[test]

@@ -1,4 +1,5 @@
-//! 动作库：稳定 ID、选择器元数据与平台展开共用此表。新平台能力只需替换 Pending 项。
+//! 动作库：稳定 ID、选择器元数据与平台展开共用此表。
+use super::native::{LayoutOp, NativeAction, NativePreset, PreparedAction, TextMethod};
 use crate::caps::Platform;
 use crate::i18n::Lang;
 use crate::schema::{Action, IfRunning, SendMode, WindowOpKind};
@@ -47,6 +48,7 @@ pub struct Param {
 #[derive(Debug, Clone, Copy, Serialize)]
 #[serde(tag = "type", content = "value", rename_all = "snake_case")]
 pub enum Expansion {
+    Native(NativePreset),
     Keys(&'static str),
     Window(WindowOpKind),
     SystemKey(&'static str),
@@ -68,6 +70,17 @@ pub enum Implementation {
     Pending { reason_key: &'static str },
 }
 
+#[derive(Debug, Clone, Copy, Serialize)]
+pub struct AdvancedExpansion {
+    pub windows: bool,
+    pub macos: bool,
+    pub reason_key: &'static str,
+}
+
+const fn can_expand(implementation: Implementation) -> bool {
+    matches!(implementation, Implementation::Implemented(expansion) if !matches!(expansion, Expansion::Native(_)))
+}
+
 #[derive(Debug, Serialize)]
 pub struct Preset {
     pub id: &'static str,
@@ -78,6 +91,7 @@ pub struct Preset {
     pub params: &'static [Param],
     pub windows: Implementation,
     pub macos: Implementation,
+    pub advanced_expansion: AdvancedExpansion,
 }
 
 impl Preset {
@@ -106,7 +120,7 @@ const TYPE_PARAMS: &[Param] = &[
 ];
 const DATE_PARAMS: &[Param] = &[
     Param { name: "format", label_key: "preset.param.format", kind: ParamKind::Choice { choices: choices!["date_iso", "date_local", "date_us", "time", "datetime", "custom"] }, default: ParamDefault::Literal("date_iso") },
-    Param { name: "custom_format", label_key: "preset.param.custom_format", kind: ParamKind::Text, default: ParamDefault::Literal("%Y-%m-%d") }, METHOD,
+    Param { name: "custom_format", label_key: "preset.param.custom_format", kind: ParamKind::Text, default: ParamDefault::Literal("YYYY-MM-DD") }, METHOD,
 ];
 const SEARCH_PARAMS: &[Param] = &[
     Param { name: "engine", label_key: "preset.param.engine", kind: ParamKind::Choice { choices: choices!["bing", "google", "baidu", "duckduckgo", "custom"] }, default: ParamDefault::SearchEngine },
@@ -136,7 +150,7 @@ const fn system(value: &'static str) -> Implementation { Implementation::Impleme
 const fn launch(value: &'static str) -> Implementation { Implementation::Implemented(Expansion::Launch(value)) }
 const fn shell(value: &'static str) -> Implementation { Implementation::Implemented(Expansion::Shell(value)) }
 const fn implemented(value: Expansion) -> Implementation { Implementation::Implemented(value) }
-const PENDING: Implementation = Implementation::Pending { reason_key: "preset.status.pending" };
+const fn native(value: NativePreset) -> Implementation { implemented(Expansion::Native(value)) }
 const PHASE2: Implementation = Implementation::Pending { reason_key: "preset.status.phase2" };
 const WINDOWS_ONLY: Implementation = Implementation::Unsupported { reason_key: "preset.status.windows_only" };
 const MAC_ONLY: Implementation = Implementation::Unsupported { reason_key: "preset.status.mac_only" };
@@ -149,6 +163,7 @@ macro_rules! preset {
             description_key: concat!("preset.action.", $id, ".description"),
             aliases_key: concat!("preset.action.", $id, ".aliases"),
             windows: $win, macos: $mac, params: preset!(@params $($params)?),
+            advanced_expansion: AdvancedExpansion { windows: can_expand($win), macos: can_expand($mac), reason_key: "preset.status.native_only" },
         }
     };
     (@params $params:expr) => { $params };
@@ -192,22 +207,22 @@ pub static REGISTRY: &[Preset] = &[
     preset!("key.delete", Edit, keys("{DELETE}"), keys("{DELETE}")),
     preset!("key.escape", Edit, keys("{ESC}"), keys("{ESC}")),
     preset!("view.fullscreen", Edit, keys("{F11}"), keys("^#f")),
-    preset!("text.type", Text, PENDING, PENDING, TYPE_PARAMS),
-    preset!("text.datetime", Text, PENDING, PENDING, DATE_PARAMS),
+    preset!("text.type", Text, native(NativePreset::TypeText), native(NativePreset::TypeText), TYPE_PARAMS),
+    preset!("text.datetime", Text, native(NativePreset::DateTime), native(NativePreset::DateTime), DATE_PARAMS),
     preset!("text.search", Text, implemented(Expansion::Search), implemented(Expansion::Search), SEARCH_PARAMS),
     preset!("text.translate", Text, implemented(Expansion::Translate), implemented(Expansion::Translate), TRANSLATE_PARAMS),
     preset!("text.open_selected_url", Text, implemented(Expansion::SelectedUrl), implemented(Expansion::SelectedUrl)),
-    preset!("text.copy_plain", Text, PENDING, PENDING),
+    preset!("text.copy_plain", Text, native(NativePreset::CopyPlain), native(NativePreset::CopyPlain)),
     preset!("window.minimize", Window, window(WindowOpKind::Minimize), window(WindowOpKind::Minimize)),
     preset!("window.toggle_maximize", Window, window(WindowOpKind::ToggleMaximize), window(WindowOpKind::ToggleMaximize)),
     preset!("window.close", Window, window(WindowOpKind::Close), window(WindowOpKind::Close)),
     preset!("app.quit", Window, keys("%{F4}"), keys("#q")),
     preset!("app.kill", Window, shell("taskkill /F /PID %MS_PID%"), shell("/bin/kill -9 %MS_PID%")),
     preset!("window.toggle_topmost", Window, window(WindowOpKind::ToggleTopmost), WINDOWS_ONLY),
-    preset!("window.snap_left", Window, PENDING, PENDING),
-    preset!("window.snap_right", Window, PENDING, PENDING),
-    preset!("window.center", Window, PENDING, PENDING),
-    preset!("window.next_monitor", Window, PENDING, PENDING),
+    preset!("window.snap_left", Window, native(NativePreset::Layout(LayoutOp::SnapLeft)), native(NativePreset::Layout(LayoutOp::SnapLeft))),
+    preset!("window.snap_right", Window, native(NativePreset::Layout(LayoutOp::SnapRight)), native(NativePreset::Layout(LayoutOp::SnapRight))),
+    preset!("window.center", Window, native(NativePreset::Layout(LayoutOp::Center)), native(NativePreset::Layout(LayoutOp::Center))),
+    preset!("window.next_monitor", Window, native(NativePreset::Layout(LayoutOp::NextMonitor)), native(NativePreset::Layout(LayoutOp::NextMonitor))),
     preset!("app.hide", Window, MAC_ONLY, keys("#h")),
     preset!("desktop.switch_app", Desktop, keys("%{TAB}"), keys("#{TAB}")),
     preset!("desktop.task_view", Desktop, keys("#{TAB}"), keys("^{UP}")),
@@ -227,8 +242,8 @@ pub static REGISTRY: &[Preset] = &[
     preset!("system.force_quit_dialog", Desktop, MAC_ONLY, keys("#%{ESC}")),
     preset!("system.settings", Desktop, keys("#i"), launch("com.apple.systempreferences")),
     preset!("system.calculator", Desktop, launch("calc.exe"), launch("com.apple.calculator")),
-    preset!("system.display_off", Desktop, PENDING, PENDING),
-    preset!("system.sleep", Desktop, PENDING, PENDING),
+    preset!("system.display_off", Desktop, native(NativePreset::DisplayOff), native(NativePreset::DisplayOff)),
+    preset!("system.sleep", Desktop, native(NativePreset::Sleep), native(NativePreset::Sleep)),
     preset!("media.play_pause", Media, system("PLAY_PAUSE"), system("PLAY_PAUSE")),
     preset!("media.previous", Media, system("PREVIOUS"), system("PREVIOUS")),
     preset!("media.next", Media, system("NEXT"), system("NEXT")),
@@ -241,8 +256,8 @@ pub static REGISTRY: &[Preset] = &[
     preset!("open.folder", Open, implemented(Expansion::OpenPath), implemented(Expansion::OpenPath), FOLDER_PARAMS),
     preset!("open.file", Open, implemented(Expansion::OpenPath), implemented(Expansion::OpenPath), FILE_PARAMS),
     preset!("open.app", Open, implemented(Expansion::App), implemented(Expansion::App), APP_PARAMS),
-    preset!("mousetroke.toggle_pause", Mousetroke, PENDING, PENDING),
-    preset!("mousetroke.settings", Mousetroke, PENDING, PENDING),
+    preset!("mousetroke.toggle_pause", Mousetroke, native(NativePreset::TogglePause), native(NativePreset::TogglePause)),
+    preset!("mousetroke.settings", Mousetroke, native(NativePreset::Settings), native(NativePreset::Settings)),
     preset!("mousetroke.cheatsheet", Mousetroke, PHASE2, PHASE2),
 ];
 
@@ -253,6 +268,7 @@ pub enum PresetError {
     UnknownId,
     Unsupported(&'static str),
     Pending(&'static str),
+    NativeOnly,
     InvalidParam { name: &'static str, reason_key: &'static str },
 }
 
@@ -261,6 +277,7 @@ impl PresetError {
         match self {
             Self::UnknownId => "preset.status.unknown",
             Self::Unsupported(key) | Self::Pending(key) => key,
+            Self::NativeOnly => "preset.status.native_only",
             Self::InvalidParam { reason_key, .. } => reason_key,
         }
     }
@@ -292,6 +309,14 @@ fn url_action(url: impl Into<String>) -> Action { Action::OpenUrl { url_template
 
 /// 不改写配置；语言依赖参数在每次展开时解析，切换界面语言即可生效。
 pub fn expand(id: &str, platform: Platform, params: &Params, ui_lang: Lang) -> Result<Action, PresetError> {
+    match resolve(id, platform, params, ui_lang)? {
+        PreparedAction::Advanced(action) => Ok(action),
+        PreparedAction::Native(_) => Err(PresetError::NativeOnly),
+    }
+}
+
+/// 执行器同时接受高级动作和原生能力；设置中的转换接口只接受前者。
+pub fn resolve(id: &str, platform: Platform, params: &Params, ui_lang: Lang) -> Result<PreparedAction, PresetError> {
     let preset = find(id).ok_or(PresetError::UnknownId)?;
     let expansion = match preset.implementation(platform) {
         Implementation::Implemented(expansion) => expansion,
@@ -301,7 +326,11 @@ pub fn expand(id: &str, platform: Platform, params: &Params, ui_lang: Lang) -> R
     validate_params(preset, params)?;
     let mut values = preset.default_params(ui_lang);
     values.extend(params.clone());
-    Ok(match expansion {
+    if let Expansion::Native(native) = expansion {
+        return resolve_native(native, &values).map(PreparedAction::Native);
+    }
+    Ok(PreparedAction::Advanced(match expansion {
+        Expansion::Native(_) => unreachable!(),
         Expansion::Keys(keys) => Action::KeySequence { keys: keys.into(), mode: SendMode::DownUp, secured: false, activate_target: false },
         Expansion::Window(op) => Action::WindowOp { op, allow_child: false },
         Expansion::SystemKey(key) => Action::SystemKey { key: key.into() },
@@ -357,5 +386,39 @@ pub fn expand(id: &str, platform: Platform, params: &Params, ui_lang: Lang) -> R
             }
         }
         Expansion::App => launch_action(required(&values, "app")?, None),
+    }))
+}
+
+fn resolve_native(native: NativePreset, values: &Params) -> Result<NativeAction, PresetError> {
+    let method = || match required(values, "method")? {
+        "paste" => Ok(TextMethod::Paste),
+        "type" => Ok(TextMethod::Type),
+        _ => Err(invalid("method")),
+    };
+    Ok(match native {
+        NativePreset::Layout(op) => NativeAction::Layout(op),
+        NativePreset::TypeText => {
+            let text = values.get("text").and_then(Value::as_str).filter(|text| !text.is_empty() && !text.contains('\0')).ok_or_else(|| invalid("text"))?;
+            NativeAction::TypeText { text: text.into(), method: method()? }
+        }
+        NativePreset::DateTime => {
+            let pattern = match required(values, "format")? {
+                "date_iso" => "YYYY-MM-DD",
+                "date_local" => "YYYY年MM月DD日", // i18n:allow 日期模式为设计指定的输出内容。
+                "date_us" => "MM/DD/YYYY",
+                "time" => "HH:mm",
+                "datetime" => "YYYY-MM-DD HH:mm",
+                "custom" => required(values, "custom_format")?,
+                _ => return Err(invalid("format")),
+            };
+            let sample = crate::action_datetime::LocalDateTime { year: 2000, month: 1, day: 1, hour: 0, minute: 0, second: 0 };
+            crate::action_datetime::format_pattern(pattern, sample).map_err(|_| invalid("custom_format"))?;
+            NativeAction::DateTime { pattern: pattern.into(), method: method()? }
+        }
+        NativePreset::CopyPlain => NativeAction::CopyPlain,
+        NativePreset::DisplayOff => NativeAction::DisplayOff,
+        NativePreset::Sleep => NativeAction::Sleep,
+        NativePreset::TogglePause => NativeAction::TogglePause,
+        NativePreset::Settings => NativeAction::Settings,
     })
 }

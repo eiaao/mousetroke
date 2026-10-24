@@ -8,6 +8,6 @@ pub mod log;
 mod slot;
 
 pub use engine::{push_toast, Engine, InputEvent, Reload, Verdict, PAUSED};
-pub use actions::prepare_action;
+pub use actions::{prepare_action, report_action_failure};
 pub use host::{Canvas, Host, Target};
 pub use slot::{install, uninstall, with_engine};

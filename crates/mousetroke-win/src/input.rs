@@ -174,6 +174,10 @@ pub fn inject_keyseq_phase(seq: &KeySeq, phase: KeyPhase) {
 
 /// 以 Unicode 方式输入文本（不受键盘布局/输入法影响，中文与符号都可）。
 pub fn send_text(text: &str) {
+    let _ = send_text_checked(text);
+}
+
+pub(crate) fn send_text_checked(text: &str) -> Result<(), String> {
     use windows::Win32::UI::Input::KeyboardAndMouse::{KEYBDINPUT, KEYEVENTF_UNICODE};
     let mut inputs: Vec<INPUT> = Vec::with_capacity(text.len() * 2);
     for unit in text.encode_utf16() {
@@ -192,8 +196,28 @@ pub fn send_text(text: &str) {
             });
         }
     }
-    if !inputs.is_empty() {
-        unsafe { SendInput(&inputs, std::mem::size_of::<INPUT>() as i32) };
+    if !inputs.is_empty() && unsafe { SendInput(&inputs, std::mem::size_of::<INPUT>() as i32) } as usize != inputs.len() {
+        return Err("Unicode input failed; check target permissions".into());
+    }
+    Ok(())
+}
+
+/// 原生文字动作用完整的一组按下/抬起事件，并把注入失败交给调用方报告。
+pub(crate) fn send_shortcut_checked(vk: u16, modifier: ModKey) -> Result<(), String> {
+    let modifier = mod_vk(modifier);
+    let inputs = [(modifier, true), (vk, true), (vk, false), (modifier, false)].map(|(key, down)| INPUT {
+        r#type: INPUT_KEYBOARD,
+        Anonymous: INPUT_0 { ki: windows::Win32::UI::Input::KeyboardAndMouse::KEYBDINPUT {
+            wVk: VIRTUAL_KEY(key), dwFlags: if down { KEYBD_EVENT_FLAGS(0) } else { KEYEVENTF_KEYUP },
+            dwExtraInfo: INJECT_TAG, ..Default::default()
+        } },
+    });
+    if unsafe { SendInput(&inputs, std::mem::size_of::<INPUT>() as i32) } == inputs.len() as u32 {
+        Ok(())
+    } else {
+        send_vk(vk, false);
+        send_vk(modifier, false);
+        Err("Shortcut input failed; check target permissions".into())
     }
 }
 

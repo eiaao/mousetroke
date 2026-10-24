@@ -1000,5 +1000,7 @@
   "preset.choice.time": "14:30",
   "preset.choice.datetime": "2026-10-24 14:30",
   "preset.choice.google_translate": "Google Переводчик",
-  "preset.choice.bing_translate": "Переводчик Bing"
+  "preset.choice.bing_translate": "Переводчик Bing",
+  "preset.status.native_only": "Использует системные функции; преобразование в расширенное действие недоступно.",
+  "preset.status.failed": "Ошибка действия: {error}"
 }

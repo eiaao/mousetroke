@@ -1,18 +1,20 @@
 ---
 title: "Actions"
-description: "Choose send keys, window actions, apps, URLs, commands, media keys, menus or Lua, and use gesture variables."
+description: "Pick a preset from the action library, or edit advanced keys, windows, apps, URLs, commands, menus and Lua."
 order: 5
 ---
 
 # Actions
 
-Select a gesture and choose its action under **Action**. The editor offers eight types. Most tasks need only a simple action; use [Lua](lua-basics.md) when you need conditions or multiple operations.
+Select or create a gesture, then click **Choose action** under **Action**. Search for what you want to do, or browse a category; fill any parameters and click **Use this action**. The [action library](action-library.md) lists all presets and their Windows/Mac availability, including literal text, date/time, window layout and power actions.
+
+Existing actions show **Change**. Presets that map to an editable advanced action also offer **Convert to advanced action**; native presets explain why conversion is unavailable. The **Advanced** category opens send keys, commands, Lua and menus. The editors below remain available, including through **Change action type**.
 
 ## Send keys
 
 Enter a [key sequence](key-sequences.md), or click **Record**, press the shortcut and click **Done**. For example, `^c` copies on Windows; `#c` copies on Mac. **Syntax help** opens the syntax guide.
 
-**Activate the window under the cursor before sending** activates the gesture target first. Without it, shortcuts go to whichever application receives keyboard input. The target also follows **Preferences → Gestures act on**. There is no plain-text toggle in this editor; [text-first input](key-sequences.md#text-and-escaping) is available through Lua.
+**Activate the window under the cursor before sending** activates the gesture target first. Without it, shortcuts go to whichever application receives keyboard input. The target also follows **Preferences → Gestures act on**. For literal text, choose **Type text** from the [action library](action-library.md), or use [text-first input](key-sequences.md#text-and-escaping) through Lua.
 
 ## Window actions
 

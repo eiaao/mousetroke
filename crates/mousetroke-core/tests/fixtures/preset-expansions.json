@@ -31,7 +31,7 @@
     "lang": "en-US",
     "params": {},
     "result": {
-      "error": "preset.status.pending"
+      "error": "preset.status.native_only"
     }
   },
   {
@@ -150,7 +150,7 @@
     "lang": "en-US",
     "params": {},
     "result": {
-      "error": "preset.status.pending"
+      "error": "preset.status.native_only"
     }
   },
   {

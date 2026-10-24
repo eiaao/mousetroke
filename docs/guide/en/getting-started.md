@@ -34,6 +34,10 @@ The built-in actions follow the platform: browser shortcuts use Ctrl on Windows 
 
 A plain right-click still opens the application's context menu. Holding still long enough also passes the button through for normal clicking or dragging; adjust that time in [Preferences](gestures.md#recognition-and-appearance).
 
+## Create a gesture
+
+Open **All apps → Mouse gestures → New gesture**, choose the trigger and record the drawing. Click **Choose action** to search or browse the [action library](action-library.md), select a preset and fill its parameters. Changes save automatically once the gesture is valid; try it outside settings. See [Mouse gestures](gestures.md) for recording details.
+
 ## Pause
 
 On Windows choose **Pause gestures**, then **Resume gestures** to restore them. On Mac, **Pause gestures** stays the same label: its checkmark indicates manual pause, and clicking it again resumes. The default pause/resume hotkey is **Win+Esc** on Windows and **Control+Option+Command+P** on Mac. Change it under **Preferences → Pause / resume hotkey**.

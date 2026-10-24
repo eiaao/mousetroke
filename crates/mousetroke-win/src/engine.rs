@@ -3,6 +3,7 @@
 use std::path::PathBuf;
 
 use mousetroke_core::matcher;
+use mousetroke_core::presets::native::PreparedAction;
 use mousetroke_core::schema::{Action, Config, MouseButton};
 use mousetroke_core::vars::{self, Vars};
 use mousetroke_engine::{Canvas, Engine, Host, Target};
@@ -138,6 +139,16 @@ pub fn sync_display() {
 /// 执行动作（工作线程）。
 fn execute(action: Action, target: Option<targeting::Target>, vars: Vars, pos: (i32, i32)) {
     let Some(action) = mousetroke_engine::prepare_action(action, mousetroke_core::caps::Platform::Windows, mousetroke_core::i18n::lang()) else { return };
+    let action = match action {
+        PreparedAction::Advanced(action) => action,
+        PreparedAction::Native(action) => {
+            let id = action.id();
+            if let Err(error) = crate::preset_actions::execute(action, target.as_ref()) {
+                mousetroke_engine::report_action_failure(id, &error);
+            }
+            return;
+        }
+    };
     match action {
         Action::KeySequence { keys, activate_target, .. } => {
             if activate_target {

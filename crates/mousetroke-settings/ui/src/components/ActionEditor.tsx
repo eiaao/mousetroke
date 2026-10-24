@@ -2,7 +2,7 @@ import { isMac, unsupportedAction, supportedAction } from "../platform";
 import { useRef, useState } from "react";
 import type { Action, ActionPreset, AdvancedAction, MenuItem, PresetAction } from "../types";
 import { isAdvancedAction, isPresetAction } from "../types";
-import { presetDefinition } from "../actions";
+import { presetCanExpand, presetDefinition } from "../actions";
 import { ACTION_ORDER, SYSTEM_KEYS, WINDOW_OPS, actionName, defaultAction } from "../gesture";
 import { currentLang, t, type MsgKey } from "../i18n";
 import { api, errText } from "../api";
@@ -97,6 +97,7 @@ function PresetCard({ action, preset, onChange, depth = 0 }: { action: PresetAct
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const impl = isMac() ? preset.macos : preset.windows;
+  const canExpand = presetCanExpand(preset);
   const filled = preset.params
     .map((param) => {
       const value = typeof action.params?.[param.name] === "string" ? (action.params[param.name] as string) : "";
@@ -146,10 +147,13 @@ function PresetCard({ action, preset, onChange, depth = 0 }: { action: PresetAct
             <button type="button" className="btn small" onClick={() => setPicking(true)}>
               {t("ui.actpick.change")}
             </button>
-            {impl.status === "implemented" && (
+            {canExpand && (
               <button type="button" className="btn small" onClick={() => setConfirming(true)}>
                 {t("ui.actpick.to_advanced")}
               </button>
+            )}
+            {impl.status === "implemented" && !canExpand && (
+              <span className="field-help">{t(preset.advanced_expansion.reason_key as MsgKey)}</span>
             )}
           </div>
         )}

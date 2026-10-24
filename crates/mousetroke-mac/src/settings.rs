@@ -12,21 +12,31 @@ pub fn open_setup() {
     spawn(Some("--setup"));
 }
 fn spawn(mode: Option<&'static str>) {
+    std::thread::spawn(move || {
+        if launch(mode).and_then(|mut child| child.wait()).is_err() {
+            crate::log!("启动设置进程失败");
+        }
+    });
+}
+
+pub(crate) fn open_checked() -> Result<(), String> {
+    let mut child = launch(None).map_err(|error| format!("Open settings: {error}"))?;
+    // 只等待启动结果；回收进程交给独立线程，动作队列不等待设置窗口关闭。
+    std::thread::spawn(move || {
+        let _ = child.wait();
+    });
+    Ok(())
+}
+
+fn launch(mode: Option<&'static str>) -> std::io::Result<std::process::Child> {
     let config = CONFIG
         .get()
         .cloned()
         .unwrap_or_else(crate::default_config_path);
-    std::thread::spawn(move || {
-        let result = std::env::current_exe().and_then(|exe| {
-            let mut cmd = std::process::Command::new(exe);
-            cmd.arg("settings").arg(config);
-            if let Some(mode) = mode {
-                cmd.arg(mode);
-            }
-            cmd.spawn()?.wait()
-        });
-        if result.is_err() {
-            crate::log!("启动设置进程失败");
-        }
-    });
+    let mut cmd = std::process::Command::new(std::env::current_exe()?);
+    cmd.arg("settings").arg(config);
+    if let Some(mode) = mode {
+        cmd.arg(mode);
+    }
+    cmd.spawn()
 }

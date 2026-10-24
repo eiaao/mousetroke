@@ -15,6 +15,7 @@ These guides cover Windows and macOS. Mac support is in beta; platform differenc
 - [Getting started](getting-started.md): install, first run, default gestures and pause.
 - [Mouse gestures](gestures.md): record strokes and shapes, add buttons or keys, and find or edit gestures.
 - [Screen corners and edges](screen-edges.md): volume, brightness, clicks and edge rubbing.
+- [Action library](action-library.md): search ready-to-use presets, set parameters and check platform availability.
 - [Actions](actions.md): choose what a gesture does, including selected-text web search.
 - [Per-app rules](per-app.md): overrides, exclusions and fullscreen behavior.
 
@@ -30,4 +31,4 @@ These guides cover Windows and macOS. Mac support is in beta; platform differenc
 - [Configuration, backup and updates](config.md): files, restore, hot reload, updates and uninstall.
 - [Troubleshooting](troubleshooting.md): missing gestures, permissions, text input and logs.
 
-For a quick win, [draw your first gesture](getting-started.md#draw-your-first-gesture). To make a gesture type text, jump to [Lua recipes](lua-examples.md#type-fixed-text).
+For a quick win, [draw your first gesture](getting-started.md#draw-your-first-gesture). To make a gesture type text, choose **Type text** in the [action library](action-library.md).

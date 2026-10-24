@@ -83,6 +83,7 @@ export interface ActionPreset {
   params: { name: string; label_key: string; kind: PresetParamKind; default: { kind: "literal"; value: string } | { kind: "search_engine" } }[];
   windows: PresetImplementation;
   macos: PresetImplementation;
+  advanced_expansion: { windows: boolean; macos: boolean; reason_key: string };
 }
 export interface ActionCatalog {
   presets: ActionPreset[];

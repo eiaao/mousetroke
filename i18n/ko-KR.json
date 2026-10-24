@@ -982,5 +982,7 @@
   "preset.choice.time": "14:30",
   "preset.choice.datetime": "2026-10-24 14:30",
   "preset.choice.google_translate": "Google 번역",
-  "preset.choice.bing_translate": "Bing 번역"
+  "preset.choice.bing_translate": "Bing 번역",
+  "preset.status.native_only": "기본 시스템 기능을 사용하므로 고급 동작으로 변환할 수 없습니다.",
+  "preset.status.failed": "동작 실패: {error}"
 }

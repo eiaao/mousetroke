@@ -48,6 +48,11 @@ export function presetPlatformStatus(p: ActionPreset): "implemented" | "unsuppor
   return (isMac() ? p.macos : p.windows).status;
 }
 
+/** 能执行与能转为高级动作分别由后端给出，原生能力保留为预置动作。 */
+export function presetCanExpand(p: ActionPreset): boolean {
+  return presetPlatformStatus(p) === "implemented" && p.advanced_expansion[isMac() ? "macos" : "windows"];
+}
+
 /** 不可用时显示的原因词条键（unsupported/pending）。 */
 export function presetStatusReason(p: ActionPreset): MsgKey | undefined {
   const impl = isMac() ? p.macos : p.windows;
@@ -177,15 +182,15 @@ export function presetParamValues(p: ActionPreset): Record<string, string> {
 /** 必填参数：默认值是空串的文字类参数（选项类总有值）。 */
 export function missingRequiredParams(p: ActionPreset, values: Record<string, string>): string[] {
   return p.params
-    .filter((param) => param.default.kind === "literal" && param.default.value === "" && !(values[param.name] ?? "").trim())
+    .filter((param) => param.default.kind === "literal" && param.default.value === "" && !(param.kind.type === "multiline_text" ? values[param.name] : (values[param.name] ?? "").trim()))
     .map((param) => param.name);
 }
 
-/** 空格、退出后按字母序的干净参数。 */
+/** 路径与网址去掉两端空格；输入文字保留缩进、换行与尾部空格。 */
 export function cleanPresetParams(p: ActionPreset, values: Record<string, string>): Record<string, string> {
   const out: Record<string, string> = {};
   for (const param of p.params) {
-    const v = (values[param.name] ?? "").trim();
+    const v = param.kind.type === "multiline_text" ? (values[param.name] ?? "") : (values[param.name] ?? "").trim();
     if (v) out[param.name] = v;
   }
   return out;

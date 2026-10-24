@@ -988,5 +988,7 @@
   "preset.choice.time": "14:30",
   "preset.choice.datetime": "2026-10-24 14:30",
   "preset.choice.google_translate": "Google 翻译",
-  "preset.choice.bing_translate": "必应翻译"
+  "preset.choice.bing_translate": "必应翻译",
+  "preset.status.native_only": "此动作使用原生功能，不能转为高级动作。",
+  "preset.status.failed": "动作执行失败：{error}"
 }

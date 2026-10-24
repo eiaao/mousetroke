@@ -6,12 +6,14 @@ Each version lists its highlights in English, then in Chinese. The release page,
 
 ### English
 
+- Action library: a searchable picker with about 87 presets, including new window layout, text and power actions; shared platform defaults and config v2 with automatic backup.
 - Website moved to [mousetroke.com](https://mousetroke.com/).
 - Lua: add Mac key-state queries and AX window discovery/state control; check shortcut modifiers on both platforms and return nil on brightness failure (legacy Windows wrappers retain -1). Mac topmost and numeric brightness remain unsupported.
 - Complete English and Simplified Chinese user guides, with Lua basics, API reference, examples, send-keys syntax and variable help links in the action editor.
 
 ### 中文
 
+- 动作库：支持搜索的动作选择器，约 87 项预置动作，新增窗口布局、文字和电源操作；合并两端默认配置，配置升级到 v2 并自动备份。
 - 网站迁至 [mousetroke.com](https://mousetroke.com/)。
 - Lua：补齐 Mac 按键状态查询及 AX 窗口查找／状态控制，两平台检查快捷键修饰键，亮度失败统一返回 nil（Windows 旧接口保留 -1）；Mac 置顶和数值亮度控制仍不支持。
 - 新增完整的简体中文和英文使用指南，并在动作编辑器中加入 Lua 入门、API 参考、示例、按键语法说明和变量说明链接。

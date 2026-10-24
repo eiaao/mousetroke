@@ -1,5 +1,6 @@
 use mousetroke_core::{caps::{self, Platform}, i18n::Lang, keyseq, presets::actions::*, schema::Action};
 use serde_json::{json, Value};
+use mousetroke_core::presets::native::{NativeAction, PreparedAction, TextMethod};
 use std::collections::{BTreeMap, BTreeSet};
 
 const LANGS: &[(&str, Lang)] = &[
@@ -8,11 +9,8 @@ const LANGS: &[(&str, Lang)] = &[
     ("it-IT", Lang::ItIt), ("ko-KR", Lang::KoKr),
 ];
 
-// 设计中明确留给任务 C 的条目，含第二期速查浮层；不能悄悄增加占位动作。
-const PENDING: &[&str] = &[
-    "text.type", "text.datetime", "text.copy_plain", "window.snap_left", "window.snap_right", "window.center",
-    "window.next_monitor", "system.display_off", "system.sleep", "mousetroke.toggle_pause", "mousetroke.settings", "mousetroke.cheatsheet",
-];
+// 仅第二期速查浮层保留占位。
+const PENDING: &[&str] = &["mousetroke.cheatsheet"];
 
 #[test]
 fn registry_is_complete_localized_and_has_valid_defaults() {
@@ -63,24 +61,35 @@ fn registry_is_complete_localized_and_has_valid_defaults() {
 #[test]
 fn each_platform_has_only_explicit_unsupported_or_pending_actions() {
     for (platform, implemented, unsupported) in [
-        (Platform::Windows, 73, vec!["app.hide", "system.force_quit_dialog"]),
-        (Platform::Macos, 72, vec!["window.toggle_topmost", "desktop.clipboard_history", "desktop.notifications"]),
+        (Platform::Windows, 84, vec!["app.hide", "system.force_quit_dialog"]),
+        (Platform::Macos, 83, vec!["window.toggle_topmost", "desktop.clipboard_history", "desktop.notifications"]),
     ] {
         let mut count = 0;
         for preset in REGISTRY {
             let mut params = preset.default_params(Lang::EnUs);
             if matches!(preset.id, "open.folder" | "open.file") { params.insert("path".into(), json!("folder with spaces")); }
             if preset.id == "open.app" { params.insert("app".into(), json!(if platform == Platform::Windows { "editor.exe" } else { "com.apple.TextEdit" })); }
+            if preset.id == "text.type" { params.insert("text".into(), json!("sample")); }
             match preset.implementation(platform) {
                 Implementation::Implemented(_) => {
                     count += 1;
-                    let action = expand(preset.id, platform, &params, Lang::EnUs).unwrap();
+                    let prepared = resolve(preset.id, platform, &params, Lang::EnUs).unwrap();
+                    let can_expand = match platform { Platform::Windows => preset.advanced_expansion.windows, Platform::Macos => preset.advanced_expansion.macos };
+                    assert_eq!(can_expand, matches!(prepared, PreparedAction::Advanced(_)));
+                    let action = match prepared {
+                        PreparedAction::Advanced(action) => action,
+                        PreparedAction::Native(action) => {
+                            assert_eq!(action.id(), preset.id);
+                            assert_eq!(expand(preset.id, platform, &params, Lang::EnUs), Err(PresetError::NativeOnly));
+                            continue;
+                        }
+                    };
                     assert!(!matches!(action, Action::Preset { .. } | Action::Unknown(_) | Action::Lua { .. }));
                     if let Action::KeySequence { keys, .. } = &action {
                         let seq = keyseq::parse(keys, false).unwrap();
                         assert!(caps::keys_supported(&seq, platform), "{}: {keys}", preset.id);
                     }
-                    if preset.id.starts_with("text.") {
+                    if matches!(preset.id, "text.search" | "text.translate" | "text.open_selected_url") {
                         assert!(matches!(action, Action::OpenUrl { url_template, .. } if url_template.contains("%MS_SELECTED_TEXT%")));
                     }
                 }
@@ -126,9 +135,13 @@ fn invalid_parameters_are_rejected_without_losing_future_fields() {
         ("text.translate", json!({"target_language":"unknown"})),
         ("open.folder", json!({"path":""})), ("open.file", json!({"path":"bad\u{0000}path"})),
         ("open.app", json!({"app":""})),
+        ("text.type", json!({"text":""})), ("text.type", json!({"text":"bad\u{0000}text"})),
+        ("text.type", json!({"text":"ok", "method":"invalid"})),
+        ("text.datetime", json!({"format":"invalid"})),
+        ("text.datetime", json!({"format":"custom", "custom_format":"'YYYY"})),
     ] {
         let params = serde_json::from_value(params).unwrap();
-        assert!(matches!(expand(id, Platform::Windows, &params, Lang::EnUs), Err(PresetError::InvalidParam { .. })), "{id}");
+        assert!(matches!(resolve(id, Platform::Windows, &params, Lang::EnUs), Err(PresetError::InvalidParam { .. })), "{id}");
     }
     let params = serde_json::from_value(json!({"future":[1,2,3]})).unwrap();
     assert!(expand("edit.copy", Platform::Macos, &params, Lang::EnUs).is_ok());
@@ -148,5 +161,30 @@ fn representative_expansions_match_snapshots() {
             Err(error) => json!({"error":error.reason_key()}),
         };
         assert_eq!(expanded, case["result"], "{id} {platform:?} {params:?}");
+    }
+}
+
+#[test]
+fn native_text_methods_dates_and_custom_patterns_are_resolved_without_lua() {
+    let now = mousetroke_core::action_datetime::LocalDateTime { year: 2026, month: 10, day: 24, hour: 14, minute: 30, second: 7 };
+    for platform in [Platform::Windows, Platform::Macos] {
+        for method in ["paste", "type"] {
+            let params = serde_json::from_value(json!({"text":"  中文 😀 ^+#{ENTER}\n ","method":method})).unwrap();
+            let PreparedAction::Native(action) = resolve("text.type", platform, &params, Lang::EnUs).unwrap() else { panic!() };
+            assert_eq!(action.formatted_text(now).unwrap(), "  中文 😀 ^+#{ENTER}\n ");
+            assert!(matches!(action, NativeAction::TypeText { method: actual, .. } if actual == if method == "paste" { TextMethod::Paste } else { TextMethod::Type }));
+            for (format, custom, expected) in [
+                ("date_iso", "", "2026-10-24"), ("date_local", "", "2026年10月24日"),
+                ("date_us", "", "10/24/2026"), ("time", "", "14:30"), ("datetime", "", "2026-10-24 14:30"),
+                ("custom", "YYYY-MM-DD HH:mm:ss", "2026-10-24 14:30:07"),
+                ("custom", "'YYYY' YYYY ''", "YYYY 2026 '"), ("custom", "date", "date"),
+            ] {
+                let params = serde_json::from_value(json!({"format":format,"custom_format":custom,"method":method})).unwrap();
+                let PreparedAction::Native(action) = resolve("text.datetime", platform, &params, Lang::EnUs).unwrap() else { panic!() };
+                assert_eq!(action.formatted_text(now).unwrap(), expected);
+                assert!(matches!(action, NativeAction::DateTime { method: actual, .. } if actual == if method == "paste" { TextMethod::Paste } else { TextMethod::Type }));
+            }
+        }
+        assert!(matches!(resolve("text.datetime", platform, &Params::new(), Lang::EnUs).unwrap(), PreparedAction::Native(NativeAction::DateTime { method: TextMethod::Paste, .. })));
     }
 }

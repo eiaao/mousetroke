@@ -3,6 +3,8 @@ use crate::keyseq::{Action, Key, KeySeq, ModKey};
 use std::time::Duration;
 
 pub const DEFAULT_PASTE_DELAY: Duration = Duration::from_millis(150);
+pub const COPY_POLL_DELAY: Duration = Duration::from_millis(10);
+pub const COPY_POLL_LIMIT: usize = 50;
 
 pub fn literal_text(text: &str) -> KeySeq {
     KeySeq {
@@ -25,6 +27,28 @@ pub trait PasteBackend {
     fn write_text(&mut self, text: Option<&str>) -> Result<(), String>;
     fn paste(&mut self) -> Result<(), String>;
     fn wait(&mut self, delay: Duration);
+}
+
+pub trait CopyBackend {
+    fn change_count(&mut self) -> Result<u64, String>;
+    fn copy(&mut self) -> Result<(), String>;
+    /// 核对版本并替换；没有新文本或期间再次变化时保留剪贴板并报错。
+    fn replace_with_plain_text(&mut self, expected: u64) -> Result<(), String>;
+    fn wait(&mut self, delay: Duration);
+}
+
+/// 用版本号识别复制完成，同样的文字也可能从富文本重新复制；最多等待 500ms。
+pub fn copy_plain(backend: &mut impl CopyBackend) -> Result<(), String> {
+    let previous = backend.change_count()?;
+    backend.copy()?;
+    for _ in 0..COPY_POLL_LIMIT {
+        backend.wait(COPY_POLL_DELAY);
+        let current = backend.change_count()?;
+        if current != previous {
+            return backend.replace_with_plain_text(current);
+        }
+    }
+    Err("Copy timed out; clipboard was not changed".into())
 }
 
 /// 即使写入或粘贴失败也尝试恢复；恢复失败必须报告，不能悄悄覆盖旧内容。
@@ -52,6 +76,60 @@ pub fn paste_with_restore(
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    struct CopyFake {
+        polls: usize,
+        changed_at: usize,
+        copied: bool,
+        replaced: bool,
+        replacement_fails: bool,
+    }
+    impl CopyBackend for CopyFake {
+        fn change_count(&mut self) -> Result<u64, String> {
+            Ok(if self.copied && self.polls >= self.changed_at {
+                2
+            } else {
+                1
+            })
+        }
+        fn copy(&mut self) -> Result<(), String> {
+            self.copied = true;
+            Ok(())
+        }
+        fn replace_with_plain_text(&mut self, expected: u64) -> Result<(), String> {
+            assert_eq!(expected, 2);
+            if self.replacement_fails {
+                Err("No text or clipboard changed again".into())
+            } else {
+                self.replaced = true;
+                Ok(())
+            }
+        }
+        fn wait(&mut self, delay: Duration) {
+            assert_eq!(delay, COPY_POLL_DELAY);
+            self.polls += 1;
+        }
+    }
+
+    #[test]
+    fn plain_copy_waits_for_a_new_clipboard_version_and_preserves_it_on_failure() {
+        for (changed_at, replacement_fails, success, polls) in [
+            (3, false, true, 3),
+            (usize::MAX, false, false, COPY_POLL_LIMIT),
+            (1, true, false, 1),
+        ] {
+            let mut backend = CopyFake {
+                polls: 0,
+                changed_at,
+                copied: false,
+                replaced: false,
+                replacement_fails,
+            };
+            assert_eq!(copy_plain(&mut backend).is_ok(), success);
+            assert_eq!(backend.replaced, success);
+            assert_eq!(backend.polls, polls);
+        }
+    }
     #[derive(Default)]
     struct Fake {
         saved: Option<String>,

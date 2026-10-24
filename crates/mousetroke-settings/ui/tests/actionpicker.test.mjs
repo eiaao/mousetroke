@@ -32,8 +32,8 @@ const fixture = {
         { name: "text", label_key: "preset.param.text", kind: { type: "multiline_text" }, default: { kind: "literal", value: "" } },
         { name: "method", label_key: "preset.param.method", kind: { type: "choice", choices: [{ value: "paste", label_key: "preset.choice.paste" }, { value: "type", label_key: "preset.choice.type" }] }, default: { kind: "literal", value: "paste" } },
       ],
-      windows: { status: "pending", value: { reason_key: "preset.status.pending" } },
-      macos: { status: "pending", value: { reason_key: "preset.status.pending" } },
+      windows: { status: "implemented", value: { type: "native", value: { type: "type_text" } } },
+      macos: { status: "implemented", value: { type: "native", value: { type: "type_text" } } },
     },
     {
       id: "text.search", category: "text",
@@ -76,6 +76,14 @@ const fixture = {
   knownActionTypes: ["preset"],
   unknownActionKey: "preset.status.unknown",
 };
+
+for (const preset of fixture.presets) {
+  preset.advanced_expansion = {
+    windows: preset.windows.status === "implemented" && preset.windows.value.type !== "native",
+    macos: preset.macos.status === "implemented" && preset.macos.value.type !== "native",
+    reason_key: "preset.status.native_only",
+  };
+}
 
 /** Editor 无 hooks，可直接调用取元素树（与 platform.test.mjs 遍历 UpdateStatus 同源）。 */
 function findAll(element, pred, out = []) {
@@ -127,7 +135,8 @@ test("keyboard navigation moves in a loop and skips unavailable rows (12)", () =
   const pending = actions.findPreset("text.type");
   const cheat = actions.findPreset("mousetroke.cheatsheet");
   const sel = [close, pending, cheat, actions.findPreset("open.website")].map((p) => actions.presetPlatformStatus(p) === "implemented");
-  assert.equal(actions.pickerNav(0, 4, "ArrowDown", sel), 3, "跳过 pending");
+  assert.equal(actions.pickerNav(0, 4, "ArrowDown", sel), 1, "原生文字动作可选");
+  assert.equal(actions.pickerNav(1, 4, "ArrowDown", sel), 3, "跳过第二期动作");
   assert.equal(actions.pickerNav(3, 4, "ArrowDown", sel), 0, "循环回可选");
   assert.equal(actions.pickerNav(0, 4, "ArrowUp", sel), 3);
   assert.equal(actions.pickerNav(0, 0, "ArrowDown", sel), null);
@@ -154,14 +163,19 @@ test("unsupported and pending actions render unselectable with their reasons (12
   const clipboard = actions.findPreset("desktop.clipboard_history");
   assert.equal(actions.presetPlatformStatus(clipboard), "unsupported");
   assert.equal(actions.presetStatusReason(clipboard), "preset.status.windows_only");
-  const html = render(createElement(ActionPicker, { onPick() {}, onClose() {} }));
-  assert.ok(html.includes(t("preset.status.windows_only")), "unsupported 行显示原因");
+  const html = render(createElement(ActionPicker, { initialId: "mousetroke.cheatsheet", onPick() {}, onClose() {} }));
+  const commonHtml = render(createElement(ActionPicker, { onPick() {}, onClose() {} }));
+  assert.ok(commonHtml.includes(t("preset.status.windows_only")), "unsupported 行显示原因");
   assert.ok(html.includes(t("ui.actpick.soon")), "pending 行显示即将支持");
-  assert.ok((html.match(/disabled=""/g) ?? []).length >= 2, "灰显的行都不可选");
+  assert.ok((html.match(/disabled=""/g) ?? []).length >= 1, "灰显的行都不可选");
   assert.ok(html.includes('aria-live="polite"'), "原因通过 aria-live 读出");
   const card = render(createElement(ActionEditor, { action: { type: "preset", id: "text.type" }, onChange() {} }));
-  assert.ok(!card.includes(t("ui.actpick.to_advanced")), "pending 动作不能转为高级动作");
+  assert.ok(!card.includes(`>${t("ui.actpick.to_advanced")}</button>`), "原生动作不能转为高级动作");
   assert.ok(card.includes(t("ui.actpick.change")));
+  assert.ok(card.includes(t("preset.status.native_only")));
+  assert.equal(actions.presetCanExpand(actions.findPreset("text.type")), false);
+  assert.equal(actions.presetCanExpand(actions.findPreset("browser.close_tab")), true);
+  assert.equal(actions.presetCanExpand(clipboard), false);
 });
 
 test("param form renders by kind and blocks empty required params (1)", () => {
@@ -181,8 +195,8 @@ test("param form renders by kind and blocks empty required params (1)", () => {
   assert.match(html, /class="btn primary small" disabled/, "必填未填时不能确认");
   // 字符串参数提交前 trim
   assert.deepEqual(actions.cleanPresetParams(site, { url: "  https://a.com/  " }), { url: "https://a.com/" });
-  assert.deepEqual(actions.cleanPresetParams(typePreset, { text: "  收到 ", method: "paste" }), { text: "收到", method: "paste" });
-  assert.deepEqual(actions.cleanPresetParams(typePreset, { text: "  ", method: "type" }), { method: "type" }, "空白参数不提交");
+  assert.deepEqual(actions.cleanPresetParams(typePreset, { text: "  收到 ", method: "paste" }), { text: "  收到 ", method: "paste" });
+  assert.deepEqual(actions.cleanPresetParams(typePreset, { text: "  ", method: "type" }), { text: "  ", method: "type" }, "保留字面空白");
 });
 
 test("searching across categories shows a hint (7)", () => {

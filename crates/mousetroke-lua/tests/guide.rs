@@ -14,6 +14,19 @@ fn read(lang: &str, slug: &str) -> String {
     std::fs::read_to_string(guides().join(lang).join(format!("{slug}.md"))).unwrap()
 }
 
+#[test]
+fn action_library_is_linked_from_the_gesture_creation_guides() {
+    for lang in ["en", "zh-CN"] {
+        for slug in ["index", "actions", "getting-started", "gestures"] {
+            assert!(read(lang, slug).contains("(action-library.md)"), "{lang}/{slug}.md");
+        }
+        let library = read(lang, "action-library");
+        for expected in ["title:", "description:", "order:", "<!-- action-library:generated:start -->", "<!-- action-library:generated:end -->", "(actions.md)"] {
+            assert!(library.contains(expected), "{lang}/action-library.md: {expected}");
+        }
+    }
+}
+
 #[derive(Default)]
 struct Stub {
     mac: bool,

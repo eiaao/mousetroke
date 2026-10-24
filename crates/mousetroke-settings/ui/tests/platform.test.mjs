@@ -19,7 +19,7 @@ const event = (code, mods = {}) => ({ code, ctrlKey: false, altKey: false, shift
 
 test("known presets render as a changeable card and future actions stay read-only", () => {
   initActionCatalog({
-    presets: [{ id: "edit.copy", name_key: "preset.action.edit.copy.name", description_key: "preset.action.edit.copy.description", params: [], windows: { status: "implemented", value: { type: "keys", value: "^c" } }, macos: { status: "implemented", value: { type: "keys", value: "#c" } } }],
+    presets: [{ id: "edit.copy", advanced_expansion: { windows: true, macos: true, reason_key: "preset.status.native_only" }, name_key: "preset.action.edit.copy.name", description_key: "preset.action.edit.copy.description", params: [], windows: { status: "implemented", value: { type: "keys", value: "^c" } }, macos: { status: "implemented", value: { type: "keys", value: "#c" } } }],
     defaults: {},
     commonPresetIds: [],
     knownActionTypes: ["preset"],

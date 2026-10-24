@@ -988,5 +988,7 @@
   "preset.choice.time": "14:30",
   "preset.choice.datetime": "2026-10-24 14:30",
   "preset.choice.google_translate": "Traductor de Google",
-  "preset.choice.bing_translate": "Traductor de Bing"
+  "preset.choice.bing_translate": "Traductor de Bing",
+  "preset.status.native_only": "Usa funciones nativas; no se puede convertir en una acción avanzada.",
+  "preset.status.failed": "La acción falló: {error}"
 }

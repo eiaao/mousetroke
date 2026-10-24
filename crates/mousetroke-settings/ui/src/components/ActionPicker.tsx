@@ -311,7 +311,7 @@ function categoryKey(c: PickerCategory): MsgKey {
 function ParamField({ param, value, onChange }: { param: ActionPreset["params"][number]; value: string; onChange: (v: string) => void }) {
   const label = t(param.label_key as MsgKey);
   const required = param.default.kind === "literal" && param.default.value === "";
-  const empty = required && !value.trim();
+  const empty = required && !(param.kind.type === "multiline_text" ? value : value.trim());
   const error = empty ? <span className="field-error">{t("ui.actpick.required")}</span> : null;
   switch (param.kind.type) {
     case "choice":

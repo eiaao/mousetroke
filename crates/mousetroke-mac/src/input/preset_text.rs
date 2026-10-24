@@ -1,7 +1,7 @@
 //! 作为 input 子模块复用 Action::Text 的 Unicode 事件和完整修饰键释放组。
 use crate::preset_actions::on_main;
 use mousetroke_core::{
-    action_text::{self, PasteBackend},
+    action_text::{self, CopyBackend, PasteBackend},
     keyseq::ModKey,
 };
 use objc2_app_kit::{NSPasteboard, NSPasteboardTypeString};
@@ -47,6 +47,51 @@ impl PasteBackend for Backend {
     fn wait(&mut self, delay: Duration) {
         std::thread::sleep(delay);
     }
+}
+
+impl CopyBackend for Backend {
+    fn change_count(&mut self) -> Result<u64, String> {
+        on_main(|| Ok(NSPasteboard::generalPasteboard().changeCount() as u64))
+    }
+    fn copy(&mut self) -> Result<(), String> {
+        on_main(|| {
+            if super::copy_selection() {
+                Ok(())
+            } else {
+                Err("Create complete Cmd+C event group failed".into())
+            }
+        })
+    }
+    fn replace_with_plain_text(&mut self, expected: u64) -> Result<(), String> {
+        on_main(move || {
+            let board = NSPasteboard::generalPasteboard();
+            if board.changeCount() as u64 != expected {
+                return Err("Clipboard changed again; plain-text copy cancelled".into());
+            }
+            let text = unsafe { board.stringForType(NSPasteboardTypeString) }
+                .ok_or("Copied clipboard does not contain text")?;
+            if board.changeCount() as u64 != expected {
+                return Err("Clipboard changed while reading; plain-text copy cancelled".into());
+            }
+            board.clearContents();
+            if unsafe { board.setString_forType(&text, NSPasteboardTypeString) } {
+                Ok(())
+            } else {
+                Err("Write plain clipboard text failed".into())
+            }
+        })
+    }
+    fn wait(&mut self, delay: Duration) {
+        std::thread::sleep(delay);
+    }
+}
+
+pub fn copy_plain() -> Result<(), String> {
+    if objc2::MainThreadMarker::new().is_some() {
+        return Err("Copy wait must run on a worker thread".into());
+    }
+    let _lock = PASTE_LOCK.lock().map_err(|_| "Text paste lock poisoned")?;
+    action_text::copy_plain(&mut Backend)
 }
 
 /// 仅保存文本；原先没有文本时恢复为空。必须从工作线程调用，主 run loop 需保持运行。
