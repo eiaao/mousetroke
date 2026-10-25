@@ -39,7 +39,7 @@ mousetroke-win = { path = "../mousetroke-win" }
 
 [target.'cfg(target_os = "macos")'.dependencies]
 mousetroke-mac = { path = "../mousetroke-mac" }
-objc2 = "=0.6.4"
+objc2 = "=0.6.5"
 objc2-foundation = { version = "=0.3.2", default-features = false, features = ["std", "NSArray", "NSString", "NSURL", "NSBundle", "NSData", "NSDictionary", "NSError", "NSProcessInfo"] }
 objc2-app-kit = { version = "=0.3.2", default-features = false, features = ["std", "NSWorkspace", "NSRunningApplication", "NSApplication", "NSImage", "NSImageRep", "NSBitmapImageRep", "NSWindow", "NSPanel", "NSView", "NSTextField", "NSText", "NSControl", "NSCell", "NSResponder", "NSColor", "NSFont", "NSCursor", "NSEvent", "NSScreen", "NSGraphics"] }
 objc2-core-foundation = { version = "=0.3.2", default-features = false, features = ["std", "CFArray", "CFDictionary", "CFNumber"] }
