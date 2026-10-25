@@ -445,36 +445,20 @@ const ISSUES_URL: &str = "https://github.com/eiaao/mousetroke/issues";
 
 /// 链接仅由后端白名单决定；没有对应首页的语言回退到英文。
 fn project_url(what: &str, lang: &str) -> Option<String> {
+    // 文档路径复用首页的语言短码：zh-CN 是 `/docs/…`，其余语言 `/en/docs/…`、`/es/docs/…` 等。
+    let language_prefix = || {
+        HOMEPAGE_PATHS.iter().find(|(tag, _)| *tag == lang).unwrap_or(&HOMEPAGE_PATHS[1]).1
+    };
     let path = match what {
-        "homepage" => HOMEPAGE_PATHS.iter().find(|(tag, _)| *tag == lang).unwrap_or(&HOMEPAGE_PATHS[1]).1,
+        "homepage" => language_prefix().to_string(),
         "github" => return Some(GITHUB_URL.into()),
         "issues" => return Some(ISSUES_URL.into()),
         "releases" => return Some(platform::update::RELEASES_URL.into()),
-        "lua_basics" => if lang == "zh-CN" {
-            "/docs/lua-basics/"
-        } else {
-            "/en/docs/lua-basics/"
-        },
-        "lua_api" => if lang == "zh-CN" {
-            "/docs/lua-api/"
-        } else {
-            "/en/docs/lua-api/"
-        },
-        "lua_examples" => if lang == "zh-CN" {
-            "/docs/lua-examples/"
-        } else {
-            "/en/docs/lua-examples/"
-        },
-        "variables" => if lang == "zh-CN" {
-            "/docs/actions/#variables"
-        } else {
-            "/en/docs/actions/#variables"
-        },
-        "key_sequences" => if lang == "zh-CN" {
-            "/docs/key-sequences/"
-        } else {
-            "/en/docs/key-sequences/"
-        },
+        "lua_basics" => format!("{}docs/lua-basics/", language_prefix()),
+        "lua_api" => format!("{}docs/lua-api/", language_prefix()),
+        "lua_examples" => format!("{}docs/lua-examples/", language_prefix()),
+        "variables" => format!("{}docs/actions/#variables", language_prefix()),
+        "key_sequences" => format!("{}docs/key-sequences/", language_prefix()),
         _ => return None,
     };
     Some(format!("{WEBSITE_ORIGIN}{path}"))
@@ -792,13 +776,13 @@ mod tests {
             assert_eq!(project_url("github", tag).as_deref(), Some("https://github.com/eiaao/mousetroke"));
             assert_eq!(project_url("issues", tag).as_deref(), Some("https://github.com/eiaao/mousetroke/issues"));
             assert_eq!(project_url("releases", tag).as_deref(), Some(platform::update::RELEASES_URL));
-            let docs_prefix = if tag == "zh-CN" { "" } else { "en/" };
+            // 文档链接跟随界面语言（zh-CN 无前缀，其余语言用自己的短码；未知语言回退 en/）
             for (what, destination) in [
                 ("lua_basics", "lua-basics/"), ("lua_api", "lua-api/"),
                 ("lua_examples", "lua-examples/"), ("variables", "actions/#variables"),
                 ("key_sequences", "key-sequences/"),
             ] {
-                assert_eq!(project_url(what, tag).as_deref(), Some(format!("https://mousetroke.com/{docs_prefix}docs/{destination}").as_str()));
+                assert_eq!(project_url(what, tag).as_deref(), Some(format!("https://mousetroke.com/{suffix}docs/{destination}").as_str()));
             }
         }
         for what in ["", "https://example.com", "https://mousetroke.com/", "file:///C:/Windows", "Homepage", "github/issues", "lua_api/../", "variables#other"] {
