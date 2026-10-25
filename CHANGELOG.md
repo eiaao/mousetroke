@@ -2,7 +2,7 @@
 
 Each version lists its highlights in English, then in Chinese. The release page, the in-app update notes and the website changelog are all generated from this file.
 
-## Unreleased
+## 0.2.2 — 2026-10-25
 
 ### English
 
