@@ -10,6 +10,9 @@ fn guides() -> PathBuf {
     Path::new(env!("CARGO_MANIFEST_DIR")).join("../../docs/guide")
 }
 
+/// 指南的全部语言目录（与网站 URL 短码一致；zh-CN 之外新增语言时同步扩充）。
+const LANGS: [&str; 10] = ["en", "zh-CN", "de", "es", "fr", "it", "ja", "ko", "pt", "ru"];
+
 fn read(lang: &str, slug: &str) -> String {
     std::fs::read_to_string(guides().join(lang).join(format!("{slug}.md"))).unwrap()
 }
@@ -90,7 +93,7 @@ impl LuaPlatform for Stub {
 }
 
 #[test]
-fn every_registered_ms_function_is_documented_in_both_languages() {
+fn every_registered_ms_function_is_documented_in_every_language() {
     let lua = Lua::new();
     let platform: Arc<dyn LuaPlatform> = Arc::new(Stub::default());
     install_ms_table(&lua, &LuaCtx::default(), &platform).unwrap();
@@ -107,7 +110,7 @@ fn every_registered_ms_function_is_documented_in_both_languages() {
         })
         .collect();
     assert!(!registered.is_empty());
-    for lang in ["en", "zh-CN"] {
+    for lang in LANGS {
         let doc = read(lang, "lua-api");
         let documented: BTreeSet<String> = doc
             .lines()
@@ -117,13 +120,13 @@ fn every_registered_ms_function_is_documented_in_both_languages() {
         assert_eq!(registered, documented, "{lang}/lua-api.md API coverage");
     }
     println!(
-        "Lua API: {} registered, documented in both languages",
+        "Lua API: {} registered, documented in every language",
         registered.len()
     );
 }
 
 #[test]
-fn every_named_key_is_documented_in_both_languages() {
+fn every_named_key_is_documented_in_every_language() {
     let source = include_str!("../../mousetroke-core/src/keyseq.rs");
     let lookup = source
         .split("fn lookup_vk(")
@@ -161,7 +164,7 @@ fn every_named_key_is_documented_in_both_languages() {
         }
     }
     assert!(!names.is_empty());
-    for lang in ["en", "zh-CN"] {
+    for lang in LANGS {
         let doc = read(lang, "key-sequences");
         for name in &names {
             let argument = match name.as_str() {
@@ -179,7 +182,7 @@ fn every_named_key_is_documented_in_both_languages() {
             );
         }
     }
-    println!("Key names: {} documented in both languages", names.len());
+    println!("Key names: {} documented in every language", names.len());
 }
 
 fn lua_blocks(markdown: &str) -> Vec<(usize, String)> {
@@ -206,7 +209,7 @@ fn lua_blocks(markdown: &str) -> Vec<(usize, String)> {
 fn all_guide_lua_examples_compile_in_the_actual_runtime() {
     let lua = Lua::new();
     let mut count = 0;
-    for lang in ["en", "zh-CN"] {
+    for lang in LANGS {
         for file in std::fs::read_dir(guides().join(lang)).unwrap() {
             let path = file.unwrap().path();
             if path.extension().is_some_and(|ext| ext == "md") {
@@ -226,7 +229,7 @@ fn all_guide_lua_examples_compile_in_the_actual_runtime() {
 
 #[test]
 fn recipes_execute_with_stubbed_platforms_and_selection_fallbacks() {
-    for lang in ["en", "zh-CN"] {
+    for lang in LANGS {
         for (line, code) in lua_blocks(&read(lang, "lua-examples")) {
             for mac in [false, true] {
                 for (saved, selection) in [(None, ""), (Some("saved text"), "a b&中文")] {
