@@ -12,7 +12,7 @@ mousetroke-core = { path = "../mousetroke-core" }
 mousetroke-engine = { path = "../mousetroke-engine" }
 mousetroke-lua = { path = "../mousetroke-lua" }
 regex = "1"
-objc2 = "=0.6.4"
+objc2 = "=0.6.5"
 objc2-foundation = { version = "=0.3.2", default-features = false, features = ["std", "NSArray", "NSEnumerator", "NSString", "NSURL", "NSLocale", "NSDate", "NSDateFormatter", "NSFileManager", "NSError", "NSRunLoop", "NSTimer", "NSNotification", "NSDistributedNotificationCenter", "NSOperation", "NSValue", "NSData", "NSDictionary", "block2"] }
 objc2-app-kit = { version = "=0.3.2", default-features = false, features = ["std", "libc", "NSApplication", "NSAlert", "NSCell", "NSGraphicsContext", "NSResponder", "NSStatusBar", "NSStatusItem", "NSStatusBarButton", "NSButton", "NSControl", "NSView", "NSWindow", "NSGraphics", "NSFont", "NSAttributedString", "NSStringDrawing", "NSMenu", "NSMenuItem", "NSImage", "NSBezierPath", "NSColor", "NSEvent", "NSScreen", "NSWorkspace", "NSPasteboard", "NSPasteboardItem", "NSRunningApplication", "block2", "objc2-core-foundation", "objc2-core-graphics", "objc2-quartz-core"] }
 objc2-core-foundation = { version = "=0.3.2", default-features = false, features = ["std", "CFMachPort", "CFRunLoop", "CFDictionary", "CFNumber", "CFString"] }
