@@ -2,20 +2,14 @@
 
 Each version lists its highlights in English, then in Chinese. The release page, the in-app update notes and the website changelog are all generated from this file.
 
-## Unreleased
+## 0.2.2 — 2026-10-26
 
 ### English
 
-- Action library: a searchable picker with about 87 presets, including new window layout, text and power actions; shared platform defaults and config v2 with automatic backup.
-
-### 中文
-
-- 动作库：支持搜索的动作选择器，约 87 项预置动作，新增窗口布局、文字和电源操作；合并两端默认配置，配置升级到 v2 并自动备份。
-
-## 0.2.2 — 2026-10-25
-
-### English
-
+- Action library: a searchable picker with about 87 presets, including window layout, text and power actions; shared platform defaults and config v2 upgrades with automatic backup.
+- New gestures stay inactive until their recording and action are complete; imported and existing single-click bindings keep working.
+- Text actions protect non-text clipboard data and offer a configurable wait before restoring clipboard text. Preset forms validate parameters before saving, and shortcut searches also match action names, descriptions and aliases.
+- Startup stops with an error if configuration cannot be read; search and translation URL templates are respected. Windows app switching restores minimized windows, skips desktop and shell windows, and preserves administrator launches. Mac actions no longer wait indefinitely.
 - User guides in all ten interface languages: German, Spanish, French, Italian, Japanese, Korean, Brazilian Portuguese and Russian join English and Simplified Chinese. In-app help links follow the interface language.
 - Website moved to [mousetroke.com](https://mousetroke.com/).
 - Lua: add Mac key-state queries and AX window discovery/state control; check shortcut modifiers on both platforms and return nil on brightness failure (legacy Windows wrappers retain -1). Mac topmost and numeric brightness remain unsupported.
@@ -23,6 +17,10 @@ Each version lists its highlights in English, then in Chinese. The release page,
 
 ### 中文
 
+- 动作库：支持搜索的动作选择器，约 87 项预置动作，包含窗口布局、文字和电源操作；合并两端默认配置，配置升级到 v2 并自动备份。
+- 新建手势在录制和动作完整前不会生效；导入和已有的单击绑定继续正常工作。
+- 文字动作保护剪贴板中的非文本数据，可设置恢复剪贴板文本前的等待时间。预置动作表单在保存前校验参数，快捷键搜索也会匹配动作名称、说明和别名。
+- 配置无法读取时，启动会报错并停止；搜索和翻译正确使用指定的网址模板。Windows 切换程序时恢复最小化窗口，跳过桌面和系统外壳窗口，并保留管理员启动行为。Mac 动作不再无限等待。
 - 使用指南补齐全部十种界面语言：在英文、简体中文之外新增德语、西班牙语、法语、意大利语、日语、韩语、巴西葡萄牙语和俄语；应用内帮助链接跟随界面语言跳转。
 - 网站迁至 [mousetroke.com](https://mousetroke.com/)。
 - Lua：补齐 Mac 按键状态查询及 AX 窗口查找／状态控制，两平台检查快捷键修饰键，亮度失败统一返回 nil（Windows 旧接口保留 -1）；Mac 置顶和数值亮度控制仍不支持。
