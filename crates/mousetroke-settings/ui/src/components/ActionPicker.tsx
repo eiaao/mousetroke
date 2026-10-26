@@ -14,6 +14,7 @@ import {
   missingRequiredParams,
   pickerNav,
   presetParamValues,
+  presetParamRequired,
   presetPickResult,
   presetPlatformStatus,
   presetStatusReason,
@@ -21,8 +22,8 @@ import {
   type PickerCategory,
 } from "../actions";
 import { defaultAction } from "../gesture";
-import { t, type MsgKey } from "../i18n";
-import { api } from "../api";
+import { currentLang, t, type MsgKey } from "../i18n";
+import { api, errText, type Msg } from "../api";
 import { Modal } from "./Dialogs";
 import { Caps } from "./KeysInput";
 
@@ -53,6 +54,9 @@ export function ActionPicker({
   const [formId, setFormId] = useState<string | null>(initialId && initial.preset?.params.length ? initial.preset.id : null);
   const [values, setValues] = useState<Record<string, string>>(() => initial.preset ? presetParamValues(initial.preset, current) : {});
   const [announce, setAnnounce] = useState("");
+  const [formError, setFormError] = useState("");
+  const [submitting, setSubmitting] = useState(false);
+  const submission = useRef<{ id: string } | null>(null);
   const listRef = useRef<HTMLUListElement>(null);
   const bodyRef = useRef<HTMLDivElement>(null);
   const searchRef = useRef<HTMLInputElement>(null);
@@ -73,9 +77,25 @@ export function ActionPicker({
   const formPreset = formId ? findPreset(formId) : undefined;
   const missing = formPreset ? missingRequiredParams(formPreset, values) : [];
 
+  const invalidateValidation = () => {
+    submission.current = null;
+    setSubmitting(false);
+    setFormError("");
+  };
+  const closeForm = () => {
+    invalidateValidation();
+    setFormId(null);
+    setValues({});
+  };
+  const closePicker = () => {
+    invalidateValidation();
+    onClose();
+  };
+
   // 打开时显式聚焦搜索框（不依赖 Modal 的默认聚焦）
   useEffect(() => {
     searchRef.current?.focus();
+    return () => { submission.current = null; };
   }, []);
 
   // 换分类或改搜索词时回到第一行，收起参数表单（跳过首次挂载）
@@ -85,7 +105,7 @@ export function ActionPicker({
       return;
     }
     setActive(0);
-    setFormId(null);
+    closeForm();
   }, [cat, q]);
 
   // 高亮行滚动到可见
@@ -94,6 +114,7 @@ export function ActionPicker({
   }, [activeRow, cat, q]);
 
   const openForm = (p: ActionPreset) => {
+    invalidateValidation();
     const base = presetParamValues(p, current);
     setFormId(p.id);
     setValues(base);
@@ -105,7 +126,8 @@ export function ActionPicker({
     setAnnounce(reason ? t(reason) : t("preset.status.unknown"));
   };
 
-  const applyForm = (p: ActionPreset) => {
+  const applyForm = async (p: ActionPreset) => {
+    if (submission.current?.id === p.id) return;
     const missing = missingRequiredParams(p, values);
     if (missing.length) {
       // 校验不通过：就地提示并聚焦第一个缺项
@@ -114,7 +136,26 @@ export function ActionPicker({
       el?.focus();
       return;
     }
-    onPick({ type: "preset", id: p.id, params: cleanPresetParams(p, values) });
+    const params = cleanPresetParams(p, values);
+    const attempt = { id: p.id };
+    submission.current = attempt;
+    setSubmitting(true);
+    setFormError("");
+    try {
+      await api.validatePreset(p.id, params, currentLang());
+    } catch (error) {
+      if (submission.current !== attempt) return;
+      submission.current = null;
+      setSubmitting(false);
+      setFormError(errText(error));
+      const param = error && typeof error === "object" && "params" in error ? (error as Msg).params?.param : undefined;
+      if (param) Array.from(bodyRef.current?.querySelectorAll<HTMLElement>("[data-param]") ?? []).find((el) => el.dataset.param === param)?.focus();
+      return;
+    }
+    // 换表单、修改输入或关闭后，晚到的校验结果不能再选用旧动作。
+    if (submission.current !== attempt) return;
+    setSubmitting(false);
+    onPick({ type: "preset", id: p.id, ...(p.params.length ? { params } : {}) });
   };
 
   /** 确认一行：无参数的动作直接选中；带参数的展开表单，再按一次回车/点"选用"确认。 */
@@ -124,7 +165,8 @@ export function ActionPicker({
       const p = presets[index];
       switch (presetPickResult(p, formId === p.id, values)) {
         case "pick":
-          onPick({ type: "preset", id: p.id });
+          if (formId) closeForm();
+          applyForm(p);
           break;
         case "form":
           openForm(p);
@@ -142,7 +184,7 @@ export function ActionPicker({
       }
     } else {
       const adv = advancedVisible[index - presets.length];
-      if (adv) onPick(defaultAction(adv.type));
+      if (adv) { invalidateValidation(); onPick(defaultAction(adv.type)); }
     }
   };
 
@@ -153,11 +195,10 @@ export function ActionPicker({
       e.stopPropagation();
       // 有展开的表单时先收起表单并把焦点回到搜索框；没有表单时才关闭
       if (formId) {
-        setFormId(null);
-        setValues({});
+        closeForm();
         searchRef.current?.focus();
       } else {
-        onClose();
+        closePicker();
       }
       return;
     }
@@ -203,9 +244,9 @@ export function ActionPicker({
   }, [formId]);
 
   return (
-    <Modal title={t("ui.actpick.title")} onClose={onClose} wide onEscape={() => {
+    <Modal title={t("ui.actpick.title")} onClose={closePicker} wide onEscape={() => {
       if (!formId) return false;
-      setFormId(null); setValues({}); searchRef.current?.focus(); return true;
+      closeForm(); searchRef.current?.focus(); return true;
     }}>
       <div ref={bodyRef} className="modal-body act-pick" onKeyDown={onKeyDown}>
         <input
@@ -219,7 +260,7 @@ export function ActionPicker({
           aria-label={t("ui.actpick.search_ph")}
           placeholder={t("ui.actpick.search_ph")}
           value={q}
-          onChange={(e) => setQ(e.target.value)}
+          onChange={(e) => { invalidateValidation(); setQ(e.target.value); }}
         />
         <div className="act-cats" aria-label={t("ui.actpick.cat_aria")}>
           {CATEGORY_ORDER.map((c) => (
@@ -228,7 +269,7 @@ export function ActionPicker({
               type="button"
               aria-pressed={!searching && cat === c}
               className={`act-cat ${!searching && cat === c ? "on" : ""}`}
-              onClick={() => { setQ(""); setCat(c); }}
+              onClick={() => { invalidateValidation(); setQ(""); setCat(c); }}
             >
               {t(categoryKey(c))}
             </button>
@@ -273,6 +314,7 @@ export function ActionPicker({
           {rowCount === 0 && <li className="muted act-none">{t("ui.actpick.no_match")}</li>}
         </ul>
         <p className="act-detail muted">{presets[activeRow] ? presetDescription(presets[activeRow]) : "\u00a0"}</p>
+        {formError && <p className="field-error" role="alert">{formError}</p>}
         {formPreset && (
           <div className="act-form">
             {visibleParams(formPreset, values).map((param) => (
@@ -280,12 +322,12 @@ export function ActionPicker({
                 key={param.name}
                 param={param}
                 value={values[param.name] ?? ""}
-                onChange={(v) => setValues((old) => ({ ...old, [param.name]: v }))}
+                onChange={(v) => { invalidateValidation(); setValues((old) => ({ ...old, [param.name]: v })); }}
               />
             ))}
             <div className="act-form-foot">
               {missing.length > 0 && <span className="field-error">{t("ui.actpick.fill_required")}</span>}
-              <button type="button" className="btn primary small" disabled={missing.length > 0} onClick={() => applyForm(formPreset)}>
+              <button type="button" className="btn primary small" disabled={submitting || missing.length > 0} onClick={() => applyForm(formPreset)}>
                 {t("ui.actpick.apply")}
               </button>
             </div>
@@ -308,7 +350,7 @@ function ParamField({ param, value, onChange }: { param: ActionPreset["params"][
   const selectionLabel = `{${t("ui.var.selected_text")}}`;
   const customUrl = param.label_key === "preset.param.search_url";
   const displayValue = customUrl ? value.replaceAll("%MS_SELECTED_TEXT%", selectionLabel) : value;
-  const required = param.default.kind === "literal" && param.default.value === "";
+  const required = presetParamRequired(param);
   const empty = required && !(param.kind.type === "multiline_text" ? value : value.trim());
   const error = empty ? <span className="field-error">{t("ui.actpick.required")}</span> : null;
   switch (param.kind.type) {

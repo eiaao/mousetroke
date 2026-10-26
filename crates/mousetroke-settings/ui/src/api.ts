@@ -15,6 +15,7 @@ export const api = {
   initState: () => invoke<InitState>("init_state"),
   actionCatalog: () => invoke<ActionCatalog>("action_catalog"),
   expandPreset: (id: string, params: Record<string, unknown>, uiLang: string) => invoke<Action>("expand_preset", { id, params, uiLang }),
+  validatePreset: (id: string, params: Record<string, string>, uiLang: string) => invoke<void>("validate_preset", { id, params, uiLang }),
   saveConfig: (config: Config) => invoke<void>("save_config", { config: persistedConfig(config) }),
   engineStatus: () => invoke<EngineStatus>("get_engine_status"),
   setUiLang: (tag: string) => invoke<void>("set_ui_lang", { tag }),

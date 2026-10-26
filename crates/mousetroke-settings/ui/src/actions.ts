@@ -263,10 +263,15 @@ export function visibleParams(p: ActionPreset, values: Record<string, string>): 
   return p.params.filter((param) => !param.visible_when || values[param.visible_when.param] === param.visible_when.equals);
 }
 
-/** 必填参数：默认值是空串的文字类参数（选项类总有值）。 */
+/** 自定义选项下的输入仍需明确填写，不能因字面默认值非空而回落到默认内容。 */
+export function presetParamRequired(param: ActionPreset["params"][number]): boolean {
+  return param.kind.type !== "choice" && ((param.default.kind === "literal" && param.default.value === "") || param.visible_when?.equals === "custom");
+}
+
+/** 只检查当前可见的必填参数；多行文字保留空白。 */
 export function missingRequiredParams(p: ActionPreset, values: Record<string, string>): string[] {
   return visibleParams(p, values)
-    .filter((param) => param.default.kind === "literal" && param.default.value === "" && !(param.kind.type === "multiline_text" ? values[param.name] : (values[param.name] ?? "").trim()))
+    .filter((param) => presetParamRequired(param) && !(param.kind.type === "multiline_text" ? values[param.name] : (values[param.name] ?? "").trim()))
     .map((param) => param.name);
 }
 

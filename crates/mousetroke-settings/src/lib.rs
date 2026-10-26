@@ -141,6 +141,18 @@ fn expand_preset(id: String, params: Params, ui_lang: String) -> MsgResult<Actio
     action_presets::expand(&id, caps::Platform::CURRENT, &params, lang).map_err(|e| Msg::new(e.reason_key(), &[]))
 }
 
+#[tauri::command]
+fn validate_preset(id: String, params: Params, ui_lang: String) -> MsgResult<()> {
+    let lang = mousetroke_core::i18n::Lang::from_tag(&ui_lang).unwrap_or_else(mousetroke_core::i18n::lang);
+    action_presets::resolve(&id, caps::Platform::CURRENT, &params, lang).map(|_| ()).map_err(|error| {
+        let params = match &error {
+            action_presets::PresetError::InvalidParam { name, .. } => vec![("param", (*name).into())],
+            _ => vec![],
+        };
+        Msg::new(error.reason_key(), &params)
+    })
+}
+
 #[derive(Serialize)]
 #[serde(rename_all = "camelCase")]
 struct EngineStatus {
@@ -620,6 +632,7 @@ pub fn run(config: Option<PathBuf>) {
             init_state,
             action_catalog,
             expand_preset,
+            validate_preset,
             save_config,
             get_engine_status,
             set_ui_lang,
@@ -693,6 +706,28 @@ mod tests {
         assert_eq!(std::fs::read_dir(&dir).unwrap().count(), 1);
         std::fs::remove_file(&path).unwrap();
         std::fs::remove_dir(&dir).unwrap();
+    }
+
+    #[test]
+    fn preset_validation_accepts_native_and_advanced_actions_and_identifies_bad_params() {
+        for (id, params) in [
+            ("window.snap_left", serde_json::json!({})),
+            ("text.type", serde_json::json!({"text":"hello"})),
+            ("text.search", serde_json::json!({"engine":"custom","url":"https://example.org/?q=%MS_SELECTED_TEXT%"})),
+            ("text.datetime", serde_json::json!({"format":"custom","custom_format":"YYYY-MM-DD HH:mm"})),
+            ("edit.copy", serde_json::json!({})),
+        ] {
+            assert!(validate_preset(id.into(), params.as_object().unwrap().clone(), "en-US".into()).is_ok(), "{id}");
+        }
+        for (id, params, param) in [
+            ("text.search", serde_json::json!({"engine":"custom","url":"https://example.org/"}), "url"),
+            ("text.search", serde_json::json!({"engine":"custom","url":"file://example/%MS_SELECTED_TEXT%"}), "url"),
+            ("text.datetime", serde_json::json!({"format":"custom","custom_format":"YYYY-MM-DD '"}), "custom_format"),
+        ] {
+            let error = validate_preset(id.into(), params.as_object().unwrap().clone(), "en-US".into()).unwrap_err();
+            assert_eq!(error.key, "preset.status.invalid_param");
+            assert_eq!(error.params["param"], param);
+        }
     }
 
     #[test]

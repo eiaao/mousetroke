@@ -54,6 +54,17 @@ const fixture = {
       macos: { status: "implemented", value: { type: "search" } },
     },
     {
+      id: "text.datetime", category: "text",
+      name_key: "preset.action.text.datetime.name", description_key: "preset.action.text.datetime.description", aliases_key: "preset.action.text.datetime.aliases",
+      params: [
+        { name: "format", label_key: "preset.param.format", kind: { type: "choice", choices: [{ value: "date_iso", label_key: "preset.choice.date_iso" }, { value: "custom", label_key: "preset.choice.custom" }] }, default: { kind: "literal", value: "date_iso" } },
+        { name: "custom_format", label_key: "preset.param.custom_format", visible_when: { param: "format", equals: "custom" }, kind: { type: "text" }, default: { kind: "literal", value: "YYYY-MM-DD" } },
+        { name: "method", label_key: "preset.param.method", kind: { type: "choice", choices: [{ value: "paste", label_key: "preset.choice.paste" }, { value: "type", label_key: "preset.choice.type" }] }, default: { kind: "literal", value: "paste" } },
+      ],
+      windows: { status: "implemented", value: { type: "native", value: { type: "date_time" } } },
+      macos: { status: "implemented", value: { type: "native", value: { type: "date_time" } } },
+    },
+    {
       id: "open.website", category: "open",
       name_key: "preset.action.open.website.name", description_key: "preset.action.open.website.description", aliases_key: "preset.action.open.website.aliases",
       params: [{ name: "url", label_key: "preset.param.url", kind: { type: "url" }, default: { kind: "literal", value: "https://mousetroke.com/" } }],
@@ -78,6 +89,7 @@ const fixture = {
   defaults: {
     "text.type": { text: "", method: "paste" },
     "text.search": { engine: "google", url: "https://www.google.com/search?q=%MS_SELECTED_TEXT%" },
+    "text.datetime": { format: "date_iso", custom_format: "YYYY-MM-DD", method: "paste" },
     "open.website": { url: "https://mousetroke.com/" },
   },
   commonPresetIds: ["browser.close_tab", "text.type", "open.website", "desktop.clipboard_history"],
@@ -111,6 +123,20 @@ function setup() {
   platform.initPlatform("windows");
   actions.initActionCatalog(fixture);
 }
+
+// 事件与焦点使用真实 DOM 挂载；静态渲染无法验证 Escape 的冒泡顺序。
+const dom = new JSDOM("<!doctype html><html><body></body></html>", { url: "http://localhost/" });
+Object.assign(globalThis, { window: dom.window, document: dom.window.document, HTMLElement: dom.window.HTMLElement, HTMLInputElement: dom.window.HTMLInputElement, Event: dom.window.Event, location: dom.window.location, requestAnimationFrame: (fn) => setTimeout(fn, 0), IS_REACT_ACT_ENVIRONMENT: true });
+Object.defineProperty(globalThis, "navigator", { value: dom.window.navigator, configurable: true });
+// jsdom 不提供录制画布的尺寸监听和绘图；这些测试只验证编辑状态。
+globalThis.ResizeObserver = class { observe() {} disconnect() {} };
+dom.window.HTMLCanvasElement.prototype.getContext = () => null;
+let scrolled;
+dom.window.HTMLElement.prototype.scrollIntoView = function () { scrolled = this; };
+const { createRoot } = await import("react-dom/client");
+after(() => dom.window.close());
+api.validateKeys = async () => null;
+api.validatePreset = async () => {};
 
 test("search matches names, aliases and shortcut spellings on the current platform", () => {
   setup();
@@ -282,19 +308,6 @@ test("unselected action shows a prominent pick button and hint (A)", () => {
 });
 
 
-// 事件与焦点使用真实 DOM 挂载；静态渲染无法验证 Escape 的冒泡顺序。
-const dom = new JSDOM("<!doctype html><html><body></body></html>", { url: "http://localhost/" });
-Object.assign(globalThis, { window: dom.window, document: dom.window.document, HTMLElement: dom.window.HTMLElement, HTMLInputElement: dom.window.HTMLInputElement, Event: dom.window.Event, location: dom.window.location, requestAnimationFrame: (fn) => setTimeout(fn, 0), IS_REACT_ACT_ENVIRONMENT: true });
-Object.defineProperty(globalThis, "navigator", { value: dom.window.navigator, configurable: true });
-// jsdom 不提供录制画布的尺寸监听和绘图；这些测试只验证编辑状态。
-globalThis.ResizeObserver = class { observe() {} disconnect() {} };
-dom.window.HTMLCanvasElement.prototype.getContext = () => null;
-let scrolled;
-dom.window.HTMLElement.prototype.scrollIntoView = function () { scrolled = this; };
-const { createRoot } = await import("react-dom/client");
-after(() => dom.window.close());
-api.validateKeys = async () => null;
-
 async function mount(element) {
   const container = document.createElement("div");
   document.body.append(container);
@@ -307,7 +320,7 @@ async function mount(element) {
   };
 }
 async function click(el) { assert.ok(el); await act(async () => el.click()); }
-async function key(el, value) { assert.ok(el); await act(async () => el.dispatchEvent(new dom.window.KeyboardEvent("keydown", { key: value, bubbles: true, cancelable: true }))); }
+async function key(el, value, modifiers = {}) { assert.ok(el); await act(async () => el.dispatchEvent(new dom.window.KeyboardEvent("keydown", { key: value, bubbles: true, cancelable: true, ...modifiers }))); }
 async function input(el, value) {
   await act(async () => {
     Object.getOwnPropertyDescriptor(dom.window.HTMLInputElement.prototype, "value").set.call(el, value);
@@ -1016,4 +1029,128 @@ test("hovering another row keeps an open form; search Enter applies the form act
   assert.equal(picked[0].id, "text.type");
   assert.equal(picked[0].params.text, "你好");
   await view.close();
+});
+
+
+test("custom search validates with the backend and clearing its URL stays required", async () => {
+  setup();
+  const original = api.validatePreset;
+  const calls = [], picked = [];
+  api.validatePreset = async (id, params, lang) => {
+    calls.push({ id, params, lang });
+    if (!params.url.includes("%MS_SELECTED_TEXT%")) throw { key: "preset.status.invalid_param", params: { param: "url" } };
+  };
+  const view = await mount(createElement(ActionPicker, { initialId: "text.search", current: { type: "preset", id: "text.search", params: { engine: "custom" } }, onPick: (a) => picked.push(a), onClose() {} }));
+  try {
+    const field = view.el.querySelector('[data-param="url"]');
+    await input(field, "https://example.org/");
+    await key(field, "Enter");
+    assert.equal(picked.length, 0);
+    assert.equal(view.el.querySelector('[role="alert"]').textContent, t("preset.status.invalid_param"));
+    assert.ok(document.activeElement === field, "焦点应回到校验失败的参数框");
+    assert.ok(view.el.querySelector(".act-form"));
+    await input(field, "   ");
+    assert.equal(field.getAttribute("aria-required"), "true");
+    assert.equal(field.getAttribute("aria-invalid"), "true");
+    assert.equal(button(view.el, t("ui.actpick.apply")).disabled, true);
+    await key(field, "Enter");
+    assert.equal(calls.length, 1);
+    assert.equal(picked.length, 0);
+    await input(field, "  https://example.org/?q=%MS_SELECTED_TEXT%  ");
+    await key(field, "Enter");
+    await key(field, "Enter");
+    assert.equal(calls.length, 2);
+    assert.equal(picked.length, 1);
+    assert.equal(picked[0].params, calls[1].params);
+    assert.deepEqual(picked[0].params, { engine: "custom", url: "https://example.org/?q=%MS_SELECTED_TEXT%" });
+  } finally { await view.close(); api.validatePreset = original; }
+});
+
+test("custom datetime is required and backend format errors keep its form open", async () => {
+  setup();
+  const original = api.validatePreset;
+  const picked = [], calls = [];
+  api.validatePreset = async (id, params) => {
+    calls.push({ id, params });
+    if (params.custom_format.includes("'")) throw { key: "preset.status.invalid_param", params: { param: "custom_format" } };
+  };
+  const view = await mount(createElement(ActionPicker, { initialId: "text.datetime", current: { type: "preset", id: "text.datetime", params: { format: "custom" } }, onPick: (a) => picked.push(a), onClose() {} }));
+  try {
+    const field = view.el.querySelector('[data-param="custom_format"]');
+    await input(field, "");
+    await key(field, "Enter");
+    assert.equal(field.getAttribute("aria-invalid"), "true");
+    assert.equal(calls.length, 0);
+    await input(field, "YYYY-MM-DD '");
+    await click(button(view.el, t("ui.actpick.apply")));
+    assert.equal(picked.length, 0);
+    assert.ok(document.activeElement === field, "焦点应回到校验失败的参数框");
+    assert.equal(view.el.querySelector('[role="alert"]').textContent, t("preset.status.invalid_param"));
+    await input(field, "YYYY-MM-DD HH:mm");
+    await key(field, "Enter");
+    assert.equal(picked.length, 1);
+    assert.equal(picked[0].params, calls[1].params);
+  } finally { await view.close(); api.validatePreset = original; }
+});
+
+test("native presets validate too and textarea requires Ctrl or Cmd Enter", async () => {
+  setup();
+  const original = api.validatePreset;
+  const calls = [], picked = [];
+  api.validatePreset = async (id, params) => { calls.push({ id, params }); };
+  const view = await mount(createElement(ActionPicker, { initialId: "text.type", current: { type: "preset", id: "text.type", params: { text: "hello" } }, onPick: (a) => picked.push(a), onClose() {} }));
+  try {
+    const field = view.el.querySelector("textarea");
+    await key(field, "Enter");
+    assert.equal(calls.length, 0);
+    await key(field, "Enter", { ctrlKey: true });
+    assert.equal(picked.length, 1);
+    assert.equal(calls[0].id, "text.type");
+    assert.equal(picked[0].params, calls[0].params);
+    await key(field, "Escape");
+    await click([...view.el.querySelectorAll('.act-list button')].find((b) => b.textContent.startsWith(t("preset.action.desktop.clipboard_history.name"))));
+    assert.equal(calls[1].id, "desktop.clipboard_history");
+    assert.deepEqual(calls[1].params, {});
+    assert.equal(picked.length, 2);
+  } finally { await view.close(); api.validatePreset = original; }
+});
+
+test("backend rejection keeps the form open and allows retry", async () => {
+  setup();
+  const original = api.validatePreset;
+  const picked = [];
+  api.validatePreset = async () => { throw new Error("validation unavailable"); };
+  const view = await mount(createElement(ActionPicker, { initialId: "open.website", onPick: (a) => picked.push(a), onClose() {} }));
+  try {
+    await click(button(view.el, t("ui.actpick.apply")));
+    assert.equal(view.el.querySelector('[role="alert"]').textContent, "validation unavailable");
+    assert.equal(picked.length, 0);
+    assert.ok(view.el.querySelector(".act-form"));
+    api.validatePreset = async () => {};
+    await click(button(view.el, t("ui.actpick.apply")));
+    assert.equal(picked.length, 1);
+  } finally { await view.close(); api.validatePreset = original; }
+});
+
+for (const change of ["switch", "edit", "escape", "unmount"]) test(`pending validation is guarded and discarded after ${change}`, async () => {
+  setup();
+  const original = api.validatePreset;
+  let finish, calls = 0;
+  const picked = [];
+  api.validatePreset = () => { calls++; return new Promise((resolve) => { finish = resolve; }); };
+  const view = await mount(createElement(ActionPicker, { initialId: "open.website", onPick: (a) => picked.push(a), onClose() {} }));
+  let unmounted = false;
+  try {
+    const field = view.el.querySelector('[data-param="url"]');
+    await key(field, "Enter");
+    await key(field, "Enter");
+    assert.equal(calls, 1);
+    assert.equal(button(view.el, t("ui.actpick.apply")).disabled, true);
+    if (change === "switch") await click([...view.el.querySelectorAll('.act-list button')].find((b) => b.textContent.startsWith(t("preset.action.text.type.name"))));
+    if (change === "edit") await input(field, "https://changed.example/");
+    if (change === "escape") await key(field, "Escape");
+    if (change === "unmount") { await view.close(); unmounted = true; }
+    await act(async () => finish());
+    assert.equal(picked.length, 0);
+  } finally { if (!unmounted) await view.close(); api.validatePreset = original; }
 });
