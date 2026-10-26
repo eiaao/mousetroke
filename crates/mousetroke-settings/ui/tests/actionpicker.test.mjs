@@ -2,7 +2,9 @@ import assert from "node:assert/strict";
 import { after, test } from "node:test";
 import { createServer } from "vite";
 import { act, createElement, useState } from "react";
-import { readFileSync } from "node:fs";
+import { readFileSync, mkdtempSync, writeFileSync, rmSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
 import { JSDOM } from "jsdom";
 import { renderToStaticMarkup } from "react-dom/server";
 
@@ -666,7 +668,7 @@ test("new gesture rows show no stroke yet with or without an action selected", (
 });
 
 
-test("unreadable config blocks all automatic and close-time saves until explicit recovery (C10)", async () => {
+for (const recovery of ["defaults", "import"]) test(`unreadable config blocks all automatic and close-time saves until explicit ${recovery} recovery (C10)`, async () => {
   setup();
   const { App } = await server.ssrLoadModule("/src/App.tsx");
   const config = JSON.parse(readFileSync(new URL("../../../mousetroke-core/assets/default-config.json", import.meta.url), "utf8"));
@@ -686,6 +688,11 @@ test("unreadable config blocks all automatic and close-time saves until explicit
   const saved = [];
   const opened = [];
   let recovered = 0;
+  const diskDir = mkdtempSync(join(tmpdir(), "mousetroke-ui-recovery-"));
+  const diskPath = join(diskDir, "config.json");
+  writeFileSync(diskPath, "broken JSON");
+  const imported = structuredClone(config);
+  imported.scopes[0].bindings[0].name = "Imported binding";
   Object.assign(api, {
     initState: async () => ({ platform: "windows", config, loadError: "line 2 column 14", configPath: "config.json", engine: { running: true, autostart: false, exeFound: true }, systemLangs: ["zh-CN"], actionCatalog: fixture }),
     actionCatalog: async () => fixture,
@@ -693,7 +700,14 @@ test("unreadable config blocks all automatic and close-time saves until explicit
     appIcons: async () => ({}),
     saveConfig: async (config) => saved.push(config),
     openPath: async (what) => opened.push(what),
-    recoverConfig: async () => { recovered++; return config; },
+    recoverConfig: async (incoming) => {
+      recovered++;
+      assert.equal(incoming === undefined, recovery === "defaults");
+      writeFileSync(diskPath, JSON.stringify(persistedConfig(incoming ?? config)));
+      return incoming ?? config;
+    },
+    pickFile: async () => "import.json",
+    loadConfigFile: async () => imported,
   });
   const view = await mount(createElement(App));
   try {
@@ -705,14 +719,25 @@ test("unreadable config blocks all automatic and close-time saves until explicit
     assert.equal(saved.length, 0);
     await click(button(view.el, t("ui.app.open_config_folder")));
     assert.deepEqual(opened, ["config_dir"]);
-    await click(button(view.el, t("ui.app.recover_defaults")));
+    if (recovery === "defaults") await click(button(view.el, t("ui.app.recover_defaults")));
+    else {
+      await click([...view.el.querySelectorAll('.nav-item')].find((b) => b.textContent === t("ui.sidebar.data")));
+      await click(button(view.el, t("ui.data.import_file")));
+      assert.equal(JSON.parse(readFileSync(diskPath, "utf8")).scopes[0].bindings[0].name, "Imported binding");
+      assert.ok(!button(view.el.querySelector('.toast'), t("common.undo")), "恢复导入不提供撤销通知");
+    }
     assert.equal(recovered, 1);
     assert.equal(view.el.querySelector('.banner'), null);
     await click(view.el.querySelector('.rows .row .switch'));
     await act(async () => new Promise((resolve) => setTimeout(resolve, 420)));
-    assert.equal(saved.length, 1);
+    assert.ok(saved.length >= 1);
+    const saves = saved.length;
+    await click(view.el.querySelector('.rows .row .switch'));
+    await act(async () => listeners.get("tauri://close-requested")({ event: "tauri://close-requested", id: 1 }));
+    assert.equal(saved.length, saves + 1, "恢复后关闭窗口前可以保存");
   } finally {
     await view.close();
+    rmSync(diskDir, { recursive: true, force: true });
     Object.assign(api, originalApi);
   }
 });

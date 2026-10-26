@@ -167,7 +167,7 @@ export function DataPage({
 }: {
   config: Config;
   configPath: string;
-  onReplace: (c: Config, message: string) => void;
+  onReplace: (c: Config, message: string) => Promise<void>;
   notify: (msg: string) => void;
 }) {
   const [busy, setBusy] = useState(false);
@@ -190,8 +190,8 @@ export function DataPage({
       // 同目录的 prefs.json 存在就一并导入（后端会忽略不存在的文件）
       const incoming = await api.importLegacy(gestures, gestures.replace(/gestures\.json$/i, "prefs.json"));
       const n = incoming.scopes.reduce((a, s) => a + s.bindings.length, 0);
-      if (mode === "replace") onReplace(incoming, t("ui.data.imported", { count: n }));
-      else onReplace(mergeConfigs(config, incoming), t("ui.data.merged", { count: n }));
+      if (mode === "replace") await onReplace(incoming, t("ui.data.imported", { count: n }));
+      else await onReplace(mergeConfigs(config, incoming), t("ui.data.merged", { count: n }));
     });
 
   return (
@@ -240,7 +240,7 @@ export function DataPage({
                 const p = await api.pickFile("json", false, t("ui.data.pick_import"));
                 if (!p) return;
                 const c = await api.loadConfigFile(p);
-                onReplace(c, t("ui.data.config_imported"));
+                await onReplace(c, t("ui.data.config_imported"));
               })
             }
           >

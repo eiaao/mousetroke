@@ -694,9 +694,15 @@ impl Config {
 
     /// 显式恢复：先完整保留坏文件，再写默认值；失败时恢复原文件。
     pub fn recover_defaults(path: &std::path::Path, now: std::time::SystemTime) -> Result<Self, String> {
+        Self::recover_to(path, Self::builtin(), now)
+    }
+
+    /// 显式恢复为指定配置：先完整备份坏文件，写入失败时回滚。
+    pub fn recover_to(path: &std::path::Path, mut cfg: Self, now: std::time::SystemTime) -> Result<Self, String> {
         if Self::load(path).is_ok() {
             return Err(crate::i18n::t("config.recovery_readable").into());
         }
+        cfg.migrate();
         let backup = path.with_file_name(format!("config.broken-{}.json", backup_timestamp(now)?));
         // 独占创建避免同一秒内的第二次恢复覆盖上次保留的原件。
         let reservation = std::fs::OpenOptions::new().write(true).create_new(true).open(&backup).map_err(|e| e.to_string())?;
@@ -705,12 +711,11 @@ impl Config {
             let _ = std::fs::remove_file(&backup);
             return Err(error.to_string());
         }
-        let defaults = Self::builtin();
-        if let Err(error) = defaults.save_live(path) {
+        if let Err(error) = cfg.write_atomic(path) {
             let _ = std::fs::rename(&backup, path);
             return Err(error);
         }
-        Ok(defaults)
+        Ok(cfg)
     }
 }
 

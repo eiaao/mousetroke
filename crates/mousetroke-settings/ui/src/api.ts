@@ -32,7 +32,7 @@ export const api = {
   pickFile: (kind: "json" | "exe" | "any", save: boolean, title: string) =>
     invoke<string | null>("pick_file", { kind, save, title }),
   pickFolder: (title: string) => invoke<string | null>("pick_folder", { title }),
-  recoverConfig: () => invoke<Config>("recover_config"),
+  recoverConfig: (config?: Config) => invoke<Config>("recover_config", { config: config ? persistedConfig(config) : null }),
   runningApps: () => invoke<RunningApp[]>("running_apps"),
   resolveApp: (path: string) => invoke<string>("resolve_app", { path }),
   pickWindow: () => invoke<{ exe: string; title: string } | null>("pick_window"),

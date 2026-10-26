@@ -333,8 +333,14 @@ fn export_config(path: String, config: Config) -> MsgResult<()> {
 }
 
 #[tauri::command]
-fn recover_config(paths: State<AppPaths>) -> MsgResult<Config> {
-    Config::recover_defaults(&paths.config, std::time::SystemTime::now())
+fn recover_config(paths: State<AppPaths>, config: Option<Config>) -> MsgResult<Config> {
+    let recovered = if let Some(config) = config {
+        validate_strokes(&config)?;
+        Config::recover_to(&paths.config, config, std::time::SystemTime::now())
+    } else {
+        Config::recover_defaults(&paths.config, std::time::SystemTime::now())
+    };
+    recovered
         .map_err(|e| Msg::new(keys::ERROR_SAVE, &[("path", paths.config.display().to_string()), ("err", e)]))
 }
 

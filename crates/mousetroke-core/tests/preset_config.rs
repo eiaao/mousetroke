@@ -200,3 +200,29 @@ fn failed_recovery_keeps_original_when_defaults_cannot_be_written() {
     assert!(!dir.0.join("config.broken-19700101-000000.json").exists());
     std::fs::remove_dir(tmp).unwrap();
 }
+
+#[test]
+fn imported_recovery_writes_config_and_preserves_or_rolls_back_bad_bytes() {
+    for fail_write in [false, true] {
+        let dir = Temp::new();
+        let path = dir.config();
+        let original = [0xff, 0xfe, 0x00, 0x01];
+        std::fs::write(&path, original).unwrap();
+        let imported = config_with(json!({"type":"key_sequence","keys":"^v"}));
+        if fail_write {
+            std::fs::create_dir(path.with_extension("json.tmp")).unwrap();
+        }
+        let result = Config::recover_to(&path, imported.clone(), std::time::UNIX_EPOCH);
+        let backup = dir.0.join("config.broken-19700101-000000.json");
+        if fail_write {
+            assert!(result.is_err());
+            assert_eq!(std::fs::read(&path).unwrap(), original);
+            assert!(!backup.exists());
+        } else {
+            assert_eq!(result.unwrap(), imported);
+            assert_eq!(Config::load(&path).unwrap(), imported);
+            assert_eq!(std::fs::read(backup).unwrap(), original);
+            assert!(Config::recover_to(&path, Config::builtin(), std::time::UNIX_EPOCH).is_err());
+        }
+    }
+}

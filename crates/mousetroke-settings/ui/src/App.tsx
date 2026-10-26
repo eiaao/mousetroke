@@ -306,11 +306,15 @@ function Main({ init }: { init: InitState }) {
     });
   };
 
-  const replaceConfig = (c: Config, message: string) => {
+  const replaceConfig = async (c: Config, message: string) => {
+    const recovering = !!loadError;
+    if (recovering) await api.recoverConfig(c);
     store.load(c, true);
+    if (recovering) setLoadError(null);
     setView({ kind: "scope", index: Math.max(0, c.scopes.findIndex((s) => s.kind === "global")) });
     setSelected(null);
-    notify(message, t("common.undo"), undo);
+    if (recovering) notify(message);
+    else notify(message, t("common.undo"), undo);
   };
 
   const binding = scope && sel != null ? scope.bindings[sel] : null;
