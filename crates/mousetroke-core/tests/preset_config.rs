@@ -78,6 +78,16 @@ fn known_action_json_shapes_remain_compatible() {
 }
 
 #[test]
+fn existing_non_file_config_is_a_fatal_read_error() {
+    let dir = Temp::new();
+    let path = dir.config();
+    std::fs::create_dir(&path).unwrap();
+    assert!(Config::load_or_init(&path).is_err());
+    assert!(path.is_dir());
+    assert_eq!(std::fs::read_dir(&path).unwrap().count(), 0);
+}
+
+#[test]
 fn broken_configs_are_never_overwritten_or_renamed() {
     for bytes in [b"invalid JSON".as_slice(), br#"{"scopes":[{"kind":"broken"}]}"#, &[0xff, 0xfe]] {
         let dir = Temp::new();

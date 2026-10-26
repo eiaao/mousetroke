@@ -645,13 +645,20 @@ impl Config {
     }
 
     /// 读取配置；首次运行（文件不存在）写入内置默认值，设置界面随后读到的也是这一份。
-    /// 第二项是读取失败或首次写盘失败的原因；调用方须通知用户并暂停设置写盘。
+    /// 读取失败直接返回错误；第二项是解析失败或首次写盘失败的原因，调用方须通知用户并暂停设置写盘。
     pub fn load_or_init(path: &std::path::Path) -> Result<(Self, Option<String>), String> {
-        match Self::load_existing(path) {
-            Ok(Some(cfg)) => return Ok((cfg, None)),
-            // 损坏文件留给用户恢复；只在内存回落，由调用方显示诊断。
-            Err(error) => return Ok((Self::builtin(), Some(error))),
-            Ok(None) => {}
+        let bytes = match std::fs::read(path) {
+            Ok(bytes) => Some(bytes),
+            Err(error) if error.kind() == std::io::ErrorKind::NotFound => None,
+            Err(error) => return Err(format!("读取 {} 失败: {error}", path.display())), // i18n:allow 配置损坏时的诊断信息
+        };
+        if let Some(bytes) = bytes {
+            // 已读到的损坏内容留给用户恢复；只在内存回落，由调用方显示诊断。
+            let parsed = std::str::from_utf8(&bytes).map_err(|e| e.to_string()).and_then(Self::from_json);
+            return match parsed {
+                Ok(cfg) => Ok((cfg, None)),
+                Err(error) => Ok((Self::builtin(), Some(format!("解析 {} 失败: {error}", path.display())))), // i18n:allow 配置损坏时的诊断信息
+            };
         }
         let cfg = Self::builtin();
         let saved = cfg.save_live(path).err();
