@@ -9,16 +9,20 @@ use objc2_foundation::NSString;
 use std::{sync::Mutex, time::Duration};
 
 static PASTE_LOCK: Mutex<()> = Mutex::new(());
+
+fn is_text_type(kind: &NSString) -> bool {
+    kind == unsafe { NSPasteboardTypeString }
+        || matches!(kind.to_string().as_str(), "public.utf8-plain-text" | "public.text")
+}
+
 struct Backend;
 impl PasteBackend for Backend {
     fn clipboard_has_non_text(&mut self) -> Result<bool, String> {
         on_main(|| {
             let board = NSPasteboard::generalPasteboard();
-            Ok(board.types().is_some_and(|types| types.iter().any(|kind| {
-                let name = kind.to_string();
-                kind.as_ref() != unsafe { NSPasteboardTypeString }
-                    && !matches!(name.as_str(), "public.utf8-plain-text" | "public.text")
-            })))
+            Ok(board.types().is_some_and(|types| {
+                types.iter().any(|kind| !is_text_type(&kind))
+            }))
         })
     }
 
@@ -133,6 +137,19 @@ pub fn type_text_direct(text: &str) -> Result<(), String> {
 
 #[cfg(test)]
 mod tests {
+    use super::{is_text_type, NSPasteboardTypeString, NSString};
+
+    #[test]
+    fn pasteboard_types_classify_text_without_clipboard_access() {
+        assert!(is_text_type(unsafe { NSPasteboardTypeString }));
+        for name in ["public.utf8-plain-text", "public.text"] {
+            assert!(is_text_type(&NSString::from_str(name)), "{name}");
+        }
+        for name in ["public.png", "public.file-url"] {
+            assert!(!is_text_type(&NSString::from_str(name)), "{name}");
+        }
+    }
+
     #[test]
     #[ignore] // 授予测试终端辅助功能权限；运行后 3 秒内聚焦空白编辑器。
     fn desktop_direct_text() {
