@@ -15,7 +15,7 @@ use windows::Win32::UI::Input::KeyboardAndMouse::{
     MOUSEEVENTF_XDOWN, MOUSEEVENTF_XUP, MOUSE_EVENT_FLAGS, MOUSEINPUT, VIRTUAL_KEY,
 };
 use windows::Win32::UI::WindowsAndMessaging::{
-    DestroyMenu, GetWindowTextW, PostMessageW, SetForegroundWindow, SetWindowPos, ShowWindow,
+    DestroyMenu, GetWindowTextW, IsIconic, PostMessageW, SetForegroundWindow, SetWindowPos, ShowWindow,
     HWND_NOTOPMOST, HWND_TOPMOST, MF_POPUP, MF_STRING, SW_SHOWNORMAL, SW_HIDE, SW_MAXIMIZE,
     SW_MINIMIZE, SW_RESTORE, SWP_NOACTIVATE, SWP_NOMOVE, SWP_NOSIZE, WM_CLOSE, WS_EX_TOOLWINDOW,
     WS_OVERLAPPED,
@@ -321,6 +321,9 @@ pub fn set_topmost(hwnd: HWND, on: bool) {
 /// 激活窗口（执行命令前）。
 pub fn focus_window(hwnd: HWND) {
     unsafe {
+        if IsIconic(hwnd).as_bool() {
+            let _ = ShowWindow(hwnd, SW_RESTORE);
+        }
         let _ = SetForegroundWindow(hwnd);
     }
 }
@@ -545,11 +548,17 @@ pub fn launch_app(
 pub(crate) fn activate_app_by_identity(exe: &str) -> bool {
     let exe = expand_environment(exe);
     let running = crate::targeting::visible_windows().into_iter().find_map(|(hwnd, _)| {
+        if !app_activation_class_eligible(&crate::targeting::class_name(hwnd)) { return None; }
         let mut pid = 0;
         unsafe { windows::Win32::UI::WindowsAndMessaging::GetWindowThreadProcessId(hwnd, Some(&mut pid)); }
         crate::targeting::exe_of(pid).filter(|path| app_exe_matches(&exe, path)).map(|_| hwnd)
     });
     if let Some(hwnd) = running { focus_window(hwnd); true } else { false }
+}
+
+/// 桌面与系统外壳不能代替应用窗口；资源管理器的文件窗口仍可激活。
+fn app_activation_class_eligible(class: &str) -> bool {
+    !matches!(class, "Progman" | "WorkerW" | "SHELLDLL_DefView") && !crate::targeting::is_shell_ui_class(class)
 }
 
 fn app_exe_matches(requested: &str, running: &str) -> bool {
@@ -868,7 +877,7 @@ pub fn is_vk_pressed(key: mousetroke_core::keyseq::Key) -> bool {
 
 #[cfg(test)]
 mod app_identity_tests {
-    use super::{app_exe_matches, expand_environment};
+    use super::{app_activation_class_eligible, app_exe_matches, expand_environment};
 
     #[test]
     fn environment_expansion_handles_system_paths_mixed_text_and_unknown_variables() {
@@ -890,5 +899,14 @@ mod app_identity_tests {
         assert!(app_exe_matches("tools/editor.exe", "tools\\EDITOR.EXE"));
         assert!(!app_exe_matches("editor.exe", "tools/other-editor.exe"));
         assert!(!app_exe_matches("tools/editor.exe", "other/editor.exe"));
+    }
+    #[test]
+    fn shell_classes_are_not_app_activation_candidates() {
+        for class in ["Progman", "WorkerW", "SHELLDLL_DefView", "Shell_TrayWnd", "Shell_SecondaryTrayWnd", "NotifyIconOverflowWindow", "TopLevelWindowForOverflowXamlIsland", "Xaml_WindowedPopupClass", "XamlExplorerHostIslandWindow", "Windows.UI.Core.CoreWindow", "#32768"] {
+            assert!(!app_activation_class_eligible(class), "{class}");
+        }
+        for class in ["CabinetWClass", "Notepad", "Chrome_WidgetWin_1"] {
+            assert!(app_activation_class_eligible(class), "{class}");
+        }
     }
 }

@@ -423,9 +423,9 @@ pub struct MenuItem {
 }
 
 impl Action {
-    /// 带参数的启动必须交给程序处理，不能只聚焦已有窗口。
+    /// 带参数或提权的启动必须交给程序处理，不能只聚焦已有窗口。
     pub fn activates_app_identity(&self) -> bool {
-        matches!(self, Self::LaunchApp { activate_by_identity: true, args, win_class: None, win_title: None, if_running: IfRunning::Activate, .. } if args.is_none())
+        matches!(self, Self::LaunchApp { activate_by_identity: true, elevate: false, args, win_class: None, win_title: None, if_running: IfRunning::Activate, .. } if args.is_none())
     }
 
     pub const KNOWN_TYPES: &'static [&'static str] = &[
@@ -870,6 +870,16 @@ mod builtin_tests {
                 }
             }
         }
+    }
+
+    #[test]
+    fn elevated_launch_cannot_activate_by_identity() {
+        let mut action: Action = serde_json::from_str(r#"{"type":"launch_app","exe":"editor.exe","activate_by_identity":true,"elevate":false}"#).unwrap();
+        assert!(action.activates_app_identity());
+        if let Action::LaunchApp { elevate, .. } = &mut action { *elevate = true; }
+        assert!(!action.activates_app_identity());
+        if let Action::LaunchApp { elevate, .. } = &mut action { *elevate = false; }
+        assert!(action.activates_app_identity());
     }
 
     #[test]
