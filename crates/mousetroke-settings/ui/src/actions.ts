@@ -196,7 +196,12 @@ export function presetSearchBlob(p: ActionPreset): string {
   }
   const hit = blobs.get(p.id);
   if (hit !== undefined) return hit;
-  const parts = [t(p.name_key as MsgKey), t(p.description_key as MsgKey), t(p.aliases_key as MsgKey)];
+  // 带修饰键的别名由完整快捷键匹配处理，避免 Ctrl+W 成为 Ctrl+Win+Left 的子串。
+  const aliases = t(p.aliases_key as MsgKey).split(/\s+/).filter((word) => {
+    const identity = shortcutIdentity(word);
+    return !identity || identity.startsWith(":");
+  }).join(" ");
+  const parts = [t(p.name_key as MsgKey), t(p.description_key as MsgKey), aliases];
   const blob = parts.join(" ").toLowerCase().replace(/\s+/g, "");
   blobs.set(p.id, blob);
   return blob;
@@ -207,8 +212,7 @@ export function matchPreset(p: ActionPreset, query: string): boolean {
   if (!q) return true;
   const keys = presetKeys(p);
   const shortcut = shortcutIdentity(q);
-  if (shortcut) return !!keys && shortcutIdentities(keys).includes(shortcut);
-  return presetSearchBlob(p).includes(q);
+  return presetSearchBlob(p).includes(q) || (!!shortcut && !!keys && shortcutIdentities(keys).includes(shortcut));
 }
 
 // ---------------------------------------------------------------- 分类与参数

@@ -14,7 +14,7 @@ after(() => server.close());
 const platform = await server.ssrLoadModule("/src/platform.ts");
 const actions = await server.ssrLoadModule("/src/actions.ts");
 const keys = await server.ssrLoadModule("/src/gesture.ts");
-const { t } = await server.ssrLoadModule("/src/i18n/index.ts");
+const { t, initLang } = await server.ssrLoadModule("/src/i18n/index.ts");
 const { ActionPicker } = await server.ssrLoadModule("/src/components/ActionPicker.tsx");
 const { ActionEditor } = await server.ssrLoadModule("/src/components/ActionEditor.tsx");
 const { Modal } = await server.ssrLoadModule("/src/components/Dialogs.tsx");
@@ -535,6 +535,27 @@ test("current preset selects its actual row and scrolls into view (UI 1)", async
   assert.equal(nonCommon.category, "text");
 });
 
+test("bare key searches include English text matches and exact shortcuts together", async () => {
+  setup();
+  const view = await mount(createElement("div"));
+  try {
+    initLang({ setting: "en-US", url: "" });
+    const close = actions.findPreset("browser.close_tab");
+    const tab = { ...close, id: "browser.new_tab", name_key: "preset.action.browser.new_tab.name", aliases_key: "preset.action.browser.new_tab.aliases", windows: { status: "implemented", value: { type: "keys", value: "^t" } } };
+    const snap = { ...close, id: "window.snap_left", name_key: "preset.action.window.snap_left.name", aliases_key: "preset.action.window.snap_left.aliases", windows: { status: "implemented", value: { type: "keys", value: "#{LEFT}" } } };
+    const arrow = { ...close, id: "edit.left", name_key: "preset.action.edit.copy.name", aliases_key: "preset.action.edit.copy.aliases", windows: { status: "implemented", value: { type: "keys", value: "{LEFT}" } } };
+    actions.initActionCatalog({ ...fixture, presets: [close, tab, snap, arrow] });
+    assert.deepEqual(actions.visiblePresets("common", "tab").map((p) => p.id), [close.id, tab.id]);
+    assert.deepEqual(actions.visiblePresets("common", "left").map((p) => p.id), [snap.id, arrow.id]);
+    assert.deepEqual(actions.visiblePresets("common", "^t").map((p) => p.id), [tab.id]);
+    assert.deepEqual(actions.visiblePresets("common", "win+left").map((p) => p.id), [snap.id]);
+  } finally {
+    initLang({ setting: "zh-CN", url: "" });
+    await view.close();
+    setup();
+  }
+});
+
 test("shortcut matching compares complete modifier sets and main keys (UI 2)", () => {
   setup();
   const desktop = { ...actions.findPreset("browser.close_tab"), id: "desktop.prev", aliases_key: "preset.action.desktop.prev.aliases", windows: { status: "implemented", value: { type: "keys", value: "^#{LEFT}" } } };
@@ -545,6 +566,9 @@ test("shortcut matching compares complete modifier sets and main keys (UI 2)", (
   const modified = { ...plain, id: "modified", windows: { status: "implemented", value: { type: "keys", value: "^{F5}" } } };
   assert.equal(actions.matchPreset(plain, "F5"), true);
   assert.equal(actions.matchPreset(modified, "F5"), false);
+  const shifted = { ...plain, id: "shifted", windows: { status: "implemented", value: { type: "keys", value: "#+5" } } };
+  for (const query of ["#+5", "win+shift+5", "shift+win+5"]) assert.equal(actions.matchPreset(shifted, query), true);
+  assert.equal(actions.matchPreset(shifted, "#5"), false);
 });
 
 test("initialId and row activation merge existing params over defaults (C3)", async () => {
