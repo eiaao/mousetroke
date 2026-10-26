@@ -19,14 +19,22 @@ fn read(lang: &str, slug: &str) -> String {
 
 #[test]
 fn action_library_is_linked_from_the_gesture_creation_guides() {
-    for lang in ["en", "zh-CN"] {
+    for lang in LANGS {
         for slug in ["index", "actions", "getting-started", "gestures"] {
             assert!(read(lang, slug).contains("(action-library.md)"), "{lang}/{slug}.md");
         }
-        let library = read(lang, "action-library");
-        for expected in ["title:", "description:", "order:", "<!-- action-library:generated:start -->", "<!-- action-library:generated:end -->", "(actions.md)"] {
-            assert!(library.contains(expected), "{lang}/action-library.md: {expected}");
+        let library = read(lang, "action-library").replace("\r\n", "\n");
+        let (frontmatter, _) = library.strip_prefix("---\n").unwrap().split_once("\n---\n").unwrap();
+        for field in ["title:", "description:"] {
+            assert!(frontmatter.lines().any(|line| line.starts_with(field)), "{lang}/action-library.md: {field}");
         }
+        assert!(frontmatter.lines().any(|line| line == "order: 5.5"), "{lang}/action-library.md: order");
+        let start = "<!-- action-library:generated:start -->";
+        let end = "<!-- action-library:generated:end -->";
+        assert_eq!(library.matches(start).count(), 1, "{lang}/action-library.md");
+        assert_eq!(library.matches(end).count(), 1, "{lang}/action-library.md");
+        assert!(library.find(start).unwrap() < library.find(end).unwrap(), "{lang}/action-library.md");
+        assert!(library.contains("(actions.md)"), "{lang}/action-library.md: actions link");
     }
 }
 

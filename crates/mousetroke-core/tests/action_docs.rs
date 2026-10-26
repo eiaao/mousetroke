@@ -8,6 +8,70 @@ use std::{collections::BTreeMap, fmt::Write, path::Path};
 const START: &str = "<!-- action-library:generated:start -->";
 const END: &str = "<!-- action-library:generated:end -->";
 
+struct DocText {
+    headings: &'static str,
+    required: &'static str,
+    default: &'static str,
+    search_default: &'static str,
+    visible_when: &'static str,
+}
+
+fn localized_text(lang: Lang) -> DocText {
+    let (headings, required, default, search_default, visible_when) = match lang {
+        Lang::EnUs | Lang::QpsPloc => (
+            "| Action / ID | What it does / where it works | Parameters | Windows | Mac |\n",
+            "required", "default", "Baidu for Simplified Chinese UI; Google otherwise",
+            "; only when {field} is {choice}",
+        ),
+        Lang::ZhCn => (
+            "| 动作 / ID | 用途与适用范围 | 参数 | Windows | Mac |\n",
+            "必填", "默认", "简体中文界面默认百度，其他语言默认 Google",
+            "；仅当{field}为{choice}时",
+        ),
+        Lang::DeDe => (
+            "| Aktion / ID | Funktion und Einsatzbereich | Parameter | Windows | Mac |\n",
+            "erforderlich", "Standard:", "Baidu bei vereinfachter chinesischer Oberfläche, sonst Google",
+            "; nur bei {field}: {choice}",
+        ),
+        Lang::EsEs => (
+            "| Acción / ID | Función y ámbito de uso | Parámetros | Windows | Mac |\n",
+            "obligatorio", "predeterminado:", "Baidu con la interfaz en chino simplificado; Google en los demás idiomas",
+            "; solo si {field} es {choice}",
+        ),
+        Lang::FrFr => (
+            "| Action / ID | Fonction et contexte d’utilisation | Paramètres | Windows | Mac |\n",
+            "obligatoire", "par défaut :", "Baidu avec l’interface en chinois simplifié ; Google sinon",
+            " ; uniquement si {field} vaut {choice}",
+        ),
+        Lang::ItIt => (
+            "| Azione / ID | Funzione e ambito d’uso | Parametri | Windows | Mac |\n",
+            "obbligatorio", "predefinito:", "Baidu con l’interfaccia in cinese semplificato; Google nelle altre lingue",
+            "; solo se {field} è {choice}",
+        ),
+        Lang::JaJp => (
+            "| 動作 / ID | 機能と利用範囲 | パラメーター | Windows | Mac |\n",
+            "必須", "既定値:", "簡体字中国語の画面では Baidu、それ以外では Google が既定",
+            "；{field}が{choice}の場合のみ",
+        ),
+        Lang::KoKr => (
+            "| 동작 / ID | 기능과 사용 범위 | 매개변수 | Windows | Mac |\n",
+            "필수", "기본값:", "중국어 간체 UI는 Baidu, 나머지 언어는 Google이 기본값",
+            "; {field} 항목이 {choice}일 때만 표시",
+        ),
+        Lang::PtBr => (
+            "| Ação / ID | Função e onde usar | Parâmetros | Windows | Mac |\n",
+            "obrigatório", "padrão:", "Baidu na interface em chinês simplificado; Google nos demais idiomas",
+            "; somente se {field} for {choice}",
+        ),
+        Lang::RuRu => (
+            "| Действие / ID | Назначение и область применения | Параметры | Windows | Mac |\n",
+            "обязательно", "по умолчанию:", "Baidu для интерфейса на упрощённом китайском, иначе Google",
+            "; только при выборе «{choice}» в поле «{field}»",
+        ),
+    };
+    DocText { headings, required, default, search_default, visible_when }
+}
+
 fn cell(text: &str) -> String {
     text.replace('&', "&amp;")
         .replace('<', "&lt;")
@@ -18,7 +82,7 @@ fn cell(text: &str) -> String {
 
 fn parameters(preset: &Preset, lang: Lang, catalog: &BTreeMap<String, String>) -> String {
     let defaults = preset.default_params(lang);
-    let zh = lang == Lang::ZhCn;
+    let text = localized_text(lang);
     preset
         .params
         .iter()
@@ -48,28 +112,17 @@ fn parameters(preset: &Preset, lang: Lang, catalog: &BTreeMap<String, String>) -
                 format!("`{}`", cell(default))
             };
             let detail = if default.is_empty() {
-                if zh {
-                    "必填".into()
-                } else {
-                    "required".into()
-                }
+                text.required.into()
             } else if matches!(param.default, ParamDefault::SearchEngine) {
-                if zh {
-                    "简体中文界面默认百度，其他语言默认 Google".into()
-                } else {
-                    "Baidu for Simplified Chinese UI; Google otherwise".into()
-                }
-            } else if zh {
-                format!("默认 {default_label}")
+                text.search_default.into()
             } else {
-                format!("default {default_label}")
+                format!("{} {default_label}", text.default)
             };
             let condition = param.visible_when.map(|condition| {
                 let field = preset.params.iter().find(|p| p.name == condition.param).unwrap();
                 let ParamKind::Choice { choices } = field.kind else { panic!() };
                 let choice = choices.iter().find(|c| c.value == condition.equals).unwrap();
-                if zh { format!("；仅当{}为{}时", cell(&catalog[field.label_key]), cell(&catalog[choice.label_key])) }
-                else { format!("; only when {} is {}", cell(&catalog[field.label_key]), cell(&catalog[choice.label_key])) }
+                text.visible_when.replace("{field}", &cell(&catalog[field.label_key])).replace("{choice}", &cell(&catalog[choice.label_key]))
             }).unwrap_or_default();
             format!(
                 "{label} (`{}`): {}{detail}{condition}",
@@ -97,6 +150,7 @@ fn availability(implementation: Implementation, note: Option<&str>, catalog: &BT
 
 fn catalogue(lang: Lang, catalog: &BTreeMap<String, String>) -> String {
     let mut out = String::new();
+    let text = localized_text(lang);
     let mut previous = None;
     for preset in REGISTRY {
         if previous != Some(preset.category) {
@@ -107,11 +161,8 @@ fn catalogue(lang: Lang, catalog: &BTreeMap<String, String>) -> String {
                 catalog[&format!("preset.category.{}", category.as_str().unwrap())]
             )
             .unwrap();
-            if lang == Lang::ZhCn {
-                out.push_str("| 动作 / ID | 用途与适用范围 | 参数 | Windows | Mac |\n|---|---|---|---|---|\n");
-            } else {
-                out.push_str("| Action / ID | What it does / where it works | Parameters | Windows | Mac |\n|---|---|---|---|---|\n");
-            }
+            out.push_str(text.headings);
+            out.push_str("|---|---|---|---|---|\n");
             previous = Some(preset.category);
         }
         writeln!(
@@ -137,7 +188,13 @@ fn catalogue(lang: Lang, catalog: &BTreeMap<String, String>) -> String {
 #[test]
 fn action_library_tables_match_registry() {
     let root = Path::new(env!("CARGO_MANIFEST_DIR")).join("../..");
-    for (dir, tag, lang) in [("en", "en-US", Lang::EnUs), ("zh-CN", "zh-CN", Lang::ZhCn)] {
+    for (dir, tag, lang) in [
+        ("en", "en-US", Lang::EnUs), ("zh-CN", "zh-CN", Lang::ZhCn),
+        ("de", "de-DE", Lang::DeDe), ("es", "es-ES", Lang::EsEs),
+        ("fr", "fr-FR", Lang::FrFr), ("it", "it-IT", Lang::ItIt),
+        ("ja", "ja-JP", Lang::JaJp), ("ko", "ko-KR", Lang::KoKr),
+        ("pt", "pt-BR", Lang::PtBr), ("ru", "ru-RU", Lang::RuRu),
+    ] {
         let catalog: BTreeMap<String, String> = serde_json::from_str(
             &std::fs::read_to_string(root.join(format!("i18n/{tag}.json"))).unwrap(),
         )

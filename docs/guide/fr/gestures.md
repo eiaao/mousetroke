@@ -10,7 +10,7 @@ order: 3
 
 Ouvrez **Toutes les applications → Gestes de souris → Nouveau geste**. Nommez-le, puis choisissez **Comment ça commence** : **Maintenir le bouton droit enfoncé**, **Maintenir le bouton du milieu enfoncé**, **Maintenir le bouton latéral 1 enfoncé** ou **Maintenir le bouton latéral 2 enfoncé**. Les boutons latéraux correspondent à X1 et X2.
 
-Dans la zone de dessin, maintenez le bouton gauche ou droit, dessinez et relâchez. La zone d’enregistrement accepte l’un ou l’autre bouton, indépendamment du déclencheur choisi. Les segments droits deviennent un tracé directionnel, comme `←` ou `↓→` ; retracez pour le remplacer. Choisissez une [action](actions.md), puis essayez le geste en dehors des paramètres avec son vrai bouton déclencheur.
+Dans la zone de dessin, maintenez le bouton gauche ou droit, dessinez et relâchez. La zone d’enregistrement accepte l’un ou l’autre bouton, indépendamment du déclencheur choisi. Les segments droits deviennent un tracé directionnel, comme `←` ou `↓→` ; retracez pour le remplacer. Cliquez sur **Choisir une action**, recherchez ou parcourez la [bibliothèque d’actions](action-library.md), puis sélectionnez une action prédéfinie et renseignez les paramètres nécessaires. Utilisez **Avancées** pour les touches, commandes, scripts Lua ou menus personnalisés ; voir [Actions](actions.md). Essayez le geste en dehors des paramètres avec son vrai bouton déclencheur.
 
 ## Enregistrer une forme
 

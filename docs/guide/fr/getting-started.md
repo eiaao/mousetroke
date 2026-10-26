@@ -34,6 +34,10 @@ Les actions intégrées s’adaptent à la plateforme : les raccourcis du naviga
 
 Un simple clic droit ouvre toujours le menu contextuel de l’application. Rester immobile assez longtemps transmet aussi le bouton pour un clic ou un glisser normaux ; ajustez cette durée dans les [Préférences](gestures.md#reconnaissance-et-apparence).
 
+## Créer un geste
+
+Ouvrez **Toutes les applications → Gestes de souris → Nouveau geste**, choisissez le déclencheur et enregistrez le tracé. Cliquez sur **Choisir une action** pour rechercher ou parcourir la [bibliothèque d’actions](action-library.md), sélectionnez une action prédéfinie et renseignez ses paramètres. Les modifications sont enregistrées automatiquement dès que le geste est valide ; essayez-le en dehors des paramètres. Consultez [Gestes de souris](gestures.md) pour les détails de l’enregistrement.
+
 ## Pause
 
 Sous Windows, choisissez **Mettre les gestes en pause**, puis **Reprendre les gestes** pour les rétablir. Sur Mac, l’élément garde le même libellé : sa coche indique une pause manuelle, et cliquer à nouveau dessus reprend les gestes. Le raccourci de pause/reprise par défaut est **Win+Esc** sous Windows et **Control+Option+Command+P** sur Mac. Modifiez-le sous **Préférences → Raccourci pause / reprise**.

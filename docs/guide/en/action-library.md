@@ -21,7 +21,7 @@ The search box receives focus when the picker opens. Use Up/Down to move through
 
 ## Text, windows and power
 
-- **Type text** outputs the literal text, including spaces, line breaks, Chinese, emoji and characters such as `^+#{ENTER}`. **Paste** is the default: it temporarily uses the clipboard and restores its previous **text** after a short wait. Images, HTML and file lists are not restored. **Type** injects Unicode without using the clipboard. Both send input to the app receiving keyboard input.
+- **Type text** outputs the literal text, including spaces, line breaks, Chinese, emoji and characters such as `^+#{ENTER}`. **Paste** is the default: it temporarily uses the clipboard and restores its previous **text** after a short wait. If the clipboard contains images, HTML, file lists or other non-text data, or cannot be inspected, it types directly without changing the clipboard. `paste_delay_ms` is only visible for `paste`: the UI accepts 50–5000 ms, with a default of 150 ms. **Type** injects Unicode without using the clipboard. Both send input to the app receiving keyboard input.
 - **Insert date/time** uses the local system clock and the chosen output method. Formats include ISO date, Chinese date, US date, time and date with time. A custom pattern accepts `YYYY`, `MM`, `DD`, `HH`, `mm` and `ss` (case sensitive). Other characters are literal; single quotes protect literal text and `''` inserts a quote. For example, `YYYY-MM-DD HH:mm:ss` gives a timestamp. Unclosed quotes are rejected.
 - **Copy as plain text** sends Ctrl+C / Command+C, waits up to 500 ms for a clipboard version change, then replaces the copied content with its text only. If copying does not complete or has no text, it reports a failure and keeps the clipboard contents. Select text and keep that app focused before using it.
 - Layout actions use the same gesture target as other window actions, following **Preferences → Gestures act on**. Windows uses native window positioning; Mac uses Accessibility and the screen's usable area. Minimum window sizes and app restrictions can prevent an exact half-screen layout. Exit Mac native fullscreen first. **Next monitor** cycles through screens in a stable order, preserves relative placement and maximization, and does nothing with one screen.
@@ -162,4 +162,4 @@ The tables below are generated from the registry and include all 87 entries. ✓
 
 <!-- action-library:generated:end -->
 
-To refresh both catalogues after changing the registry or translations, set `UPDATE_ACTION_DOCS=1` and run `cargo test -p mousetroke-core --test action_docs`. Run the same command without that variable to check that the committed tables are current.
+To refresh all ten catalogues after changing the registry or translations, set `UPDATE_ACTION_DOCS=1` and run `cargo test -p mousetroke-core --test action_docs`. Run the same command without that variable to check that the committed tables are current.

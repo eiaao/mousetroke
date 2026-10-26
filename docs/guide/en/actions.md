@@ -45,7 +45,7 @@ For selected-text web search, set URL to:
 https://www.google.com/search?q=%MS_SELECTED_TEXT%
 ```
 
-Select text in an application, then perform the gesture. Selected text is URL-encoded. If it already starts with `http://`, `https://` or `www.`, Mousetroke opens that address directly; `www.` receives an `https://` prefix.
+Select text in an application, then perform the gesture. Selected text is URL-encoded within the template, so search and translation templates keep using the chosen service even when the selection is an address. Only when the URL field contains `%MS_SELECTED_TEXT%` alone does Mousetroke open selected addresses starting with `http://`, `https://` or `www.` directly; `www.` receives an `https://` prefix.
 
 ## Run a command
 

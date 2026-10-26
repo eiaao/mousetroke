@@ -15,6 +15,7 @@ Diese Anleitungen behandeln Windows und macOS. Die Mac-Unterstützung ist beta; 
 - [Erste Schritte](getting-started.md): Installation, erster Start, Standardgesten und Pausieren.
 - [Mausgesten](gestures.md): Zeichenfolgen und Formen aufnehmen, Maustasten oder Tasten hinzufügen und Gesten finden oder bearbeiten.
 - [Bildschirmecken und -ränder](screen-edges.md): Lautstärke, Helligkeit, Klicks und Reiben am Rand.
+- [Aktionsbibliothek](action-library.md): fertige Voreinstellungen suchen, Parameter festlegen und die Plattformverfügbarkeit prüfen.
 - [Aktionen](actions.md): wählen, was eine Geste tut, einschließlich Websuche mit markiertem Text.
 - [App-spezifische Regeln](per-app.md): Überschreibungen, Ausnahmen und Vollbildverhalten.
 
@@ -30,4 +31,4 @@ Diese Anleitungen behandeln Windows und macOS. Die Mac-Unterstützung ist beta; 
 - [Konfiguration, Backup und Updates](config.md): Dateien, Wiederherstellen, automatisches Neuladen, Updates und Deinstallation.
 - [Fehlerbehebung](troubleshooting.md): fehlende Gesten, Berechtigungen, Texteingabe und Protokolle.
 
-Für einen schnellen Erfolg [zeichnen Sie Ihre erste Geste](getting-started.md#die-erste-geste-zeichnen). Soll eine Geste Text eingeben, springen Sie direkt zu den [Lua-Rezepten](lua-examples.md#festen-text-eingeben).
+Für einen schnellen Erfolg [zeichnen Sie Ihre erste Geste](getting-started.md#die-erste-geste-zeichnen). Soll eine Geste Text eingeben, wählen Sie **Text einfügen** in der [Aktionsbibliothek](action-library.md).

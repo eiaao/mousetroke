@@ -1,18 +1,20 @@
 ---
 title: "Azioni"
-description: "Scegli invio tasti, azioni sulla finestra, app, URL, comandi, tasti multimediali, menu o Lua, e usa le variabili dei gesti."
+description: "Scegli un’azione predefinita dalla libreria o modifica tasti, finestre, app, URL, comandi, menu e Lua nelle azioni avanzate."
 order: 5
 ---
 
 # Azioni
 
-Seleziona un gesto e scegli la sua azione sotto **Azione**. L'editor offre otto tipi. La maggior parte delle attività richiede solo un'azione semplice; usa [Lua](lua-basics.md) quando servono condizioni o più operazioni.
+Seleziona o crea un gesto, poi clicca **Scegli azione** sotto **Azione**. Cerca ciò che vuoi fare o esplora una categoria, compila i parametri necessari e clicca **Usa questa azione**. La [libreria delle azioni](action-library.md) elenca tutte le azioni predefinite e la loro disponibilità su Windows e Mac, inclusi testo letterale, data e ora, disposizione delle finestre e alimentazione.
+
+Le azioni esistenti mostrano **Cambia**. Le azioni predefinite che corrispondono a un’azione avanzata modificabile offrono anche **Converti in azione avanzata**; quelle native spiegano perché la conversione non è disponibile. La categoria **Avanzate** apre invio di tasti, comandi, Lua e menu. Gli editor seguenti restano disponibili, anche da **Cambia tipo di azione**.
 
 ## Inviare tasti
 
 Inserisci una [sequenza di tasti](key-sequences.md), oppure clicca **Registra**, premi la scorciatoia e clicca **Fatto**. Per esempio, `^c` copia su Windows; `#c` copia su Mac. **Guida alla sintassi** apre la guida dedicata alla sintassi.
 
-**Attiva prima la finestra sotto il cursore** attiva prima il bersaglio del gesto. Senza questa opzione, le scorciatoie vanno all'applicazione che riceve l'input della tastiera. Il bersaglio segue anche **Preferenze → I gesti agiscono su**. In questo editor non c'è un'opzione per il testo semplice; l'[input in modalità testo](key-sequences.md#testo-ed-escape) è disponibile tramite Lua.
+**Attiva prima la finestra sotto il cursore** attiva prima il bersaglio del gesto. Senza questa opzione, le scorciatoie vanno all'applicazione che riceve l'input della tastiera. Il bersaglio segue anche **Preferenze → I gesti agiscono su**. Per inserire testo letterale, scegli **Inserisci testo** nella [libreria delle azioni](action-library.md), oppure usa l'[input in modalità testo](key-sequences.md#testo-ed-escape) tramite Lua.
 
 ## Azioni sulla finestra
 
@@ -43,7 +45,7 @@ Per la ricerca web sul testo selezionato, imposta l'URL su:
 https://www.google.com/search?q=%MS_SELECTED_TEXT%
 ```
 
-Seleziona del testo in un'applicazione, poi esegui il gesto. Il testo selezionato viene codificato per l'URL. Se inizia già con `http://`, `https://` o `www.`, Mousetroke apre direttamente quell'indirizzo; `www.` riceve il prefisso `https://`.
+Seleziona del testo in un'applicazione, poi esegui il gesto. Il testo viene codificato per l’URL nel modello; i modelli di ricerca e traduzione continuano a usare il servizio scelto anche se la selezione è un indirizzo. Solo quando il campo URL contiene esclusivamente `%MS_SELECTED_TEXT%`, Mousetroke apre direttamente gli indirizzi selezionati che iniziano con `http://`, `https://` o `www.`; `www.` riceve il prefisso `https://`.
 
 ## Eseguire un comando
 

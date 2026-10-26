@@ -34,6 +34,10 @@ Die integrierten Aktionen folgen der Plattform: Browser-Kürzel verwenden, wo pa
 
 Ein einfacher Rechtsklick öffnet weiterhin das Kontextmenü der Anwendung. Bleibt die Maus lange genug still, wird die Taste ebenfalls für normales Klicken oder Ziehen durchgereicht; passen Sie diese Zeit in den [Einstellungen](gestures.md#erkennung-und-erscheinungsbild) an.
 
+## Eine Geste erstellen
+
+Öffnen Sie **Alle Apps → Mausgesten → Neue Geste**, wählen Sie den Auslöser und nehmen Sie die Zeichnung auf. Klicken Sie auf **Aktion auswählen**, suchen oder stöbern Sie in der [Aktionsbibliothek](action-library.md), wählen Sie eine Voreinstellung und legen Sie ihre Parameter fest. Sobald die Geste gültig ist, werden Änderungen automatisch gespeichert; probieren Sie sie außerhalb der Einstellungen aus. Einzelheiten zur Aufnahme finden Sie unter [Mausgesten](gestures.md).
+
 ## Pausieren
 
 Unter Windows wählen Sie **Gesten pausieren**, dann **Gesten fortsetzen**, um sie wiederherzustellen. Auf dem Mac behält **Gesten pausieren** dieselbe Bezeichnung: Das Häkchen zeigt die manuelle Pause an, und ein erneuter Klick setzt fort. Das Standard-Kürzel für Pause/Fortsetzen ist **Win+Esc** unter Windows und **Control+Wahl+Command+P** auf dem Mac. Ändern Sie es unter **Einstellungen → Kürzel für Pause / Fortsetzen**.
