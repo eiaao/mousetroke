@@ -105,6 +105,8 @@ export interface Binding {
   /** 仅界面使用；写入和导出时移除。 */
   uiId?: string;
   actionUnselected?: boolean;
+  /** 仅界面使用；标记从磁盘载入的绑定（加载/导入），未形成手势时仍允许保持启用（导入的单击手势）。 */
+  loaded?: boolean;
   /** 草稿：持久化为停用，模式完成且已选动作后自动启用。 */
   draft?: boolean;
   name: string;

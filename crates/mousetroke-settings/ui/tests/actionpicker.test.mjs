@@ -316,10 +316,11 @@ async function input(el, value) {
 }
 const button = (el, text) => [...el.querySelectorAll("button")].find((b) => b.textContent === text);
 
-async function mountGestureEditor(binding = keys.newBinding()) {
+async function mountGestureEditor(binding = keys.newBinding(), fromDisk = false) {
   let store;
   function Harness() {
-    store = useConfigStore({ scopes: [{ id: "g", bindings: [binding] }] });
+    store = useConfigStore({ scopes: [{ id: "g", bindings: fromDisk ? [binding] : [] }] });
+    if (!store.config.scopes[0].bindings.length) return null;
     return createElement(Editor, {
       binding: store.config.scopes[0].bindings[0], bindingKey: "gesture", conflictWith: [], otherBindings: [],
       onChange: (f, coalesce) => store.edit((c) => updateBinding(c, 0, 0, f), coalesce),
@@ -327,6 +328,7 @@ async function mountGestureEditor(binding = keys.newBinding()) {
     });
   }
   const view = await mount(createElement(Harness));
+  if (!fromDisk) await act(async () => store.edit((c) => updateScope(c, 0, (s) => ({ ...s, bindings: [binding] }))));
   return { ...view, get store() { return store; }, get binding() { return store.config.scopes[0].bindings[0]; } };
 }
 
@@ -362,8 +364,9 @@ test("editor warns on drafts until both the pattern and action are complete", as
     assert.equal(view.binding.disabled, undefined);
     assert.equal(view.binding.draft, undefined);
     await click(view.el.querySelector('.chip-x'));
-    assert.equal(view.binding.disabled, undefined, "完成过的绑定不再按模式自动停用");
-    assert.equal(view.el.querySelector('.pattern-editor + .field-warn'), null);
+    assert.equal(view.binding.disabled, true, "界面新建绑定移除最后一个有效步骤后重新进入草稿");
+    assert.equal(view.binding.draft, true);
+    assert.equal(view.el.querySelector('.pattern-editor + .field-warn')?.textContent, t("ui.editor.incomplete_pattern"));
   } finally { await view.close(); }
 });
 
@@ -375,10 +378,13 @@ test("draft persists disabled across JSON reload and completing it enables witho
   const binding = saved.scopes[0].bindings[0];
   assert.equal(binding.disabled, true);
   assert.equal(binding.draft, true);
-  for (const field of ["uiId", "actionUnselected", "lastActionName", "autoDisabled"]) assert.equal(field in binding, false);
+  for (const field of ["uiId", "actionUnselected", "lastActionName", "loaded", "autoDisabled"]) assert.equal(field in binding, false);
   assert.deepEqual(config, before);
-  const view = await mountGestureEditor(binding);
+  const view = await mountGestureEditor(binding, true);
   try {
+    assert.equal(view.binding.loaded, true);
+    assert.equal(view.binding.disabled, true);
+    assert.equal(view.binding.draft, true);
     await click(button(view.el, t("ui.pattern.add_step")));
     await click(button(view.el, t("ui.pattern.wheel_up")));
     assert.equal(view.binding.disabled, undefined);
@@ -393,13 +399,17 @@ test("draft persists disabled across JSON reload and completing it enables witho
   } finally { await view.close(); }
 });
 
-test("manual disable in the editor clears draft and wins after pattern completion", async () => {
+test("manual disable in the editor stays off after pattern completion until manually enabled", async () => {
   setup();
-  const view = await mountGestureEditor();
+  const view = await mountGestureEditor({ ...keys.newBinding(), action: { type: "preset", id: "browser.close_tab" }, actionUnselected: false });
   try {
     const toggle = view.el.querySelector('.editor-enable input');
     assert.equal(toggle.checked, true);
     await click(toggle);
+    assert.equal(view.binding.disabled, true);
+    assert.equal(view.binding.draft, undefined);
+    await input(view.el.querySelector('.editor-name'), "Manually disabled");
+    assert.equal(toggle.checked, false);
     assert.equal(view.binding.disabled, true);
     assert.equal(view.binding.draft, undefined);
     await click(button(view.el, t("ui.pattern.add_step")));
@@ -408,21 +418,38 @@ test("manual disable in the editor clears draft and wins after pattern completio
     assert.equal(view.binding.draft, undefined);
     assert.equal(toggle.checked, false);
     assert.equal(persistedConfig(view.store.config).scopes[0].bindings[0].disabled, true);
-  } finally { await view.close(); }
-});
-
-test("editor toggling an unselected draft off and on still persists it as a disabled draft", async () => {
-  setup();
-  const view = await mountGestureEditor();
-  try {
-    const toggle = view.el.querySelector('.editor-enable input');
-    assert.equal(toggle.checked, true);
-    await click(toggle);
-    assert.equal(toggle.checked, false);
     await click(toggle);
     assert.equal(toggle.checked, true);
     assert.equal(view.binding.disabled, undefined);
     assert.equal(view.binding.draft, undefined);
+    assert.equal(persistedConfig(view.store.config).scopes[0].bindings[0].disabled, undefined);
+  } finally { await view.close(); }
+});
+
+for (const selectAction of [false, true]) test(`editor toggling an incomplete draft off and on restores its draft state with action selected: ${selectAction}`, async () => {
+  setup();
+  const view = await mountGestureEditor();
+  try {
+    if (selectAction) {
+      await click(button(view.el, t("ui.actpick.choose")));
+      await click([...document.querySelectorAll('.act-list button')].find((b) => b.textContent.startsWith(t("preset.action.browser.close_tab.name"))));
+      assert.equal(view.binding.action.id, "browser.close_tab");
+    }
+    const toggle = view.el.querySelector('.editor-enable input');
+    assert.equal(toggle.checked, true);
+    await click(toggle);
+    assert.equal(toggle.checked, false);
+    assert.equal(view.binding.disabled, true);
+    assert.equal(view.binding.draft, undefined);
+    assert.equal(view.el.querySelector('.pattern-editor + .field-warn'), null);
+    const disabled = persistedConfig(view.store.config).scopes[0].bindings[0];
+    assert.equal(disabled.disabled, true);
+    assert.equal(disabled.draft, undefined);
+    await click(toggle);
+    assert.equal(toggle.checked, true);
+    assert.equal(view.binding.disabled, true);
+    assert.equal(view.binding.draft, true);
+    assert.equal(view.el.querySelector('.pattern-editor + .field-warn')?.textContent, t("ui.editor.incomplete_pattern"));
     const before = structuredClone(view.store.config);
     const saved = persistedConfig(view.store.config).scopes[0].bindings[0];
     assert.equal(saved.disabled, true);
@@ -432,7 +459,7 @@ test("editor toggling an unselected draft off and on still persists it as a disa
   } finally { await view.close(); }
 });
 
-test("persistence catches incomplete unselected bindings with and without UI flags", () => {
+test("normalization and persistence protect incomplete UI bindings regardless of action selection", () => {
   setup();
   const press = { type: "press", key: "mouse:right" };
   for (const pattern of [[], [press], [press, { type: "trace", points: [] }], [press, { type: "shape", templates: [[]] }]]) {
@@ -440,13 +467,18 @@ test("persistence catches incomplete unselected bindings with and without UI fla
       [true, { type: "preset", id: "browser.close_tab" }],
       [undefined, { type: "key_sequence", keys: "" }],
       [false, { type: "key_sequence", keys: "" }],
+      [false, { type: "preset", id: "browser.close_tab" }],
+      [undefined, { type: "key_sequence", keys: "^v" }],
     ]) {
       const config = { scopes: [{ bindings: [{ ...keys.newBinding(), pattern, action, actionUnselected, disabled: undefined, draft: undefined }] }] };
       const before = structuredClone(config);
+      const normalized = withBindingIds(config).scopes[0].bindings[0];
+      assert.equal(normalized.disabled, true);
+      assert.equal(normalized.draft, true);
       const saved = persistedConfig(config).scopes[0].bindings[0];
       assert.equal(saved.disabled, true);
       assert.equal(saved.draft, true);
-      for (const field of ["uiId", "actionUnselected", "lastActionName"]) assert.equal(field in saved, false);
+      for (const field of ["uiId", "actionUnselected", "lastActionName", "loaded"]) assert.equal(field in saved, false);
       assert.deepEqual(config, before);
     }
   }
@@ -454,17 +486,26 @@ test("persistence catches incomplete unselected bindings with and without UI fla
 
 test("loaded single presses stay enabled and a new edge without an action stays draft", async () => {
   setup();
-  for (const key of ["mouse:x1", "mouse:x2", "mouse:middle"]) {
+  for (const source of ["initial", "load"]) for (const key of ["mouse:right", "mouse:x1", "mouse:x2", "mouse:middle"]) {
     const binding = { ...keys.newBinding(), pattern: [{ type: "press", key }], action: { type: "key_sequence", keys: "^v" }, draft: undefined, disabled: undefined, actionUnselected: undefined };
-    const view = await mountGestureEditor(binding);
+    const before = structuredClone(binding);
+    const view = await mountGestureEditor(binding, source === "initial");
     try {
-      await act(async () => view.store.load({ scopes: [{ id: "g", bindings: [binding] }] }));
+      if (source === "load") await act(async () => view.store.load({ scopes: [{ id: "g", bindings: [binding] }] }));
+      assert.equal(view.binding.loaded, true);
       assert.equal(view.binding.disabled, undefined);
       assert.equal(view.binding.draft, undefined);
+      await act(async () => view.store.edit((c) => updateBinding(c, 0, 0, (b) => ({ ...b, name: "renamed" }))));
+      assert.equal(view.binding.loaded, true);
+      assert.equal(view.binding.disabled, undefined);
+      assert.equal(view.binding.draft, undefined);
+      assert.equal(withBindingIds(view.store.config).scopes[0].bindings[0].draft, undefined);
       assert.equal(view.el.querySelector('.field-warn'), null);
       const saved = persistedConfig(view.store.config).scopes[0].bindings[0];
       assert.ok(!saved.disabled);
       assert.ok(!saved.draft);
+      assert.equal("loaded" in saved, false);
+      assert.deepEqual(binding, before);
     } finally { await view.close(); }
   }
   const edge = { ...keys.newBinding(), pattern: [{ type: "edge", edge: 1 }] };
@@ -783,7 +824,7 @@ for (const recovery of ["defaults", "import"]) test(`unreadable config blocks al
   }
 });
 
-for (const selectAction of [false, true]) test(`list toggles preserve persistence safety with action selected: ${selectAction}`, async () => {
+for (const togglePath of ["row", "editor"]) for (const selectAction of [false, true]) test(`${togglePath} toggles preserve draft state and persistence safety with action selected: ${selectAction}`, async () => {
   setup();
   const { App } = await server.ssrLoadModule("/src/App.tsx");
   const config = JSON.parse(readFileSync(new URL("../../../mousetroke-core/assets/default-config.json", import.meta.url), "utf8"));
@@ -824,33 +865,36 @@ for (const selectAction of [false, true]) test(`list toggles preserve persistenc
     assert.equal(binding.pattern.length, 1);
     assert.equal(binding.disabled, true);
     assert.equal(binding.draft, true);
-    assert.equal("actionUnselected" in binding, false);
-    const toggle = view.el.querySelector('.rows .row .switch');
+    for (const field of ["uiId", "actionUnselected", "lastActionName", "loaded"]) assert.equal(field in binding, false);
+    const toggle = view.el.querySelector(togglePath === "row" ? '.rows .row .switch' : '.editor-enable input');
+    const badge = () => view.el.querySelector('.rows .row .row-name .badge')?.textContent;
     assert.equal(toggle.checked, true);
+    assert.equal(badge(), t("ui.list.inactive_badge"));
     await click(toggle);
     assert.equal(toggle.checked, false);
-    if (!selectAction) {
-      await click(toggle);
-      assert.equal(toggle.checked, true);
-      const saves = saved.length;
-      await act(async () => new Promise((resolve) => setTimeout(resolve, 420)));
-      assert.ok(saved.length > saves);
-      assert.equal(saved.at(-1).scopes[0].bindings[0].disabled, true);
-      assert.equal(saved.at(-1).scopes[0].bindings[0].draft, true);
-      await click(toggle);
-      await click(toggle);
-      const autosaves = saved.length;
-      await act(async () => listeners.get("tauri://close-requested")({ event: "tauri://close-requested", id: 1 }));
-      assert.equal(saved.length, autosaves + 1);
-      assert.equal(saved.at(-1).scopes[0].bindings[0].disabled, true);
-      assert.equal(saved.at(-1).scopes[0].bindings[0].draft, true);
-      return;
-    }
-    await click(toggle);
+    assert.equal(badge(), t("ui.list.off_badge"));
     await act(async () => listeners.get("tauri://close-requested")({ event: "tauri://close-requested", id: 1 }));
-    assert.equal(saved.at(-1).scopes[0].bindings[0].pattern.length, 1);
-    assert.ok(!saved.at(-1).scopes[0].bindings[0].disabled, "已选动作的单击绑定允许手动启用");
+    assert.equal(saved.at(-1).scopes[0].bindings[0].disabled, true);
     assert.ok(!saved.at(-1).scopes[0].bindings[0].draft);
+    await click(toggle);
+    assert.equal(toggle.checked, true);
+    assert.equal(badge(), t("ui.list.inactive_badge"));
+    assert.ok(view.el.querySelector('.pattern-editor + .field-warn'));
+    const saves = saved.length;
+    await act(async () => new Promise((resolve) => setTimeout(resolve, 420)));
+    assert.ok(saved.length > saves);
+    assert.equal(saved.at(-1).scopes[0].bindings[0].disabled, true);
+    assert.equal(saved.at(-1).scopes[0].bindings[0].draft, true);
+    await click(toggle);
+    await click(toggle);
+    assert.equal(badge(), t("ui.list.inactive_badge"));
+    const autosaves = saved.length;
+    await act(async () => listeners.get("tauri://close-requested")({ event: "tauri://close-requested", id: 1 }));
+    assert.equal(saved.length, autosaves + 1);
+    assert.equal(saved.at(-1).scopes[0].bindings[0].pattern.length, 1);
+    assert.equal(saved.at(-1).scopes[0].bindings[0].disabled, true);
+    assert.equal(saved.at(-1).scopes[0].bindings[0].draft, true);
+    if (!selectAction) return;
     await click(toggle);
     await click(button(view.el, t("ui.pattern.add_step")));
     await click(button(view.el, t("ui.pattern.wheel_up")));
@@ -860,11 +904,16 @@ for (const selectAction of [false, true]) test(`list toggles preserve persistenc
     assert.equal(saved.at(-1).scopes[0].bindings[0].disabled, true);
     await click(toggle);
     assert.equal(toggle.checked, true);
-    await click(view.el.querySelector('.chip-x'));
-    assert.equal(view.el.querySelector('.pattern-editor + .field-warn'), null);
+    assert.equal(badge(), undefined);
     await act(async () => listeners.get("tauri://close-requested")({ event: "tauri://close-requested", id: 1 }));
-    assert.ok(!saved.at(-1).scopes[0].bindings[0].disabled, "手动启用后不再按模式自动停用");
+    assert.ok(!saved.at(-1).scopes[0].bindings[0].disabled, "完整模式允许手动启用并落盘");
     assert.ok(!saved.at(-1).scopes[0].bindings[0].draft);
+    await click(view.el.querySelector('.chip-x'));
+    assert.equal(badge(), t("ui.list.inactive_badge"));
+    assert.ok(view.el.querySelector('.pattern-editor + .field-warn'));
+    await act(async () => listeners.get("tauri://close-requested")({ event: "tauri://close-requested", id: 1 }));
+    assert.equal(saved.at(-1).scopes[0].bindings[0].disabled, true);
+    assert.equal(saved.at(-1).scopes[0].bindings[0].draft, true);
   } finally {
     await view.close();
     Object.assign(api, originalApi);
