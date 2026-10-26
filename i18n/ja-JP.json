@@ -953,6 +953,7 @@
   "preset.action.mousetroke.cheatsheet.description": "現在のアプリで使えるジェスチャを表示。第2期で提供予定です。",
   "preset.action.mousetroke.cheatsheet.aliases": "ジェスチャ一覧を表示",
   "preset.param.method": "入力方法",
+  "preset.param.paste_delay_ms": "貼り付け後の待機時間（ミリ秒）",
   "preset.param.text": "テキスト",
   "preset.param.format": "日時の形式",
   "preset.param.custom_format": "カスタム形式",

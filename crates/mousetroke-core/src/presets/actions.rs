@@ -28,6 +28,7 @@ pub enum ParamKind {
     Text,
     MultilineText,
     Choice { choices: &'static [Choice] },
+    Number { min: u32, max: u32, step: u32 },
     Url,
     Path { kind: PathKind },
     App,
@@ -143,12 +144,13 @@ macro_rules! choices {
 }
 
 const METHOD: Param = Param { name: "method", label_key: "preset.param.method", kind: ParamKind::Choice { choices: choices!["paste", "type"] }, default: ParamDefault::Literal("paste"), visible_when: None };
+const PASTE_DELAY: Param = Param { name: "paste_delay_ms", label_key: "preset.param.paste_delay_ms", kind: ParamKind::Number { min: 50, max: 5000, step: 50 }, default: ParamDefault::Literal("150"), visible_when: Some(ParamCondition { param: "method", equals: "paste" }) };
 const TYPE_PARAMS: &[Param] = &[
-    Param { name: "text", label_key: "preset.param.text", kind: ParamKind::MultilineText, default: ParamDefault::Literal(""), visible_when: None }, METHOD,
+    Param { name: "text", label_key: "preset.param.text", kind: ParamKind::MultilineText, default: ParamDefault::Literal(""), visible_when: None }, METHOD, PASTE_DELAY,
 ];
 const DATE_PARAMS: &[Param] = &[
     Param { name: "format", label_key: "preset.param.format", kind: ParamKind::Choice { choices: choices!["date_iso", "date_local", "date_us", "time", "datetime", "custom"] }, default: ParamDefault::Literal("date_iso"), visible_when: None },
-    Param { name: "custom_format", label_key: "preset.param.custom_format", kind: ParamKind::Text, default: ParamDefault::Literal("YYYY-MM-DD"), visible_when: Some(ParamCondition { param: "format", equals: "custom" }) }, METHOD,
+    Param { name: "custom_format", label_key: "preset.param.custom_format", kind: ParamKind::Text, default: ParamDefault::Literal("YYYY-MM-DD"), visible_when: Some(ParamCondition { param: "format", equals: "custom" }) }, METHOD, PASTE_DELAY,
 ];
 const SEARCH_PARAMS: &[Param] = &[
     Param { name: "engine", label_key: "preset.param.engine", kind: ParamKind::Choice { choices: choices!["bing", "google", "baidu", "duckduckgo", "custom"] }, default: ParamDefault::SearchEngine, visible_when: None },
@@ -431,11 +433,17 @@ fn resolve_native(native: NativePreset, values: &Params) -> Result<NativeAction,
         "type" => Ok(TextMethod::Type),
         _ => Err(invalid("method")),
     };
+    let paste_delay = |method: TextMethod| {
+        // 直接输入时忽略隐藏的旧值；只有粘贴路径需要等待剪贴板消费。
+        if method == TextMethod::Type { return Ok(150); }
+        required(values, "paste_delay_ms")?.trim().parse::<u32>().ok().filter(|delay| (50..=5000).contains(delay)).ok_or_else(|| invalid("paste_delay_ms"))
+    };
     Ok(match native {
         NativePreset::Layout(op) => NativeAction::Layout(op),
         NativePreset::TypeText => {
             let text = values.get("text").and_then(Value::as_str).filter(|text| !text.is_empty() && !text.contains('\0')).ok_or_else(|| invalid("text"))?;
-            NativeAction::TypeText { text: text.into(), method: method()? }
+            let method = method()?;
+            NativeAction::TypeText { text: text.into(), method, paste_delay_ms: paste_delay(method)? }
         }
         NativePreset::DateTime => {
             let pattern = match required(values, "format")? {
@@ -449,7 +457,8 @@ fn resolve_native(native: NativePreset, values: &Params) -> Result<NativeAction,
             };
             let sample = crate::action_datetime::LocalDateTime { year: 2000, month: 1, day: 1, hour: 0, minute: 0, second: 0 };
             crate::action_datetime::format_pattern(pattern, sample).map_err(|_| invalid("custom_format"))?;
-            NativeAction::DateTime { pattern: pattern.into(), method: method()? }
+            let method = method()?;
+            NativeAction::DateTime { pattern: pattern.into(), method, paste_delay_ms: paste_delay(method)? }
         }
         NativePreset::CopyPlain => NativeAction::CopyPlain,
         NativePreset::DisplayOff => NativeAction::DisplayOff,

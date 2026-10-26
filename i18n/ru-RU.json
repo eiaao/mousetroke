@@ -971,6 +971,7 @@
   "preset.action.mousetroke.cheatsheet.description": "Список жестов текущего приложения; запланирован на второй этап.",
   "preset.action.mousetroke.cheatsheet.aliases": "Показать список жестов",
   "preset.param.method": "Способ ввода",
+  "preset.param.paste_delay_ms": "Ожидание после вставки (мс)",
   "preset.param.text": "Текст",
   "preset.param.format": "Формат даты и времени",
   "preset.param.custom_format": "Свой формат",

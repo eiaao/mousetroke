@@ -36,8 +36,8 @@ pub enum TextMethod {
 #[derive(Debug, Clone, PartialEq)]
 pub enum NativeAction {
     Layout(LayoutOp),
-    TypeText { text: String, method: TextMethod },
-    DateTime { pattern: String, method: TextMethod },
+    TypeText { text: String, method: TextMethod, paste_delay_ms: u32 },
+    DateTime { pattern: String, method: TextMethod, paste_delay_ms: u32 },
     CopyPlain,
     DisplayOff,
     Sleep,

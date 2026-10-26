@@ -731,6 +731,20 @@ mod tests {
     }
 
     #[test]
+    fn preset_validation_reports_paste_delay_range_errors() {
+        for id in ["text.type", "text.datetime"] {
+            for delay in ["49", "5001", "150.5", "oops"] {
+                let mut params = serde_json::json!({"text":"hello","paste_delay_ms":delay}).as_object().unwrap().clone();
+                let error = validate_preset(id.into(), params.clone(), "en-US".into()).unwrap_err();
+                assert_eq!(error.key, "preset.status.invalid_param");
+                assert_eq!(error.params["param"], "paste_delay_ms");
+                params.insert("method".into(), serde_json::json!("type"));
+                assert!(validate_preset(id.into(), params, "en-US".into()).is_ok());
+            }
+        }
+    }
+
+    #[test]
     fn settings_catalog_exposes_future_action_presentation_and_expansion() {
         let catalog = serde_json::to_value(action_catalog()).unwrap();
         assert_eq!(catalog["presets"].as_array().unwrap().len(), 87);

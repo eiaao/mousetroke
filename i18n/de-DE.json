@@ -959,6 +959,7 @@
   "preset.action.mousetroke.cheatsheet.description": "Zeigt Gesten für die aktuelle App; für Phase 2 geplant.",
   "preset.action.mousetroke.cheatsheet.aliases": "Gestenliste anzeigen",
   "preset.param.method": "Eingabemethode",
+  "preset.param.paste_delay_ms": "Wartezeit nach Einfügen (ms)",
   "preset.param.text": "Text",
   "preset.param.format": "Datums- und Zeitformat",
   "preset.param.custom_format": "Eigenes Format",

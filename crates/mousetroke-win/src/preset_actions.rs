@@ -1,6 +1,7 @@
 //! 原生预设沿用执行器锁定的目标；阻塞能力只在动作工作线程调用。
 use crate::{preset_datetime, preset_layout, preset_power, preset_text, targeting::Target};
 use mousetroke_core::presets::native::{LayoutOp, NativeAction, TextMethod};
+use std::time::Duration;
 
 pub(crate) fn execute(action: NativeAction, target: Option<&Target>) -> Result<(), String> {
     match action {
@@ -18,10 +19,11 @@ pub(crate) fn execute(action: NativeAction, target: Option<&Target>) -> Result<(
                 LayoutOp::NextMonitor => preset_layout::move_to_next_monitor(hwnd),
             }
         }
-        NativeAction::TypeText { ref text, method } => type_text(text, method),
-        NativeAction::DateTime { method, .. } => type_text(
+        NativeAction::TypeText { ref text, method, paste_delay_ms } => type_text(text, method, paste_delay_ms),
+        NativeAction::DateTime { method, paste_delay_ms, .. } => type_text(
             &action.formatted_text(preset_datetime::local_now())?,
             method,
+            paste_delay_ms,
         ),
         NativeAction::CopyPlain => preset_text::copy_plain(),
         NativeAction::DisplayOff => preset_power::display_off(),
@@ -37,9 +39,9 @@ pub(crate) fn execute(action: NativeAction, target: Option<&Target>) -> Result<(
     }
 }
 
-fn type_text(text: &str, method: TextMethod) -> Result<(), String> {
+fn type_text(text: &str, method: TextMethod, paste_delay_ms: u32) -> Result<(), String> {
     match method {
-        TextMethod::Paste => preset_text::type_text_via_paste(text),
+        TextMethod::Paste => preset_text::type_text_via_paste_with_delay(text, Duration::from_millis(paste_delay_ms.into())),
         TextMethod::Type => preset_text::type_text_direct(text),
     }
 }

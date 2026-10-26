@@ -959,6 +959,7 @@
   "preset.action.mousetroke.cheatsheet.description": "Elenca i gesti dell’app attuale; previsto per la fase 2.",
   "preset.action.mousetroke.cheatsheet.aliases": "Mostra elenco gesti",
   "preset.param.method": "Metodo di inserimento",
+  "preset.param.paste_delay_ms": "Attesa dopo incolla (ms)",
   "preset.param.text": "Testo",
   "preset.param.format": "Formato data e ora",
   "preset.param.custom_format": "Formato personalizzato",

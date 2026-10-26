@@ -23,6 +23,8 @@ const { persistedConfig, withBindingIds, updateBinding, updateScope, useConfigSt
 const { api } = await server.ssrLoadModule("/src/api.ts");
 const { Editor } = await server.ssrLoadModule("/src/components/Editor.tsx");
 
+const pasteDelayParam = { name: "paste_delay_ms", label_key: "preset.param.paste_delay_ms", kind: { type: "number", min: 50, max: 5000, step: 50 }, default: { kind: "literal", value: "150" }, visible_when: { param: "method", equals: "paste" } };
+
 /** 与后端 action_catalog 序列化形状一致的迷你目录（真实词条键，t() 可取到译文）。 */
 const fixture = {
   presets: [
@@ -39,6 +41,7 @@ const fixture = {
       params: [
         { name: "text", label_key: "preset.param.text", kind: { type: "multiline_text" }, default: { kind: "literal", value: "" } },
         { name: "method", label_key: "preset.param.method", kind: { type: "choice", choices: [{ value: "paste", label_key: "preset.choice.paste" }, { value: "type", label_key: "preset.choice.type" }] }, default: { kind: "literal", value: "paste" } },
+        pasteDelayParam,
       ],
       windows: { status: "implemented", value: { type: "native", value: { type: "type_text" } } },
       macos: { status: "implemented", value: { type: "native", value: { type: "type_text" } } },
@@ -60,6 +63,7 @@ const fixture = {
         { name: "format", label_key: "preset.param.format", kind: { type: "choice", choices: [{ value: "date_iso", label_key: "preset.choice.date_iso" }, { value: "custom", label_key: "preset.choice.custom" }] }, default: { kind: "literal", value: "date_iso" } },
         { name: "custom_format", label_key: "preset.param.custom_format", visible_when: { param: "format", equals: "custom" }, kind: { type: "text" }, default: { kind: "literal", value: "YYYY-MM-DD" } },
         { name: "method", label_key: "preset.param.method", kind: { type: "choice", choices: [{ value: "paste", label_key: "preset.choice.paste" }, { value: "type", label_key: "preset.choice.type" }] }, default: { kind: "literal", value: "paste" } },
+        pasteDelayParam,
       ],
       windows: { status: "implemented", value: { type: "native", value: { type: "date_time" } } },
       macos: { status: "implemented", value: { type: "native", value: { type: "date_time" } } },
@@ -87,9 +91,9 @@ const fixture = {
     },
   ],
   defaults: {
-    "text.type": { text: "", method: "paste" },
+    "text.type": { text: "", method: "paste", paste_delay_ms: "150" },
     "text.search": { engine: "google", url: "https://www.google.com/search?q=%MS_SELECTED_TEXT%" },
-    "text.datetime": { format: "date_iso", custom_format: "YYYY-MM-DD", method: "paste" },
+    "text.datetime": { format: "date_iso", custom_format: "YYYY-MM-DD", method: "paste", paste_delay_ms: "150" },
     "open.website": { url: "https://mousetroke.com/" },
   },
   commonPresetIds: ["browser.close_tab", "text.type", "open.website", "desktop.clipboard_history"],
@@ -215,7 +219,7 @@ test("unsupported and pending actions render unselectable with their reasons (12
 test("param form renders by kind and blocks empty required params (1)", () => {
   setup();
   const typePreset = actions.findPreset("text.type");
-  assert.deepEqual(actions.presetParamValues(typePreset), { text: "", method: "paste" });
+  assert.deepEqual(actions.presetParamValues(typePreset), { text: "", method: "paste", paste_delay_ms: "150" });
   assert.deepEqual(actions.missingRequiredParams(typePreset, { text: "", method: "paste" }), ["text"]);
   assert.deepEqual(actions.missingRequiredParams(typePreset, { text: "收到", method: "paste" }), []);
   const site = actions.findPreset("open.website");
@@ -587,7 +591,7 @@ test("shortcut matching compares complete modifier sets and main keys (UI 2)", (
 test("initialId and row activation merge existing params over defaults (C3)", async () => {
   setup();
   const current = { type: "preset", id: "text.type", params: { text: "my current text" } };
-  assert.deepEqual(actions.presetParamValues(actions.findPreset(current.id), current), { text: "my current text", method: "paste" });
+  assert.deepEqual(actions.presetParamValues(actions.findPreset(current.id), current), { text: "my current text", method: "paste", paste_delay_ms: "150" });
   const view = await mount(createElement(ActionPicker, { current, initialId: current.id, onPick() {}, onClose() {} }));
   assert.equal(view.el.querySelector("textarea").value, "my current text");
   await key(document.activeElement, "Escape");
@@ -1153,4 +1157,42 @@ for (const change of ["switch", "edit", "escape", "unmount"]) test(`pending vali
     await act(async () => finish());
     assert.equal(picked.length, 0);
   } finally { if (!unmounted) await view.close(); api.validatePreset = original; }
+});
+
+
+for (const id of ["text.type", "text.datetime"]) test(`${id} shows a paste delay number field and validates its range before saving`, async () => {
+  setup();
+  const original = api.validatePreset;
+  const calls = [], picked = [];
+  api.validatePreset = async (id, params) => {
+    calls.push({ id, params });
+    if (params.method === "paste" && (!/^\d+$/.test(params.paste_delay_ms) || +params.paste_delay_ms < 50 || +params.paste_delay_ms > 5000)) throw { key: "preset.status.invalid_param", params: { param: "paste_delay_ms" } };
+  };
+  const view = await mount(createElement(ActionPicker, { initialId: id, current: { type: "preset", id, params: { text: "hello" } }, onPick: (a) => picked.push(a), onClose() {} }));
+  try {
+    const field = view.el.querySelector('[data-param="paste_delay_ms"]');
+    assert.equal(field.type, "number");
+    assert.equal(field.min, "50");
+    assert.equal(field.max, "5000");
+    assert.equal(field.step, "50");
+    assert.equal(field.value, "150");
+    await input(field, "500");
+    await key(field, "Enter");
+    assert.equal(picked.length, 1);
+    assert.equal(picked[0].params.paste_delay_ms, "500");
+    assert.equal(picked[0].params, calls[0].params);
+    for (const invalid of ["49", "5001", "150.5"]) {
+      await input(field, invalid);
+      await key(field, "Enter");
+      assert.equal(picked.length, 1);
+      assert.equal(view.el.querySelector('[role="alert"]').textContent, t("preset.status.invalid_param"));
+      assert.ok(document.activeElement === field, "焦点应回到等待时间输入框");
+    }
+    await click(button(view.el, t("preset.choice.type")));
+    assert.equal(view.el.querySelector('[data-param="paste_delay_ms"]'), null);
+    await click(button(view.el, t("ui.actpick.apply")));
+    assert.equal(picked.length, 2);
+    assert.equal(picked[1].params.method, "type");
+    assert.equal("paste_delay_ms" in picked[1].params, false);
+  } finally { await view.close(); api.validatePreset = original; }
 });

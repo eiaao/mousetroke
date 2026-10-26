@@ -959,6 +959,7 @@
   "preset.action.mousetroke.cheatsheet.description": "显示当前程序可用的手势；计划在第二期提供。",
   "preset.action.mousetroke.cheatsheet.aliases": "显示手势列表",
   "preset.param.method": "输入方式",
+  "preset.param.paste_delay_ms": "粘贴后等待（毫秒）",
   "preset.param.text": "文字",
   "preset.param.format": "日期时间格式",
   "preset.param.custom_format": "自定义格式",

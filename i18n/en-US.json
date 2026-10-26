@@ -959,6 +959,7 @@
   "preset.action.mousetroke.cheatsheet.description": "Lists gestures for the current app; planned for phase 2.",
   "preset.action.mousetroke.cheatsheet.aliases": "Show gesture list",
   "preset.param.method": "Input method",
+  "preset.param.paste_delay_ms": "Wait after paste (ms)",
   "preset.param.text": "Text",
   "preset.param.format": "Date and time format",
   "preset.param.custom_format": "Custom format",

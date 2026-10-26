@@ -354,6 +354,25 @@ function ParamField({ param, value, onChange }: { param: ActionPreset["params"][
   const empty = required && !(param.kind.type === "multiline_text" ? value : value.trim());
   const error = empty ? <span className="field-error">{t("ui.actpick.required")}</span> : null;
   switch (param.kind.type) {
+    case "number":
+      return (
+        <div className="field">
+          <label className="field-label" htmlFor={`param-${param.name}`}>{label}</label>
+          <input
+            id={`param-${param.name}`}
+            type="number"
+            min={param.kind.min}
+            max={param.kind.max}
+            step={param.kind.step}
+            value={value}
+            aria-required={required}
+            aria-invalid={empty}
+            data-param={param.name}
+            onChange={(e) => onChange(e.target.value)}
+          />
+          {error}
+        </div>
+      );
     case "choice":
       return (
         <div className="field">

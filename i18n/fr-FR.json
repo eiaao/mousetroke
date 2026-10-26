@@ -959,6 +959,7 @@
   "preset.action.mousetroke.cheatsheet.description": "Liste les gestes de l’app actuelle ; prévu pour la phase 2.",
   "preset.action.mousetroke.cheatsheet.aliases": "Afficher la liste des gestes",
   "preset.param.method": "Méthode de saisie",
+  "preset.param.paste_delay_ms": "Attente après collage (ms)",
   "preset.param.text": "Texte",
   "preset.param.format": "Format de date et d’heure",
   "preset.param.custom_format": "Format personnalisé",

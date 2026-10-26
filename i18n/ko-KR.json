@@ -953,6 +953,7 @@
   "preset.action.mousetroke.cheatsheet.description": "현재 앱에서 사용할 수 있는 제스처 목록. 2단계 제공 예정.",
   "preset.action.mousetroke.cheatsheet.aliases": "제스처 목록 표시",
   "preset.param.method": "입력 방식",
+  "preset.param.paste_delay_ms": "붙여넣기 후 대기 시간(ms)",
   "preset.param.text": "텍스트",
   "preset.param.format": "날짜 및 시간 형식",
   "preset.param.custom_format": "사용자 지정 형식",

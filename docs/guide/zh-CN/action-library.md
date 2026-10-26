@@ -82,8 +82,8 @@ order: 5.5
 
 | 动作 / ID | 用途与适用范围 | 参数 | Windows | Mac |
 |---|---|---|---|---|
-| 输入一段文字<br>`text.type` | 可输入文字的程序；默认粘贴后恢复剪贴板。 | 文字 (`text`): 必填<br>输入方式 (`method`): 粘贴并恢复剪贴板 (`paste`) / 逐字输入 (`type`); 默认 粘贴并恢复剪贴板 | ✓ | ✓ |
-| 插入日期时间<br>`text.datetime` | 可输入文字的程序；使用本地日期和时间。 | 日期时间格式 (`format`): 2026-10-24 (`date_iso`) / 2026年10月24日 (`date_local`) / 10/24/2026 (`date_us`) / 14:30 (`time`) / 2026-10-24 14:30 (`datetime`) / 自定义 (`custom`); 默认 2026-10-24<br>自定义格式 (`custom_format`): 默认 `YYYY-MM-DD`；仅当日期时间格式为自定义时<br>输入方式 (`method`): 粘贴并恢复剪贴板 (`paste`) / 逐字输入 (`type`); 默认 粘贴并恢复剪贴板 | ✓ | ✓ |
+| 输入一段文字<br>`text.type` | 可输入文字的程序；默认粘贴后恢复剪贴板。 | 文字 (`text`): 必填<br>输入方式 (`method`): 粘贴并恢复剪贴板 (`paste`) / 逐字输入 (`type`); 默认 粘贴并恢复剪贴板<br>粘贴后等待（毫秒） (`paste_delay_ms`): 默认 `150`；仅当输入方式为粘贴并恢复剪贴板时 | ✓ | ✓ |
+| 插入日期时间<br>`text.datetime` | 可输入文字的程序；使用本地日期和时间。 | 日期时间格式 (`format`): 2026-10-24 (`date_iso`) / 2026年10月24日 (`date_local`) / 10/24/2026 (`date_us`) / 14:30 (`time`) / 2026-10-24 14:30 (`datetime`) / 自定义 (`custom`); 默认 2026-10-24<br>自定义格式 (`custom_format`): 默认 `YYYY-MM-DD`；仅当日期时间格式为自定义时<br>输入方式 (`method`): 粘贴并恢复剪贴板 (`paste`) / 逐字输入 (`type`); 默认 粘贴并恢复剪贴板<br>粘贴后等待（毫秒） (`paste_delay_ms`): 默认 `150`；仅当输入方式为粘贴并恢复剪贴板时 | ✓ | ✓ |
 | 搜索选中文字<br>`text.search` | 使用默认浏览器；先在当前程序中选中文字。 | 搜索引擎 (`engine`): Bing (`bing`) / Google (`google`) / 百度 (`baidu`) / DuckDuckGo (`duckduckgo`) / 自定义 (`custom`); 简体中文界面默认百度，其他语言默认 Google<br>自定义网址 (`url`): 默认 `https://www.google.com/search?q=%MS_SELECTED_TEXT%`；仅当搜索引擎为自定义时 | ✓ | ✓ |
 | 翻译选中文字<br>`text.translate` | 使用默认浏览器；先在当前程序中选中文字。 | 翻译服务 (`service`): Google 翻译 (`google`) / DeepL (`deepl`) / 必应翻译 (`bing`); 默认 Google 翻译<br>目标语言 (`target_language`): 跟随界面语言 (`ui`) / 简体中文 (`zh-CN`) / English (`en-US`) / español (`es-ES`) / Français (`fr-FR`) / Deutsch (`de-DE`) / 日本語 (`ja-JP`) / Português (Brasil) (`pt-BR`) / Русский (`ru-RU`) / Italiano (`it-IT`) / 한국어 (`ko-KR`); 默认 跟随界面语言 | ✓ | ✓ |
 | 打开选中的网址<br>`text.open_selected_url` | 使用默认浏览器；先在当前程序中选中文字。 | — | ✓ | ✓ |

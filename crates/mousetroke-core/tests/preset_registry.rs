@@ -90,7 +90,7 @@ fn conditional_params_only_validate_for_their_visible_option() {
     let date = find("text.datetime").unwrap();
     assert!(!date.params[1].visible(&date.default_params(Lang::EnUs)));
     assert_eq!(find("text.translate").unwrap().params.iter().filter(|p| p.visible_when.is_some()).count(), 0);
-    assert_eq!(find("text.type").unwrap().params.iter().filter(|p| p.visible_when.is_some()).count(), 0);
+    assert_eq!(find("text.type").unwrap().params.iter().filter(|p| p.visible_when.is_some()).count(), 1);
 }
 
 #[test]
@@ -236,6 +236,34 @@ fn native_text_methods_dates_and_custom_patterns_are_resolved_without_lua() {
             }
         }
         assert!(matches!(resolve("text.datetime", platform, &Params::new(), Lang::EnUs).unwrap(), PreparedAction::Native(NativeAction::DateTime { method: TextMethod::Paste, .. })));
+    }
+}
+
+#[test]
+fn paste_delay_defaults_ranges_and_hidden_values_resolve_for_both_text_actions() {
+    for platform in [Platform::Windows, Platform::Macos] {
+        for id in ["text.type", "text.datetime"] {
+            let preset = find(id).unwrap();
+            let delay_schema = preset.params.iter().find(|p| p.name == "paste_delay_ms").unwrap();
+            assert_eq!(serde_json::to_value(delay_schema.kind).unwrap(), json!({"type":"number","min":50,"max":5000,"step":50}));
+            let mut params: Params = serde_json::from_value(json!({"text":"hello"})).unwrap();
+            for (value, expected) in [(None, 150), (Some("50"), 50), (Some("500"), 500), (Some("5000"), 5000)] {
+                if let Some(value) = value { params.insert("paste_delay_ms".into(), json!(value)); }
+                let PreparedAction::Native(action) = resolve(id, platform, &params, Lang::EnUs).unwrap() else { panic!() };
+                assert!(matches!(action, NativeAction::TypeText { method: TextMethod::Paste, paste_delay_ms, .. } | NativeAction::DateTime { method: TextMethod::Paste, paste_delay_ms, .. } if paste_delay_ms == expected));
+            }
+            for value in [json!("49"), json!("5001"), json!("150.5"), json!("oops"), json!(""), json!(500), json!(false)] {
+                params.insert("method".into(), json!("paste"));
+                params.insert("paste_delay_ms".into(), value.clone());
+                assert!(matches!(resolve(id, platform, &params, Lang::EnUs), Err(PresetError::InvalidParam { name: "paste_delay_ms", .. })), "{id} {value}");
+                params.insert("method".into(), json!("type"));
+                let PreparedAction::Native(action) = resolve(id, platform, &params, Lang::EnUs).unwrap() else { panic!() };
+                assert!(matches!(action, NativeAction::TypeText { method: TextMethod::Type, paste_delay_ms: 150, .. } | NativeAction::DateTime { method: TextMethod::Type, paste_delay_ms: 150, .. }));
+            }
+            params.insert("paste_delay_ms".into(), json!("500"));
+            let PreparedAction::Native(action) = resolve(id, platform, &params, Lang::EnUs).unwrap() else { panic!() };
+            assert!(matches!(action, NativeAction::TypeText { method: TextMethod::Type, paste_delay_ms: 150, .. } | NativeAction::DateTime { method: TextMethod::Type, paste_delay_ms: 150, .. }));
+        }
     }
 }
 

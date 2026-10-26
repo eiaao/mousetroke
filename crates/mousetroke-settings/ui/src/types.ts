@@ -71,6 +71,7 @@ export function isPresetAction(action: Action): action is PresetAction {
 export type PresetParamKind =
   | { type: "text" | "multiline_text" | "url" | "app" }
   | { type: "choice"; choices: { value: string; label_key: string }[] }
+  | { type: "number"; min: number; max: number; step: number }
   | { type: "path"; kind: "folder" | "file" };
 export type PresetImplementation =
   | { status: "implemented"; value: { type: string; value?: unknown } }

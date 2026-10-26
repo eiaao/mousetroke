@@ -16,6 +16,7 @@ pub(crate) use main_thread::on_main;
 pub use power::{display_off, sleep};
 
 use mousetroke_core::presets::native::{LayoutOp, NativeAction, TextMethod};
+use std::time::Duration;
 
 pub(crate) fn execute(
     action: NativeAction,
@@ -44,9 +45,9 @@ pub(crate) fn execute(
                 LayoutOp::NextMonitor => move_to_next_monitor(w),
             }
         }
-        NativeAction::TypeText { ref text, method } => type_text(text, method),
-        NativeAction::DateTime { method, .. } => {
-            type_text(&action.formatted_text(local_now()?)?, method)
+        NativeAction::TypeText { ref text, method, paste_delay_ms } => type_text(text, method, paste_delay_ms),
+        NativeAction::DateTime { method, paste_delay_ms, .. } => {
+            type_text(&action.formatted_text(local_now()?)?, method, paste_delay_ms)
         }
         NativeAction::CopyPlain => copy_plain(),
         NativeAction::DisplayOff => display_off(),
@@ -60,9 +61,9 @@ pub(crate) fn execute(
     }
 }
 
-fn type_text(text: &str, method: TextMethod) -> Result<(), String> {
+fn type_text(text: &str, method: TextMethod, paste_delay_ms: u32) -> Result<(), String> {
     match method {
-        TextMethod::Paste => type_text_via_paste(text),
+        TextMethod::Paste => type_text_via_paste_with_delay(text, Duration::from_millis(paste_delay_ms.into())),
         TextMethod::Type => type_text_direct(text),
     }
 }
