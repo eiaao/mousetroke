@@ -23,6 +23,7 @@ pub fn paste_shortcut(modifier: ModKey) -> KeySeq {
 }
 
 pub trait PasteBackend {
+    fn clipboard_has_non_text(&mut self) -> Result<bool, String>;
     fn read_text(&mut self) -> Result<Option<String>, String>;
     fn write_text(&mut self, text: Option<&str>) -> Result<(), String>;
     fn paste(&mut self) -> Result<(), String>;
@@ -49,6 +50,20 @@ pub fn copy_plain(backend: &mut impl CopyBackend) -> Result<(), String> {
         }
     }
     Err("Copy timed out; clipboard was not changed".into())
+}
+
+/// 非文本剪贴板无法完整恢复，检测失败时也直接输入，避免覆盖原内容。
+pub fn paste_or_type(
+    backend: &mut impl PasteBackend,
+    text: &str,
+    delay: Duration,
+    type_direct: impl FnOnce(&str) -> Result<(), String>,
+) -> Result<(), String> {
+    if backend.clipboard_has_non_text().unwrap_or(true) {
+        type_direct(text)
+    } else {
+        paste_with_restore(backend, text, delay)
+    }
 }
 
 /// 即使写入或粘贴失败也尝试恢复；恢复失败必须报告，不能悄悄覆盖旧内容。
@@ -135,11 +150,16 @@ mod tests {
         saved: Option<String>,
         calls: Vec<String>,
         fail_read: bool,
+        non_text: bool,
+        fail_check: bool,
         fail_write: bool,
         fail_paste: bool,
         fail_restore: bool,
     }
     impl PasteBackend for Fake {
+        fn clipboard_has_non_text(&mut self) -> Result<bool, String> {
+            if self.fail_check { Err("check failed".into()) } else { Ok(self.non_text) }
+        }
         fn read_text(&mut self) -> Result<Option<String>, String> {
             self.calls.push("read".into());
             if self.fail_read {
@@ -170,6 +190,29 @@ mod tests {
             self.calls.push(format!("wait:{}", delay.as_millis()));
         }
     }
+    #[test]
+    fn non_text_or_failed_detection_types_without_reading_or_writing_clipboard() {
+        for (non_text, fail_check) in [(true, false), (false, true)] {
+            let mut f = Fake { non_text, fail_check, ..Fake::default() };
+            let mut typed = None;
+            paste_or_type(&mut f, "new", DEFAULT_PASTE_DELAY, |text| {
+                typed = Some(text.to_owned());
+                Ok(())
+            }).unwrap();
+            assert_eq!(typed.as_deref(), Some("new"));
+            assert!(f.calls.is_empty(), "剪贴板不应被读取或写入");
+        }
+    }
+
+    #[test]
+    fn text_or_empty_clipboard_keeps_paste_restore_and_delay() {
+        for saved in [Some("old".into()), Some(String::new()), None] {
+            let mut f = Fake { saved: saved.clone(), ..Fake::default() };
+            paste_or_type(&mut f, "new", DEFAULT_PASTE_DELAY, |_| panic!("must paste")).unwrap();
+            assert_eq!(f.calls, vec!["read".into(), "write:Some(\"new\")".into(), "paste".into(), "wait:150".into(), format!("write:{:?}", saved.as_deref())]);
+        }
+    }
+
     #[test]
     fn text_never_parses_syntax_and_chords_have_one_complete_pair() {
         let text = "中😀 ^%+#({ENTER})\n";

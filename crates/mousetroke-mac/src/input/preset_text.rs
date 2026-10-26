@@ -11,6 +11,17 @@ use std::{sync::Mutex, time::Duration};
 static PASTE_LOCK: Mutex<()> = Mutex::new(());
 struct Backend;
 impl PasteBackend for Backend {
+    fn clipboard_has_non_text(&mut self) -> Result<bool, String> {
+        on_main(|| {
+            let board = NSPasteboard::generalPasteboard();
+            Ok(board.types().is_some_and(|types| types.iter().any(|kind| {
+                let name = kind.to_string();
+                kind.as_ref() != unsafe { NSPasteboardTypeString }
+                    && !matches!(name.as_str(), "public.utf8-plain-text" | "public.text")
+            })))
+        })
+    }
+
     fn read_text(&mut self) -> Result<Option<String>, String> {
         // 沿用 Lua 的 NSPasteboard 字符串读写实现，所有 AppKit 操作回主线程。
         on_main(|| {
@@ -94,7 +105,7 @@ pub fn copy_plain() -> Result<(), String> {
     action_text::copy_plain(&mut Backend)
 }
 
-/// 仅保存文本；原先没有文本时恢复为空。必须从工作线程调用，主 run loop 需保持运行。
+/// 纯文本粘贴后恢复；非文本剪贴板改为直接输入。必须从工作线程调用，主 run loop 需保持运行。
 pub fn type_text_via_paste(text: &str) -> Result<(), String> {
     type_text_via_paste_with_delay(text, action_text::DEFAULT_PASTE_DELAY)
 }
@@ -104,7 +115,10 @@ pub fn type_text_via_paste_with_delay(text: &str, delay: Duration) -> Result<(),
         return Err("Paste delay must run on a worker thread".into());
     }
     let _lock = PASTE_LOCK.lock().map_err(|_| "Text paste lock poisoned")?;
-    action_text::paste_with_restore(&mut Backend, text, delay)
+    action_text::paste_or_type(&mut Backend, text, delay, |text| {
+        crate::log!("Clipboard contains non-text data or cannot be inspected; typing directly");
+        type_text_direct(text)
+    })
 }
 
 /// 与 Action::Text 共用 post_text；CGEvent 可在工作线程投递，不占用主 run loop。

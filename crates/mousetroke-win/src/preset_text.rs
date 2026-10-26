@@ -1,4 +1,4 @@
-//! 临时剪贴板仅保存文本；图片、HTML、文件列表等非文本格式不能恢复。
+//! 临时剪贴板仅用于纯文本；含图片、HTML、文件列表等格式时改为直接输入。
 //! 调用方应在动作工作线程串行执行；150ms 是默认值，慢应用可增加等待时间。
 use crate::input;
 use mousetroke_core::{
@@ -9,10 +9,10 @@ use std::{sync::Mutex, time::Duration};
 use windows::{
     core::w,
     Win32::{
-        Foundation::{GlobalFree, HANDLE, HGLOBAL, HWND},
+        Foundation::{GetLastError, GlobalFree, SetLastError, ERROR_SUCCESS, HANDLE, HGLOBAL, HWND},
         System::{
             DataExchange::{
-                CloseClipboard, EmptyClipboard, GetClipboardData, GetClipboardSequenceNumber,
+                CloseClipboard, EmptyClipboard, EnumClipboardFormats, GetClipboardData, GetClipboardSequenceNumber,
                 IsClipboardFormatAvailable, OpenClipboard, SetClipboardData,
             },
             Memory::{GlobalAlloc, GlobalLock, GlobalSize, GlobalUnlock, GMEM_MOVEABLE},
@@ -127,6 +127,23 @@ impl Backend {
     }
 }
 impl PasteBackend for Backend {
+    fn clipboard_has_non_text(&mut self) -> Result<bool, String> {
+        let _clipboard = Clipboard::open(Some(self.owner.0))?;
+        let mut format = 0;
+        loop {
+            unsafe { SetLastError(ERROR_SUCCESS); }
+            format = unsafe { EnumClipboardFormats(format) };
+            if format == 0 {
+                let error = unsafe { GetLastError() };
+                return if error == ERROR_SUCCESS { Ok(false) } else { Err(format!("Enumerate clipboard formats: {error:?}")) };
+            }
+            // CF_TEXT、CF_OEMTEXT、CF_UNICODETEXT、CF_LOCALE；其他格式一律保留。
+            if !matches!(format, 1 | 7 | 13 | 16) {
+                return Ok(true);
+            }
+        }
+    }
+
     fn read_text(&mut self) -> Result<Option<String>, String> {
         {
             let _clipboard = Clipboard::open(Some(self.owner.0))?;
@@ -217,7 +234,10 @@ pub fn type_text_via_paste_with_delay(text: &str, delay: Duration) -> Result<(),
     let mut backend = Backend {
         owner: Owner::new()?,
     };
-    action_text::paste_with_restore(&mut backend, text, delay)
+    action_text::paste_or_type(&mut backend, text, delay, |text| {
+        crate::log!("Clipboard contains non-text data or cannot be inspected; typing directly");
+        type_text_direct(text)
+    })
 }
 
 /// 沿用 Action::Text 的 Unicode 注入，语法字符原样输出；返回 SendInput 的权限错误。
