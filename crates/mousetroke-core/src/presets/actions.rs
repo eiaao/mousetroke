@@ -262,7 +262,7 @@ pub static REGISTRY: &[Preset] = &[
     preset!("desktop.files", Desktop, keys("#e"), launch("com.apple.finder")),
     preset!("capture.region", Desktop, keys("#+s"), keys("#+4")),
     preset!("capture.screen", Desktop, keys("#{PRTSC}"), keys("#+3")),
-    preset!("capture.tool", Desktop, launch("SnippingTool.exe"), keys("#+5")),
+    preset!("capture.tool", Desktop, launch(r"%SystemRoot%\System32\SnippingTool.exe"), keys("#+5")),
     preset!("desktop.clipboard_history", Desktop, keys("#v"), WINDOWS_ONLY),
     preset!("desktop.emoji", Desktop, keys("#."), keys("^#{SPACE}")),
     preset!("desktop.notifications", Desktop, keys("#n"), WINDOWS_ONLY),
@@ -270,7 +270,7 @@ pub static REGISTRY: &[Preset] = &[
     preset!("system.task_manager", Desktop, keys("^+{ESC}"), launch("com.apple.ActivityMonitor")),
     preset!("system.force_quit_dialog", Desktop, MAC_ONLY, keys("#%{ESC}")),
     preset!("system.settings", Desktop, keys("#i"), launch("com.apple.systempreferences")),
-    preset!("system.calculator", Desktop, launch("calc.exe"), launch("com.apple.calculator")),
+    preset!("system.calculator", Desktop, launch(r"%SystemRoot%\System32\calc.exe"), launch("com.apple.calculator")),
     preset!("system.display_off", Desktop, native(NativePreset::DisplayOff), native(NativePreset::DisplayOff)),
     preset!("system.sleep", Desktop, native(NativePreset::Sleep), native(NativePreset::Sleep)),
     preset!("media.play_pause", Media, system("PLAY_PAUSE"), system("PLAY_PAUSE")),
@@ -405,7 +405,7 @@ pub fn resolve(id: &str, platform: Platform, params: &Params, ui_lang: Lang) -> 
                 Platform::Windows => {
                     if path.contains('"') { return Err(invalid("path")); }
                     let trailing = path.chars().rev().take_while(|c| *c == '\\').count();
-                    let mut action = launch_action("explorer.exe", Some(format!("\"{path}{}\"", "\\".repeat(trailing))));
+                    let mut action = launch_action(r"%SystemRoot%\explorer.exe", Some(format!("\"{path}{}\"", "\\".repeat(trailing))));
                     if let Action::LaunchApp { if_running, .. } = &mut action { *if_running = IfRunning::RunAgain; }
                     action
                 }

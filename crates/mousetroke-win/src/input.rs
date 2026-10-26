@@ -483,6 +483,28 @@ unsafe extern "system" fn enum_proc(hwnd: HWND, lparam: LPARAM) -> BOOL {
     BOOL(1)
 }
 
+/// 展开用户与预置路径中的环境变量；未知变量按 Windows 语义原样保留。
+fn expand_environment(s: &str) -> String {
+    use windows::{core::PCWSTR, Win32::System::Environment::ExpandEnvironmentStringsW};
+    let source: Vec<u16> = s.encode_utf16().chain([0]).collect();
+    let mut required = unsafe { ExpandEnvironmentStringsW(PCWSTR(source.as_ptr()), None) };
+    loop {
+        if required == 0 {
+            return s.into();
+        }
+        let mut buffer = vec![0u16; required as usize];
+        let written = unsafe { ExpandEnvironmentStringsW(PCWSTR(source.as_ptr()), Some(&mut buffer)) };
+        if written == 0 {
+            return s.into();
+        }
+        if written as usize <= buffer.len() {
+            return String::from_utf16_lossy(&buffer[..written as usize - 1]);
+        }
+        // 两次调用间环境变化时按最新长度重试，不受 MAX_PATH 限制。
+        required = written;
+    }
+}
+
 /// 运行/激活应用程序。
 pub fn launch_app(
     exe: &str,
@@ -508,10 +530,11 @@ pub fn launch_app(
             }
         }
     }
+    let exe = expand_environment(exe);
     let ok = if elevate {
-        shell_execute("runas", exe, args.unwrap_or(""))
+        shell_execute("runas", &exe, args.unwrap_or(""))
     } else {
-        run_app_process(exe, args.unwrap_or(""))
+        run_app_process(&exe, args.unwrap_or(""))
     };
     if !ok {
         crate::log!("应用启动失败: {exe}");
@@ -520,10 +543,11 @@ pub fn launch_app(
 
 /// 仅由预置打开应用的无参数路径调用。
 pub(crate) fn activate_app_by_identity(exe: &str) -> bool {
+    let exe = expand_environment(exe);
     let running = crate::targeting::visible_windows().into_iter().find_map(|(hwnd, _)| {
         let mut pid = 0;
         unsafe { windows::Win32::UI::WindowsAndMessaging::GetWindowThreadProcessId(hwnd, Some(&mut pid)); }
-        crate::targeting::exe_of(pid).filter(|path| app_exe_matches(exe, path)).map(|_| hwnd)
+        crate::targeting::exe_of(pid).filter(|path| app_exe_matches(&exe, path)).map(|_| hwnd)
     });
     if let Some(hwnd) = running { focus_window(hwnd); true } else { false }
 }
@@ -844,7 +868,21 @@ pub fn is_vk_pressed(key: mousetroke_core::keyseq::Key) -> bool {
 
 #[cfg(test)]
 mod app_identity_tests {
-    use super::app_exe_matches;
+    use super::{app_exe_matches, expand_environment};
+
+    #[test]
+    fn environment_expansion_handles_system_paths_mixed_text_and_unknown_variables() {
+        let root = std::env::var("SystemRoot").unwrap();
+        assert_eq!(expand_environment("%SystemRoot%"), root);
+        let mixed = format!("prefix {} %SystemRoot% suffix", "x".repeat(300));
+        assert_eq!(expand_environment(&mixed), mixed.replace("%SystemRoot%", &root));
+        assert_eq!(expand_environment("%MOUSESTROKE_UNKNOWN_ENV_829A%"), "%MOUSESTROKE_UNKNOWN_ENV_829A%");
+        assert_eq!(expand_environment("plain text"), "plain text");
+        assert_eq!(expand_environment(""), "");
+        let expanded = expand_environment(r"%SystemRoot%\explorer.exe");
+        assert!(app_exe_matches(&expanded, &format!(r"{root}\explorer.exe")));
+        assert!(!app_exe_matches(&expanded, "portable/explorer.exe"));
+    }
 
     #[test]
     fn activation_matches_names_and_full_paths_without_confusing_apps() {

@@ -109,7 +109,7 @@
     },
     "result": {
       "type": "launch_app",
-      "exe": "explorer.exe",
+      "exe": "%SystemRoot%\\explorer.exe",
       "args": "\"folder with spaces\"",
       "elevate": false,
       "win_class": null,

@@ -238,3 +238,18 @@ fn native_text_methods_dates_and_custom_patterns_are_resolved_without_lua() {
         assert!(matches!(resolve("text.datetime", platform, &Params::new(), Lang::EnUs).unwrap(), PreparedAction::Native(NativeAction::DateTime { method: TextMethod::Paste, .. })));
     }
 }
+
+#[test]
+fn windows_system_program_presets_use_explicit_system_root_paths() {
+    for (id, expected) in [
+        ("capture.tool", r"%SystemRoot%\System32\SnippingTool.exe"),
+        ("system.calculator", r"%SystemRoot%\System32\calc.exe"),
+        ("open.folder", r"%SystemRoot%\explorer.exe"),
+    ] {
+        let mut params = find(id).unwrap().default_params(Lang::EnUs);
+        if id == "open.folder" { params.insert("path".into(), json!("folder")); }
+        let Action::LaunchApp { exe, .. } = expand(id, Platform::Windows, &params, Lang::EnUs).unwrap() else { panic!("{id}: expected launch") };
+        assert_eq!(exe, expected);
+        assert!(exe.contains("%SystemRoot%"));
+    }
+}
