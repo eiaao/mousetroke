@@ -216,7 +216,7 @@ function Main({ init }: { init: InitState }) {
   };
   const toggleBinding = (i: number) => {
     if (!scope) return;
-    edit((c) => updateBinding(c, scopeIdx, i, (b) => ({ ...b, disabled: b.disabled ? undefined : true })));
+    edit((c) => updateBinding(c, scopeIdx, i, (b) => ({ ...b, disabled: b.autoDisabled || !b.disabled ? true : undefined, autoDisabled: undefined })));
   };
   const duplicateBinding = (i: number) => {
     if (!scope) return;

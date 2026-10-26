@@ -17,7 +17,7 @@ const { ActionPicker } = await server.ssrLoadModule("/src/components/ActionPicke
 const { ActionEditor } = await server.ssrLoadModule("/src/components/ActionEditor.tsx");
 const { Modal } = await server.ssrLoadModule("/src/components/Dialogs.tsx");
 const { BindingList } = await server.ssrLoadModule("/src/components/BindingList.tsx");
-const { persistedConfig, withBindingIds } = await server.ssrLoadModule("/src/store.ts");
+const { persistedConfig, withBindingIds, updateBinding, updateScope, useConfigStore } = await server.ssrLoadModule("/src/store.ts");
 const { api } = await server.ssrLoadModule("/src/api.ts");
 const { Editor } = await server.ssrLoadModule("/src/components/Editor.tsx");
 
@@ -284,6 +284,9 @@ test("unselected action shows a prominent pick button and hint (A)", () => {
 const dom = new JSDOM("<!doctype html><html><body></body></html>", { url: "http://localhost/" });
 Object.assign(globalThis, { window: dom.window, document: dom.window.document, HTMLElement: dom.window.HTMLElement, HTMLInputElement: dom.window.HTMLInputElement, Event: dom.window.Event, location: dom.window.location, requestAnimationFrame: (fn) => setTimeout(fn, 0), IS_REACT_ACT_ENVIRONMENT: true });
 Object.defineProperty(globalThis, "navigator", { value: dom.window.navigator, configurable: true });
+// jsdom 不提供录制画布的尺寸监听和绘图；这些测试只验证编辑状态。
+globalThis.ResizeObserver = class { observe() {} disconnect() {} };
+dom.window.HTMLCanvasElement.prototype.getContext = () => null;
 let scrolled;
 dom.window.HTMLElement.prototype.scrollIntoView = function () { scrolled = this; };
 const { createRoot } = await import("react-dom/client");
@@ -310,6 +313,136 @@ async function input(el, value) {
   });
 }
 const button = (el, text) => [...el.querySelectorAll("button")].find((b) => b.textContent === text);
+
+async function mountGestureEditor(binding = keys.newBinding()) {
+  let store;
+  function Harness() {
+    store = useConfigStore({ scopes: [{ id: "g", bindings: [binding] }] });
+    return createElement(Editor, {
+      binding: store.config.scopes[0].bindings[0], bindingKey: "gesture", conflictWith: [], otherBindings: [],
+      onChange: (f, coalesce) => store.edit((c) => updateBinding(c, 0, 0, f), coalesce),
+      onDuplicate() {}, onDelete() {}, onClose() {},
+    });
+  }
+  const view = await mount(createElement(Harness));
+  return { ...view, get store() { return store; }, get binding() { return store.config.scopes[0].bindings[0]; } };
+}
+
+test("incomplete patterns are empty or a lone press, while additional steps stay valid", () => {
+  const press = { type: "press", key: "mouse:right" };
+  for (const pattern of [[], [press], [{ type: "press", key: "kb:82" }]]) {
+    assert.equal(keys.isIncompletePattern(pattern), true);
+  }
+  for (const pattern of [
+    [press, { type: "press", key: "kb:82" }],
+    [press, { type: "press", key: "mouse:left" }],
+    [press, { type: "wheel", horizontal: false }],
+    [{ type: "wheel", horizontal: false }],
+    [{ type: "edge", edge: 1 }],
+    [{ type: "trace", points: [0, 0, 1, 0] }],
+    [{ type: "shape", templates: [[0, 0, 1, 0]] }],
+    [press, { type: "trace", points: [] }],
+    [{ type: "shape", templates: [] }],
+  ]) assert.equal(keys.isIncompletePattern(pattern), false, JSON.stringify(pattern));
+});
+
+test("conflict patterns require recorded points but accept keys, wheels and edges", () => {
+  const press = { type: "press", key: "mouse:right" };
+  for (const pattern of [[], [press], [press, { type: "trace", points: [] }], [press, { type: "trace", points: [0, 0] }], [press, { type: "shape", templates: [[]] }]]) {
+    assert.equal(keys.hasConflictPattern(pattern), false);
+  }
+  for (const pattern of [[press, { type: "press", key: "kb:82" }], [press, { type: "wheel", horizontal: false }], [{ type: "edge", edge: 1 }], [press, { type: "trace", points: [0, 0, 1, 0] }], [press, { type: "shape", templates: [[0, 0, 1, 0]] }]]) {
+    assert.equal(keys.hasConflictPattern(pattern), true);
+  }
+});
+
+test("editor warns directly below an incomplete pattern and clears the warning after adding a step", async () => {
+  setup();
+  const view = await mountGestureEditor();
+  try {
+    assert.equal(view.el.querySelector('.pattern-editor + .field-warn')?.textContent, t("ui.editor.incomplete_pattern"));
+    assert.equal(view.binding.disabled, true);
+    assert.equal(view.binding.autoDisabled, true);
+    await click(button(view.el, t("ui.pattern.add_step")));
+    await click(button(view.el, t("ui.pattern.wheel_up")));
+    assert.equal(view.el.querySelector('.pattern-editor + .field-warn'), null);
+    assert.equal(view.binding.disabled, false);
+    assert.equal(view.binding.autoDisabled, undefined);
+    await click(view.el.querySelector('.chip-x'));
+    assert.equal(view.el.querySelector('.pattern-editor + .field-warn')?.textContent, t("ui.editor.incomplete_pattern"));
+    assert.equal(view.binding.disabled, true);
+    assert.equal(view.binding.autoDisabled, true);
+  } finally { await view.close(); }
+});
+
+test("persisted config disables incomplete bindings in every scope and strips UI flags", () => {
+  setup();
+  const binding = { ...keys.newBinding(), disabled: false, autoDisabled: undefined, actionUnselected: false, lastActionName: "action" };
+  const config = { scopes: [{ id: "g", bindings: [binding] }, { id: "app", bindings: [{ ...binding, pattern: [] }] }] };
+  const before = structuredClone(config);
+  const persisted = persistedConfig(config);
+  for (const scope of persisted.scopes) {
+    assert.equal(scope.bindings[0].disabled, true);
+    for (const field of ["uiId", "actionUnselected", "lastActionName", "autoDisabled"]) assert.equal(field in scope.bindings[0], false);
+  }
+  assert.deepEqual(config, before, "持久化不能修改编辑状态");
+});
+
+test("drawing a stroke re-enables only auto-disabled bindings, including undo and redo", async () => {
+  setup();
+  const view = await mountGestureEditor();
+  try {
+    const pattern = [...view.binding.pattern, { type: "trace", points: [0, 0, 1, 0] }];
+    await act(async () => view.store.edit((c) => updateBinding(c, 0, 0, (b) => ({ ...b, pattern }))));
+    assert.equal(view.binding.disabled, false);
+    assert.equal(view.binding.autoDisabled, undefined);
+    assert.equal(persistedConfig(view.store.config).scopes[0].bindings[0].disabled, false);
+    await act(async () => view.store.undo());
+    assert.equal(view.binding.disabled, true);
+    assert.equal(view.binding.autoDisabled, true);
+    assert.equal(persistedConfig(view.store.config).scopes[0].bindings[0].disabled, true);
+    await act(async () => view.store.redo());
+    assert.equal(view.binding.disabled, false);
+    assert.equal(view.binding.autoDisabled, undefined);
+  } finally { await view.close(); }
+});
+
+test("manual disable in the editor takes precedence when an incomplete gesture is completed", async () => {
+  setup();
+  const view = await mountGestureEditor();
+  try {
+    const toggle = view.el.querySelector('.editor-enable input');
+    assert.equal(toggle.checked, true, "自动停用时仍可撤回启用意图");
+    await click(toggle);
+    assert.equal(view.binding.disabled, true);
+    assert.equal(view.binding.autoDisabled, undefined);
+    await click(button(view.el, t("ui.pattern.add_step")));
+    await click(button(view.el, t("ui.pattern.wheel_up")));
+    assert.equal(view.binding.disabled, true);
+    assert.equal(view.binding.autoDisabled, undefined);
+    assert.equal(toggle.checked, false);
+    assert.equal(persistedConfig(view.store.config).scopes[0].bindings[0].disabled, true);
+  } finally { await view.close(); }
+});
+
+test("loaded and newly inserted patterns are normalized without overriding manual disable", async () => {
+  setup();
+  const view = await mountGestureEditor({ ...keys.newBinding(), disabled: undefined, autoDisabled: undefined });
+  try {
+    assert.equal(view.binding.disabled, true);
+    assert.equal(view.binding.autoDisabled, true);
+    await act(async () => view.store.load({ scopes: [{ id: "g", bindings: [{ ...keys.newBinding(), autoDisabled: undefined }] }] }));
+    await act(async () => view.store.edit((c) => updateBinding(c, 0, 0, (b) => ({ ...b, pattern: [...b.pattern, { type: "trace", points: [0, 0, 1, 0] }] }))));
+    assert.equal(view.binding.disabled, true);
+    assert.equal(view.binding.autoDisabled, undefined);
+    await act(async () => view.store.edit((c) => updateScope(c, 0, (s) => ({ ...s, bindings: [...s.bindings, { ...keys.newBinding(), disabled: undefined, autoDisabled: undefined }, { ...keys.newBinding(), pattern: [{ type: "edge", edge: 1 }] }] }))));
+    const [, incomplete, edge] = view.store.config.scopes[0].bindings;
+    assert.equal(incomplete.disabled, true);
+    assert.equal(incomplete.autoDisabled, true);
+    assert.equal(edge.disabled, false);
+    assert.equal(edge.autoDisabled, undefined);
+  } finally { await view.close(); }
+});
 
 test("current preset selects its actual row and scrolls into view (UI 1)", async () => {
   setup();
@@ -497,8 +630,8 @@ test("auto picker request is consumed once by stable binding identity (C9)", asy
 
 test("unselected rows are muted and incomplete gestures do not conflict (C2, UI 7)", () => {
   setup();
-  const binding = keys.newBinding();
-  assert.equal(keys.conflicts([binding, keys.newBinding()]).size, 0);
+  const binding = { ...keys.newBinding(), disabled: false, autoDisabled: undefined };
+  assert.equal(keys.conflicts([binding, binding]).size, 0);
   const trace = { ...binding, pattern: [{ type: "press", key: "mouse:right" }, { type: "trace", points: [] }] };
   assert.equal(keys.conflicts([trace, trace]).size, 0);
   const edge = { ...binding, pattern: [{ type: "edge", edge: 1 }] };
@@ -506,6 +639,25 @@ test("unselected rows are muted and incomplete gestures do not conflict (C2, UI 
   const html = render(createElement(BindingList, { scope: { id: "g", kind: "global", name: "g", bindings: [binding] }, tab: "gesture", filter: "all", selected: null, clash: new Map(), onSelect() {}, onTab() {}, onFilter() {}, onAdd() {}, onDelete() {}, onDuplicate() {}, onToggle() {}, onScopeChange() {}, onDeleteScope() {} }));
   assert.ok(html.includes('class="row-action-text muted"'));
   assert.ok(html.includes(t("ui.actpick.unselected")));
+});
+
+test("new gesture rows show no stroke yet with or without an action selected", () => {
+  setup();
+  const binding = keys.newBinding();
+  assert.equal(binding.disabled, true);
+  assert.equal(binding.autoDisabled, true);
+  const props = { tab: "gesture", filter: "all", selected: null, clash: new Map(), onSelect() {}, onTab() {}, onFilter() {}, onAdd() {}, onDelete() {}, onDuplicate() {}, onToggle() {}, onScopeChange() {}, onDeleteScope() {} };
+  for (const actionUnselected of [true, false]) {
+    const html = render(createElement(BindingList, { ...props, scope: { id: "g", kind: "global", name: "g", bindings: [{ ...binding, actionUnselected }] } }));
+    assert.ok(html.includes('class="row-action-text muted"'));
+    assert.ok(html.includes(t("ui.list.no_stroke")));
+    assert.equal(html.includes(t("ui.actpick.unselected")), actionUnselected);
+    assert.ok(!html.includes('filter-off'), "等待画轨迹与手动停用分开显示");
+  }
+  const disabled = render(createElement(BindingList, { ...props, scope: { id: "g", kind: "global", name: "g", bindings: [{ ...binding, autoDisabled: undefined }] } }));
+  assert.ok(disabled.includes('filter-off'));
+  const html = render(createElement(BindingList, { ...props, scope: { id: "g", kind: "global", name: "g", bindings: [{ ...binding, pattern: [...binding.pattern, { type: "press", key: "kb:82" }] }] } }));
+  assert.ok(!html.includes(t("ui.list.no_stroke")));
 });
 
 
@@ -557,6 +709,70 @@ test("unreadable config blocks all automatic and close-time saves until explicit
   } finally {
     await view.close();
     Object.assign(api, originalApi);
+  }
+});
+
+test("new gestures with only an action save disabled and list toggles preserve manual intent", async () => {
+  setup();
+  const { App } = await server.ssrLoadModule("/src/App.tsx");
+  const config = JSON.parse(readFileSync(new URL("../../../mousetroke-core/assets/default-config.json", import.meta.url), "utf8"));
+  config.settings = JSON.parse(readFileSync(new URL("../../../../tools/uitest/config.json", import.meta.url), "utf8")).settings;
+  config.scopes = [{ ...config.scopes[0], bindings: [] }];
+  const originalApi = { ...api };
+  const originalInternals = window.__TAURI_INTERNALS__;
+  const originalEvents = window.__TAURI_EVENT_PLUGIN_INTERNALS__;
+  const saved = [], listeners = new Map();
+  window.__TAURI_EVENT_PLUGIN_INTERNALS__ = { unregisterListener() {} };
+  window.__TAURI_INTERNALS__ = {
+    metadata: { currentWindow: { label: "main" }, currentWebview: { label: "main" } },
+    transformCallback: (fn) => fn,
+    invoke: async (cmd, args) => {
+      if (cmd === "plugin:event|listen") { listeners.set(args.event, args.handler); return listeners.size; }
+      if (cmd === "save_config") saved.push(args.config);
+      return null;
+    },
+  };
+  Object.assign(api, {
+    initState: async () => ({ platform: "windows", config, loadError: null, configPath: "config.json", engine: { running: true, autostart: false, exeFound: true }, systemLangs: ["zh-CN"], actionCatalog: fixture }),
+    actionCatalog: async () => fixture,
+    setUiLang: async () => {},
+    appIcons: async () => ({}),
+  });
+  const view = await mount(createElement(App));
+  try {
+    await click(button(view.el, t("ui.list.add_gesture")));
+    assert.ok(view.el.querySelector('.row-action-text.muted').textContent.includes(t("ui.list.no_stroke")));
+    await click([...view.el.querySelectorAll('.act-list button')].find((b) => b.textContent.startsWith(t("preset.action.browser.close_tab.name"))));
+    assert.ok(view.el.querySelector('.pattern-editor + .field-warn'));
+    await act(async () => new Promise((resolve) => setTimeout(resolve, 420)));
+    assert.ok(saved.length > 0);
+    const binding = saved.at(-1).scopes[0].bindings[0];
+    assert.equal(binding.action.id, "browser.close_tab");
+    assert.equal(binding.pattern.length, 1);
+    assert.equal(binding.disabled, true);
+    assert.equal("autoDisabled" in binding, false);
+    assert.equal("actionUnselected" in binding, false);
+    const toggle = view.el.querySelector('.rows .row .switch');
+    assert.equal(toggle.checked, true);
+    await click(toggle);
+    assert.equal(toggle.checked, false);
+    await click(button(view.el, t("ui.pattern.add_step")));
+    await click(button(view.el, t("ui.pattern.wheel_up")));
+    assert.equal(view.el.querySelector('.pattern-editor + .field-warn'), null);
+    assert.equal(toggle.checked, false);
+    await act(async () => listeners.get("tauri://close-requested")({ event: "tauri://close-requested", id: 1 }));
+    assert.equal(saved.at(-1).scopes[0].bindings[0].disabled, true);
+    await click(toggle);
+    assert.equal(toggle.checked, true);
+    await click(view.el.querySelector('.chip-x'));
+    assert.ok(view.el.querySelector('.pattern-editor + .field-warn'));
+    await act(async () => listeners.get("tauri://close-requested")({ event: "tauri://close-requested", id: 1 }));
+    assert.equal(saved.at(-1).scopes[0].bindings[0].disabled, true, "再次移除步骤也不能以启用状态保存");
+  } finally {
+    await view.close();
+    Object.assign(api, originalApi);
+    window.__TAURI_INTERNALS__ = originalInternals;
+    window.__TAURI_EVENT_PLUGIN_INTERNALS__ = originalEvents;
   }
 });
 

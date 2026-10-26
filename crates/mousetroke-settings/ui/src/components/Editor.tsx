@@ -1,6 +1,7 @@
 import type { Action, Binding, Step } from "../types";
 import { displayName, t } from "../i18n";
 import { presetDefinition, presetName } from "../actions";
+import { isIncompletePattern } from "../gesture";
 import { ActionEditor } from "./ActionEditor";
 import { PatternEditor } from "./PatternEditor";
 
@@ -35,6 +36,8 @@ function isUnknownPreset(b: Binding): boolean {
 }
 
 export function Editor({ binding, bindingKey, conflictWith, otherBindings, autoPickAction, onPickerShown, onChange, onDuplicate, onDelete, onClose }: EditorProps) {
+  // 自动停用保留启用意图，用户仍可在画轨迹前手动停用。
+  const enabled = !binding.disabled || !!binding.autoDisabled;
   const conflict = conflictWith.length ? (
     <span className="warn">{t("ui.editor.conflict", { names: quoteJoin(conflictWith.map((n) => n)) })}</span>
   ) : null;
@@ -48,13 +51,13 @@ export function Editor({ binding, bindingKey, conflictWith, otherBindings, autoP
           placeholder={t("ui.editor.name_ph")}
           onChange={(e) => onChange((b) => ({ ...b, name: e.target.value, name_key: undefined }), "name")}
         />
-        <label className="editor-enable" data-tip={binding.disabled ? t("ui.editor.off_tip") : t("ui.editor.on_tip")}>
-          <span>{binding.disabled ? t("ui.editor.off_state") : t("ui.editor.on_state")}</span>
+        <label className="editor-enable" data-tip={enabled ? t("ui.editor.on_tip") : t("ui.editor.off_tip")}>
+          <span>{enabled ? t("ui.editor.on_state") : t("ui.editor.off_state")}</span>
           <input
             type="checkbox"
             className="switch small"
-            checked={!binding.disabled}
-            onChange={(e) => onChange((b) => ({ ...b, disabled: e.target.checked ? undefined : true }))}
+            checked={enabled}
+            onChange={(e) => onChange((b) => ({ ...b, disabled: e.target.checked ? undefined : true, autoDisabled: undefined }))}
           />
         </label>
         <button type="button" className="icon-btn" data-tip={t("ui.editor.close_tip")} aria-label={t("ui.editor.close_aria")} onClick={onClose}>
@@ -70,6 +73,7 @@ export function Editor({ binding, bindingKey, conflictWith, otherBindings, autoP
           others={otherBindings}
           onChange={(pattern: Step[]) => onChange((b) => ({ ...b, pattern }))}
         />
+        {isIncompletePattern(binding.pattern) && <p className="field-warn" role="status">{t("ui.editor.incomplete_pattern")}</p>}
         {conflict && <p className="field-warn">{conflict}</p>}
 
         <h3 className="editor-section">{t("ui.editor.section_action")}</h3>

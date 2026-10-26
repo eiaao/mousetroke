@@ -1,7 +1,7 @@
 import { useCallback, useReducer } from "react";
-import type { Config } from "./types";
+import type { Binding, Config } from "./types";
 import { persistedAction } from "./actions";
-import { uid } from "./gesture";
+import { isIncompletePattern, uid } from "./gesture";
 
 // 配置编辑状态：不可变更新 + 撤销/重做。
 // 同一字段的连续输入（相同 coalesce 键、间隔 < 1s）合并为一步撤销。
@@ -32,7 +32,7 @@ function reducer(s: State, m: Msg): State {
       const now = Date.now();
       const merge = m.key != null && m.key === s.lastKey && now - s.lastAt < 1000;
       return {
-        config: next,
+        config: withBindingIds(next),
         past: merge ? s.past : [...s.past.slice(-HISTORY + 1), s.config],
         future: [],
         revision: s.revision + 1,
@@ -96,11 +96,22 @@ export function updateScope(c: Config, scopeIdx: number, f: (s: Config["scopes"]
   return { ...c, scopes: c.scopes.map((s, i) => (i === scopeIdx ? f(s) : s)) };
 }
 
-/** 稳定标识跨编辑与排序保留，持久化前清除。 */
+/** 只恢复系统自动停用的绑定，手动停用优先。 */
+function withPatternState(binding: Binding): Binding {
+  if (isIncompletePattern(binding.pattern)) {
+    return binding.disabled ? binding : { ...binding, disabled: true, autoDisabled: true };
+  }
+  return binding.autoDisabled ? { ...binding, disabled: false, autoDisabled: undefined } : binding;
+}
+
+/** 稳定标识跨编辑与排序保留，同时同步模式的可用状态。 */
 export function withBindingIds(config: Config): Config {
-  return { ...config, scopes: config.scopes.map((scope) => ({ ...scope, bindings: scope.bindings.map((binding) => ({ ...binding, uiId: binding.uiId ?? uid() })) })) };
+  return { ...config, scopes: config.scopes.map((scope) => ({ ...scope, bindings: scope.bindings.map((binding) => withPatternState({ ...binding, uiId: binding.uiId ?? uid() })) })) };
 }
 
 export function persistedConfig(config: Config): Config {
-  return { ...config, scopes: config.scopes.map((scope) => ({ ...scope, bindings: scope.bindings.map(({ uiId: _id, actionUnselected: _unselected, lastActionName: _name, ...binding }) => ({ ...binding, action: persistedAction(binding.action) })) })) };
+  return { ...config, scopes: config.scopes.map((scope) => ({ ...scope, bindings: scope.bindings.map((binding) => {
+    const { uiId: _id, actionUnselected: _unselected, lastActionName: _name, autoDisabled: _autoDisabled, ...saved } = withPatternState(binding);
+    return { ...saved, action: persistedAction(saved.action) };
+  }) })) };
 }
