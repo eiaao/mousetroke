@@ -605,3 +605,29 @@ test("preset keycaps and platform notes use the current platform (UI 3, 8, 9, 16
   assert.equal(actions.presetKeys(preset), "#w");
   assert.ok(actions.presetDescription(noted).includes(t("preset.note.accessibility")));
 });
+
+test("hovering another row keeps an open form; search Enter applies the form action, not the row", async () => {
+  setup();
+  const picked = [];
+  const view = await mount(createElement(ActionPicker, { onPick(a) { picked.push(a); }, onClose() {} }));
+  const search = view.el.querySelector('.search');
+  // 打开带参数动作（输入一段文字）的表单
+  await click([...view.el.querySelectorAll('.act-list button')].find((b) => b.textContent.startsWith(t("preset.action.text.type.name"))));
+  const formInput = view.el.querySelector('.act-form textarea[data-param="text"]');
+  assert.ok(formInput, "param form visible");
+  // 鼠标滑过其他行：表单保持打开，不被收起
+  const otherRow = view.el.querySelector('[role=option]');
+  await act(async () => otherRow.dispatchEvent(new dom.window.MouseEvent("mousemove", { bubbles: true })));
+  assert.ok(view.el.querySelector('.act-form textarea[data-param="text"]'), "form still open after hover");
+  // 填入文字后在搜索框按回车：提交表单的动作，而不是高亮行
+  await act(async () => {
+    formInput.focus();
+    Object.getOwnPropertyDescriptor(dom.window.HTMLTextAreaElement.prototype, "value").set.call(formInput, "你好");
+    formInput.dispatchEvent(new dom.window.Event("input", { bubbles: true }));
+  });
+  await key(search, "Enter");
+  assert.equal(picked.length, 1);
+  assert.equal(picked[0].id, "text.type");
+  assert.equal(picked[0].params.text, "你好");
+  await view.close();
+});

@@ -93,13 +93,6 @@ export function ActionPicker({
     listRef.current?.querySelector(`#actpick-opt-${activeRow}`)?.scrollIntoView({ block: "nearest" });
   }, [activeRow, cat, q]);
 
-  // 高亮行与表单动作不一致时，切换高亮即收起原表单
-  useEffect(() => {
-    if (formPreset && presets[activeRow]?.id !== formPreset.id) {
-      setFormId(null);
-    }
-  }, [activeRow, presets, formPreset]);
-
   const openForm = (p: ActionPreset) => {
     const base = presetParamValues(p, current);
     setFormId(p.id);
@@ -185,10 +178,11 @@ export function ActionPicker({
         }
         return;
       }
-      // 搜索框/列表区域的回车
+      // 搜索框/列表区域的回车：表单打开时提交表单（避免误选高亮行），否则激活高亮行
       if (target === searchRef.current || target === listRef.current) {
         e.preventDefault();
-        activate(activeRow);
+        if (formPreset) applyForm(formPreset);
+        else activate(activeRow);
       }
       return;
     }
