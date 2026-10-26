@@ -26,7 +26,11 @@ pub(crate) fn on_main<R: Send + 'static>(
     unsafe {
         NSOperationQueue::mainQueue().addOperationWithBlock(&block);
     }
-    match rx.recv_timeout(Duration::from_secs(5)) {
+    wait_for_task(rx, &task, Duration::from_secs(5))
+}
+
+fn wait_for_task<R>(rx: mpsc::Receiver<Result<R, String>>, task: &Mutex<Option<impl Sized>>, timeout: Duration) -> Result<R, String> {
+    match rx.recv_timeout(timeout) {
         Ok(result) => result,
         Err(_) => {
             // 尚未开始的操作可取消，避免超时返回后才改写剪贴板。
@@ -37,9 +41,38 @@ pub(crate) fn on_main<R: Send + 'static>(
             if pending.is_some() {
                 Err("Main thread did not respond; text action cancelled".into())
             } else {
-                rx.recv()
-                    .map_err(|_| "Main-thread text action disconnected")?
+                // 已开始的操作不能取消；丢弃晚到的结果并释放工作线程，避免主线程卡住时队列永久死锁。
+                Err("Main-thread text action timed out; late result discarded".into())
             }
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn pending_timeout_cancels_the_task() {
+        let (_tx, rx) = mpsc::sync_channel::<Result<(), String>>(1);
+        let task = Mutex::new(Some(()));
+        assert!(wait_for_task(rx, &task, Duration::ZERO).unwrap_err().contains("cancelled"));
+        assert!(task.lock().unwrap().is_none());
+    }
+
+    #[test]
+    fn started_timeout_releases_worker_and_discards_late_result() {
+        let (tx, rx) = mpsc::sync_channel::<Result<(), String>>(1);
+        let task = Mutex::new(Some(()));
+        task.lock().unwrap().take();
+        assert!(wait_for_task(rx, &task, Duration::ZERO).unwrap_err().contains("timed out"));
+        assert!(tx.send(Ok(())).is_err());
+    }
+
+    #[test]
+    fn completed_task_returns_its_result() {
+        let (tx, rx) = mpsc::sync_channel(1);
+        tx.send(Ok(42)).unwrap();
+        assert_eq!(wait_for_task(rx, &Mutex::new(None::<()>), Duration::ZERO), Ok(42));
     }
 }
