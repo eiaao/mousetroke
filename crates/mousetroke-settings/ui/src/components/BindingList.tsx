@@ -2,7 +2,7 @@ import { primaryModifier } from "../platform";
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import type { Binding, MouseButton, Scope, Step } from "../types";
 import { actionKeys, presetDefinition, presetTypeLabel } from "../actions";
-import { EDGE, actionSummary, buttonName, decompose, describePattern, edgeName, fileName, isIncompletePattern } from "../gesture";
+import { EDGE, actionSummary, buttonName, decompose, describePattern, edgeName, fileName, hasConflictPattern } from "../gesture";
 import { T, currentLang, displayName, t } from "../i18n";
 import { PatternGlyph } from "./Glyph";
 import { AppIcon, EdgeIcon, MouseIcon } from "./Icons";
@@ -68,7 +68,7 @@ export function BindingList({
     const count = new Map<string, number>();
     classes.forEach((c) => c.tab === tab && count.set(c.key, (count.get(c.key) ?? 0) + 1));
     const keys = tab === "gesture" ? BUTTON_ORDER.map((b) => `btn:${b}`) : EDGE_ORDER.map((e) => `edge:${e}`);
-    const off = scope.bindings.filter((b, i) => b.disabled && !b.autoDisabled && classes[i].tab === tab).length;
+    const off = scope.bindings.filter((b, i) => b.disabled && !b.draft && classes[i].tab === tab).length;
     return [...keys.filter((k) => count.has(k)).map((k) => ({ key: k, n: count.get(k)! })), ...(off ? [{ key: "off", n: off }] : [])];
   }, [classes, tab, scope.bindings]);
   const activeFilter = filters.some((f) => f.key === filter) ? filter : "all";
@@ -78,7 +78,7 @@ export function BindingList({
     const q = query.trim().toLowerCase();
     return scope.bindings
       .map((b, i) => ({ b, i }))
-      .filter(({ b, i }) => classes[i].tab === tab && (activeFilter === "all" || classes[i].key === activeFilter || (activeFilter === "off" && !!b.disabled && !b.autoDisabled)))
+      .filter(({ b, i }) => classes[i].tab === tab && (activeFilter === "all" || classes[i].key === activeFilter || (activeFilter === "off" && !!b.disabled && !b.draft)))
       // 按界面上显示的名字搜（内置名随语言翻译，b.name 只是导入时那种语言的文字）
       .filter(
         ({ b }) =>
@@ -302,8 +302,8 @@ export function BindingList({
 
 function Row({ n, b, on, clash, onClick, onToggle }: { n: number; b: Binding; on: boolean; clash: boolean; onClick: () => void; onToggle: () => void }) {
   const name = displayName(b.name, b.name_key);
-  const enabled = !b.disabled || !!b.autoDisabled;
-  const incomplete = isIncompletePattern(b.pattern);
+  const enabled = !b.disabled || !!b.draft;
+  const incomplete = !!b.draft && !hasConflictPattern(b.pattern);
   return (
     <li
       role="option"
@@ -319,7 +319,7 @@ function Row({ n, b, on, clash, onClick, onToggle }: { n: number; b: Binding; on
         <span className="row-name">
           {name || <em className="muted">{t("ui.list.unnamed")}</em>}
           {!enabled && <span className="badge">{t("ui.list.off_badge")}</span>}
-          {incomplete && enabled && (
+          {b.draft && (
             <span className="badge" data-tip={t("ui.list.inactive_tip")}>
               {t("ui.list.inactive_badge")}
             </span>

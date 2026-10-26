@@ -105,8 +105,8 @@ export interface Binding {
   /** 仅界面使用；写入和导出时移除。 */
   uiId?: string;
   actionUnselected?: boolean;
-  /** 仅界面使用；模式未完成时自动停用，完成后恢复启用。 */
-  autoDisabled?: boolean;
+  /** 草稿：持久化为停用，模式完成且已选动作后自动启用。 */
+  draft?: boolean;
   name: string;
   /** 内置名称的词条键；存在且未被用户改名时按当前语言显示。 */
   name_key?: string;

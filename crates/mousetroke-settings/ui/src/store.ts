@@ -1,7 +1,7 @@
 import { useCallback, useReducer } from "react";
-import type { Binding, Config } from "./types";
+import type { Config } from "./types";
 import { persistedAction } from "./actions";
-import { isIncompletePattern, uid } from "./gesture";
+import { hasConflictPattern, uid } from "./gesture";
 
 // 配置编辑状态：不可变更新 + 撤销/重做。
 // 同一字段的连续输入（相同 coalesce 键、间隔 < 1s）合并为一步撤销。
@@ -96,22 +96,19 @@ export function updateScope(c: Config, scopeIdx: number, f: (s: Config["scopes"]
   return { ...c, scopes: c.scopes.map((s, i) => (i === scopeIdx ? f(s) : s)) };
 }
 
-/** 只恢复系统自动停用的绑定，手动停用优先。 */
-function withPatternState(binding: Binding): Binding {
-  if (isIncompletePattern(binding.pattern)) {
-    return binding.disabled ? binding : { ...binding, disabled: true, autoDisabled: true };
-  }
-  return binding.autoDisabled ? { ...binding, disabled: false, autoDisabled: undefined } : binding;
-}
-
-/** 稳定标识跨编辑与排序保留，同时同步模式的可用状态。 */
+/** 稳定标识跨编辑与排序保留；仅在模式和动作均已完成时启用草稿。 */
 export function withBindingIds(config: Config): Config {
-  return { ...config, scopes: config.scopes.map((scope) => ({ ...scope, bindings: scope.bindings.map((binding) => withPatternState({ ...binding, uiId: binding.uiId ?? uid() })) })) };
+  return { ...config, scopes: config.scopes.map((scope) => ({ ...scope, bindings: scope.bindings.map((binding) => {
+    // 未选择动作的空按键序列也会落盘；重载草稿时恢复这个仅界面标记。
+    const actionUnselected = binding.actionUnselected ?? (binding.draft && binding.action.type === "key_sequence" && binding.action.keys === "" ? true : undefined);
+    const b = { ...binding, actionUnselected, uiId: binding.uiId ?? uid() };
+    return b.draft && hasConflictPattern(b.pattern) && !b.actionUnselected ? { ...b, draft: undefined, disabled: undefined } : b;
+  }) })) };
 }
 
 export function persistedConfig(config: Config): Config {
   return { ...config, scopes: config.scopes.map((scope) => ({ ...scope, bindings: scope.bindings.map((binding) => {
-    const { uiId: _id, actionUnselected: _unselected, lastActionName: _name, autoDisabled: _autoDisabled, ...saved } = withPatternState(binding);
+    const { uiId: _id, actionUnselected: _unselected, lastActionName: _name, ...saved } = binding;
     return { ...saved, action: persistedAction(saved.action) };
   }) })) };
 }

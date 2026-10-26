@@ -108,6 +108,7 @@ fn bind(name: &str, pattern: Vec<Step>) -> Binding {
         execute_on_match: false,
         hide_label: false,
         secured: false,
+        draft: false,
         disabled: false,
     }
 }

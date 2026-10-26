@@ -140,6 +140,9 @@ pub struct Binding {
     /// 停用：保留在配置里但不参与识别（其触发键也不再拦截）。
     #[serde(default, skip_serializing_if = "std::ops::Not::not")]
     pub disabled: bool,
+    /// 草稿：尚未完成的绑定，读取时统一停用，完成后由设置界面启用。
+    #[serde(default, skip_serializing_if = "std::ops::Not::not")]
+    pub draft: bool,
 }
 
 // ================================================================ 模式步骤
@@ -572,6 +575,9 @@ impl Config {
         crate::names::attach_name_keys(self);
         for scope in &mut self.scopes {
             for b in &mut scope.bindings {
+                if b.draft {
+                    b.disabled = true;
+                }
                 b.action.visit_mut(&mut |a| match a {
                     Action::Shell { script } => *script = conv(script),
                     Action::OpenUrl { url_template, .. } => *url_template = conv(url_template),

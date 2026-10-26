@@ -587,7 +587,7 @@ fn samples_compete_only_across_bindings() {
 fn binding(name: &str, pattern: Vec<Step>) -> Binding {
     Binding { name: name.into(), name_key: None, pattern,
         action: Action::WindowOp { op: WindowOpKind::Close, allow_child: false },
-        execute_on_match: false, hide_label: false, secured: false, disabled: false }
+        execute_on_match: false, hide_label: false, secured: false, disabled: false, draft: false }
 }
 
 fn scope(bindings: Vec<Binding>) -> Scope {

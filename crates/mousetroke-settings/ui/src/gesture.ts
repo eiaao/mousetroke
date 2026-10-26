@@ -264,11 +264,6 @@ export function patternKey(pattern: Step[]): string {
   return pattern.map(stepKey).join(" ");
 }
 
-/** 空模式或仅按下一个键，尚未形成手势。 */
-export function isIncompletePattern(pattern: Step[]): boolean {
-  return pattern.length <= 1 && pattern.every((step) => step.type === "press");
-}
-
 /** 冲突检查还须排除尚未录完的空轨迹和无采样形状。 */
 export function hasConflictPattern(pattern: Step[]): boolean {
   return pattern.some((step) => step.type === "edge" || step.type === "wheel" || (step.type === "trace" && step.points.length >= 4) || (step.type === "shape" && step.templates.some((sample) => sample.length > 0))) || pattern.filter((step) => step.type === "press").length > 1;
@@ -376,7 +371,7 @@ export function newBinding(): Binding {
     uiId: uid(),
     actionUnselected: true,
     disabled: true,
-    autoDisabled: true,
+    draft: true,
     name: t("ui.app.new_gesture"),
     pattern: [{ type: "press", key: "mouse:right" }],
     action: defaultAction("key_sequence"),

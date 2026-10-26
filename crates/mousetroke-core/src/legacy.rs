@@ -263,6 +263,7 @@ fn convert_intent(i: &LegacyIntent) -> Binding {
         execute_on_match: i.execute_on_recognize,
         hide_label: i.dont_show_name.unwrap_or(false),
         secured: false,
+        draft: false,
         disabled: false,
     }
 }

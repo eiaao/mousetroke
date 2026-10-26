@@ -1,7 +1,6 @@
 import type { Action, Binding, Step } from "../types";
 import { displayName, t } from "../i18n";
 import { presetDefinition, presetName } from "../actions";
-import { isIncompletePattern } from "../gesture";
 import { ActionEditor } from "./ActionEditor";
 import { PatternEditor } from "./PatternEditor";
 
@@ -36,8 +35,8 @@ function isUnknownPreset(b: Binding): boolean {
 }
 
 export function Editor({ binding, bindingKey, conflictWith, otherBindings, autoPickAction, onPickerShown, onChange, onDuplicate, onDelete, onClose }: EditorProps) {
-  // 自动停用保留启用意图，用户仍可在画轨迹前手动停用。
-  const enabled = !binding.disabled || !!binding.autoDisabled;
+  // 草稿保留启用意图，用户仍可在完成前手动停用。
+  const enabled = !binding.disabled || !!binding.draft;
   const conflict = conflictWith.length ? (
     <span className="warn">{t("ui.editor.conflict", { names: quoteJoin(conflictWith.map((n) => n)) })}</span>
   ) : null;
@@ -57,7 +56,7 @@ export function Editor({ binding, bindingKey, conflictWith, otherBindings, autoP
             type="checkbox"
             className="switch small"
             checked={enabled}
-            onChange={(e) => onChange((b) => ({ ...b, disabled: e.target.checked ? undefined : true, autoDisabled: undefined }))}
+            onChange={(e) => onChange((b) => ({ ...b, disabled: e.target.checked ? undefined : true, draft: undefined }))}
           />
         </label>
         <button type="button" className="icon-btn" data-tip={t("ui.editor.close_tip")} aria-label={t("ui.editor.close_aria")} onClick={onClose}>
@@ -73,7 +72,7 @@ export function Editor({ binding, bindingKey, conflictWith, otherBindings, autoP
           others={otherBindings}
           onChange={(pattern: Step[]) => onChange((b) => ({ ...b, pattern }))}
         />
-        {isIncompletePattern(binding.pattern) && <p className="field-warn" role="status">{t("ui.editor.incomplete_pattern")}</p>}
+        {binding.draft && <p className="field-warn" role="status">{t("ui.editor.incomplete_pattern")}</p>}
         {conflict && <p className="field-warn">{conflict}</p>}
 
         <h3 className="editor-section">{t("ui.editor.section_action")}</h3>

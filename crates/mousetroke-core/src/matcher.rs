@@ -262,6 +262,7 @@ mod tests {
             execute_on_match: false,
             hide_label: false,
             secured: false,
+            draft: false,
             disabled: false,
         }
     }
@@ -406,6 +407,33 @@ mod tests {
         let mut cfg2 = cfg.clone();
         cfg2.scopes[1].inherit_global = false;
         assert_eq!(resolve_scopes(&cfg2, false, Some("code.exe")).len(), 1);
+    }
+
+    #[test]
+    fn loaded_drafts_are_disabled_and_excluded_from_triggers_and_matching() {
+        let mut draft = binding("draft", vec![RIGHT]);
+        draft.draft = true;
+        let mut edge_draft = binding("edge draft", vec![Step::Edge { edge: edge::RIGHT_TOP }]);
+        edge_draft.draft = true;
+        let cfg = Config { scopes: vec![scope(ScopeKind::Global, vec![draft, edge_draft])], ..Default::default() };
+        let json = cfg.to_json();
+        let loaded = Config::from_json(&json).unwrap();
+        assert!(loaded.all_bindings().all(|b| b.draft && b.disabled));
+        assert!(trigger_buttons(&loaded).is_empty());
+        assert!(edge_triggers(&loaded).is_empty());
+        assert!(match_binding(&loaded.scopes[0], &[RIGHT], &[]).is_none());
+        assert!(match_binding(&loaded.scopes[0], &[Step::Edge { edge: edge::RIGHT_TOP }], &[]).is_none());
+        let path = std::env::temp_dir().join(format!("mousetroke-draft-{}.json", std::process::id()));
+        std::fs::write(&path, json).unwrap();
+        assert_eq!(Config::load(&path).unwrap(), loaded);
+        std::fs::remove_file(path).unwrap();
+
+        let enabled = Config { scopes: vec![scope(ScopeKind::Global, vec![binding("single", vec![RIGHT])])], ..Default::default() };
+        let loaded = Config::from_json(&enabled.to_json()).unwrap();
+        assert!(!loaded.scopes[0].bindings[0].disabled);
+        assert!(!loaded.to_json().contains("\"draft\""));
+        assert_eq!(trigger_buttons(&loaded), vec![MouseButton::Right]);
+        assert_eq!(match_binding(&loaded.scopes[0], &[RIGHT], &[]).unwrap().name, "single");
     }
 
     #[test]
