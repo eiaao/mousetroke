@@ -237,7 +237,7 @@
   "ui.action.run_again": "再打开一个",
   "ui.action.elevate": "以管理员身份运行",
   "ui.action.url_label": "网址",
-  "ui.action.url_help": "如果选中的文字本身就是网址，会直接打开它。",
+  "ui.action.url_help": "仅当网址模板去掉首尾空白后只有 %MS_SELECTED_TEXT% 时，才会直接打开选中的 http://、https:// 或 www. 网址。使用其他模板（包括搜索和翻译）时，即使选中的文字是网址，也会先进行 URL 编码再填入模板。",
   "ui.action.browser_label": "浏览器",
   "ui.action.browser_ph": "留空使用默认浏览器",
   "ui.action.shell_help": "在隐藏的 cmd 窗口中运行。",

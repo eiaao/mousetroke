@@ -237,7 +237,7 @@
   "ui.action.run_again": "Noch eine öffnen",
   "ui.action.elevate": "Als Administrator ausführen",
   "ui.action.url_label": "URL",
-  "ui.action.url_help": "Ist der markierte Text bereits eine URL, wird sie direkt geöffnet.",
+  "ui.action.url_help": "Eine markierte http://-, https://- oder www.-Adresse wird nur direkt geöffnet, wenn die URL-Vorlage ausschließlich %MS_SELECTED_TEXT% enthält (Leerraum am Anfang und Ende wird ignoriert). Bei allen anderen Vorlagen, auch für Suche und Übersetzung, wird der markierte Text URL-kodiert und in die Vorlage eingesetzt, selbst wenn er eine URL ist.",
   "ui.action.browser_label": "Browser",
   "ui.action.browser_ph": "Leer lassen für den Standardbrowser",
   "ui.action.shell_help": "Wird in einem unsichtbaren cmd-Fenster ausgeführt.",

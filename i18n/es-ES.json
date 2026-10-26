@@ -237,7 +237,7 @@
   "ui.action.run_again": "Abrir otra instancia",
   "ui.action.elevate": "Ejecutar como administrador",
   "ui.action.url_label": "URL",
-  "ui.action.url_help": "Si el texto seleccionado ya es una URL, se abre directamente.",
+  "ui.action.url_help": "Una dirección http://, https:// o www. seleccionada solo se abre directamente si la plantilla de URL contiene únicamente %MS_SELECTED_TEXT% (sin contar los espacios en blanco al principio y al final). Con cualquier otra plantilla, incluidas las de búsqueda y traducción, el texto seleccionado se codifica para URL y se inserta en la plantilla, aunque sea una URL.",
   "ui.action.browser_label": "Navegador",
   "ui.action.browser_ph": "Vacío para usar el navegador predeterminado",
   "ui.action.shell_help": "Se ejecuta en una ventana de cmd oculta.",

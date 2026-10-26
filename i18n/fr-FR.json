@@ -237,7 +237,7 @@
   "ui.action.run_again": "En ouvrir une autre",
   "ui.action.elevate": "Exécuter en tant qu’administrateur",
   "ui.action.url_label": "URL",
-  "ui.action.url_help": "Si le texte sélectionné est déjà une URL, elle s’ouvre directement.",
+  "ui.action.url_help": "Une adresse http://, https:// ou www. sélectionnée ne s’ouvre directement que si le modèle d’URL contient uniquement %MS_SELECTED_TEXT% (sans tenir compte des espaces blancs en début et en fin). Avec tout autre modèle, y compris pour la recherche et la traduction, le texte sélectionné est encodé pour l’URL puis inséré dans le modèle, même s’il s’agit d’une URL.",
   "ui.action.browser_label": "Navigateur",
   "ui.action.browser_ph": "Laisser vide pour le navigateur par défaut",
   "ui.action.shell_help": "S’exécute dans une fenêtre cmd masquée.",

@@ -237,7 +237,7 @@
   "ui.action.run_again": "하나 더 열기",
   "ui.action.elevate": "관리자 권한으로 실행",
   "ui.action.url_label": "URL",
-  "ui.action.url_help": "선택한 텍스트가 이미 URL이면 그대로 열립니다.",
+  "ui.action.url_help": "선택한 http://, https:// 또는 www. 주소는 URL 템플릿의 앞뒤 공백을 제외한 내용이 %MS_SELECTED_TEXT%뿐일 때만 바로 열립니다. 검색 및 번역을 포함한 다른 모든 템플릿에서는 선택한 텍스트가 URL이어도 URL 인코딩한 뒤 템플릿에 삽입합니다.",
   "ui.action.browser_label": "브라우저",
   "ui.action.browser_ph": "비워 두면 기본 브라우저",
   "ui.action.shell_help": "숨겨진 cmd 창에서 실행됩니다.",

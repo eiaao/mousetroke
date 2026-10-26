@@ -237,7 +237,7 @@
   "ui.action.run_again": "Open another one",
   "ui.action.elevate": "Run as administrator",
   "ui.action.url_label": "URL",
-  "ui.action.url_help": "If the selected text is already a URL, it opens directly.",
+  "ui.action.url_help": "A selected http://, https://, or www. address opens directly only when the URL template is just %MS_SELECTED_TEXT% (ignoring surrounding whitespace). Other templates, including search and translation, URL-encode and insert the selected text even when it is a URL.",
   "ui.action.browser_label": "Browser",
   "ui.action.browser_ph": "Leave empty for the default browser",
   "ui.action.shell_help": "Runs in a hidden cmd window.",
