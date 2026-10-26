@@ -108,7 +108,13 @@ export function withBindingIds(config: Config): Config {
 
 export function persistedConfig(config: Config): Config {
   return { ...config, scopes: config.scopes.map((scope) => ({ ...scope, bindings: scope.bindings.map((binding) => {
+    // 未完成且未选动作的绑定不允许以启用状态落盘（开关反复切换的绕过兜底）。
+    const incompleteUnselected = !binding.disabled && !binding.draft && !hasConflictPattern(binding.pattern) && (binding.actionUnselected || (binding.action.type === "key_sequence" && binding.action.keys === ""));
     const { uiId: _id, actionUnselected: _unselected, lastActionName: _name, ...saved } = binding;
+    if (incompleteUnselected) {
+      saved.draft = true;
+      saved.disabled = true;
+    }
     return { ...saved, action: persistedAction(saved.action) };
   }) })) };
 }

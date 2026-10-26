@@ -411,10 +411,51 @@ test("manual disable in the editor clears draft and wins after pattern completio
   } finally { await view.close(); }
 });
 
+test("editor toggling an unselected draft off and on still persists it as a disabled draft", async () => {
+  setup();
+  const view = await mountGestureEditor();
+  try {
+    const toggle = view.el.querySelector('.editor-enable input');
+    assert.equal(toggle.checked, true);
+    await click(toggle);
+    assert.equal(toggle.checked, false);
+    await click(toggle);
+    assert.equal(toggle.checked, true);
+    assert.equal(view.binding.disabled, undefined);
+    assert.equal(view.binding.draft, undefined);
+    const before = structuredClone(view.store.config);
+    const saved = persistedConfig(view.store.config).scopes[0].bindings[0];
+    assert.equal(saved.disabled, true);
+    assert.equal(saved.draft, true);
+    assert.equal("actionUnselected" in saved, false);
+    assert.deepEqual(view.store.config, before);
+  } finally { await view.close(); }
+});
+
+test("persistence catches incomplete unselected bindings with and without UI flags", () => {
+  setup();
+  const press = { type: "press", key: "mouse:right" };
+  for (const pattern of [[], [press], [press, { type: "trace", points: [] }], [press, { type: "shape", templates: [[]] }]]) {
+    for (const [actionUnselected, action] of [
+      [true, { type: "preset", id: "browser.close_tab" }],
+      [undefined, { type: "key_sequence", keys: "" }],
+      [false, { type: "key_sequence", keys: "" }],
+    ]) {
+      const config = { scopes: [{ bindings: [{ ...keys.newBinding(), pattern, action, actionUnselected, disabled: undefined, draft: undefined }] }] };
+      const before = structuredClone(config);
+      const saved = persistedConfig(config).scopes[0].bindings[0];
+      assert.equal(saved.disabled, true);
+      assert.equal(saved.draft, true);
+      for (const field of ["uiId", "actionUnselected", "lastActionName"]) assert.equal(field in saved, false);
+      assert.deepEqual(config, before);
+    }
+  }
+});
+
 test("loaded single presses stay enabled and a new edge without an action stays draft", async () => {
   setup();
   for (const key of ["mouse:x1", "mouse:x2", "mouse:middle"]) {
-    const binding = { ...keys.newBinding(), pattern: [{ type: "press", key }], draft: undefined, disabled: undefined, actionUnselected: undefined };
+    const binding = { ...keys.newBinding(), pattern: [{ type: "press", key }], action: { type: "key_sequence", keys: "^v" }, draft: undefined, disabled: undefined, actionUnselected: undefined };
     const view = await mountGestureEditor(binding);
     try {
       await act(async () => view.store.load({ scopes: [{ id: "g", bindings: [binding] }] }));
@@ -742,7 +783,7 @@ for (const recovery of ["defaults", "import"]) test(`unreadable config blocks al
   }
 });
 
-test("new gestures with only an action save disabled and list toggles preserve manual intent", async () => {
+for (const selectAction of [false, true]) test(`list toggles preserve persistence safety with action selected: ${selectAction}`, async () => {
   setup();
   const { App } = await server.ssrLoadModule("/src/App.tsx");
   const config = JSON.parse(readFileSync(new URL("../../../mousetroke-core/assets/default-config.json", import.meta.url), "utf8"));
@@ -772,12 +813,14 @@ test("new gestures with only an action save disabled and list toggles preserve m
   try {
     await click(button(view.el, t("ui.list.add_gesture")));
     assert.ok(view.el.querySelector('.row-action-text.muted').textContent.includes(t("ui.list.no_stroke")));
-    await click([...view.el.querySelectorAll('.act-list button')].find((b) => b.textContent.startsWith(t("preset.action.browser.close_tab.name"))));
+    if (selectAction) await click([...view.el.querySelectorAll('.act-list button')].find((b) => b.textContent.startsWith(t("preset.action.browser.close_tab.name"))));
+    else await key(document.activeElement, "Escape");
     assert.ok(view.el.querySelector('.pattern-editor + .field-warn'));
     await act(async () => new Promise((resolve) => setTimeout(resolve, 420)));
     assert.ok(saved.length > 0);
     const binding = saved.at(-1).scopes[0].bindings[0];
-    assert.equal(binding.action.id, "browser.close_tab");
+    if (selectAction) assert.equal(binding.action.id, "browser.close_tab");
+    else assert.equal(binding.action.keys, "");
     assert.equal(binding.pattern.length, 1);
     assert.equal(binding.disabled, true);
     assert.equal(binding.draft, true);
@@ -786,6 +829,29 @@ test("new gestures with only an action save disabled and list toggles preserve m
     assert.equal(toggle.checked, true);
     await click(toggle);
     assert.equal(toggle.checked, false);
+    if (!selectAction) {
+      await click(toggle);
+      assert.equal(toggle.checked, true);
+      const saves = saved.length;
+      await act(async () => new Promise((resolve) => setTimeout(resolve, 420)));
+      assert.ok(saved.length > saves);
+      assert.equal(saved.at(-1).scopes[0].bindings[0].disabled, true);
+      assert.equal(saved.at(-1).scopes[0].bindings[0].draft, true);
+      await click(toggle);
+      await click(toggle);
+      const autosaves = saved.length;
+      await act(async () => listeners.get("tauri://close-requested")({ event: "tauri://close-requested", id: 1 }));
+      assert.equal(saved.length, autosaves + 1);
+      assert.equal(saved.at(-1).scopes[0].bindings[0].disabled, true);
+      assert.equal(saved.at(-1).scopes[0].bindings[0].draft, true);
+      return;
+    }
+    await click(toggle);
+    await act(async () => listeners.get("tauri://close-requested")({ event: "tauri://close-requested", id: 1 }));
+    assert.equal(saved.at(-1).scopes[0].bindings[0].pattern.length, 1);
+    assert.ok(!saved.at(-1).scopes[0].bindings[0].disabled, "已选动作的单击绑定允许手动启用");
+    assert.ok(!saved.at(-1).scopes[0].bindings[0].draft);
+    await click(toggle);
     await click(button(view.el, t("ui.pattern.add_step")));
     await click(button(view.el, t("ui.pattern.wheel_up")));
     assert.equal(view.el.querySelector('.pattern-editor + .field-warn'), null);
@@ -798,6 +864,7 @@ test("new gestures with only an action save disabled and list toggles preserve m
     assert.equal(view.el.querySelector('.pattern-editor + .field-warn'), null);
     await act(async () => listeners.get("tauri://close-requested")({ event: "tauri://close-requested", id: 1 }));
     assert.ok(!saved.at(-1).scopes[0].bindings[0].disabled, "手动启用后不再按模式自动停用");
+    assert.ok(!saved.at(-1).scopes[0].bindings[0].draft);
   } finally {
     await view.close();
     Object.assign(api, originalApi);
