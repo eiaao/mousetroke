@@ -319,6 +319,11 @@ function Row({ n, b, on, clash, onClick, onToggle }: { n: number; b: Binding; on
         <span className="row-name">
           {name || <em className="muted">{t("ui.list.unnamed")}</em>}
           {!enabled && <span className="badge">{t("ui.list.off_badge")}</span>}
+          {incomplete && enabled && (
+            <span className="badge" data-tip={t("ui.list.inactive_tip")}>
+              {t("ui.list.inactive_badge")}
+            </span>
+          )}
           {clash && (
             <span className="badge warn" data-tip={t("ui.list.dup_tip")}>
               {t("ui.list.dup_badge")}

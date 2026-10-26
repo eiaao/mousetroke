@@ -93,6 +93,8 @@
   "ui.list.rows_aria": "ジェスチャ",
   "ui.list.unnamed": "名称未設定",
   "ui.list.no_stroke": "軌跡が未入力",
+  "ui.list.inactive_badge": "無効",
+  "ui.list.inactive_tip": "まだ軌跡が描かれていないため、ジェスチャは動作しません",
   "ui.list.off_badge": "オフ",
   "ui.list.dup_badge": "重複",
   "ui.list.dup_tip": "同じスコープにまったく同じ描き方のジェスチャがあります",

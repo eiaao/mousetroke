@@ -93,6 +93,8 @@
   "ui.list.rows_aria": "Gestos",
   "ui.list.unnamed": "Sin nombre",
   "ui.list.no_stroke": "Sin trazo aún",
+  "ui.list.inactive_badge": "Inactivo",
+  "ui.list.inactive_tip": "Aún no se ha dibujado ningún trazo, por lo que el gesto no se activará",
   "ui.list.off_badge": "Desactivado",
   "ui.list.dup_badge": "Duplicado",
   "ui.list.dup_tip": "Otro gesto de este ámbito tiene exactamente el mismo trazado",

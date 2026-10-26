@@ -93,6 +93,8 @@
   "ui.list.rows_aria": "Gesten",
   "ui.list.unnamed": "Unbenannt",
   "ui.list.no_stroke": "Noch keine Linie",
+  "ui.list.inactive_badge": "Inaktiv",
+  "ui.list.inactive_tip": "Es wurde noch keine Linie gezeichnet, daher wird die Geste noch nicht ausgelöst",
   "ui.list.off_badge": "Aus",
   "ui.list.dup_badge": "Duplikat",
   "ui.list.dup_tip": "Eine andere Geste in diesem Bereich hat genau dieselbe Zeichenfolge",

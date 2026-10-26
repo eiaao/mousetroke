@@ -648,16 +648,30 @@ test("new gesture rows show no stroke yet with or without an action selected", (
   assert.equal(binding.autoDisabled, true);
   const props = { tab: "gesture", filter: "all", selected: null, clash: new Map(), onSelect() {}, onTab() {}, onFilter() {}, onAdd() {}, onDelete() {}, onDuplicate() {}, onToggle() {}, onScopeChange() {}, onDeleteScope() {} };
   for (const actionUnselected of [true, false]) {
-    const html = render(createElement(BindingList, { ...props, scope: { id: "g", kind: "global", name: "g", bindings: [{ ...binding, actionUnselected }] } }));
-    assert.ok(html.includes('class="row-action-text muted"'));
-    assert.ok(html.includes(t("ui.list.no_stroke")));
-    assert.equal(html.includes(t("ui.actpick.unselected")), actionUnselected);
-    assert.ok(!html.includes('filter-off'), "等待画轨迹与手动停用分开显示");
+    for (const pattern of [[], binding.pattern]) {
+      for (const state of [{ disabled: true, autoDisabled: true }, { disabled: false, autoDisabled: undefined }]) {
+        const html = render(createElement(BindingList, { ...props, scope: { id: "g", kind: "global", name: "g", bindings: [{ ...binding, ...state, pattern, actionUnselected }] } }));
+        assert.ok(html.includes('class="row-action-text muted"'));
+        assert.ok(html.includes(t("ui.list.no_stroke")));
+        assert.equal(html.includes(t("ui.actpick.unselected")), actionUnselected);
+        assert.ok(!html.includes('filter-off'), "等待画轨迹与手动停用分开显示");
+        const row = JSDOM.fragment(html).querySelector(".row");
+        const badges = row.querySelectorAll(".row-name .badge");
+        assert.deepEqual([...badges].map((badge) => badge.textContent), [t("ui.list.inactive_badge")]);
+        assert.equal(badges[0].getAttribute("data-tip"), t("ui.list.inactive_tip"));
+        assert.equal(row.querySelector(".switch").checked, true);
+      }
+    }
   }
   const disabled = render(createElement(BindingList, { ...props, scope: { id: "g", kind: "global", name: "g", bindings: [{ ...binding, autoDisabled: undefined }] } }));
   assert.ok(disabled.includes('filter-off'));
-  const html = render(createElement(BindingList, { ...props, scope: { id: "g", kind: "global", name: "g", bindings: [{ ...binding, pattern: [...binding.pattern, { type: "press", key: "kb:82" }] }] } }));
-  assert.ok(!html.includes(t("ui.list.no_stroke")));
+  const disabledBadges = JSDOM.fragment(disabled).querySelectorAll(".row-name .badge");
+  assert.deepEqual([...disabledBadges].map((badge) => badge.textContent), [t("ui.list.off_badge")]);
+  for (const step of [{ type: "press", key: "kb:82" }, { type: "trace", points: [0, 0, 1, 0] }]) {
+    const html = render(createElement(BindingList, { ...props, scope: { id: "g", kind: "global", name: "g", bindings: [{ ...binding, disabled: false, autoDisabled: undefined, pattern: [...binding.pattern, step] }] } }));
+    assert.ok(!html.includes(t("ui.list.no_stroke")));
+    assert.equal(JSDOM.fragment(html).querySelector(".row-name .badge"), null);
+  }
 });
 
 

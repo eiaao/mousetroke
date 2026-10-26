@@ -93,6 +93,8 @@
   "ui.list.rows_aria": "Gestes",
   "ui.list.unnamed": "Sans nom",
   "ui.list.no_stroke": "Aucun tracé",
+  "ui.list.inactive_badge": "Inactif",
+  "ui.list.inactive_tip": "Aucun tracé pour le moment, le geste ne se déclenchera donc pas",
   "ui.list.off_badge": "Désactivé",
   "ui.list.dup_badge": "Doublon",
   "ui.list.dup_tip": "Un autre geste de cette portée a exactement le même tracé",

@@ -93,6 +93,8 @@
   "ui.list.rows_aria": "제스처",
   "ui.list.unnamed": "이름 없음",
   "ui.list.no_stroke": "아직 궤적 없음",
+  "ui.list.inactive_badge": "비활성",
+  "ui.list.inactive_tip": "아직 궤적을 그리지 않아 제스처가 실행되지 않습니다",
   "ui.list.off_badge": "꺼짐",
   "ui.list.dup_badge": "중복",
   "ui.list.dup_tip": "같은 범위에 완전히 같은 그리기의 제스처가 있습니다",

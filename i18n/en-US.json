@@ -93,6 +93,8 @@
   "ui.list.rows_aria": "Gestures",
   "ui.list.unnamed": "Unnamed",
   "ui.list.no_stroke": "No stroke yet",
+  "ui.list.inactive_badge": "Inactive",
+  "ui.list.inactive_tip": "No stroke has been drawn yet, so it won't trigger",
   "ui.list.off_badge": "Off",
   "ui.list.dup_badge": "Duplicate",
   "ui.list.dup_tip": "Another gesture in this scope has exactly the same drawing",

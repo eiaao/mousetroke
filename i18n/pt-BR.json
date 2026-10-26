@@ -93,6 +93,8 @@
   "ui.list.rows_aria": "Gestos",
   "ui.list.unnamed": "Sem nome",
   "ui.list.no_stroke": "Sem traço ainda",
+  "ui.list.inactive_badge": "Inativo",
+  "ui.list.inactive_tip": "Ainda não foi desenhado um traço, por isso o gesto não será acionado",
   "ui.list.off_badge": "Desativado",
   "ui.list.dup_badge": "Duplicado",
   "ui.list.dup_tip": "Outro gesto deste escopo tem exatamente o mesmo traçado",

@@ -93,6 +93,8 @@
   "ui.list.rows_aria": "手势",
   "ui.list.unnamed": "未命名",
   "ui.list.no_stroke": "未画出轨迹",
+  "ui.list.inactive_badge": "未生效",
+  "ui.list.inactive_tip": "还没有画出轨迹，暂时不会触发",
   "ui.list.off_badge": "已停用",
   "ui.list.dup_badge": "重复",
   "ui.list.dup_tip": "同一作用域里有画法完全相同的手势",

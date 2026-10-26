@@ -93,6 +93,8 @@
   "ui.list.rows_aria": "Жесты",
   "ui.list.unnamed": "Без имени",
   "ui.list.no_stroke": "Траектория не задана",
+  "ui.list.inactive_badge": "Неактивно",
+  "ui.list.inactive_tip": "Траектория ещё не нарисована, поэтому жест пока не срабатывает",
   "ui.list.off_badge": "Отключено",
   "ui.list.dup_badge": "Дубль",
   "ui.list.dup_tip": "В этой области есть другой жест точно с таким же рисунком",
