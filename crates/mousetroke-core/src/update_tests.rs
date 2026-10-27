@@ -71,6 +71,160 @@ fn versions_are_numeric_and_malformed_tags_are_rejected() {
 }
 
 #[test]
+fn marker_accepts_only_prefixed_versions_and_one_optional_line_ending() {
+    for ending in ["", "\n", "\r\n"] {
+        assert_eq!(
+            marker_version(format!("v1.2.3{ending}").as_bytes()),
+            Some([1, 2, 3])
+        );
+    }
+    for body in [
+        "",
+        "1.2.3",
+        "v",
+        "vv1.2.3",
+        " v1.2.3",
+        "v1.2.3 ",
+        "v1.2.3\t",
+        "v1.2.3\r",
+        "v1.2.3\n\n",
+        "v1.2.3\r\n\r\n",
+        "v1.2.3\nv1.2.3",
+        "\nv1.2.3",
+        "v1.2.3\n ",
+        "v1.2.3\0",
+        "v1.2",
+        "v1.2.3.4",
+        "v1.2.x",
+        "v1.2.3-rc1",
+        "v1.2.3+build",
+        "v+1.2.3",
+        "v1.2.18446744073709551616",
+        "\u{feff}v1.2.3",
+        "v１.2.3",
+    ] {
+        assert_eq!(marker_version(body.as_bytes()), None, "{body:?}");
+    }
+    assert_eq!(marker_version(b"v1.2.\xff"), None);
+    let maximum = format!("v{0}.{0}.{0}", u64::MAX);
+    assert_eq!(marker_version(maximum.as_bytes()), Some([u64::MAX; 3]));
+    let at_cap = format!("{maximum}\n");
+    assert_eq!(at_cap.len(), MARKER_CAP);
+    assert_eq!(marker_version(at_cap.as_bytes()), Some([u64::MAX; 3]));
+    let over_cap = format!("{maximum}\r\n");
+    assert_eq!(over_cap.len(), MARKER_CAP + 1);
+    assert_eq!(marker_version(over_cap.as_bytes()), None);
+    assert_eq!(
+        marker_version(format!("v{}.2.3", "0".repeat(64)).as_bytes()),
+        None
+    );
+}
+
+#[test]
+fn marker_url_uses_release_download_or_local_origin_without_changing_api() {
+    let source = Source::production();
+    assert_eq!(source.api, API);
+    assert_eq!(
+        source.marker_url(),
+        "https://github.com/eiaao/mousetroke/releases/latest/download/latest.txt"
+    );
+    assert!(source.allowed(&source.marker_url(), false));
+    for base in ["http://127.0.0.1:8770", "http://127.0.0.1:8770/fixture/"] {
+        let source = Source::local(base).unwrap();
+        assert_eq!(source.marker_url(), "http://127.0.0.1:8770/latest.txt");
+        assert_eq!(
+            source.api,
+            format!(
+                "{}/repos/eiaao/mousetroke/releases/latest",
+                base.trim_end_matches('/')
+            )
+        );
+        assert!(source.allowed(&source.marker_url(), false));
+    }
+}
+
+fn api_check(latest: &str) -> Check {
+    Check::from_release(
+        Release {
+            latest: latest.into(),
+            notes_url: "https://github.com/eiaao/mousetroke/releases/latest".into(),
+            body: "### English\n- API notes".into(),
+            exe: "https://github.com/payload".into(),
+            sums: "https://github.com/SHA256SUMS.txt".into(),
+        },
+        Some("https://github.com/payload".into()),
+    )
+}
+
+#[test]
+fn automatic_marker_never_changes_api_result_or_request_order() {
+    use std::cell::RefCell;
+    for latest in ["0.0.0", "999.0.0"] {
+        for (marker, diagnostic) in [
+            (Ok(format!("v{latest}\n").into_bytes()), None),
+            (Ok(b"v1.2.3".to_vec()), Some("与 API 不一致")),
+            (Ok(b"invalid".to_vec()), Some("无效")),
+            (Ok(vec![b'x'; MARKER_CAP + 1]), Some("无效")),
+            (Err(Error::Network), Some("请求失败")),
+        ] {
+            let requests = RefCell::new(Vec::new());
+            let logs = RefCell::new(Vec::new());
+            let result = automatic_check(
+                || {
+                    requests.borrow_mut().push("marker");
+                    marker
+                },
+                || {
+                    requests.borrow_mut().push("api");
+                    Ok(api_check(latest))
+                },
+                |message| logs.borrow_mut().push(message.to_string()),
+            )
+            .unwrap();
+            assert_eq!(*requests.borrow(), ["marker", "api"]);
+            assert_eq!(
+                serde_json::to_value(&result).unwrap(),
+                serde_json::to_value(api_check(latest)).unwrap()
+            );
+            assert_eq!(result.newer, latest == "999.0.0");
+            let logs = logs.borrow();
+            match diagnostic {
+                Some(text) => {
+                    assert_eq!(logs.len(), 1);
+                    assert!(logs[0].contains(text));
+                }
+                None => assert!(logs.is_empty()),
+            }
+        }
+    }
+}
+
+#[test]
+fn automatic_api_failure_is_returned_after_every_marker_outcome() {
+    use std::cell::RefCell;
+    for marker in [
+        Ok(b"v999.0.0".to_vec()),
+        Ok(b"invalid".to_vec()),
+        Err(Error::Network),
+    ] {
+        let requests = RefCell::new(Vec::new());
+        let result = automatic_check(
+            || {
+                requests.borrow_mut().push("marker");
+                marker
+            },
+            || {
+                requests.borrow_mut().push("api");
+                Err(Error::Network)
+            },
+            |_| {},
+        );
+        assert_eq!(*requests.borrow(), ["marker", "api"]);
+        assert!(matches!(result, Err(Error::Network)));
+    }
+}
+
+#[test]
 fn download_hosts_are_exact_https_and_local_override_is_loopback_only() {
     let source = Source::production();
     for host in [

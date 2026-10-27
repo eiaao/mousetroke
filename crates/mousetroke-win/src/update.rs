@@ -7,7 +7,7 @@ use std::sync::{mpsc, Mutex};
 use std::time::Duration;
 
 pub use mousetroke_core::update::{Check, Error, RELEASES_URL};
-use mousetroke_core::update::{version, Automatic, Source, Release};
+use mousetroke_core::update::{version, Automatic, Source, Release, MARKER_CAP};
 #[cfg(test)]
 use mousetroke_core::update::{now, release_notes, UpdateState, API};
 
@@ -20,9 +20,24 @@ fn fetch_release(source: &Source) -> Result<Release, Error> {
 }
 
 pub fn check() -> Result<Check, Error> {
+    check_source(&Source::configured(), false)
+}
+
+fn check_automatic() -> Result<Check, Error> {
+    check_source(&Source::configured(), true)
+}
+
+fn check_source(source: &Source, automatic: bool) -> Result<Check, Error> {
     crate::log::init();
     crate::log!("检查更新：当前 {}", env!("CARGO_PKG_VERSION"));
-    let result = fetch_release(&Source::configured()).map(|r| Check::from_release(r, None));
+    let check = || fetch_release(source).map(|r| Check::from_release(r, None));
+    let result = if automatic {
+        mousetroke_core::update::automatic_check(
+            || http::get(source, &source.marker_url(), false, MARKER_CAP),
+            check,
+            |message| crate::log!("{message}"),
+        )
+    } else { check() };
     match &result {
         Ok(r) => crate::log!("检查更新成功：最新 {}", r.latest),
         Err(_) => crate::log!("检查更新失败"),
@@ -171,7 +186,7 @@ pub fn set_automatic(enabled: bool) { AUTOMATIC.set(enabled); }
 
 /// 仅从引擎启动调用；每日限制与通知握手见 core。
 pub fn start_automatic(config: PathBuf, enabled: bool) {
-    AUTOMATIC.start(config, enabled, check, |message| crate::log!("{message}"));
+    AUTOMATIC.start(config, enabled, check_automatic, |message| crate::log!("{message}"));
 }
 
 /// 托盘定时器取出通知；只有成功提交给托盘才记录已通知版本。

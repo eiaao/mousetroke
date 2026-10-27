@@ -2,6 +2,16 @@
 
 Each version lists its highlights in English, then in Chinese. The release page, the in-app update notes and the website changelog are all generated from this file.
 
+## Unreleased
+
+### English
+
+- Automatic update checks now read a small `latest.txt` version marker before querying GitHub release information. The release API remains authoritative; manual checks continue to use only the API.
+
+### 中文
+
+- 自动更新检查先读取小型 `latest.txt` 版本标记，再查询 GitHub 发布信息；始终以发布 API 为准，手动检查仍只请求 API。
+
 ## 0.2.2 — 2026-10-27
 
 ### English

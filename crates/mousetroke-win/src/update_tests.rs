@@ -52,19 +52,21 @@ fn environment_override_is_debug_only() {
     else { std::env::remove_var("MOUSETROKE_UPDATE_BASE"); }
     if cfg!(debug_assertions) {
         assert_eq!(source.api, "http://127.0.0.1:8770/fixture/repos/eiaao/mousetroke/releases/latest");
+        assert_eq!(source.marker_url(), "http://127.0.0.1:8770/latest.txt");
         assert!(source.allowed("http://127.0.0.1:8770/exe", false));
     } else {
         assert_eq!(source.api, API);
+        assert_eq!(source.marker_url(), "https://github.com/eiaao/mousetroke/releases/latest/download/latest.txt");
         assert!(!source.allowed("http://127.0.0.1:8770/exe", false));
     }
 }
 
 #[test]
 #[ignore = "本地 HTTP 下载、校验和替换集成测试；不重启程序"]
-fn local_download_verify_replace_and_rollback() {
+fn local_checks_download_verify_replace_and_rollback() {
     use std::io::{Read, Write};
     use std::net::TcpListener;
-    use std::sync::{Arc, atomic::{AtomicBool, Ordering}};
+    use std::sync::{Arc, atomic::{AtomicBool, AtomicUsize, Ordering}};
     let listener = TcpListener::bind("127.0.0.1:0").unwrap();
     listener.set_nonblocking(true).unwrap();
     let origin = format!("http://{}", listener.local_addr().unwrap());
@@ -77,6 +79,10 @@ fn local_download_verify_replace_and_rollback() {
     let sums = format!("{}  Mousetroke.dmg\n{} *mousetroke.exe\n", "a".repeat(64), sha256(data).unwrap()).into_bytes();
     let stop = Arc::new(AtomicBool::new(false));
     let flag = stop.clone();
+    let requests = Arc::new(Mutex::new(Vec::new()));
+    let received = requests.clone();
+    let marker_mode = Arc::new(AtomicUsize::new(0));
+    let mode = marker_mode.clone();
     let server = std::thread::spawn(move || {
         while !flag.load(Ordering::Acquire) {
             if let Ok((mut socket, _)) = listener.accept() {
@@ -85,7 +91,20 @@ fn local_download_verify_replace_and_rollback() {
                 let len = socket.read(&mut buf).unwrap();
                 let req = String::from_utf8_lossy(&buf[..len]);
                 let path = req.split_whitespace().nth(1).unwrap_or("");
+                received.lock().unwrap().push(path.to_string());
+                assert!(req.to_ascii_lowercase().contains(&format!("user-agent: mousetroke/{}", env!("CARGO_PKG_VERSION"))));
                 let (status, extra, body): (&str, &str, &[u8]) = match path {
+                    "/latest.txt" => match mode.load(Ordering::Acquire) {
+                        1 => ("200 OK", "", b"invalid\n"),
+                        2 => ("404 Not Found", "", b""),
+                        3 => ("200 OK", "", b"v999.0.0\n"),
+                        4 => ("200 OK", "", &[b'x'; MARKER_CAP + 1]),
+                        5 => ("302 Found", "Location: /marker\r\n", b""),
+                        6 => ("302 Found", "Location: http://example.com/\r\n", b""),
+                        _ => ("200 OK", "", b"v1.2.3\n"),
+                    },
+                    "/marker" => ("200 OK", "", b"v1.2.3\n"),
+                    "/repos/eiaao/mousetroke/releases/latest" if mode.load(Ordering::Acquire) == 7 => ("503 Service Unavailable", "", b""),
                     "/repos/eiaao/mousetroke/releases/latest" => ("200 OK", "", &release_json),
                     "/sums" => ("200 OK", "", &sums),
                     "/bad-sums" => ("200 OK", "", b"0000000000000000000000000000000000000000000000000000000000000000  mousetroke.exe"),
@@ -110,6 +129,28 @@ fn local_download_verify_replace_and_rollback() {
     let exe = dir.join("mousetroke.exe");
     std::fs::write(&exe, b"original").unwrap();
     let source = Source::local(&origin).unwrap();
+    let take_requests = || std::mem::take(&mut *requests.lock().unwrap());
+    let api_path = "/repos/eiaao/mousetroke/releases/latest";
+    let manual = serde_json::to_value(check_source(&source, false).unwrap()).unwrap();
+    assert_eq!(take_requests(), [api_path]);
+    for mode in 0..=6 {
+        marker_mode.store(mode, Ordering::Release);
+        let automatic = check_source(&source, true).unwrap();
+        assert_eq!(serde_json::to_value(automatic).unwrap(), manual);
+        let expected = if mode == 5 { vec!["/latest.txt", "/marker", api_path] } else { vec!["/latest.txt", api_path] };
+        assert_eq!(take_requests(), expected);
+        assert_eq!(serde_json::to_value(check_source(&source, false).unwrap()).unwrap(), manual);
+        assert_eq!(take_requests(), [api_path]);
+    }
+    marker_mode.store(4, Ordering::Release);
+    assert!(http::get(&source, &source.marker_url(), false, MARKER_CAP).is_err());
+    assert_eq!(take_requests(), ["/latest.txt"]);
+    marker_mode.store(7, Ordering::Release);
+    assert!(matches!(check_source(&source, true), Err(Error::Network)));
+    assert_eq!(take_requests(), ["/latest.txt", api_path]);
+    assert!(matches!(check_source(&source, false), Err(Error::Network)));
+    assert_eq!(take_requests(), [api_path]);
+    marker_mode.store(0, Ordering::Release);
     let mut release = fetch_release(&source).unwrap();
     let transaction = download_replace(&source, &release, &exe).unwrap();
     assert_eq!(std::fs::read(&exe).unwrap(), data);
