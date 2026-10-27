@@ -1,18 +1,20 @@
 ---
 title: "Aktionen"
-description: "Tasten senden, Fensteraktionen, Apps, URLs, Befehle, Medientasten, Menüs oder Lua wählen und Gestenvariablen verwenden."
+description: "Eine Voreinstellung aus der Aktionsbibliothek wählen oder erweiterte Tasten-, Fenster-, App-, URL-, Befehls-, Menü- und Lua-Aktionen bearbeiten."
 order: 5
 ---
 
 # Aktionen
 
-Wählen Sie eine Geste und legen Sie ihre Aktion unter **Aktion** fest. Der Editor bietet acht Typen. Für die meisten Aufgaben genügt eine einfache Aktion; verwenden Sie [Lua](lua-basics.md), wenn Sie Bedingungen oder mehrere Operationen brauchen.
+Wählen oder erstellen Sie eine Geste und klicken Sie unter **Aktion** auf **Aktion auswählen**. Suchen Sie nach der gewünschten Aufgabe oder sehen Sie eine Kategorie durch, legen Sie die nötigen Parameter fest und klicken Sie auf **Diese Aktion verwenden**. Die [Aktionsbibliothek](action-library.md) enthält alle Voreinstellungen und ihre Verfügbarkeit unter Windows und Mac, einschließlich Text, Datum und Uhrzeit, Fensterlayouts und Energieaktionen.
+
+Vorhandene Aktionen zeigen **Ersetzen**. Voreinstellungen, die sich als bearbeitbare erweiterte Aktion darstellen lassen, bieten außerdem **In erweiterte Aktion umwandeln**; native Voreinstellungen erklären, warum die Umwandlung nicht verfügbar ist. Die Kategorie **Erweitert** öffnet Tastenfolgen, Befehle, Lua und Menüs. Die folgenden Editoren bleiben verfügbar, auch über **Aktionstyp ändern**.
 
 ## Tasten senden
 
 Geben Sie eine [Tastenfolge](key-sequences.md) ein, oder klicken Sie auf **Aufnehmen**, drücken Sie das Kürzel und klicken Sie auf **Fertig**. Zum Beispiel kopiert `^c` unter Windows und `#c` auf dem Mac. **Syntaxhilfe** öffnet die Syntaxanleitung.
 
-**Zuerst das Fenster unter dem Cursor aktivieren** aktiviert zuerst das Gestenziel. Ohne diese Option gehen Kürzel an die Anwendung, die gerade Tastatureingaben erhält. Das Ziel folgt außerdem **Einstellungen → Gesten wirken auf**. Einen reinen Textmodus-Schalter gibt es in diesem Editor nicht; [Text-zuerst-Eingabe](key-sequences.md#text-und-escaping) ist über Lua verfügbar.
+**Zuerst das Fenster unter dem Cursor aktivieren** aktiviert zuerst das Gestenziel. Ohne diese Option gehen Kürzel an die Anwendung, die gerade Tastatureingaben erhält. Das Ziel folgt außerdem **Einstellungen → Gesten wirken auf**. Für unveränderten Text wählen Sie **Text einfügen** in der [Aktionsbibliothek](action-library.md) oder nutzen die [Text-zuerst-Eingabe](key-sequences.md#text-und-escaping) über Lua.
 
 ## Fensteraktionen
 
@@ -43,7 +45,7 @@ Für die Websuche mit markiertem Text setzen Sie die URL auf:
 https://www.google.com/search?q=%MS_SELECTED_TEXT%
 ```
 
-Markieren Sie Text in einer Anwendung und führen Sie dann die Geste aus. Markierter Text wird URL-kodiert. Beginnt er bereits mit `http://`, `https://` oder `www.`, öffnet Mousetroke diese Adresse direkt; `www.` erhält ein `https://`-Präfix.
+Markieren Sie Text in einer Anwendung und führen Sie dann die Geste aus. Der Text wird URL-kodiert in die Vorlage eingesetzt; Such- und Übersetzungsvorlagen verwenden den gewählten Dienst auch dann, wenn die Auswahl eine Adresse ist. Nur wenn das URL-Feld ausschließlich `%MS_SELECTED_TEXT%` enthält, öffnet Mousetroke markierte Adressen mit `http://`, `https://` oder `www.` direkt; `www.` erhält ein `https://`-Präfix.
 
 ## Befehl ausführen
 

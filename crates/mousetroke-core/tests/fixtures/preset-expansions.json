@@ -1,0 +1,279 @@
+[
+  {
+    "id": "browser.close_tab",
+    "platform": "windows",
+    "lang": "en-US",
+    "params": {},
+    "result": {
+      "type": "key_sequence",
+      "keys": "^w",
+      "mode": "down_up",
+      "secured": false,
+      "activate_target": false
+    }
+  },
+  {
+    "id": "edit.copy",
+    "platform": "windows",
+    "lang": "en-US",
+    "params": {},
+    "result": {
+      "type": "key_sequence",
+      "keys": "^c",
+      "mode": "down_up",
+      "secured": false,
+      "activate_target": false
+    }
+  },
+  {
+    "id": "window.snap_left",
+    "platform": "windows",
+    "lang": "en-US",
+    "params": {},
+    "result": {
+      "error": "preset.status.native_only"
+    }
+  },
+  {
+    "id": "text.search",
+    "platform": "windows",
+    "lang": "en-US",
+    "params": {
+      "engine": "google"
+    },
+    "result": {
+      "type": "open_url",
+      "url_template": "https://www.google.com/search?q=%MS_SELECTED_TEXT%",
+      "browser": null
+    }
+  },
+  {
+    "id": "text.search",
+    "platform": "windows",
+    "lang": "en-US",
+    "params": {
+      "engine": "bing"
+    },
+    "result": {
+      "type": "open_url",
+      "url_template": "https://www.bing.com/search?q=%MS_SELECTED_TEXT%",
+      "browser": null
+    }
+  },
+  {
+    "id": "text.search",
+    "platform": "windows",
+    "lang": "en-US",
+    "params": {
+      "engine": "baidu"
+    },
+    "result": {
+      "type": "open_url",
+      "url_template": "https://www.baidu.com/s?wd=%MS_SELECTED_TEXT%",
+      "browser": null
+    }
+  },
+  {
+    "id": "text.search",
+    "platform": "windows",
+    "lang": "en-US",
+    "params": {
+      "engine": "duckduckgo"
+    },
+    "result": {
+      "type": "open_url",
+      "url_template": "https://duckduckgo.com/?q=%MS_SELECTED_TEXT%",
+      "browser": null
+    }
+  },
+  {
+    "id": "text.search",
+    "platform": "windows",
+    "lang": "en-US",
+    "params": {
+      "engine": "custom",
+      "url": "https://example.com/?text=%MS_SELECTED_TEXT%"
+    },
+    "result": {
+      "type": "open_url",
+      "url_template": "https://example.com/?text=%MS_SELECTED_TEXT%",
+      "browser": null
+    }
+  },
+  {
+    "id": "open.folder",
+    "platform": "windows",
+    "lang": "en-US",
+    "params": {
+      "path": "folder with spaces"
+    },
+    "result": {
+      "type": "launch_app",
+      "exe": "%SystemRoot%\\explorer.exe",
+      "args": "\"folder with spaces\"",
+      "elevate": false,
+      "win_class": null,
+      "win_title": null,
+      "regex": false,
+      "if_running": "run_again"
+    }
+  },
+  {
+    "id": "browser.close_tab",
+    "platform": "macos",
+    "lang": "en-US",
+    "params": {},
+    "result": {
+      "type": "key_sequence",
+      "keys": "#w",
+      "mode": "down_up",
+      "secured": false,
+      "activate_target": false
+    }
+  },
+  {
+    "id": "edit.copy",
+    "platform": "macos",
+    "lang": "en-US",
+    "params": {},
+    "result": {
+      "type": "key_sequence",
+      "keys": "#c",
+      "mode": "down_up",
+      "secured": false,
+      "activate_target": false
+    }
+  },
+  {
+    "id": "window.snap_left",
+    "platform": "macos",
+    "lang": "en-US",
+    "params": {},
+    "result": {
+      "error": "preset.status.native_only"
+    }
+  },
+  {
+    "id": "text.search",
+    "platform": "macos",
+    "lang": "en-US",
+    "params": {
+      "engine": "google"
+    },
+    "result": {
+      "type": "open_url",
+      "url_template": "https://www.google.com/search?q=%MS_SELECTED_TEXT%",
+      "browser": null
+    }
+  },
+  {
+    "id": "text.search",
+    "platform": "macos",
+    "lang": "en-US",
+    "params": {
+      "engine": "bing"
+    },
+    "result": {
+      "type": "open_url",
+      "url_template": "https://www.bing.com/search?q=%MS_SELECTED_TEXT%",
+      "browser": null
+    }
+  },
+  {
+    "id": "text.search",
+    "platform": "macos",
+    "lang": "en-US",
+    "params": {
+      "engine": "baidu"
+    },
+    "result": {
+      "type": "open_url",
+      "url_template": "https://www.baidu.com/s?wd=%MS_SELECTED_TEXT%",
+      "browser": null
+    }
+  },
+  {
+    "id": "text.search",
+    "platform": "macos",
+    "lang": "en-US",
+    "params": {
+      "engine": "duckduckgo"
+    },
+    "result": {
+      "type": "open_url",
+      "url_template": "https://duckduckgo.com/?q=%MS_SELECTED_TEXT%",
+      "browser": null
+    }
+  },
+  {
+    "id": "text.search",
+    "platform": "macos",
+    "lang": "en-US",
+    "params": {
+      "engine": "custom",
+      "url": "https://example.com/?text=%MS_SELECTED_TEXT%"
+    },
+    "result": {
+      "type": "open_url",
+      "url_template": "https://example.com/?text=%MS_SELECTED_TEXT%",
+      "browser": null
+    }
+  },
+  {
+    "id": "open.folder",
+    "platform": "macos",
+    "lang": "en-US",
+    "params": {
+      "path": "folder with spaces"
+    },
+    "result": {
+      "type": "launch_app",
+      "exe": "/usr/bin/open",
+      "args": "-- 'folder with spaces'",
+      "elevate": false,
+      "win_class": null,
+      "win_title": null,
+      "regex": false,
+      "if_running": "run_again"
+    }
+  },
+  {
+    "id": "text.translate",
+    "platform": "windows",
+    "lang": "zh-CN",
+    "params": {
+      "service": "google"
+    },
+    "result": {
+      "type": "open_url",
+      "url_template": "https://translate.google.com/?sl=auto&tl=zh-CN&text=%MS_SELECTED_TEXT%&op=translate",
+      "browser": null
+    }
+  },
+  {
+    "id": "text.translate",
+    "platform": "windows",
+    "lang": "ja-JP",
+    "params": {
+      "service": "deepl"
+    },
+    "result": {
+      "type": "open_url",
+      "url_template": "https://www.deepl.com/translator#auto/ja/%MS_SELECTED_TEXT%",
+      "browser": null
+    }
+  },
+  {
+    "id": "text.translate",
+    "platform": "windows",
+    "lang": "pt-BR",
+    "params": {
+      "service": "bing"
+    },
+    "result": {
+      "type": "open_url",
+      "url_template": "https://www.bing.com/translator?from=auto-detect&to=pt&text=%MS_SELECTED_TEXT%",
+      "browser": null
+    }
+  }
+]

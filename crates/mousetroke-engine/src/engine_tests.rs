@@ -108,6 +108,7 @@ fn bind(name: &str, pattern: Vec<Step>) -> Binding {
         execute_on_match: false,
         hide_label: false,
         secured: false,
+        draft: false,
         disabled: false,
     }
 }
@@ -965,9 +966,9 @@ fn stationary_corner_settle_respects_dwell_pause_and_rearm() {
 
 #[test]
 fn mac_default_right_edge_rubbing_executes_without_a_button_release() {
-    let mut cfg = Config::from_json(include_str!("../../mousetroke-core/assets/default-config-macos.json")).unwrap();
+    let mut cfg = Config::builtin_for(mousetroke_core::caps::Platform::Macos);
     let binding = cfg.scopes[0].bindings.iter_mut().find(|b| b.name_key.as_deref() == Some("builtin.gesture.task_manager")).unwrap();
-    assert!(matches!(&binding.action, Action::LaunchApp { exe, .. } if exe == "com.apple.ActivityMonitor"));
+    assert!(matches!(&binding.action, Action::Preset { id, .. } if id == "system.task_manager"));
     binding.action = Action::Shell { script: "activity_monitor".into() };
     let mut t = T::with_config(cfg);
     t.dwell(1919, 600);

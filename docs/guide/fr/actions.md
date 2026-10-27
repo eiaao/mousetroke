@@ -1,18 +1,20 @@
 ---
 title: "Actions"
-description: "Choisissez l’envoi de touches, des actions de fenêtre, des applications, des URL, des commandes, des touches média, des menus ou Lua, et utilisez les variables de geste."
+description: "Choisissez une action prédéfinie dans la bibliothèque ou modifiez les touches, fenêtres, applications, URL, commandes, menus et scripts Lua des actions avancées."
 order: 5
 ---
 
 # Actions
 
-Sélectionnez un geste et choisissez son action sous **Action**. L’éditeur propose huit types. La plupart des tâches n’exigent qu’une action simple ; utilisez [Lua](lua-basics.md) quand vous avez besoin de conditions ou de plusieurs opérations.
+Sélectionnez ou créez un geste, puis cliquez sur **Choisir une action** sous **Action**. Recherchez ce que vous voulez faire ou parcourez une catégorie, renseignez les paramètres nécessaires et cliquez sur **Utiliser cette action**. La [bibliothèque d’actions](action-library.md) répertorie toutes les actions prédéfinies et leur disponibilité sous Windows et sur Mac, notamment le texte littéral, la date et l’heure, la disposition des fenêtres et l’alimentation.
+
+Les actions existantes affichent **Remplacer**. Les actions prédéfinies qui correspondent à une action avancée modifiable proposent aussi **Convertir en action avancée** ; les actions natives expliquent pourquoi la conversion est indisponible. La catégorie **Avancées** ouvre l’envoi de touches, les commandes, Lua et les menus. Les éditeurs ci-dessous restent accessibles, y compris par **Changer le type d'action**.
 
 ## Envoyer des touches
 
 Saisissez une [séquence de touches](key-sequences.md), ou cliquez sur **Enregistrer**, appuyez sur le raccourci puis cliquez sur **Terminé**. Par exemple, `^c` copie sous Windows ; `#c` copie sur Mac. **Aide sur la syntaxe** ouvre le guide de syntaxe.
 
-**Activer d’abord la fenêtre sous le curseur** active d’abord la cible du geste. Sans cela, les raccourcis vont à l’application qui reçoit la saisie au clavier. La cible suit aussi **Préférences → Les gestes agissent sur**. Il n’y a pas d’option de texte brut dans cet éditeur ; la [saisie texte prioritaire](key-sequences.md#texte-et-échappement) est disponible via Lua.
+**Activer d’abord la fenêtre sous le curseur** active d’abord la cible du geste. Sans cela, les raccourcis vont à l’application qui reçoit la saisie au clavier. La cible suit aussi **Préférences → Les gestes agissent sur**. Pour saisir du texte littéral, choisissez **Insérer du texte** dans la [bibliothèque d’actions](action-library.md), ou utilisez la [saisie texte prioritaire](key-sequences.md#texte-et-échappement) via Lua.
 
 ## Actions de fenêtre
 
@@ -43,7 +45,7 @@ Pour une recherche web sur le texte sélectionné, définissez l’URL sur :
 https://www.google.com/search?q=%MS_SELECTED_TEXT%
 ```
 
-Sélectionnez du texte dans une application, puis effectuez le geste. Le texte sélectionné est encodé pour les URL. S’il commence déjà par `http://`, `https://` ou `www.`, Mousetroke ouvre directement cette adresse ; `www.` reçoit un préfixe `https://`.
+Sélectionnez du texte dans une application, puis effectuez le geste. Le texte est encodé pour les URL dans le modèle ; les modèles de recherche et de traduction continuent d’utiliser le service choisi même si la sélection est une adresse. Mousetroke ouvre directement les adresses sélectionnées commençant par `http://`, `https://` ou `www.` uniquement lorsque le champ URL contient seulement `%MS_SELECTED_TEXT%` ; `www.` reçoit un préfixe `https://`.
 
 ## Exécuter une commande
 

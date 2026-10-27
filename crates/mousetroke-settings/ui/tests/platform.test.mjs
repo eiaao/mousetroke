@@ -6,15 +6,48 @@ import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 
 // 使用与产物相同的 Vite 转换，不复制待测试的按键与平台实现。
-const server = await createServer({ server: { middlewareMode: true }, appType: "custom" });
+const server = await createServer({ server: { middlewareMode: true, hmr: false, ws: false }, appType: "custom" });
 after(() => server.close());
 const platform = await server.ssrLoadModule("/src/platform.ts");
 const keys = await server.ssrLoadModule("/src/gesture.ts");
 const { t } = await server.ssrLoadModule("/src/i18n/index.ts");
 const { About, UpdateStatus } = await server.ssrLoadModule("/src/components/About.tsx");
 const { ActionEditor } = await server.ssrLoadModule("/src/components/ActionEditor.tsx");
+const { initActionCatalog } = await server.ssrLoadModule("/src/actions.ts");
 const { Guide, PermissionRows, permissionsReady } = await server.ssrLoadModule("/src/components/Guide.tsx");
 const event = (code, mods = {}) => ({ code, ctrlKey: false, altKey: false, shiftKey: false, metaKey: false, ...mods });
+
+test("known presets render as a changeable card and future actions stay read-only", () => {
+  initActionCatalog({
+    presets: [{ id: "edit.copy", advanced_expansion: { windows: true, macos: true, reason_key: "preset.status.native_only" }, name_key: "preset.action.edit.copy.name", description_key: "preset.action.edit.copy.description", params: [], windows: { status: "implemented", value: { type: "keys", value: "^c" } }, macos: { status: "implemented", value: { type: "keys", value: "#c" } } }],
+    defaults: {},
+    commonPresetIds: [],
+    knownActionTypes: ["preset"],
+    unknownActionKey: "preset.status.unknown",
+  });
+  // 已知预置动作：动作卡片，可"更换/转为高级动作"，不再是只读
+  const known = { type: "preset", id: "edit.copy", params: { future: [1, true] } };
+  const html = renderToStaticMarkup(createElement(ActionEditor, { action: known, onChange: () => assert.fail("known preset card must not change by itself") }));
+  assert.ok(!/readonly/i.test(html));
+  assert.ok(html.includes(t("preset.action.edit.copy.name")));
+  assert.ok(html.includes(t("preset.action.edit.copy.description")));
+  assert.ok(html.includes(t("ui.actpick.change")));
+  assert.ok(html.includes(t("ui.actpick.to_advanced")));
+  assert.equal(keys.actionSummary(known), t("preset.action.edit.copy.name"));
+  // 未知动作（含未收录的预置 ID）：只读保留原始 JSON，提供"更换"
+  for (const action of [
+    { type: "preset", id: "future.preset", params: { service: "future" } },
+    { type: "future_action", payload: { nested: ["^%+#", null, 42] } },
+  ]) {
+    const before = structuredClone(action);
+    const h = renderToStaticMarkup(createElement(ActionEditor, { action, onChange: () => assert.fail("read-only action must not change") }));
+    assert.match(h, /readonly/i);
+    assert.ok(h.includes(t("preset.status.unknown")));
+    assert.ok(h.includes(t("ui.actpick.change")));
+    assert.deepEqual(action, before);
+    assert.equal(keys.actionSummary(action), t("preset.status.unknown"));
+  }
+});
 
 test("Windows display and identities retain their existing behavior", () => {
   platform.initPlatform("windows");

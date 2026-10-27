@@ -34,6 +34,10 @@ Las acciones integradas se adaptan a la plataforma: los atajos del navegador usa
 
 Un clic derecho normal sigue abriendo el menú contextual de la aplicación. Mantener el botón quieto el tiempo suficiente también deja pasar el botón para un clic o arrastre normales; ajusta ese tiempo en [Preferencias](gestures.md#reconocimiento-y-aspecto).
 
+## Crear un gesto
+
+Abre **Todas las aplicaciones → Gestos de ratón → Nuevo gesto**, elige el disparador y graba el dibujo. Haz clic en **Elegir acción** para buscar o explorar la [biblioteca de acciones](action-library.md), selecciona una acción predefinida y rellena sus parámetros. Los cambios se guardan automáticamente cuando el gesto es válido; pruébalo fuera de la configuración. Consulta [Gestos de ratón](gestures.md) para conocer los detalles de grabación.
+
 ## Pausa
 
 En Windows elige **Pausar gestos** y luego **Reanudar gestos** para restaurarlos. En Mac, **Pausar gestos** conserva la misma etiqueta: su marca de verificación indica una pausa manual y, al hacer clic de nuevo, se reanudan. El atajo predeterminado de pausa/reanudación es **Win+Esc** en Windows y **Control+Option+Command+P** en Mac. Cámbialo en **Preferencias → Atajo para pausar / reanudar**.

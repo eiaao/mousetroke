@@ -15,6 +15,7 @@ Estas guías cubren Windows y macOS. El soporte de Mac está en beta; las difere
 - [Primeros pasos](getting-started.md): instalación, primera ejecución, gestos predeterminados y pausa.
 - [Gestos de ratón](gestures.md): grabar trazados y formas, añadir botones o teclas, y buscar o editar gestos.
 - [Esquinas y bordes de la pantalla](screen-edges.md): volumen, brillo, clics y frotado de bordes.
+- [Biblioteca de acciones](action-library.md): buscar acciones predefinidas, configurar parámetros y consultar la disponibilidad por plataforma.
 - [Acciones](actions.md): elegir qué hace un gesto, incluida la búsqueda web con el texto seleccionado.
 - [Reglas por aplicación](per-app.md): gestos específicos, exclusiones y comportamiento a pantalla completa.
 
@@ -30,4 +31,4 @@ Estas guías cubren Windows y macOS. El soporte de Mac está en beta; las difere
 - [Configuración, copia de seguridad y actualizaciones](config.md): archivos, restauración, recarga en caliente, actualizaciones y desinstalación.
 - [Solución de problemas](troubleshooting.md): gestos que no se disparan, permisos, entrada de texto y registros.
 
-Para un resultado rápido, [dibuja tu primer gesto](getting-started.md#dibujar-tu-primer-gesto). Para que un gesto escriba texto, salta a las [recetas de Lua](lua-examples.md#escribir-texto-fijo).
+Para un resultado rápido, [dibuja tu primer gesto](getting-started.md#dibujar-tu-primer-gesto). Para que un gesto escriba texto, elige **Insertar texto** en la [biblioteca de acciones](action-library.md).

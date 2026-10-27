@@ -10,7 +10,7 @@ order: 3
 
 Open **All apps → Mouse gestures → New gesture**. Name it, then choose **How it starts**: **Hold down the right button**, **Hold down the middle button**, **Hold down the side button 1** or **Hold down the side button 2**. Side buttons correspond to X1 and X2.
 
-In the drawing area, hold the left or right button, draw and release. The recording canvas accepts either button independently of the trigger you selected. Straight segments become a directional stroke, such as `←` or `↓→`; redraw to replace it. Choose an [action](actions.md), then try the gesture outside settings with its actual trigger button.
+In the drawing area, hold the left or right button, draw and release. The recording canvas accepts either button independently of the trigger you selected. Straight segments become a directional stroke, such as `←` or `↓→`; redraw to replace it. Click **Choose action**, search or browse the [action library](action-library.md), then select a preset and fill any parameters. Use **Advanced** for custom keys, commands, Lua or menus; see [Actions](actions.md). Try the gesture outside settings with its actual trigger button.
 
 ## Record a shape
 

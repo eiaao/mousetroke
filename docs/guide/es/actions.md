@@ -1,18 +1,20 @@
 ---
 title: "Acciones"
-description: "Elige enviar teclas, acciones de ventana, aplicaciones, URL, comandos, teclas multimedia, menús o Lua, y usa las variables de gesto."
+description: "Elige una acción predefinida de la biblioteca o edita teclas, ventanas, aplicaciones, URL, comandos, menús y Lua en las acciones avanzadas."
 order: 5
 ---
 
 # Acciones
 
-Selecciona un gesto y elige su acción en **Acción**. El editor ofrece ocho tipos. La mayoría de las tareas solo necesitan una acción sencilla; usa [Lua](lua-basics.md) cuando necesites condiciones u operaciones múltiples.
+Selecciona o crea un gesto y haz clic en **Elegir acción** dentro de **Acción**. Busca lo que quieres hacer o explora una categoría, rellena los parámetros necesarios y haz clic en **Usar esta acción**. La [biblioteca de acciones](action-library.md) enumera todas las acciones predefinidas y su disponibilidad en Windows y Mac, incluidas las de texto literal, fecha y hora, distribución de ventanas y energía.
+
+Las acciones existentes muestran **Cambiar**. Las acciones predefinidas que se pueden representar como una acción avanzada editable también ofrecen **Convertir en acción avanzada**; las nativas explican por qué no se pueden convertir. La categoría **Avanzadas** abre el envío de teclas, los comandos, Lua y los menús. Los editores siguientes siguen disponibles, también desde **Cambiar tipo de acción**.
 
 ## Enviar teclas
 
 Introduce una [secuencia de teclas](key-sequences.md), o haz clic en **Grabar**, pulsa el atajo y haz clic en **Hecho**. Por ejemplo, `^c` copia en Windows; `#c` copia en Mac. **Ayuda de sintaxis** abre la guía de sintaxis.
 
-**Activar antes la ventana bajo el cursor** activa primero el objetivo del gesto. Sin esta opción, los atajos van a la aplicación que reciba la entrada de teclado. El objetivo también sigue **Preferencias → Los gestos actúan sobre**. No hay ninguna opción de texto plano en este editor; la [entrada en modo texto](key-sequences.md#texto-y-escape) está disponible mediante Lua.
+**Activar antes la ventana bajo el cursor** activa primero el objetivo del gesto. Sin esta opción, los atajos van a la aplicación que reciba la entrada de teclado. El objetivo también sigue **Preferencias → Los gestos actúan sobre**. Para escribir texto literalmente, elige **Insertar texto** en la [biblioteca de acciones](action-library.md), o usa la [entrada en modo texto](key-sequences.md#texto-y-escape) mediante Lua.
 
 ## Acciones de ventana
 
@@ -43,7 +45,7 @@ Para la búsqueda web con texto seleccionado, pon esta URL:
 https://www.google.com/search?q=%MS_SELECTED_TEXT%
 ```
 
-Selecciona texto en una aplicación y luego realiza el gesto. El texto seleccionado se codifica como URL. Si ya empieza por `http://`, `https://` o `www.`, Mousetroke abre esa dirección directamente; a `www.` se le añade el prefijo `https://`.
+Selecciona texto en una aplicación y luego realiza el gesto. El texto se codifica como URL dentro de la plantilla; las plantillas de búsqueda y traducción siguen usando el servicio elegido aunque la selección sea una dirección. Solo cuando el campo URL contiene únicamente `%MS_SELECTED_TEXT%`, Mousetroke abre directamente las direcciones seleccionadas que empiezan por `http://`, `https://` o `www.`; a `www.` se le añade el prefijo `https://`.
 
 ## Ejecutar un comando
 

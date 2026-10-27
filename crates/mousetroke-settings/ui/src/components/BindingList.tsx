@@ -1,7 +1,8 @@
 import { primaryModifier } from "../platform";
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import type { Binding, MouseButton, Scope, Step } from "../types";
-import { EDGE, actionSummary, buttonName, decompose, describePattern, edgeName, fileName } from "../gesture";
+import { actionKeys, presetDefinition, presetTypeLabel } from "../actions";
+import { EDGE, actionSummary, buttonName, decompose, describePattern, edgeName, fileName, hasConflictPattern } from "../gesture";
 import { T, currentLang, displayName, t } from "../i18n";
 import { PatternGlyph } from "./Glyph";
 import { AppIcon, EdgeIcon, MouseIcon } from "./Icons";
@@ -67,7 +68,7 @@ export function BindingList({
     const count = new Map<string, number>();
     classes.forEach((c) => c.tab === tab && count.set(c.key, (count.get(c.key) ?? 0) + 1));
     const keys = tab === "gesture" ? BUTTON_ORDER.map((b) => `btn:${b}`) : EDGE_ORDER.map((e) => `edge:${e}`);
-    const off = scope.bindings.filter((b, i) => b.disabled && classes[i].tab === tab).length;
+    const off = scope.bindings.filter((b, i) => b.disabled && !b.draft && classes[i].tab === tab).length;
     return [...keys.filter((k) => count.has(k)).map((k) => ({ key: k, n: count.get(k)! })), ...(off ? [{ key: "off", n: off }] : [])];
   }, [classes, tab, scope.bindings]);
   const activeFilter = filters.some((f) => f.key === filter) ? filter : "all";
@@ -77,7 +78,7 @@ export function BindingList({
     const q = query.trim().toLowerCase();
     return scope.bindings
       .map((b, i) => ({ b, i }))
-      .filter(({ b, i }) => classes[i].tab === tab && (activeFilter === "all" || classes[i].key === activeFilter || (activeFilter === "off" && !!b.disabled)))
+      .filter(({ b, i }) => classes[i].tab === tab && (activeFilter === "all" || classes[i].key === activeFilter || (activeFilter === "off" && !!b.disabled && !b.draft)))
       // 按界面上显示的名字搜（内置名随语言翻译，b.name 只是导入时那种语言的文字）
       .filter(
         ({ b }) =>
@@ -301,11 +302,13 @@ export function BindingList({
 
 function Row({ n, b, on, clash, onClick, onToggle }: { n: number; b: Binding; on: boolean; clash: boolean; onClick: () => void; onToggle: () => void }) {
   const name = displayName(b.name, b.name_key);
+  const enabled = !b.disabled || !!b.draft;
+  const incomplete = !!b.draft && !hasConflictPattern(b.pattern);
   return (
     <li
       role="option"
       aria-selected={on}
-      className={`row ${on ? "on" : ""} ${b.disabled ? "off" : ""}`}
+      className={`row ${on ? "on" : ""} ${!enabled ? "off" : ""}`}
       style={{ "--i": Math.min(n, 12) } as React.CSSProperties}
       onClick={onClick}
     >
@@ -315,7 +318,12 @@ function Row({ n, b, on, clash, onClick, onToggle }: { n: number; b: Binding; on
       <span className="row-main">
         <span className="row-name">
           {name || <em className="muted">{t("ui.list.unnamed")}</em>}
-          {b.disabled && <span className="badge">{t("ui.list.off_badge")}</span>}
+          {!enabled && <span className="badge">{t("ui.list.off_badge")}</span>}
+          {b.draft && (
+            <span className="badge" data-tip={t("ui.list.inactive_tip")}>
+              {t("ui.list.inactive_badge")}
+            </span>
+          )}
           {clash && (
             <span className="badge warn" data-tip={t("ui.list.dup_tip")}>
               {t("ui.list.dup_badge")}
@@ -325,14 +333,14 @@ function Row({ n, b, on, clash, onClick, onToggle }: { n: number; b: Binding; on
         <span className="row-pattern">{describePattern(b.pattern)}</span>
       </span>
       <span className="row-action">
-        {b.action.type === "key_sequence" && !b.secured ? <Caps keys={b.action.keys} compact /> : <span className="row-action-text">{b.secured ? "••••" : actionSummary(b.action)}</span>}
+        {incomplete || b.actionUnselected ? <span className="row-action-text muted">{[incomplete && t("ui.list.no_stroke"), b.actionUnselected && t("ui.actpick.unselected")].filter(Boolean).join(" · ")}</span> : actionKeys(b.action) !== undefined && !b.secured ? <Caps keys={actionKeys(b.action)!} compact /> : <span className="row-action-text">{b.secured ? "••••" : actionSummary(b.action) === name && presetDefinition(b.action) ? presetTypeLabel(presetDefinition(b.action)!) : actionSummary(b.action)}</span>}
       </span>
       <input
         type="checkbox"
         className="switch small"
-        checked={!b.disabled}
-        data-tip={b.disabled ? t("ui.list.off_toggle_tip") : t("ui.list.on_toggle_tip")}
-        aria-label={b.disabled ? t("ui.list.enable_aria", { name }) : t("ui.list.disable_aria", { name })}
+        checked={enabled}
+        data-tip={enabled ? t("ui.list.on_toggle_tip") : t("ui.list.off_toggle_tip")}
+        aria-label={enabled ? t("ui.list.disable_aria", { name }) : t("ui.list.enable_aria", { name })}
         onClick={(e) => e.stopPropagation()}
         onChange={onToggle}
       />

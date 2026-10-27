@@ -10,6 +10,7 @@ use mousetroke_core::{
     vars::{self, Vars},
 };
 use mousetroke_engine::Target;
+use mousetroke_core::presets::native::{NativeAction, PreparedAction};
 use objc2::{rc::Retained, runtime::ProtocolObject, MainThreadMarker};
 use objc2_app_kit::{
     NSApplicationActivationOptions, NSEvent, NSEventModifierFlags, NSEventType, NSPasteboard,
@@ -142,6 +143,16 @@ pub fn tick() {
     let Some(request) = request else {
         return;
     };
+    let Some(action) = mousetroke_engine::prepare_action(request.action, mousetroke_core::caps::Platform::Macos, mousetroke_core::i18n::lang()) else { return };
+    let action = match action {
+        PreparedAction::Advanced(action) => action,
+        PreparedAction::Native(action) => {
+            if dry_run { crate::log!("自测原生动作 dry_run：{}", action.id()); }
+            else { dispatch_native(action, request.target, request.window, request.pos); }
+            return;
+        }
+    };
+    let request = Request { action, ..request };
     if dry_run {
         if matches!(request.action, Action::KeySequence { .. }) {
             crate::input::enqueue(request.action);
@@ -193,6 +204,27 @@ pub fn tick() {
         dispatch(request);
     }
 }
+fn dispatch_native(action: NativeAction, target: Option<Target>, window: Option<Window>, pos: (i32, i32)) {
+    let id = action.id();
+    let monitors = if matches!(action, NativeAction::Layout(_)) {
+        let result = MainThreadMarker::new().ok_or_else(|| "Screen snapshot requires the main thread".into())
+            .and_then(crate::preset_actions::monitors);
+        match result {
+            Ok(monitors) => monitors,
+            Err(error) => { mousetroke_engine::report_action_failure(id, &error); return; }
+        }
+    } else { Vec::new() };
+    let (tx, rx) = mpsc::sync_channel(1);
+    STATE.with(|s| s.borrow_mut().pending = Some(Pending::Window(rx)));
+    std::thread::spawn(move || {
+        if let Err(error) = crate::preset_actions::execute(action, target, window, pos, monitors) {
+            mousetroke_engine::report_action_failure(id, &error);
+        }
+        let _ = tx.send(());
+        crate::app::wake_from_worker();
+    });
+}
+
 fn poll(pending: Pending) {
     match pending {
         Pending::Keys { action, deadline } => {
@@ -471,6 +503,8 @@ fn dispatch(request: Request) {
                 crate::lua::run(code, ctx);
             });
         }
+        // 队列消费时已展开；未识别的动作不进入平台执行器。
+        Action::Preset { .. } | Action::Unknown(_) => {}
     }
 }
 #[allow(deprecated)] // macOS 11 起的兼容激活入口；新激活 API 不能覆盖最低系统版本。
@@ -668,6 +702,7 @@ mod tests {
                 win_class: None,
                 win_title: None,
                 regex: false,
+                activate_by_identity: false,
                 if_running: IfRunning::RunAgain,
             },
             Action::Lua {

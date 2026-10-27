@@ -15,6 +15,7 @@ Queste guide trattano Windows e macOS. Il supporto per Mac è in beta; le differ
 - [Primi passi](getting-started.md): installazione, primo avvio, gesti predefiniti e pausa.
 - [Gesti del mouse](gestures.md): registrare tracciati e forme, aggiungere pulsanti o tasti, e trovare o modificare i gesti.
 - [Angoli e bordi dello schermo](screen-edges.md): volume, luminosità, clic e sfregamento dei bordi.
+- [Libreria delle azioni](action-library.md): cercare azioni predefinite, impostare i parametri e verificarne la disponibilità sulle piattaforme.
 - [Azioni](actions.md): scegliere cosa fa un gesto, inclusa la ricerca web sul testo selezionato.
 - [Regole per app](per-app.md): sostituzioni, esclusioni e comportamento a schermo intero.
 
@@ -30,4 +31,4 @@ Queste guide trattano Windows e macOS. Il supporto per Mac è in beta; le differ
 - [Configurazione, backup e aggiornamenti](config.md): file, ripristino, ricaricamento automatico, aggiornamenti e disinstallazione.
 - [Risoluzione dei problemi](troubleshooting.md): gesti mancanti, autorizzazioni, input di testo e log.
 
-Per un risultato immediato, [disegna il tuo primo gesto](getting-started.md#disegnare-il-primo-gesto). Per far digitare un testo a un gesto, passa alle [ricette Lua](lua-examples.md#digitare-un-testo-fisso).
+Per un risultato immediato, [disegna il tuo primo gesto](getting-started.md#disegnare-il-primo-gesto). Per far digitare un testo a un gesto, scegli **Inserisci testo** nella [libreria delle azioni](action-library.md).

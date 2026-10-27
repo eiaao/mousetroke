@@ -71,16 +71,16 @@ pub fn url_encode(s: &str) -> String {
     out
 }
 
-/// 展开后是否直接是一个网址（是则直接打开，不套模板——旧格式 WebSearch 语义）。
+/// 选中文字是否是一个网址。
 pub fn looks_like_url(s: &str) -> bool {
     let s = s.trim();
     s.starts_with("http://") || s.starts_with("https://") || s.starts_with("www.")
 }
 
-/// 网址动作：选中文字本身是网址就直接打开（`www.` 补 https://），否则把它编码后代入模板。
+/// 选中网址动作直接打开（`www.` 补 https://）；其余模板把选中文字编码后代入。
 pub fn expand_url(template: &str, vars: &Vars) -> String {
     if let Some(text) = vars.get("MS_SELECTED_TEXT") {
-        if looks_like_url(text) {
+        if template.trim() == "%MS_SELECTED_TEXT%" && looks_like_url(text) {
             let text = text.trim();
             return if text.starts_with("www.") {
                 format!("https://{text}")
@@ -144,9 +144,14 @@ mod tests {
             "https://example.com?q=a%20b%26%E4%B8%AD%E6%96%87&pid=42"
         );
         values.insert("MS_SELECTED_TEXT".into(), " https://example.com/?x=1 ".into());
-        assert_eq!(expand_url("unused", &values), "https://example.com/?x=1");
+        assert_eq!(expand_url(" %MS_SELECTED_TEXT% ", &values), "https://example.com/?x=1");
+        assert_eq!(expand_url("unused", &values), "unused");
+        values.insert("MS_SELECTED_TEXT".into(), "https://example.com".into());
+        for template in ["https://search.example/?q=%MS_SELECTED_TEXT%", "https://translate.example/?text=%MS_SELECTED_TEXT%"] {
+            assert_eq!(expand_url(template, &values), template.replace("%MS_SELECTED_TEXT%", "https%3A%2F%2Fexample.com"));
+        }
         values.insert("MS_SELECTED_TEXT".into(), "www.example.com".into());
-        assert_eq!(expand_url("unused", &values), "https://www.example.com");
+        assert_eq!(expand_url("%MS_SELECTED_TEXT%", &values), "https://www.example.com");
     }
 
     #[test]

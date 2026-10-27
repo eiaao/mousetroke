@@ -7,6 +7,9 @@
 
 use crate::i18n::keys;
 
+pub mod actions;
+pub mod native;
+
 /// 建议禁用的类别。
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum PresetCategory {

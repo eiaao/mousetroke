@@ -1,5 +1,7 @@
 import { isMac } from "./platform";
-import type { Action, Binding, KeyTag, MouseButton, Step } from "./types";
+import type { Action, AdvancedAction, Binding, KeyTag, MouseButton, Step } from "./types";
+import { isAdvancedAction } from "./types";
+import { presetSummary } from "./actions";
 import { t } from "./i18n";
 import type { MsgKey } from "./i18n";
 
@@ -262,11 +264,16 @@ export function patternKey(pattern: Step[]): string {
   return pattern.map(stepKey).join(" ");
 }
 
+/** 冲突检查还须排除尚未录完的空轨迹和无采样形状。 */
+export function hasConflictPattern(pattern: Step[]): boolean {
+  return pattern.some((step) => step.type === "edge" || step.type === "wheel" || (step.type === "trace" && step.points.length >= 4) || (step.type === "shape" && step.templates.some((sample) => sample.length > 0))) || pattern.filter((step) => step.type === "press").length > 1;
+}
+
 /** 作用域内的冲突：指纹 → 绑定下标列表（仅含 ≥2 个的）。 */
 export function conflicts(bindings: Binding[]): Map<number, number[]> {
   const groups = new Map<string, number[]>();
   bindings.forEach((b, i) => {
-    if (b.disabled) return; // 停用的不参与，也就不算重复
+    if (b.disabled || !hasConflictPattern(b.pattern)) return; // 停用的不参与，也就不算重复
     const k = patternKey(b.pattern);
     groups.set(k, [...(groups.get(k) ?? []), i]);
   });
@@ -278,11 +285,11 @@ export function conflicts(bindings: Binding[]): Map<number, number[]> {
 // ---------------------------------------------------------------- 动作
 
 /** 动作类型的显示名（按需取词条）。 */
-export function actionName(type: Action["type"]): string {
+export function actionName(type: AdvancedAction["type"]): string {
   return t(`action.${type}` as MsgKey);
 }
 
-export const ACTION_ORDER: Action["type"][] = [
+export const ACTION_ORDER: AdvancedAction["type"][] = [
   "key_sequence",
   "window_op",
   "launch_app",
@@ -293,7 +300,7 @@ export const ACTION_ORDER: Action["type"][] = [
   "lua",
 ];
 
-export function defaultAction(type: Action["type"]): Action {
+export function defaultAction(type: AdvancedAction["type"]): AdvancedAction {
   switch (type) {
     case "key_sequence":
       return { type, keys: "", activate_target: false };
@@ -334,6 +341,7 @@ export const SYSTEM_KEYS: { key: string; i18n: MsgKey }[] = [
 
 /** 动作的一行摘要。 */
 export function actionSummary(a: Action): string {
+  if (!isAdvancedAction(a)) return presetSummary(a);
   switch (a.type) {
     case "key_sequence":
       return isMac() ? keyseqToCaps(a.keys).map((group) => group.join("+")).join(" ") : a.keys;
@@ -360,6 +368,10 @@ export function fileName(path: string): string {
 
 export function newBinding(): Binding {
   return {
+    uiId: uid(),
+    actionUnselected: true,
+    disabled: true,
+    draft: true,
     name: t("ui.app.new_gesture"),
     pattern: [{ type: "press", key: "mouse:right" }],
     action: defaultAction("key_sequence"),

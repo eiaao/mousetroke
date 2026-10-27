@@ -10,7 +10,7 @@ order: 3
 
 Abre **Todas las aplicaciones → Gestos de ratón → Nuevo gesto**. Ponle nombre y elige **Cómo empieza**: **Mantener pulsado el botón derecho**, **Mantener pulsado el botón central**, **Mantener pulsado el botón lateral 1** o **Mantener pulsado el botón lateral 2**. Los botones laterales corresponden a X1 y X2.
 
-En el área de dibujo, mantén pulsado el botón izquierdo o derecho, dibuja y suelta. El lienzo de grabación acepta cualquiera de los dos botones con independencia del disparador que hayas elegido. Los segmentos rectos se convierten en un trazo direccional, como `←` o `↓→`; vuelve a dibujar para sustituirlo. Elige una [acción](actions.md) y prueba después el gesto fuera de la configuración con su botón disparador real.
+En el área de dibujo, mantén pulsado el botón izquierdo o derecho, dibuja y suelta. El lienzo de grabación acepta cualquiera de los dos botones con independencia del disparador que hayas elegido. Los segmentos rectos se convierten en un trazo direccional, como `←` o `↓→`; vuelve a dibujar para sustituirlo. Haz clic en **Elegir acción**, busca o explora la [biblioteca de acciones](action-library.md), selecciona una acción predefinida y rellena los parámetros necesarios. Usa **Avanzadas** para teclas, comandos, Lua o menús personalizados; consulta [Acciones](actions.md). Prueba después el gesto fuera de la configuración con su botón disparador real.
 
 ## Grabar una forma
 

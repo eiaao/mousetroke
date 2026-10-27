@@ -7,18 +7,19 @@ import { fileName } from "../gesture";
 import { displayName, t } from "../i18n";
 
 /** 通用模态框：Esc 关闭、点遮罩关闭、打开时聚焦第一个输入。 */
-export function Modal({ title, onClose, children, wide }: { title: string; onClose: () => void; children: React.ReactNode; wide?: boolean }) {
+export function Modal({ title, onClose, children, wide, onEscape }: { title: string; onClose: () => void; children: React.ReactNode; wide?: boolean; onEscape?: () => boolean }) {
   const box = useRef<HTMLDivElement>(null);
+  const closeRef = useRef(onClose);
+  closeRef.current = onClose;
   useEffect(() => {
-    const onKey = (e: KeyboardEvent) => e.key === "Escape" && (e.stopPropagation(), onClose());
-    window.addEventListener("keydown", onKey, true);
     // 优先聚焦输入框（关闭按钮排在前面，但打开后多半是要输入）
     ((box.current?.querySelector("input") ?? box.current?.querySelector("button")) as HTMLElement | null)?.focus();
-    return () => window.removeEventListener("keydown", onKey, true);
-  }, [onClose]);
+  }, []);
   return (
     <div className="modal-backdrop" onMouseDown={(e) => e.target === e.currentTarget && onClose()}>
-      <div ref={box} className={`modal ${wide ? "wide" : ""}`} role="dialog" aria-modal aria-label={title}>
+      <div ref={box} className={`modal ${wide ? "wide" : ""}`} role="dialog" aria-modal aria-label={title} onKeyDown={(e) => {
+        if (e.key === "Escape") { e.stopPropagation(); e.preventDefault(); if (!onEscape?.()) closeRef.current(); }
+      }}>
         <header className="modal-head">
           <h2>{title}</h2>
           <button type="button" className="icon-btn" aria-label={t("common.close")} onClick={onClose}>
@@ -166,7 +167,7 @@ export function DataPage({
 }: {
   config: Config;
   configPath: string;
-  onReplace: (c: Config, message: string) => void;
+  onReplace: (c: Config, message: string) => Promise<void>;
   notify: (msg: string) => void;
 }) {
   const [busy, setBusy] = useState(false);
@@ -189,8 +190,8 @@ export function DataPage({
       // 同目录的 prefs.json 存在就一并导入（后端会忽略不存在的文件）
       const incoming = await api.importLegacy(gestures, gestures.replace(/gestures\.json$/i, "prefs.json"));
       const n = incoming.scopes.reduce((a, s) => a + s.bindings.length, 0);
-      if (mode === "replace") onReplace(incoming, t("ui.data.imported", { count: n }));
-      else onReplace(mergeConfigs(config, incoming), t("ui.data.merged", { count: n }));
+      if (mode === "replace") await onReplace(incoming, t("ui.data.imported", { count: n }));
+      else await onReplace(mergeConfigs(config, incoming), t("ui.data.merged", { count: n }));
     });
 
   return (
@@ -239,7 +240,7 @@ export function DataPage({
                 const p = await api.pickFile("json", false, t("ui.data.pick_import"));
                 if (!p) return;
                 const c = await api.loadConfigFile(p);
-                onReplace(c, t("ui.data.config_imported"));
+                await onReplace(c, t("ui.data.config_imported"));
               })
             }
           >

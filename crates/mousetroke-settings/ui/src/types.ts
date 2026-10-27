@@ -35,7 +35,7 @@ export type SendMode = "down_up" | "mapping" | "toggle" | "down" | "up";
 export type IfRunning = "activate" | "send_keys" | "run_again";
 export type WindowOpKind = "toggle_maximize" | "minimize" | "close" | "toggle_topmost";
 
-export type Action =
+export type AdvancedAction =
   | { type: "key_sequence"; keys: string; mode?: SendMode; secured?: boolean; activate_target?: boolean }
   | { type: "shell"; script: string }
   | { type: "lua"; code: string }
@@ -50,10 +50,52 @@ export type Action =
       win_title?: string | null;
       regex?: boolean;
       if_running?: IfRunning;
+      activate_by_identity?: boolean;
     }
   | { type: "window_op"; op: WindowOpKind; allow_child?: boolean }
   | { type: "system_key"; key: string };
 
+export interface PresetAction { type: "preset"; id: string; params?: Record<string, unknown> }
+/** 原始未来类型直接往返；界面通过类型守卫展示只读卡片，不增加 JSON 包装。 */
+export interface UnknownAction { type: string; [key: string]: unknown }
+export type Action = AdvancedAction | PresetAction | UnknownAction;
+
+export const ADVANCED_ACTION_TYPES = ["key_sequence", "shell", "lua", "open_url", "menu", "launch_app", "window_op", "system_key"] as const;
+export function isAdvancedAction(action: Action): action is AdvancedAction {
+  return (ADVANCED_ACTION_TYPES as readonly string[]).includes(action.type);
+}
+export function isPresetAction(action: Action): action is PresetAction {
+  return action.type === "preset" && "id" in action && typeof action.id === "string";
+}
+
+export type PresetParamKind =
+  | { type: "text" | "multiline_text" | "url" | "app" }
+  | { type: "choice"; choices: { value: string; label_key: string }[] }
+  | { type: "number"; min: number; max: number; step: number }
+  | { type: "path"; kind: "folder" | "file" };
+export type PresetImplementation =
+  | { status: "implemented"; value: { type: string; value?: unknown } }
+  | { status: "unsupported" | "pending"; value: { reason_key: string } };
+export interface ActionPreset {
+  id: string;
+  category: "browser" | "edit" | "text" | "window" | "desktop" | "media" | "open" | "mousetroke";
+  name_key: string;
+  description_key: string;
+  aliases_key: string;
+  platform_notes?: { windows: string | null; macos: string | null };
+  params: { name: string; label_key: string; kind: PresetParamKind; visible_when?: { param: string; equals: string } | null; default: { kind: "literal"; value: string } | { kind: "search_engine" } }[];
+  windows: PresetImplementation;
+  macos: PresetImplementation;
+  advanced_expansion: { windows: boolean; macos: boolean; reason_key: string };
+}
+export interface ActionCatalog {
+  presets: ActionPreset[];
+  defaults: Record<string, Record<string, unknown>>;
+  /** "常用"分类：内置默认配置用到的预置动作，加上输入文字、搜索选中文字、打开网站。 */
+  commonPresetIds: string[];
+  knownActionTypes: string[];
+  unknownActionKey: string;
+}
 
 export interface MenuItem {
   label: string;
@@ -61,9 +103,18 @@ export interface MenuItem {
 }
 
 export interface Binding {
+  /** 仅界面使用；写入和导出时移除。 */
+  uiId?: string;
+  actionUnselected?: boolean;
+  /** 仅界面使用；标记从磁盘载入的绑定（加载/导入），未形成手势时仍允许保持启用（导入的单击手势）。 */
+  loaded?: boolean;
+  /** 草稿：持久化为停用，模式完成且已选动作后自动启用。 */
+  draft?: boolean;
   name: string;
   /** 内置名称的词条键；存在且未被用户改名时按当前语言显示。 */
   name_key?: string;
+  /** 上一次自动填入的动作名（用户没改名时跟随新动作）。 */
+  lastActionName?: string;
   pattern: Step[];
   action: Action;
   execute_on_match: boolean;
@@ -137,6 +188,7 @@ export interface InitState {
   systemLangs: string[];
   /** 后端按 language + 系统语言解析出的语言标签。 */
   resolvedLang: string;
+  actionCatalog?: ActionCatalog;
 }
 
 export interface PermissionStatus {

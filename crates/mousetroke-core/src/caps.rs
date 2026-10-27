@@ -35,6 +35,10 @@ fn named(value: &Option<String>) -> bool {
 
 /// 动作的全部选项在该平台都有效。无法解析的按键文本交给按键校验报告，这里不算不支持。
 pub fn action_supported(action: &Action, platform: Platform) -> bool {
+    if let Action::Preset { id, .. } = action {
+        return crate::presets::actions::find(id).is_some_and(|p| matches!(p.implementation(platform), crate::presets::actions::Implementation::Implemented(_)));
+    }
+    if matches!(action, Action::Unknown(_)) { return false; }
     if platform == Platform::Windows {
         return true;
     }
@@ -62,9 +66,10 @@ pub fn repair(action: Action, platform: Platform) -> Action {
             op: if op == WindowOpKind::ToggleTopmost { WindowOpKind::Minimize } else { op },
             allow_child: false,
         },
-        Action::LaunchApp { exe, args, if_running, .. } => Action::LaunchApp {
+        Action::LaunchApp { exe, args, if_running, activate_by_identity, .. } => Action::LaunchApp {
             exe,
             args,
+            activate_by_identity,
             elevate: false,
             win_class: None,
             win_title: None,

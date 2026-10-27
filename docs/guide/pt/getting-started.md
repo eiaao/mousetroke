@@ -34,6 +34,10 @@ As ações integradas seguem a plataforma: os atalhos do navegador usam Ctrl no 
 
 Um clique direito simples continua abrindo o menu de contexto do aplicativo. Segurar o mouse parado por tempo suficiente também deixa o botão passar direto para cliques ou arrastes normais; ajuste esse tempo em [Preferências](gestures.md#reconhecimento-e-aparência).
 
+## Criar um gesto
+
+Abra **Todos os aplicativos → Gestos de mouse → Novo gesto**, escolha o gatilho e grave o desenho. Clique em **Escolher ação** para pesquisar ou explorar a [biblioteca de ações](action-library.md), selecione uma ação predefinida e preencha seus parâmetros. As alterações são salvas automaticamente quando o gesto é válido; experimente fora das configurações. Veja [Gestos de mouse](gestures.md) para os detalhes de gravação.
+
 ## Pausar
 
 No Windows, escolha **Pausar gestos** e depois **Retomar gestos** para restaurá-los. No Mac, **Pausar gestos** mantém sempre o mesmo nome: a marcação indica pausa manual, e clicar novamente retoma. O atalho padrão de pausa/retomada é **Win+Esc** no Windows e **Control+Option+Command+P** no Mac. Altere-o em **Preferências → Atalho de pausar / retomar**.

@@ -15,7 +15,7 @@ use windows::Win32::UI::Input::KeyboardAndMouse::{
     MOUSEEVENTF_XDOWN, MOUSEEVENTF_XUP, MOUSE_EVENT_FLAGS, MOUSEINPUT, VIRTUAL_KEY,
 };
 use windows::Win32::UI::WindowsAndMessaging::{
-    DestroyMenu, GetWindowTextW, PostMessageW, SetForegroundWindow, SetWindowPos, ShowWindow,
+    DestroyMenu, GetWindowTextW, IsIconic, PostMessageW, SetForegroundWindow, SetWindowPos, ShowWindow,
     HWND_NOTOPMOST, HWND_TOPMOST, MF_POPUP, MF_STRING, SW_SHOWNORMAL, SW_HIDE, SW_MAXIMIZE,
     SW_MINIMIZE, SW_RESTORE, SWP_NOACTIVATE, SWP_NOMOVE, SWP_NOSIZE, WM_CLOSE, WS_EX_TOOLWINDOW,
     WS_OVERLAPPED,
@@ -174,6 +174,10 @@ pub fn inject_keyseq_phase(seq: &KeySeq, phase: KeyPhase) {
 
 /// 以 Unicode 方式输入文本（不受键盘布局/输入法影响，中文与符号都可）。
 pub fn send_text(text: &str) {
+    let _ = send_text_checked(text);
+}
+
+pub(crate) fn send_text_checked(text: &str) -> Result<(), String> {
     use windows::Win32::UI::Input::KeyboardAndMouse::{KEYBDINPUT, KEYEVENTF_UNICODE};
     let mut inputs: Vec<INPUT> = Vec::with_capacity(text.len() * 2);
     for unit in text.encode_utf16() {
@@ -192,8 +196,28 @@ pub fn send_text(text: &str) {
             });
         }
     }
-    if !inputs.is_empty() {
-        unsafe { SendInput(&inputs, std::mem::size_of::<INPUT>() as i32) };
+    if !inputs.is_empty() && unsafe { SendInput(&inputs, std::mem::size_of::<INPUT>() as i32) } as usize != inputs.len() {
+        return Err("Unicode input failed; check target permissions".into());
+    }
+    Ok(())
+}
+
+/// 原生文字动作用完整的一组按下/抬起事件，并把注入失败交给调用方报告。
+pub(crate) fn send_shortcut_checked(vk: u16, modifier: ModKey) -> Result<(), String> {
+    let modifier = mod_vk(modifier);
+    let inputs = [(modifier, true), (vk, true), (vk, false), (modifier, false)].map(|(key, down)| INPUT {
+        r#type: INPUT_KEYBOARD,
+        Anonymous: INPUT_0 { ki: windows::Win32::UI::Input::KeyboardAndMouse::KEYBDINPUT {
+            wVk: VIRTUAL_KEY(key), dwFlags: if down { KEYBD_EVENT_FLAGS(0) } else { KEYEVENTF_KEYUP },
+            dwExtraInfo: INJECT_TAG, ..Default::default()
+        } },
+    });
+    if unsafe { SendInput(&inputs, std::mem::size_of::<INPUT>() as i32) } == inputs.len() as u32 {
+        Ok(())
+    } else {
+        send_vk(vk, false);
+        send_vk(modifier, false);
+        Err("Shortcut input failed; check target permissions".into())
     }
 }
 
@@ -297,6 +321,9 @@ pub fn set_topmost(hwnd: HWND, on: bool) {
 /// 激活窗口（执行命令前）。
 pub fn focus_window(hwnd: HWND) {
     unsafe {
+        if IsIconic(hwnd).as_bool() {
+            let _ = ShowWindow(hwnd, SW_RESTORE);
+        }
         let _ = SetForegroundWindow(hwnd);
     }
 }
@@ -459,6 +486,28 @@ unsafe extern "system" fn enum_proc(hwnd: HWND, lparam: LPARAM) -> BOOL {
     BOOL(1)
 }
 
+/// 展开用户与预置路径中的环境变量；未知变量按 Windows 语义原样保留。
+fn expand_environment(s: &str) -> String {
+    use windows::{core::PCWSTR, Win32::System::Environment::ExpandEnvironmentStringsW};
+    let source: Vec<u16> = s.encode_utf16().chain([0]).collect();
+    let mut required = unsafe { ExpandEnvironmentStringsW(PCWSTR(source.as_ptr()), None) };
+    loop {
+        if required == 0 {
+            return s.into();
+        }
+        let mut buffer = vec![0u16; required as usize];
+        let written = unsafe { ExpandEnvironmentStringsW(PCWSTR(source.as_ptr()), Some(&mut buffer)) };
+        if written == 0 {
+            return s.into();
+        }
+        if written as usize <= buffer.len() {
+            return String::from_utf16_lossy(&buffer[..written as usize - 1]);
+        }
+        // 两次调用间环境变化时按最新长度重试，不受 MAX_PATH 限制。
+        required = written;
+    }
+}
+
 /// 运行/激活应用程序。
 pub fn launch_app(
     exe: &str,
@@ -470,7 +519,8 @@ pub fn launch_app(
     if_running: IfRunning,
 ) {
     // 已在运行 → 按策略处理
-    if let Some(hwnd) = find_window_by(win_class, win_title, use_regex) {
+    let running = find_window_by(win_class, win_title, use_regex);
+    if let Some(hwnd) = running {
         match if_running {
             IfRunning::Activate => {
                 focus_window(hwnd);
@@ -483,13 +533,39 @@ pub fn launch_app(
             }
         }
     }
+    let exe = expand_environment(exe);
     let ok = if elevate {
-        shell_execute("runas", exe, args.unwrap_or(""))
+        shell_execute("runas", &exe, args.unwrap_or(""))
     } else {
-        run_app_process(exe, args.unwrap_or(""))
+        run_app_process(&exe, args.unwrap_or(""))
     };
     if !ok {
         crate::log!("应用启动失败: {exe}");
+    }
+}
+
+/// 仅由预置打开应用的无参数路径调用。
+pub(crate) fn activate_app_by_identity(exe: &str) -> bool {
+    let exe = expand_environment(exe);
+    let running = crate::targeting::visible_windows().into_iter().find_map(|(hwnd, _)| {
+        if !app_activation_class_eligible(&crate::targeting::class_name(hwnd)) { return None; }
+        let mut pid = 0;
+        unsafe { windows::Win32::UI::WindowsAndMessaging::GetWindowThreadProcessId(hwnd, Some(&mut pid)); }
+        crate::targeting::exe_of(pid).filter(|path| app_exe_matches(&exe, path)).map(|_| hwnd)
+    });
+    if let Some(hwnd) = running { focus_window(hwnd); true } else { false }
+}
+
+/// 桌面与系统外壳不能代替应用窗口；资源管理器的文件窗口仍可激活。
+fn app_activation_class_eligible(class: &str) -> bool {
+    !matches!(class, "Progman" | "WorkerW" | "SHELLDLL_DefView") && !crate::targeting::is_shell_ui_class(class)
+}
+
+fn app_exe_matches(requested: &str, running: &str) -> bool {
+    if requested.contains(['/', '\\']) {
+        requested.replace('/', "\\").eq_ignore_ascii_case(&running.replace('/', "\\"))
+    } else {
+        requested.eq_ignore_ascii_case(mousetroke_core::matcher::file_name(running))
     }
 }
 
@@ -797,4 +873,40 @@ pub fn is_vk_pressed(key: mousetroke_core::keyseq::Key) -> bool {
         _ => return false,
     };
     (unsafe { GetAsyncKeyState(vk) } as u16 & 0x8000) != 0
+}
+
+#[cfg(test)]
+mod app_identity_tests {
+    use super::{app_activation_class_eligible, app_exe_matches, expand_environment};
+
+    #[test]
+    fn environment_expansion_handles_system_paths_mixed_text_and_unknown_variables() {
+        let root = std::env::var("SystemRoot").unwrap();
+        assert_eq!(expand_environment("%SystemRoot%"), root);
+        let mixed = format!("prefix {} %SystemRoot% suffix", "x".repeat(300));
+        assert_eq!(expand_environment(&mixed), mixed.replace("%SystemRoot%", &root));
+        assert_eq!(expand_environment("%MOUSESTROKE_UNKNOWN_ENV_829A%"), "%MOUSESTROKE_UNKNOWN_ENV_829A%");
+        assert_eq!(expand_environment("plain text"), "plain text");
+        assert_eq!(expand_environment(""), "");
+        let expanded = expand_environment(r"%SystemRoot%\explorer.exe");
+        assert!(app_exe_matches(&expanded, &format!(r"{root}\explorer.exe")));
+        assert!(!app_exe_matches(&expanded, "portable/explorer.exe"));
+    }
+
+    #[test]
+    fn activation_matches_names_and_full_paths_without_confusing_apps() {
+        assert!(app_exe_matches("EDITOR.EXE", "tools/editor.exe"));
+        assert!(app_exe_matches("tools/editor.exe", "tools\\EDITOR.EXE"));
+        assert!(!app_exe_matches("editor.exe", "tools/other-editor.exe"));
+        assert!(!app_exe_matches("tools/editor.exe", "other/editor.exe"));
+    }
+    #[test]
+    fn shell_classes_are_not_app_activation_candidates() {
+        for class in ["Progman", "WorkerW", "SHELLDLL_DefView", "Shell_TrayWnd", "Shell_SecondaryTrayWnd", "NotifyIconOverflowWindow", "TopLevelWindowForOverflowXamlIsland", "Xaml_WindowedPopupClass", "XamlExplorerHostIslandWindow", "Windows.UI.Core.CoreWindow", "#32768"] {
+            assert!(!app_activation_class_eligible(class), "{class}");
+        }
+        for class in ["CabinetWClass", "Notepad", "Chrome_WidgetWin_1"] {
+            assert!(app_activation_class_eligible(class), "{class}");
+        }
+    }
 }

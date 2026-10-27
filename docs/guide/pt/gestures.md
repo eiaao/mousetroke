@@ -10,7 +10,7 @@ order: 3
 
 Abra **Todos os aplicativos → Gestos de mouse → Novo gesto**. Dê um nome a ele e escolha **Como começa**: **Segurar o botão direito**, **Segurar o botão do meio**, **Segurar o botão lateral 1** ou **Segurar o botão lateral 2**. Os botões laterais correspondem a X1 e X2.
 
-Na área de desenho, segure o botão esquerdo ou direito, desenhe e solte. A área de gravação aceita qualquer um dos dois botões, independentemente do gatilho escolhido. Segmentos retos tornam-se um traçado direcional, como `←` ou `↓→`; desenhe de novo para substituí-lo. Escolha uma [ação](actions.md) e experimente o gesto fora das configurações com o botão de disparo real.
+Na área de desenho, segure o botão esquerdo ou direito, desenhe e solte. A área de gravação aceita qualquer um dos dois botões, independentemente do gatilho escolhido. Segmentos retos tornam-se um traçado direcional, como `←` ou `↓→`; desenhe de novo para substituí-lo. Clique em **Escolher ação**, pesquise ou explore a [biblioteca de ações](action-library.md), selecione uma ação predefinida e preencha os parâmetros necessários. Use **Avançadas** para teclas, comandos, Lua ou menus personalizados; veja [Ações](actions.md). Experimente o gesto fora das configurações com o botão de disparo real.
 
 ## Gravar uma forma
 

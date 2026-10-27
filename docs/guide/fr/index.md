@@ -15,6 +15,7 @@ Ces guides couvrent Windows et macOS. La prise en charge du Mac est en version b
 - [Premiers pas](getting-started.md) : installation, premier lancement, gestes par défaut et pause.
 - [Gestes de souris](gestures.md) : enregistrer des tracés et des formes, ajouter des boutons ou des touches, et rechercher ou modifier des gestes.
 - [Coins et bords de l’écran](screen-edges.md) : volume, luminosité, clics et frottement des bords.
+- [Bibliothèque d’actions](action-library.md) : rechercher des actions prédéfinies, régler les paramètres et vérifier leur disponibilité par plateforme.
 - [Actions](actions.md) : choisir ce que fait un geste, y compris la recherche web sur le texte sélectionné.
 - [Règles par application](per-app.md) : substitutions, exclusions et comportement en plein écran.
 
@@ -30,4 +31,4 @@ Ces guides couvrent Windows et macOS. La prise en charge du Mac est en version b
 - [Configuration, sauvegarde et mises à jour](config.md) : fichiers, restauration, rechargement automatique, mises à jour et désinstallation.
 - [Dépannage](troubleshooting.md) : gestes qui ne se déclenchent pas, autorisations, saisie de texte et journaux.
 
-Pour un résultat rapide, [tracez votre premier geste](getting-started.md#tracer-votre-premier-geste). Pour faire saisir du texte par un geste, passez directement aux [recettes Lua](lua-examples.md#saisir-un-texte-fixe).
+Pour un résultat rapide, [tracez votre premier geste](getting-started.md#tracer-votre-premier-geste). Pour faire saisir du texte par un geste, choisissez **Insérer du texte** dans la [bibliothèque d’actions](action-library.md).

@@ -4,11 +4,12 @@
 //! 运行时只读写本格式。字段命名遵循本 crate 词汇表（Scope/Binding/Pattern/Action）。
 
 use serde::{Deserialize, Serialize};
+use serde::ser::SerializeStruct;
 
 // ================================================================ 配置根
 
 /// config.json 根结构。
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Deserialize)]
 #[serde(default)]
 pub struct Config {
     /// schema 版本，用于未来迁移。
@@ -139,6 +140,9 @@ pub struct Binding {
     /// 停用：保留在配置里但不参与识别（其触发键也不再拦截）。
     #[serde(default, skip_serializing_if = "std::ops::Not::not")]
     pub disabled: bool,
+    /// 草稿：尚未完成的绑定，读取时统一停用，完成后由设置界面启用。
+    #[serde(default, skip_serializing_if = "std::ops::Not::not")]
+    pub draft: bool,
 }
 
 // ================================================================ 模式步骤
@@ -240,8 +244,8 @@ impl<'de> Deserialize<'de> for PatternKey {
 
 // ================================================================ 动作
 
-/// 手势识别后执行的动作（8 种）。
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+/// 手势识别后执行的动作；未知类型保留原始 JSON。
+#[derive(Debug, Clone, PartialEq, Serialize)]
 #[serde(tag = "type", rename_all = "snake_case")]
 pub enum Action {
     /// 按键/文字序列（语法见 [`crate::keyseq`]）。
@@ -285,6 +289,9 @@ pub enum Action {
         regex: bool,
         #[serde(default)]
         if_running: IfRunning,
+        /// 仅预置“打开应用”按程序身份激活；旧动作仍按窗口条件查找。
+        #[serde(default, skip_serializing_if = "std::ops::Not::not")]
+        activate_by_identity: bool,
     },
     /// 控制目标窗口。
     WindowOp {
@@ -294,6 +301,87 @@ pub enum Action {
     },
     /// 系统功能键（亮度/媒体等）。
     SystemKey { key: String },
+    /// 预置动作在执行时按平台和界面语言展开。
+    Preset {
+        id: String,
+        #[serde(default, skip_serializing_if = "serde_json::Map::is_empty")]
+        params: serde_json::Map<String, serde_json::Value>,
+    },
+    /// 较新版本的动作；存盘时不增加包装，也不迁移其内容。
+    #[serde(untagged)]
+    Unknown(serde_json::Value),
+}
+
+// 只反序列化已知标签；新增类型时与 Action 字段、KNOWN_TYPES 一起维护。
+#[derive(Deserialize)]
+#[serde(remote = "Action", tag = "type", rename_all = "snake_case")]
+enum KnownAction {
+    KeySequence {
+        keys: String,
+        #[serde(default)]
+        mode: SendMode,
+        #[serde(default)]
+        secured: bool,
+        /// 执行前先激活目标窗口。
+        #[serde(default)]
+        activate_target: bool,
+    },
+    Shell { script: String },
+    Lua { code: String },
+    OpenUrl {
+        url_template: String,
+        #[serde(default)]
+        browser: Option<String>,
+    },
+    Menu {
+        columns: u32,
+        items: Vec<MenuItem>,
+    },
+    LaunchApp {
+        exe: String,
+        #[serde(default)]
+        args: Option<String>,
+        #[serde(default)]
+        elevate: bool,
+        #[serde(default)]
+        win_class: Option<String>,
+        #[serde(default)]
+        win_title: Option<String>,
+        #[serde(default)]
+        regex: bool,
+        #[serde(default)]
+        if_running: IfRunning,
+        #[serde(default)]
+        activate_by_identity: bool,
+    },
+    WindowOp {
+        op: WindowOpKind,
+        #[serde(default)]
+        allow_child: bool,
+    },
+    SystemKey { key: String },
+    Preset {
+        id: String,
+        #[serde(default, skip_serializing_if = "serde_json::Map::is_empty")]
+        params: serde_json::Map<String, serde_json::Value>,
+    },
+}
+
+impl<'de> Deserialize<'de> for Action {
+    fn deserialize<D: serde::Deserializer<'de>>(d: D) -> Result<Self, D::Error> {
+        let raw = serde_json::Value::deserialize(d)?;
+        let tag = raw.get("type").and_then(serde_json::Value::as_str)
+            .ok_or_else(|| serde::de::Error::custom("action.type must be a string"))?;
+        // 未收录的预置动作也保留完整对象，避免丢失未来版本增加的字段。
+        if tag == "preset" && raw.get("id").and_then(serde_json::Value::as_str).is_some_and(|id| crate::presets::actions::find(id).is_none()) {
+            return Ok(Self::Unknown(raw));
+        }
+        if Self::KNOWN_TYPES.contains(&tag) {
+            KnownAction::deserialize(raw).map_err(serde::de::Error::custom)
+        } else {
+            Ok(Self::Unknown(raw))
+        }
+    }
 }
 
 /// 按键输出模式。
@@ -335,6 +423,15 @@ pub struct MenuItem {
 }
 
 impl Action {
+    /// 带参数或提权的启动必须交给程序处理，不能只聚焦已有窗口。
+    pub fn activates_app_identity(&self) -> bool {
+        matches!(self, Self::LaunchApp { activate_by_identity: true, elevate: false, args, win_class: None, win_title: None, if_running: IfRunning::Activate, .. } if args.is_none())
+    }
+
+    pub const KNOWN_TYPES: &'static [&'static str] = &[
+        "key_sequence", "shell", "lua", "open_url", "menu", "launch_app", "window_op", "system_key", "preset",
+    ];
+
     /// 深度优先访问本动作及全部嵌套动作（Menu 递归）。
     pub fn visit(&self, f: &mut impl FnMut(&Action)) {
         f(self);
@@ -478,6 +575,9 @@ impl Config {
         crate::names::attach_name_keys(self);
         for scope in &mut self.scopes {
             for b in &mut scope.bindings {
+                if b.draft {
+                    b.disabled = true;
+                }
                 b.action.visit_mut(&mut |a| match a {
                     Action::Shell { script } => *script = conv(script),
                     Action::OpenUrl { url_template, .. } => *url_template = conv(url_template),
@@ -488,23 +588,50 @@ impl Config {
         }
     }
 
+    /// 菜单里的预置动作也要求 v2；保留未来版本号。
+    pub fn saved_version(&self) -> u32 {
+        let mut version = self.version;
+        for binding in self.all_bindings() {
+            binding.action.visit(&mut |a| {
+                if matches!(a, Action::Preset { .. }) || matches!(a, Action::Unknown(raw) if raw.get("type").and_then(serde_json::Value::as_str) == Some("preset")) {
+                    version = version.max(2);
+                }
+            });
+        }
+        version
+    }
+
     pub fn to_json(&self) -> String {
         serde_json::to_string_pretty(self).expect("Config 序列化不会失败") // i18n:allow 配置损坏时的诊断信息（serde 原文混排，不进词条）
     }
 
     /// 内置默认配置：首次运行（还没有配置文件）时使用并写盘。
-    /// Windows 与 macOS 各自使用内置资源；名称按当前界面语言本地化。
+    /// 两平台共用一份手势；名称按当前界面语言本地化。
     pub fn builtin() -> Self {
         Self::builtin_for(crate::caps::Platform::CURRENT)
     }
 
     /// 指定平台的内置默认配置（设置界面与测试可取另一平台的默认值）。
     pub fn builtin_for(platform: crate::caps::Platform) -> Self {
-        let source = match platform {
-            crate::caps::Platform::Macos => include_str!("../assets/default-config-macos.json"),
-            crate::caps::Platform::Windows => include_str!("../assets/default-config.json"),
-        };
-        let mut cfg = Self::from_json(source).expect("内置配置必须能解析"); // i18n:allow 内置资源损坏属于编译期错误，测试覆盖
+        let mut cfg = Self::from_json(include_str!("../assets/default-config.json")).expect("内置配置必须能解析"); // i18n:allow 内置资源损坏属于编译期错误，测试覆盖
+        if platform == crate::caps::Platform::Macos {
+            cfg.scopes.retain(|scope| !matches!(scope.id.as_str(), "explorer" | "cmd"));
+            cfg.settings.pause_hotkey = "^%#p".into();
+            for binding in cfg.scopes.iter_mut().flat_map(|scope| &mut scope.bindings) {
+                match binding.name_key.as_deref() {
+                    Some("builtin.gesture.topmost" | "builtin.gesture.task_switcher" | "builtin.gesture.brighter" | "builtin.gesture.darker") => binding.disabled = true,
+                    Some("builtin.gesture.switch_app") => {
+                        binding.name_key = Some("builtin.gesture.mission_control".into());
+                        binding.action = Action::Preset { id: "desktop.task_view".into(), params: Default::default() };
+                    }
+                    Some("builtin.gesture.start") => binding.name_key = Some("builtin.gesture.spotlight".into()),
+                    Some("builtin.gesture.task_manager") => binding.execute_on_match = true,
+                    _ => {}
+                }
+            }
+        } else {
+            cfg.scopes.retain(|scope| !scope.app.as_ref().is_some_and(|app| crate::presets::MAC_DISABLE_SUGGESTIONS.iter().any(|(identity, _, _)| app.exe == *identity)));
+        }
         crate::names::localize_builtin(&mut cfg);
         cfg
     }
@@ -518,13 +645,23 @@ impl Config {
     }
 
     /// 读取配置；首次运行（文件不存在）写入内置默认值，设置界面随后读到的也是这一份。
-    /// 返回值第二项是首次写盘失败的原因（不影响本次运行，调用方记录即可）。
+    /// 读取失败直接返回错误；第二项是解析失败或首次写盘失败的原因，调用方须通知用户并暂停设置写盘。
     pub fn load_or_init(path: &std::path::Path) -> Result<(Self, Option<String>), String> {
-        if let Some(cfg) = Self::load_existing(path)? {
-            return Ok((cfg, None));
+        let bytes = match std::fs::read(path) {
+            Ok(bytes) => Some(bytes),
+            Err(error) if error.kind() == std::io::ErrorKind::NotFound => None,
+            Err(error) => return Err(format!("读取 {} 失败: {error}", path.display())), // i18n:allow 配置损坏时的诊断信息
+        };
+        if let Some(bytes) = bytes {
+            // 已读到的损坏内容留给用户恢复；只在内存回落，由调用方显示诊断。
+            let parsed = std::str::from_utf8(&bytes).map_err(|e| e.to_string()).and_then(Self::from_json);
+            return match parsed {
+                Ok(cfg) => Ok((cfg, None)),
+                Err(error) => Ok((Self::builtin(), Some(format!("解析 {} 失败: {error}", path.display())))), // i18n:allow 配置损坏时的诊断信息
+            };
         }
         let cfg = Self::builtin();
-        let saved = cfg.save(path).err();
+        let saved = cfg.save_live(path).err();
         Ok((cfg, saved))
     }
 
@@ -536,6 +673,24 @@ impl Config {
 
     /// 原子写入配置文件（先写临时文件再改名，避免引擎热加载读到半截内容）。
     pub fn save(&self, path: &std::path::Path) -> Result<(), String> {
+        self.write_atomic(path)
+    }
+
+    /// 引擎与设置的当前配置才需要损坏保护和 v1 备份；导出可覆盖普通文件。
+    pub fn save_live(&self, path: &std::path::Path) -> Result<(), String> {
+        if path.exists() {
+            let original = std::fs::read(path).map_err(|e| e.to_string())?;
+            let text = std::str::from_utf8(&original).map_err(|e| e.to_string())?;
+            Self::from_json(text)?;
+            let raw: serde_json::Value = serde_json::from_str(text.trim_start_matches('\u{feff}')).map_err(|e| e.to_string())?;
+            if raw.get("version").and_then(serde_json::Value::as_u64).unwrap_or(1) == 1 && self.saved_version() >= 2 {
+                backup_v1(path, &original)?;
+            }
+        }
+        self.write_atomic(path)
+    }
+
+    fn write_atomic(&self, path: &std::path::Path) -> Result<(), String> {
         if let Some(dir) = path.parent() {
             std::fs::create_dir_all(dir).map_err(|e| format!("创建目录 {} 失败: {e}", dir.display()))?; // i18n:allow 配置损坏时的诊断信息（serde 原文混排，不进词条）
         }
@@ -543,6 +698,75 @@ impl Config {
         std::fs::write(&tmp, self.to_json()).map_err(|e| format!("写入 {} 失败: {e}", tmp.display()))?; // i18n:allow 配置损坏时的诊断信息（serde 原文混排，不进词条）
         std::fs::rename(&tmp, path).map_err(|e| format!("替换 {} 失败: {e}", path.display())) // i18n:allow 配置损坏时的诊断信息（serde 原文混排，不进词条）
     }
+
+    /// 显式恢复：先完整保留坏文件，再写默认值；失败时恢复原文件。
+    pub fn recover_defaults(path: &std::path::Path, now: std::time::SystemTime) -> Result<Self, String> {
+        Self::recover_to(path, Self::builtin(), now)
+    }
+
+    /// 显式恢复为指定配置：先完整备份坏文件，写入失败时回滚。
+    pub fn recover_to(path: &std::path::Path, mut cfg: Self, now: std::time::SystemTime) -> Result<Self, String> {
+        if Self::load(path).is_ok() {
+            return Err(crate::i18n::t("config.recovery_readable").into());
+        }
+        cfg.migrate();
+        let backup = path.with_file_name(format!("config.broken-{}.json", backup_timestamp(now)?));
+        // 独占创建避免同一秒内的第二次恢复覆盖上次保留的原件。
+        let reservation = std::fs::OpenOptions::new().write(true).create_new(true).open(&backup).map_err(|e| e.to_string())?;
+        drop(reservation);
+        if let Err(error) = std::fs::rename(path, &backup) {
+            let _ = std::fs::remove_file(&backup);
+            return Err(error.to_string());
+        }
+        if let Err(error) = cfg.write_atomic(path) {
+            let _ = std::fs::rename(&backup, path);
+            return Err(error);
+        }
+        Ok(cfg)
+    }
+}
+
+/// UTC 时间戳，避免依赖平台时区 API；公历换算以 400 年为周期。
+fn backup_timestamp(now: std::time::SystemTime) -> Result<String, String> {
+    let seconds = now.duration_since(std::time::UNIX_EPOCH).map_err(|e| e.to_string())?.as_secs();
+    let days = i64::try_from(seconds / 86400).map_err(|e| e.to_string())? + 719468;
+    let era = days / 146097;
+    let day = days - era * 146097;
+    let year_in_era = (day - day / 1460 + day / 36524 - day / 146096) / 365;
+    let day_of_year = day - (365 * year_in_era + year_in_era / 4 - year_in_era / 100);
+    let month_index = (5 * day_of_year + 2) / 153;
+    let date = day_of_year - (153 * month_index + 2) / 5 + 1;
+    let month = month_index + if month_index < 10 { 3 } else { -9 };
+    let year = year_in_era + era * 400 + i64::from(month <= 2);
+    Ok(format!("{year:04}{month:02}{date:02}-{:02}{:02}{:02}", seconds / 3600 % 24, seconds / 60 % 60, seconds % 60))
+}
+
+impl Serialize for Config {
+    fn serialize<S: serde::Serializer>(&self, serializer: S) -> Result<S::Ok, S::Error> {
+        let mut state = serializer.serialize_struct("Config", 3)?;
+        state.serialize_field("version", &self.saved_version())?;
+        state.serialize_field("scopes", &self.scopes)?;
+        state.serialize_field("settings", &self.settings)?;
+        state.end()
+    }
+}
+
+/// 使用独占创建，已有备份绝不覆盖；保留原文件的字节（含 BOM 和格式）。
+fn backup_v1(path: &std::path::Path, original: &[u8]) -> Result<(), String> {
+    use std::io::Write;
+    let backup = path.with_file_name("config.v1.bak.json");
+    let file = std::fs::OpenOptions::new().write(true).create_new(true).open(&backup);
+    let mut file = match file {
+        Ok(file) => file,
+        Err(e) if e.kind() == std::io::ErrorKind::AlreadyExists && backup.is_file() => return Ok(()),
+        Err(e) => return Err(e.to_string()),
+    };
+    if let Err(e) = file.write_all(original).and_then(|()| file.sync_all()) {
+        drop(file);
+        let _ = std::fs::remove_file(&backup);
+        return Err(e.to_string());
+    }
+    Ok(())
 }
 
 /// 默认配置文件路径：Windows 使用 APPDATA；macOS 使用 Library/Application Support。
@@ -568,86 +792,43 @@ mod builtin_tests {
     use super::*;
 
     #[test]
-    fn mac_defaults_enable_supported_actions_and_keep_topmost_disabled() {
-        let source = include_str!("../assets/default-config-macos.json");
-        let cfg = Config::from_json(source).unwrap();
-        assert_eq!(cfg.scopes.len(), 1 + crate::presets::MAC_DISABLE_SUGGESTIONS.len());
-        for (identity, _, _) in crate::presets::MAC_DISABLE_SUGGESTIONS {
-            assert!(cfg.scopes.iter().any(|scope| scope.disabled && scope.app.as_ref().is_some_and(|app| app.exe == *identity)));
-        }
-        assert_eq!(cfg.settings.pause_hotkey, "^%#p");
-        assert!(cfg.all_bindings().count() >= 40);
-        for scope in &cfg.scopes {
-            assert!(!matches!(scope.id.as_str(), "explorer" | "cmd"));
-            if scope.app.is_some() {
-                assert!(scope.disabled && scope.bindings.is_empty());
+    fn both_platforms_share_defaults_and_keep_platform_preferences() {
+        use crate::caps::Platform;
+        use crate::presets::actions::{expand, find, Params};
+        for platform in [Platform::Windows, Platform::Macos] {
+            let cfg = Config::builtin_for(platform);
+            assert_eq!(cfg.version, 2);
+            assert_eq!(cfg.scopes.len(), if platform == Platform::Macos { 1 + crate::presets::MAC_DISABLE_SUGGESTIONS.len() } else { 3 });
+            if platform == Platform::Macos {
+                for (identity, _, _) in crate::presets::MAC_DISABLE_SUGGESTIONS {
+                    assert!(cfg.scopes.iter().any(|scope| scope.disabled && scope.app.as_ref().is_some_and(|app| app.exe == *identity)));
+                }
+                assert!(cfg.scopes.iter().all(|scope| !matches!(scope.id.as_str(), "explorer" | "cmd")));
             }
-            for binding in &scope.bindings {
-                assert!(crate::i18n::try_t(binding.name_key.as_deref().unwrap()).is_some());
+            for binding in cfg.all_bindings() {
                 binding.action.visit(&mut |action| {
-                    if let Action::KeySequence { keys, .. } = action {
-                        let seq = crate::keyseq::parse(keys, false).unwrap();
-                        for step in seq.actions {
-                            if let crate::keyseq::Action::Key { key: crate::keyseq::Key::Vk(vk), .. } = step {
-                                assert!(crate::keymap::vk_to_kvk(vk).is_some());
-                            }
-                        }
-                    } else if matches!(action, Action::WindowOp { op: WindowOpKind::ToggleTopmost, .. }) {
-                        assert!(binding.disabled);
-                    } else {
-                        assert!(!matches!(action, Action::Lua { .. }));
-                        if !matches!(action, Action::SystemKey { key } if key.starts_with("BRIGHTNESS_")) {
-                            assert!(!binding.disabled);
+                    if let Action::Preset { id, params } = action {
+                        assert!(find(id).is_some(), "{id}");
+                        let expanded = expand(id, platform, params, crate::i18n::Lang::EnUs);
+                        if let Ok(Action::KeySequence { keys, .. }) = expanded {
+                            let seq = crate::keyseq::parse(&keys, false).unwrap();
+                            assert!(crate::caps::keys_supported(&seq, platform));
                         }
                     }
                 });
             }
+            let close = expand("browser.close_tab", platform, &Params::new(), crate::i18n::Lang::EnUs).unwrap();
+            assert!(matches!(close, Action::KeySequence { keys, .. } if keys == if platform == Platform::Macos { "#w" } else { "^w" }));
+            let rubbing = cfg.all_bindings().find(|b| b.name_key.as_deref() == Some("builtin.gesture.task_manager")).unwrap();
+            assert!(!rubbing.disabled);
+            assert_eq!(rubbing.execute_on_match, platform == Platform::Macos);
+            assert_eq!(rubbing.pattern, [Step::Edge { edge: crate::edge::RIGHT }, Step::Trace { points: vec![50,50,50,0,50,50,50,0,50,50] }]);
+            let corner = |edge| cfg.all_bindings().find(|b| b.pattern == [Step::Edge { edge }]).unwrap();
+            assert_eq!(corner(crate::edge::RIGHT_TOP).disabled, platform == Platform::Macos);
+            assert_eq!(cfg.settings.pause_hotkey, if platform == Platform::Macos { "^%#p" } else { "#({ESC})" });
+            let expected = if platform == Platform::Macos { "desktop.task_view" } else { "desktop.switch_app" };
+            assert!(matches!(&corner(crate::edge::LEFT_TOP).action, Action::Preset { id, .. } if id == expected));
         }
-        let lower = source.to_ascii_lowercase();
-        for windows_only in [".exe", "c:\\", "taskkill", "start cmd", "explorer"] {
-            assert!(!lower.contains(windows_only), "{windows_only}");
-        }
-        let key = |name: &str| cfg.all_bindings().find(|b| b.name_key.as_deref() == Some(name)).unwrap().action.clone();
-        for (name, expected) in [("back", "#["), ("forward", "#]"), ("close_tab", "#w"),
-            ("home", "#{UP}"), ("end", "#{DOWN}"),
-            ("prev_tab", "^+{TAB}"), ("next_tab", "^{TAB}")] {
-            assert!(matches!(key(&format!("builtin.gesture.{name}")), Action::KeySequence { keys, .. } if keys == expected));
-        }
-        assert!(matches!(key("builtin.gesture.minimize"), Action::WindowOp { op: WindowOpKind::Minimize, .. }));
-        assert!(matches!(key("builtin.gesture.maximize"), Action::WindowOp { op: WindowOpKind::ToggleMaximize, .. }));
-        assert!(matches!(key("builtin.gesture.kill"), Action::Shell { script } if script == "/bin/kill -9 %MS_PID%"));
-        assert!(matches!(key("builtin.gesture.task_manager"), Action::LaunchApp { exe, .. } if exe == "com.apple.ActivityMonitor"));
-        assert!(matches!(key("builtin.gesture.system_settings"), Action::LaunchApp { exe, .. } if exe == "com.apple.systempreferences"));
-        let corner = |edge| cfg.all_bindings().find(|b| b.pattern == [Step::Edge { edge }]).unwrap();
-        for (edge, name, keys) in [
-            (crate::edge::LEFT_TOP, "builtin.gesture.mission_control", "^{UP}"),
-            (crate::edge::LEFT_BOTTOM, "builtin.gesture.spotlight", "#{SPACE}"),
-            (crate::edge::RIGHT_BOTTOM, "builtin.gesture.show_desktop", "{F11}"),
-        ] {
-            let binding = corner(edge);
-            assert!(!binding.disabled);
-            assert_eq!(binding.name_key.as_deref(), Some(name));
-            assert!(matches!(&binding.action, Action::KeySequence { keys: actual, .. } if actual == keys));
-        }
-        assert!(corner(crate::edge::RIGHT_TOP).disabled);
-        for (name, edge, modifier, system) in [
-            ("volume_up", crate::edge::TOP, PatternKey::Wheel(-1), "VOLUME_UP"),
-            ("volume_down", crate::edge::TOP, PatternKey::Wheel(1), "VOLUME_DOWN"),
-            ("mute", crate::edge::TOP, PatternKey::Mouse(MouseButton::Middle), "MUTE"),
-            ("play_pause", crate::edge::TOP, PatternKey::Mouse(MouseButton::Right), "PLAY_PAUSE"),
-            ("brighter", crate::edge::BOTTOM, PatternKey::Wheel(-1), "BRIGHTNESS_UP"),
-            ("darker", crate::edge::BOTTOM, PatternKey::Wheel(1), "BRIGHTNESS_DOWN"),
-        ] {
-            let name = format!("builtin.gesture.{name}");
-            let binding = cfg.all_bindings().find(|b| b.name_key.as_deref() == Some(&name)).unwrap();
-            assert_eq!(binding.pattern, [Step::Edge { edge }, Step::Press { key: modifier }]);
-            assert!(matches!(&binding.action, Action::SystemKey { key } if key == system));
-            assert_eq!(binding.disabled, edge == crate::edge::BOTTOM);
-        }
-        let rubbing = cfg.all_bindings().find(|b| b.name_key.as_deref() == Some("builtin.gesture.task_manager")).unwrap();
-        assert!(!rubbing.disabled);
-        assert!(rubbing.execute_on_match, "无按键的摩擦手势必须在匹配时执行");
-        assert_eq!(rubbing.pattern, [Step::Edge { edge: crate::edge::RIGHT }, Step::Trace { points: vec![50,50,50,0,50,50,50,0,50,50] }]);
     }
 
     #[test]
@@ -689,6 +870,16 @@ mod builtin_tests {
                 }
             }
         }
+    }
+
+    #[test]
+    fn elevated_launch_cannot_activate_by_identity() {
+        let mut action: Action = serde_json::from_str(r#"{"type":"launch_app","exe":"editor.exe","activate_by_identity":true,"elevate":false}"#).unwrap();
+        assert!(action.activates_app_identity());
+        if let Action::LaunchApp { elevate, .. } = &mut action { *elevate = true; }
+        assert!(!action.activates_app_identity());
+        if let Action::LaunchApp { elevate, .. } = &mut action { *elevate = false; }
+        assert!(action.activates_app_identity());
     }
 
     #[test]

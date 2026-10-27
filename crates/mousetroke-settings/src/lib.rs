@@ -18,7 +18,8 @@ use std::path::{Path, PathBuf};
 use std::sync::atomic::{AtomicBool, Ordering};
 
 use mousetroke_core::i18n::{keys, t};
-use mousetroke_core::schema::{Config, Step};
+use mousetroke_core::schema::{Action, Config, Step};
+use mousetroke_core::presets::actions::{self as action_presets, Params};
 use mousetroke_core::shape;
 use mousetroke_core::caps;
 use serde::Serialize;
@@ -91,6 +92,65 @@ struct InitState {
     system_langs: Vec<String>,
     /// 后端按配置 + 系统语言解析出的语言标签。
     resolved_lang: String,
+    action_catalog: ActionCatalog,
+}
+
+/// 未知动作的原始 JSON 仍在 config 内；此处给选择器与只读展示提供判定和词条。
+#[derive(Serialize)]
+#[serde(rename_all = "camelCase")]
+struct ActionCatalog {
+    presets: &'static [action_presets::Preset],
+    defaults: BTreeMap<&'static str, Params>,
+    /// "常用"分类：内置默认配置用到的预置动作，加上输入文字、搜索选中文字、打开网站。
+    common_preset_ids: Vec<&'static str>,
+    known_action_types: &'static [&'static str],
+    unknown_action_key: &'static str,
+}
+
+/// 常用动作 ID：默认配置（当前平台）里出现的预置动作 ∪ 三个高频带参数动作，
+/// 按注册表顺序排列；配置里的未知 ID 不会出现（前端遇到时按未知动作处理）。
+fn common_preset_ids() -> Vec<&'static str> {
+    let mut used = std::collections::BTreeSet::new();
+    for binding in Config::builtin().all_bindings() {
+        binding.action.visit(&mut |a| {
+            if let Action::Preset { id, .. } = a {
+                used.insert(id.clone());
+            }
+        });
+    }
+    for extra in ["text.type", "text.search", "open.website"] {
+        used.insert(extra.into());
+    }
+    action_presets::REGISTRY.iter().map(|p| p.id).filter(|id| used.contains(*id)).collect()
+}
+
+#[tauri::command]
+fn action_catalog() -> ActionCatalog {
+    ActionCatalog {
+        presets: action_presets::REGISTRY,
+        defaults: action_presets::REGISTRY.iter().map(|p| (p.id, p.default_params(mousetroke_core::i18n::lang()))).collect(),
+        common_preset_ids: common_preset_ids(),
+        known_action_types: Action::KNOWN_TYPES,
+        unknown_action_key: "preset.status.unknown",
+    }
+}
+
+#[tauri::command]
+fn expand_preset(id: String, params: Params, ui_lang: String) -> MsgResult<Action> {
+    let lang = mousetroke_core::i18n::Lang::from_tag(&ui_lang).unwrap_or_else(mousetroke_core::i18n::lang);
+    action_presets::expand(&id, caps::Platform::CURRENT, &params, lang).map_err(|e| Msg::new(e.reason_key(), &[]))
+}
+
+#[tauri::command]
+fn validate_preset(id: String, params: Params, ui_lang: String) -> MsgResult<()> {
+    let lang = mousetroke_core::i18n::Lang::from_tag(&ui_lang).unwrap_or_else(mousetroke_core::i18n::lang);
+    action_presets::resolve(&id, caps::Platform::CURRENT, &params, lang).map(|_| ()).map_err(|error| {
+        let params = match &error {
+            action_presets::PresetError::InvalidParam { name, .. } => vec![("param", (*name).into())],
+            _ => vec![],
+        };
+        Msg::new(error.reason_key(), &params)
+    })
 }
 
 #[derive(Serialize)]
@@ -137,6 +197,7 @@ fn init_state(paths: State<AppPaths>) -> InitState {
         engine: engine_status(),
         system_langs,
         resolved_lang: resolved.tag().into(),
+        action_catalog: action_catalog(),
     }
 }
 
@@ -146,7 +207,10 @@ fn config_snapshot(path: &Path) -> (Config, bool, Option<String>) {
     let (config, load_error) = if exists {
         match Config::load(path) {
             Ok(c) => (c, None),
-            Err(e) => (Config::default(), Some(e)),
+            Err(e) => {
+                eprintln!("{e}");
+                (Config::builtin(), Some(e))
+            }
         }
     } else {
         // 首次运行（引擎还没生成配置文件）：展示内置默认手势，保存时写盘
@@ -173,7 +237,7 @@ fn save_config(paths: State<AppPaths>, config: Config) -> MsgResult<()> {
 
 fn save_config_at(path: &Path, config: &Config) -> MsgResult<()> {
     validate_strokes(config)?;
-    config.save(path).map_err(|e| Msg::new(keys::ERROR_SAVE, &[("path", path.display().to_string()), ("err", e)]))
+    config.save_live(path).map_err(|e| Msg::new(keys::ERROR_SAVE, &[("path", path.display().to_string()), ("err", e)]))
 }
 
 #[tauri::command]
@@ -276,7 +340,25 @@ fn load_config_file(path: String) -> MsgResult<Config> {
 
 #[tauri::command]
 fn export_config(path: String, config: Config) -> MsgResult<()> {
-    save_config_at(Path::new(&path), &config)
+    validate_strokes(&config)?;
+    config.save(Path::new(&path)).map_err(|e| Msg::new(keys::ERROR_SAVE, &[("path", path), ("err", e)]))
+}
+
+#[tauri::command]
+fn recover_config(paths: State<AppPaths>, config: Option<Config>) -> MsgResult<Config> {
+    let recovered = if let Some(config) = config {
+        validate_strokes(&config)?;
+        Config::recover_to(&paths.config, config, std::time::SystemTime::now())
+    } else {
+        Config::recover_defaults(&paths.config, std::time::SystemTime::now())
+    };
+    recovered
+        .map_err(|e| Msg::new(keys::ERROR_SAVE, &[("path", paths.config.display().to_string()), ("err", e)]))
+}
+
+#[tauri::command]
+async fn pick_folder(window: WebviewWindow, title: String) -> Option<String> {
+    rfd::FileDialog::new().set_title(&title).set_parent(&window).pick_folder().map(|p| p.to_string_lossy().into_owned())
 }
 
 /// 文件选择。`kind`：json | exe | any；`save` 为 true 时是保存对话框。
@@ -548,6 +630,9 @@ pub fn run(config: Option<PathBuf>) {
         .manage(AppPaths { config })
         .invoke_handler(tauri::generate_handler![
             init_state,
+            action_catalog,
+            expand_preset,
+            validate_preset,
             save_config,
             get_engine_status,
             set_ui_lang,
@@ -561,6 +646,8 @@ pub fn run(config: Option<PathBuf>) {
             load_config_file,
             export_config,
             pick_file,
+            pick_folder,
+            recover_config,
             running_apps,
             app_icons,
             resolve_app,
@@ -603,6 +690,97 @@ pub fn run(config: Option<PathBuf>) {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn settings_never_saves_fallback_defaults_over_an_unparseable_file() {
+        let dir = std::env::temp_dir().join(format!("mousetroke-settings-protection-{}", std::process::id()));
+        std::fs::create_dir(&dir).unwrap();
+        let path = dir.join("config.json");
+        let original = "{ invalid JSON";
+        std::fs::write(&path, original).unwrap();
+        let (config, exists, error) = config_snapshot(&path);
+        assert!(exists && error.is_some());
+        assert!(config.all_bindings().count() >= 40);
+        assert!(save_config_at(&path, &config).is_err());
+        assert_eq!(std::fs::read_to_string(&path).unwrap(), original);
+        assert_eq!(std::fs::read_dir(&dir).unwrap().count(), 1);
+        std::fs::remove_file(&path).unwrap();
+        std::fs::remove_dir(&dir).unwrap();
+    }
+
+    #[test]
+    fn preset_validation_accepts_native_and_advanced_actions_and_identifies_bad_params() {
+        for (id, params) in [
+            ("window.snap_left", serde_json::json!({})),
+            ("text.type", serde_json::json!({"text":"hello"})),
+            ("text.search", serde_json::json!({"engine":"custom","url":"https://example.org/?q=%MS_SELECTED_TEXT%"})),
+            ("text.datetime", serde_json::json!({"format":"custom","custom_format":"YYYY-MM-DD HH:mm"})),
+            ("edit.copy", serde_json::json!({})),
+        ] {
+            assert!(validate_preset(id.into(), params.as_object().unwrap().clone(), "en-US".into()).is_ok(), "{id}");
+        }
+        for (id, params, param) in [
+            ("text.search", serde_json::json!({"engine":"custom","url":"https://example.org/"}), "url"),
+            ("text.search", serde_json::json!({"engine":"custom","url":"file://example/%MS_SELECTED_TEXT%"}), "url"),
+            ("text.datetime", serde_json::json!({"format":"custom","custom_format":"YYYY-MM-DD '"}), "custom_format"),
+        ] {
+            let error = validate_preset(id.into(), params.as_object().unwrap().clone(), "en-US".into()).unwrap_err();
+            assert_eq!(error.key, "preset.status.invalid_param");
+            assert_eq!(error.params["param"], param);
+        }
+    }
+
+    #[test]
+    fn preset_validation_reports_paste_delay_range_errors() {
+        for id in ["text.type", "text.datetime"] {
+            for delay in ["49", "5001", "150.5", "oops"] {
+                let mut params = serde_json::json!({"text":"hello","paste_delay_ms":delay}).as_object().unwrap().clone();
+                let error = validate_preset(id.into(), params.clone(), "en-US".into()).unwrap_err();
+                assert_eq!(error.key, "preset.status.invalid_param");
+                assert_eq!(error.params["param"], "paste_delay_ms");
+                params.insert("method".into(), serde_json::json!("type"));
+                assert!(validate_preset(id.into(), params, "en-US".into()).is_ok());
+            }
+        }
+    }
+
+    #[test]
+    fn settings_catalog_exposes_future_action_presentation_and_expansion() {
+        let catalog = serde_json::to_value(action_catalog()).unwrap();
+        assert_eq!(catalog["presets"].as_array().unwrap().len(), 87);
+        assert_eq!(catalog["presets"][0]["advanced_expansion"]["windows"], true);
+        assert_eq!(catalog["presets"].as_array().unwrap().iter().find(|p| p["id"] == "window.snap_left").unwrap()["advanced_expansion"]["windows"], false);
+        assert_eq!(catalog["unknownActionKey"], "preset.status.unknown");
+        assert!(catalog["knownActionTypes"].as_array().unwrap().contains(&serde_json::json!("preset")));
+        assert!(expand_preset("edit.copy".into(), Params::new(), "en-US".into()).is_ok());
+        assert_eq!(expand_preset("future.preset".into(), Params::new(), "en-US".into()).unwrap_err().key, "preset.status.unknown");
+        assert_eq!(expand_preset("window.snap_left".into(), Params::new(), "en-US".into()).unwrap_err().key, "preset.status.native_only");
+    }
+
+    #[test]
+    fn settings_catalog_common_actions_follow_builtin_defaults_and_expand_with_params() {
+        let common = &action_catalog().common_preset_ids;
+        assert!(common.contains(&"browser.close_tab"));
+        // 常用 = 默认配置用到的动作 + 输入文字、搜索选中文字、打开网站
+        for extra in ["text.type", "text.search", "open.website"] {
+            assert!(common.contains(&extra), "{extra} 应在常用分类里");
+        }
+        for id in common.iter() {
+            assert!(action_presets::find(id).is_some(), "{id} 不在注册表");
+        }
+        // 与注册表顺序一致（选择器按注册表顺序展示）
+        let registry_order: Vec<_> = action_presets::REGISTRY.iter().map(|p| p.id).filter(|id| common.contains(id)).collect();
+        assert_eq!(common.as_slice(), registry_order.as_slice());
+
+        // 带参数展开：搜索引擎默认值随界面语言，必填参数缺失时报错
+        let search = expand_preset("text.search".into(), serde_json::json!({ "engine": "baidu" }).as_object().unwrap().clone(), "zh-CN".into()).unwrap();
+        assert!(serde_json::to_string(&search).unwrap().contains("baidu.com"));
+        let translate = expand_preset("text.translate".into(), serde_json::json!({ "service": "deepl", "target_language": "en-US" }).as_object().unwrap().clone(), "zh-CN".into()).unwrap();
+        assert!(serde_json::to_string(&translate).unwrap().contains("deepl.com"));
+        let mut empty = Params::new();
+        empty.insert("url".into(), serde_json::json!(""));
+        assert_eq!(expand_preset("open.website".into(), empty, "en-US".into()).unwrap_err().key, "preset.status.invalid_param");
+    }
 
     #[cfg(target_os = "macos")]
     #[test]

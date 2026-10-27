@@ -1,5 +1,6 @@
+import { persistedConfig } from "./store";
 import { invoke } from "@tauri-apps/api/core";
-import type { AppInfo, Config, EngineStatus, InitState, PermissionStatus, PresetApp, RunningApp } from "./types";
+import type { Action, ActionCatalog, AppInfo, Config, EngineStatus, InitState, PermissionStatus, PresetApp, RunningApp } from "./types";
 import { t, type MsgKey } from "./i18n";
 import zh from "../../../../i18n/zh-CN.json";
 
@@ -12,7 +13,10 @@ export interface Msg {
 // 后端命令的薄封装（命令定义见 src/main.rs）。
 export const api = {
   initState: () => invoke<InitState>("init_state"),
-  saveConfig: (config: Config) => invoke<void>("save_config", { config }),
+  actionCatalog: () => invoke<ActionCatalog>("action_catalog"),
+  expandPreset: (id: string, params: Record<string, unknown>, uiLang: string) => invoke<Action>("expand_preset", { id, params, uiLang }),
+  validatePreset: (id: string, params: Record<string, string>, uiLang: string) => invoke<void>("validate_preset", { id, params, uiLang }),
+  saveConfig: (config: Config) => invoke<void>("save_config", { config: persistedConfig(config) }),
   engineStatus: () => invoke<EngineStatus>("get_engine_status"),
   setUiLang: (tag: string) => invoke<void>("set_ui_lang", { tag }),
   /** 校验结果直接给出已翻译的错误文本；合法返回 null。 */
@@ -25,9 +29,11 @@ export const api = {
   shapeLimits: (sample: number[]) => invoke<{ accept: number; margin: number }>("shape_limits", { sample }),
   importLegacy: (gestures: string, prefs: string | null) => invoke<Config>("import_legacy", { gestures, prefs }),
   loadConfigFile: (path: string) => invoke<Config>("load_config_file", { path }),
-  exportConfig: (path: string, config: Config) => invoke<void>("export_config", { path, config }),
+  exportConfig: (path: string, config: Config) => invoke<void>("export_config", { path, config: persistedConfig(config) }),
   pickFile: (kind: "json" | "exe" | "any", save: boolean, title: string) =>
     invoke<string | null>("pick_file", { kind, save, title }),
+  pickFolder: (title: string) => invoke<string | null>("pick_folder", { title }),
+  recoverConfig: (config?: Config) => invoke<Config>("recover_config", { config: config ? persistedConfig(config) : null }),
   runningApps: () => invoke<RunningApp[]>("running_apps"),
   resolveApp: (path: string) => invoke<string>("resolve_app", { path }),
   pickWindow: () => invoke<{ exe: string; title: string } | null>("pick_window"),

@@ -10,7 +10,7 @@ order: 3
 
 Öffnen Sie **Alle Apps → Mausgesten → Neue Geste**. Benennen Sie sie und wählen Sie dann unter **Wie sie beginnt**: **Die rechte Maustaste gedrückt halten**, **Die mittlere Maustaste gedrückt halten**, **Die seitliche Taste 1 gedrückt halten** oder **Die seitliche Taste 2 gedrückt halten**. Die seitlichen Tasten entsprechen X1 und X2.
 
-Halten Sie im Zeichenbereich die linke oder rechte Maustaste gedrückt, zeichnen Sie und lassen Sie los. Der Aufnahmebereich akzeptiert beide Tasten unabhängig von dem ausgewählten Auslöser. Gerade Segmente werden zu einer gerichteten Zeichenfolge wie `←` oder `↓→`; zeichnen Sie erneut, um sie zu ersetzen. Wählen Sie eine [Aktion](actions.md) und probieren Sie die Geste außerhalb der Einstellungen mit der tatsächlichen Auslösertaste aus.
+Halten Sie im Zeichenbereich die linke oder rechte Maustaste gedrückt, zeichnen Sie und lassen Sie los. Der Aufnahmebereich akzeptiert beide Tasten unabhängig von dem ausgewählten Auslöser. Gerade Segmente werden zu einer gerichteten Zeichenfolge wie `←` oder `↓→`; zeichnen Sie erneut, um sie zu ersetzen. Klicken Sie auf **Aktion auswählen**, suchen oder stöbern Sie in der [Aktionsbibliothek](action-library.md), wählen Sie eine Voreinstellung und legen Sie die nötigen Parameter fest. Eigene Tastenfolgen, Befehle, Lua oder Menüs finden Sie unter **Erweitert**; siehe [Aktionen](actions.md). Probieren Sie die Geste außerhalb der Einstellungen mit der tatsächlichen Auslösertaste aus.
 
 ## Eine Form aufnehmen
 

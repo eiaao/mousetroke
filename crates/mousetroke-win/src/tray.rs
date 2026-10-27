@@ -269,14 +269,18 @@ pub fn open_settings() {
 }
 
 fn open_settings_page(about: bool) {
-    let Ok(exe) = std::env::current_exe() else { return };
+    if let Err(error) = start_settings(about) { crate::log!("打开设置失败: {error}"); }
+}
+
+pub(crate) fn try_open_settings() -> Result<(), String> { start_settings(false) }
+
+fn start_settings(about: bool) -> Result<(), String> {
+    let exe = std::env::current_exe().map_err(|error| format!("Find settings executable: {error}"))?;
     // 直接创建进程：ShellExecute 会把整套外壳组件加载进常驻的引擎进程（实测工作集 +12MB）
     let mut cmd = std::process::Command::new(exe);
     cmd.arg("settings").args(cfg_path());
     if about { cmd.arg("--about"); }
-    if let Err(e) = cmd.spawn() {
-        crate::log!("打开设置失败: {e}");
-    }
+    cmd.spawn().map(|_| ()).map_err(|error| format!("Open settings: {error}"))
 }
 
 fn open_config_dir() {

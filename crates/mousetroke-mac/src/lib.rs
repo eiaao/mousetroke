@@ -46,6 +46,8 @@ mod overlay;
 #[cfg(target_os = "macos")]
 pub mod permissions;
 #[cfg(target_os = "macos")]
+pub mod preset_actions;
+#[cfg(target_os = "macos")]
 mod selftest;
 
 #[cfg(target_os = "macos")]

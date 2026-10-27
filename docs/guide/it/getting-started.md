@@ -34,6 +34,10 @@ Le azioni integrate seguono la piattaforma: le scorciatoie del browser usano Ctr
 
 Un semplice clic destro continua ad aprire il menu contestuale dell'applicazione. Restare fermi abbastanza a lungo fa inoltre passare il pulsante per il clic o il trascinamento normale; regola quel tempo in [Preferenze](gestures.md#riconoscimento-e-aspetto).
 
+## Creare un gesto
+
+Apri **Tutte le app → Gesti del mouse → Nuovo gesto**, scegli il pulsante di attivazione e registra il disegno. Clicca **Scegli azione** per cercare o esplorare la [libreria delle azioni](action-library.md), seleziona un’azione predefinita e compila i parametri. Le modifiche vengono salvate automaticamente quando il gesto è valido; provalo fuori dalle impostazioni. Consulta [Gesti del mouse](gestures.md) per i dettagli sulla registrazione.
+
 ## Pausa
 
 Su Windows scegli **Metti in pausa i gesti**, poi **Riprendi i gesti** per ripristinarli. Su Mac, **Metti in pausa i gesti** mantiene la stessa etichetta: il segno di spunta indica la pausa manuale e cliccando di nuovo si riprende. Il tasto predefinito per pausa/riprendi è **Win+Esc** su Windows e **Control+Option+Command+P** su Mac. Cambialo sotto **Preferenze → Tasto pausa / riprendi**.

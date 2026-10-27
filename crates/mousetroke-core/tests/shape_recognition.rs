@@ -587,7 +587,7 @@ fn samples_compete_only_across_bindings() {
 fn binding(name: &str, pattern: Vec<Step>) -> Binding {
     Binding { name: name.into(), name_key: None, pattern,
         action: Action::WindowOp { op: WindowOpKind::Close, allow_child: false },
-        execute_on_match: false, hide_label: false, secured: false, disabled: false }
+        execute_on_match: false, hide_label: false, secured: false, disabled: false, draft: false }
 }
 
 fn scope(bindings: Vec<Binding>) -> Scope {
@@ -767,7 +767,7 @@ fn shape_step_round_trips_and_helper_filters_degenerate_samples() {
 }
 
 #[test]
-fn existing_config_serialization_includes_default_update_check() {
+fn preset_defaults_serialization_includes_default_update_check() {
     let fixture = include_str!("../assets/default-config.json");
     let cfg = Config::from_json(fixture).unwrap();
     assert!(cfg.settings.update_check);
@@ -775,10 +775,10 @@ fn existing_config_serialization_includes_default_update_check() {
     let fingerprint = json.bytes().fold(0xcbf29ce484222325u64, |hash, byte| {
         (hash ^ byte as u64).wrapping_mul(0x100000001b3)
     });
-    println!("existing config: {} bytes, FNV-1a {fingerprint:016x}", json.len());
-    // 默认开启更新后新增显式 update_check: true，冻结其余配置的序列化基线。
-    assert_eq!(json.len(), 36_415);
-    assert_eq!(fingerprint, 0x0f23e7e46b3bb572);
+    println!("preset defaults: {} bytes, FNV-1a {fingerprint:016x}", json.len());
+    // 统一资源改用预置动作；仍冻结默认配置（含 update_check）的序列化基线。
+    assert_eq!(json.len(), 36_440);
+    assert_eq!(fingerprint, 0xba538536bd2a8877);
     assert_eq!(Config::from_json(&json).unwrap().to_json(), json);
 }
 
