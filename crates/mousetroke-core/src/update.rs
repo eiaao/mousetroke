@@ -51,6 +51,7 @@ pub fn parse_url(text: &str) -> Option<Url<'_>> {
 
 pub const RELEASES_URL: &str = "https://github.com/eiaao/mousetroke/releases/latest";
 pub const API: &str = "https://api.github.com/repos/eiaao/mousetroke/releases/latest";
+pub const MARKER_CAP: usize = 64;
 pub const DAY: u64 = 24 * 60 * 60;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -96,6 +97,21 @@ pub fn version(tag: &str) -> Option<[u64; 3]> {
     Some(out)
 }
 
+pub fn marker_version(data: &[u8]) -> Option<[u64; 3]> {
+    if data.len() > MARKER_CAP {
+        return None;
+    }
+    let text = std::str::from_utf8(data).ok()?;
+    let tag = text
+        .strip_suffix("\r\n")
+        .or_else(|| text.strip_suffix('\n'))
+        .unwrap_or(text);
+    if !tag.starts_with('v') {
+        return None;
+    }
+    version(tag)
+}
+
 #[derive(Debug)]
 pub struct Source {
     pub api: String,
@@ -135,6 +151,13 @@ impl Source {
             api: format!("{base}/repos/eiaao/mousetroke/releases/latest"),
             local: Some(format!("http://{authority}")),
         })
+    }
+
+    pub fn marker_url(&self) -> String {
+        match &self.local {
+            Some(origin) => format!("{origin}/latest.txt"),
+            None => format!("{RELEASES_URL}/download/latest.txt"),
+        }
     }
 
     pub fn allowed(&self, text: &str, api: bool) -> bool {
@@ -358,6 +381,34 @@ impl Check {
     }
 }
 
+/// 版本标记只用于冗余检查；始终顺序请求 API，并原样返回 API 检查结果。
+pub fn automatic_check(
+    fetch_marker: impl FnOnce() -> Result<Vec<u8>, Error>,
+    check: impl FnOnce() -> Result<Check, Error>,
+    log: impl Fn(&str),
+) -> Result<Check, Error> {
+    let marker = match fetch_marker() {
+        Ok(data) => {
+            let parsed = marker_version(&data);
+            if parsed.is_none() {
+                log("更新版本标记无效"); // i18n:allow 日志
+            }
+            parsed
+        }
+        Err(_) => {
+            log("更新版本标记请求失败"); // i18n:allow 日志
+            None
+        }
+    };
+    let result = check();
+    if let (Some(marker), Ok(result)) = (marker, &result) {
+        if Some(marker) != version(&result.latest) {
+            log("更新版本标记与 API 不一致，以 API 为准"); // i18n:allow 日志
+        }
+    }
+    result
+}
+
 pub fn checksum_for(text: &str, asset: &str) -> Result<String, Error> {
     let mut found = None;
     for line in text.trim_start_matches('\u{feff}').lines() {
@@ -467,7 +518,8 @@ impl Automatic {
             return;
         }
         let Ok(result) = check() else { return };
-        if !result.newer || state.last_notified.as_ref() == Some(&result.latest) || !self.enabled() {
+        if !result.newer || state.last_notified.as_ref() == Some(&result.latest) || !self.enabled()
+        {
             return;
         }
         let (tx, rx) = mpsc::channel();

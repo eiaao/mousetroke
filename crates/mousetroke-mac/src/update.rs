@@ -8,7 +8,7 @@ use std::path::PathBuf;
 use std::sync::mpsc;
 
 pub use install::install;
-use mousetroke_core::update::{select_release_for, Automatic, Release, Source};
+use mousetroke_core::update::{select_release_for, Automatic, Release, Source, MARKER_CAP};
 pub use mousetroke_core::update::{Check, Error, RELEASES_URL};
 pub use relaunch::relaunch;
 
@@ -23,12 +23,31 @@ fn fetch_release(source: &Source) -> Result<Release, Error> {
 }
 
 pub fn check() -> Result<Check, Error> {
+    check_source(&Source::configured(), false)
+}
+
+fn check_automatic() -> Result<Check, Error> {
+    check_source(&Source::configured(), true)
+}
+
+fn check_source(source: &Source, automatic: bool) -> Result<Check, Error> {
     let _ = crate::log::init();
     crate::log!("检查更新：当前 {}", env!("CARGO_PKG_VERSION"));
-    let result = fetch_release(&Source::configured()).map(|release| {
-        let dmg = release.exe.clone();
-        Check::from_release(release, Some(dmg))
-    });
+    let check = || {
+        fetch_release(source).map(|release| {
+            let dmg = release.exe.clone();
+            Check::from_release(release, Some(dmg))
+        })
+    };
+    let result = if automatic {
+        mousetroke_core::update::automatic_check(
+            || http::get(source, &source.marker_url(), false, MARKER_CAP),
+            check,
+            |message| crate::log!("{message}"),
+        )
+    } else {
+        check()
+    };
     match &result {
         Ok(value) => crate::log!("检查更新成功：最新 {}", value.latest),
         Err(error) => crate::log!("检查更新失败：{error:?}"),
@@ -48,7 +67,9 @@ pub fn set_automatic(enabled: bool) {
 }
 
 pub fn start_automatic(config: PathBuf, enabled: bool) {
-    AUTOMATIC.start(config, enabled, check, |message| crate::log!("{message}"));
+    AUTOMATIC.start(config, enabled, check_automatic, |message| {
+        crate::log!("{message}")
+    });
 }
 
 pub fn take_notice() -> Option<(String, mpsc::Sender<bool>)> {

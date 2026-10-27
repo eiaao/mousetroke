@@ -16,6 +16,10 @@ def main():
     parser.add_argument("--version", default="999.0.0")
     parser.add_argument("--port", type=int, default=8770)
     parser.add_argument("--bad-checksum", action="store_true")
+    marker = parser.add_mutually_exclusive_group()
+    marker.add_argument("--bad-marker", action="store_true")
+    marker.add_argument("--missing-marker", action="store_true")
+    parser.add_argument("--marker-version")
     args = parser.parse_args()
     if not args.exe and not args.dmg:
         catalogs = Path(__file__).resolve().parents[1] / "i18n"
@@ -32,6 +36,12 @@ def main():
     }
     bodies = {}
     sums = []
+    if not args.missing_marker:
+        body = ("invalid\n" if args.bad_marker else f"v{args.marker_version or args.version}\n").encode()
+        bodies["/latest.txt"] = body
+        digest = "0" * 64 if args.bad_checksum else hashlib.sha256(body).hexdigest()
+        sums.append(f"{digest} *latest.txt\n")
+        release["assets"].append({"name": "latest.txt", "browser_download_url": f"{origin}/latest.txt"})
     for path, name in [(args.exe, "mousetroke.exe"), (args.dmg, "Mousetroke.dmg")]:
         if path is None:
             continue

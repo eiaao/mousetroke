@@ -174,7 +174,9 @@ jobs:
           GH_REPO: ${{ github.repository }}
           RELEASE_TAG: ${{ github.ref_name }}
         run: |
-          sha256sum mousetroke.exe Mousetroke.dmg > SHA256SUMS.txt
+          printf '%s\n' "$RELEASE_TAG" > latest.txt
+          printf '%s\n' "$RELEASE_TAG" | cmp latest.txt -
+          sha256sum mousetroke.exe Mousetroke.dmg latest.txt > SHA256SUMS.txt
           sha256sum --check SHA256SUMS.txt
-          gh release create "$RELEASE_TAG" mousetroke.exe Mousetroke.dmg SHA256SUMS.txt \
+          gh release create "$RELEASE_TAG" mousetroke.exe Mousetroke.dmg latest.txt SHA256SUMS.txt \
             --title "Mousetroke $RELEASE_TAG" --notes-file release-notes.md

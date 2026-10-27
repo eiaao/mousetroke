@@ -720,11 +720,11 @@ class UpdateFixtureTests(unittest.TestCase):
         self.assertEqual(server.call_args.args[0], ("127.0.0.1", 8770))
         handler = server.call_args.args[1]
 
-        def get(path):
+        def get(path, status=200):
             request = types.SimpleNamespace(path=path, wfile=io.BytesIO(),
                                             send_response=Mock(), send_header=Mock(), end_headers=Mock())
             handler.do_GET(request)
-            request.send_response.assert_called_once_with(200)
+            request.send_response.assert_called_once_with(status)
             body = request.wfile.getvalue()
             request.send_header.assert_called_once_with("Content-Length", str(len(body)))
             return body
@@ -735,6 +735,7 @@ class UpdateFixtureTests(unittest.TestCase):
             exe, dmg = Path(directory) / "input.exe", Path(directory) / "input.dmg"
             exe.write_bytes(b"Windows fixture")
             dmg.write_bytes(b"Mac fixture")
+            marker = b"v1.2.3\n"
             for options, assets in [(["--exe", exe], {"mousetroke.exe": exe}),
                                     (["--dmg", dmg], {"Mousetroke.dmg": dmg}),
                                     (["--exe", exe, "--dmg", dmg], {"mousetroke.exe": exe, "Mousetroke.dmg": dmg})]:
@@ -742,14 +743,36 @@ class UpdateFixtureTests(unittest.TestCase):
                     get = self.fixture(*options, "--version", "1.2.3")
                     release = json.loads(get("/repos/eiaao/mousetroke/releases/latest"))
                     self.assertEqual(release["tag_name"], "v1.2.3")
-                    self.assertEqual({a["name"] for a in release["assets"]}, set(assets) | {"SHA256SUMS.txt"})
+                    self.assertEqual({a["name"] for a in release["assets"]}, set(assets) | {"latest.txt", "SHA256SUMS.txt"})
+                    self.assertEqual(get("/latest.txt"), marker)
                     sums = get("/SHA256SUMS.txt").decode()
+                    self.assertIn(f"{hashlib.sha256(marker).hexdigest()} *latest.txt\n", sums)
                     for name, source in assets.items():
                         payload = source.read_bytes()
                         self.assertEqual(get("/" + name), payload)
                         self.assertIn(f"{hashlib.sha256(payload).hexdigest()} *{name}\n", sums)
                     bad = self.fixture(*options, "--bad-checksum")("/SHA256SUMS.txt").decode()
-                    self.assertTrue(all(line.startswith("0" * 64) for line in bad.splitlines()))
+                    self.assertEqual(set(bad.splitlines()),
+                                     {f"{'0' * 64} *{name}" for name in [*assets, "latest.txt"]})
+
+    def test_fixture_marker_options(self):
+        with tempfile.TemporaryDirectory() as directory:
+            exe = Path(directory) / "input.exe"
+            exe.write_bytes(b"Windows fixture")
+            for options, marker in [(["--bad-marker"], b"invalid\n"),
+                                    (["--missing-marker"], None),
+                                    (["--marker-version", "4.5.6"], b"v4.5.6\n")]:
+                with self.subTest(options=options):
+                    get = self.fixture("--exe", exe, "--version", "1.2.3", *options)
+                    release = json.loads(get("/repos/eiaao/mousetroke/releases/latest"))
+                    self.assertEqual(release["tag_name"], "v1.2.3")
+                    self.assertEqual(get("/latest.txt", status=404 if marker is None else 200), marker or b"")
+                    expected = {"mousetroke.exe": exe.read_bytes()}
+                    if marker is not None:
+                        expected["latest.txt"] = marker
+                    self.assertEqual({a["name"] for a in release["assets"]}, set(expected) | {"SHA256SUMS.txt"})
+                    self.assertEqual(set(get("/SHA256SUMS.txt").decode().splitlines()),
+                                     {f"{hashlib.sha256(body).hexdigest()} *{name}" for name, body in expected.items()})
 
     def test_fixture_requires_a_payload(self):
         with contextlib.redirect_stderr(io.StringIO()), self.assertRaises(SystemExit) as error:
