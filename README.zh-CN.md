@@ -36,7 +36,7 @@ exe 暂未做代码签名，首次运行时 SmartScreen 可能提示，点 **更
 
 ## 从源码构建
 
-在 Windows 上需要 Rust（stable，MSVC 工具链）、Node.js 20.19+、Python 3。
+在 Windows 上需要 Rust（stable，MSVC 工具链）、Node.js 22.22+、Python 3。
 
 ```bat
 scripts\build.cmd            :: 前端 + release exe → dist\mousetroke.exe

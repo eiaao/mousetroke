@@ -39,7 +39,7 @@ Uninstall: turn off *Start with Windows* in preferences, quit from the tray menu
 
 ## Build from source
 
-Needs Rust (stable, MSVC toolchain), Node.js 20.19+ and Python 3, on Windows.
+Needs Rust (stable, MSVC toolchain), Node.js 22.22+ and Python 3, on Windows.
 
 ```bat
 scripts\build.cmd            :: UI + release exe → dist\mousetroke.exe

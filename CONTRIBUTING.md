@@ -5,7 +5,7 @@ Thanks for helping! Bug reports, translations and pull requests are all welcome.
 
 ## Development / 开发
 
-Windows with Rust (stable, MSVC), Node.js 20.19+ and Python 3:
+Windows with Rust (stable, MSVC), Node.js 22.22+ and Python 3:
 
 ```bat
 cd crates\mousetroke-settings\ui && npm ci && cd ..\..\..
