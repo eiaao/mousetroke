@@ -13,6 +13,8 @@ Mac 卸载：从菜单栏退出，删除应用、`~/Library/Application Support/
 
 文档 / Documentation：[使用指南](docs/guide/zh-CN/index.md) · [User guide](docs/guide/en/index.md)
 
+![Mousetroke 演示：画手势复制信息、调节音量、录制新手势](docs/images/mousetroke-demo.gif)
+
 ![Mousetroke 设置界面](docs/images/settings-zh.png)
 
 - 内置五十多个手势，全部可改；在设置里画一遍就能录一个自己的
