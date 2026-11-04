@@ -11,6 +11,8 @@ opens the context menu.
 
 Documentation / 文档: [User guide](docs/guide/en/index.md) · [使用指南](docs/guide/zh-CN/index.md)
 
+![Mousetroke demo: draw a gesture to copy, adjust volume, and record a new gesture (Chinese UI)](docs/images/mousetroke-demo.gif)
+
 ![Mousetroke settings](docs/images/settings-en.png)
 
 - About 50 built-in gestures, all editable; record your own by drawing it once
