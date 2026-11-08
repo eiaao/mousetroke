@@ -1,6 +1,6 @@
 import { persistedConfig } from "./store";
 import { invoke } from "@tauri-apps/api/core";
-import type { Action, ActionCatalog, AppInfo, Config, EngineStatus, InitState, PermissionStatus, PresetApp, RunningApp } from "./types";
+import type { Action, ActionCatalog, AppInfo, Config, EngineStatus, ImportPlan, ImportSource, InitState, PermissionStatus, PresetApp, RunningApp } from "./types";
 import { t, type MsgKey } from "./i18n";
 import zh from "../../../../i18n/zh-CN.json";
 
@@ -27,6 +27,7 @@ export const api = {
   shapeSample: (points: [number, number][]) => invoke<number[]>("shape_sample", { points }),
   shapeCompare: (a: number[], b: number[]) => invoke<number>("shape_compare", { a, b }),
   shapeLimits: (sample: number[]) => invoke<{ accept: number; margin: number }>("shape_limits", { sample }),
+  analyzeGestureImport: (config: Config, source: ImportSource) => invoke<ImportPlan>("analyze_gesture_import", { config: persistedConfig(config), source }),
   importLegacy: (gestures: string, prefs: string | null) => invoke<Config>("import_legacy", { gestures, prefs }),
   loadConfigFile: (path: string) => invoke<Config>("load_config_file", { path }),
   exportConfig: (path: string, config: Config) => invoke<void>("export_config", { path, config: persistedConfig(config) }),

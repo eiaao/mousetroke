@@ -3,17 +3,25 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { getCurrentWindow } from "@tauri-apps/api/window";
 import { listen } from "@tauri-apps/api/event";
 import { getCurrentWebview } from "@tauri-apps/api/webview";
-import type { Binding, Config, EngineStatus, InitState, Scope, Step } from "./types";
+import type { Action, Binding, Config, EngineStatus, ImportPlan, InitState, Scope, Step } from "./types";
 import { api, errText } from "./api";
 import { initActionCatalog } from "./actions";
-import { conflicts, decompose, fileName, newBinding, uid } from "./gesture";
+import { actionSummary, conflicts, decompose, fileName, gestureName, keyseqToCaps, newBinding, uid } from "./gesture";
 import { displayName, initLang, t, useLang } from "./i18n";
 import { updateBinding, updateScope, useConfigStore } from "./store";
+import { presetDefinition, presetName } from "./actions";
+import {
+  addGesture, applyImportPlan, assignGesture, canAdopt, categoryOf, deleteGesture, detach, gestureById, gestureUses, gesturesOf,
+  keepChangeHere, link, promote, renameGesture, setBindingPattern, setGesturePattern, type BindingRef, type GroupChoice,
+} from "./library";
+import { GestureDetail, GestureLibrary, conflictLines, placeText, type LibraryFilter, type LibraryTab } from "./components/GestureLibrary";
+import { GesturePicker } from "./components/GesturePicker";
+import { ImportWizard } from "./components/ImportWizard";
 import { Sidebar, scopeTitle, type View } from "./components/Sidebar";
 import { BindingList, type ListFilter, type ListTab } from "./components/BindingList";
 import { Editor } from "./components/Editor";
 import { Prefs } from "./components/Prefs";
-import { AppPicker, DataPage, Toast } from "./components/Dialogs";
+import { AppPicker, DataPage, Toast, type ToastExtra } from "./components/Dialogs";
 import { NavIcon } from "./components/Icons";
 import { TipLayer } from "./components/Tip";
 import { Guide, guideUnseen, permissionsReady } from "./components/Guide";
@@ -48,9 +56,26 @@ export function App() {
 
 type SaveState = "idle" | "saving" | "saved" | "error" | "incomplete";
 
-/** 尚未录完的笔画留在编辑状态，不能触发自动保存或关闭时写盘。 */
+/** 尚未录完的笔画留在编辑状态，不能触发自动保存或关闭时写盘（手势库条目同样检查）。 */
 function hasIncompleteStroke(config: Config): boolean {
-  return config.scopes.some((s) => s.bindings.some((b) => b.pattern.some((s) => (s.type === "shape" && s.templates.length === 0) || (s.type === "trace" && s.points.length < 4))));
+  const incomplete = (pattern: Step[]) => pattern.some((s) => (s.type === "shape" && s.templates.length === 0) || (s.type === "trace" && s.points.length < 4));
+  return config.scopes.some((s) => s.bindings.some((b) => incomplete(b.pattern))) || gesturesOf(config).some((g) => incomplete(g.pattern));
+}
+
+const GESTURES_SEEN_KEY = "mousetroke.gestures.seen";
+function gesturesSeen(): boolean {
+  try {
+    return localStorage.getItem(GESTURES_SEEN_KEY) === "1";
+  } catch {
+    return true;
+  }
+}
+function markGesturesSeen() {
+  try {
+    localStorage.setItem(GESTURES_SEEN_KEY, "1");
+  } catch {
+    // 无痕/受限存储：只影响"新"标记
+  }
 }
 
 interface ToastMsg {
@@ -58,6 +83,7 @@ interface ToastMsg {
   text: string;
   action?: string;
   onAction?: () => void;
+  extra?: ToastExtra;
 }
 
 function Main({ init }: { init: InitState }) {
@@ -76,6 +102,17 @@ function Main({ init }: { init: InitState }) {
     return () => void off.then((f) => f());
   }, []);
   const [selected, setSelected] = useState<number | null>(null);
+  // 手势库：选中的手势（"new" = 新建）、分类与筛选、弹窗
+  const [libSelected, setLibSelected] = useState<string | null>(null);
+  const [libTab, setLibTab] = useState<LibraryTab>("gesture");
+  const [libFilter, setLibFilter] = useState<LibraryFilter>("all");
+  const [seen, setSeen] = useState(gesturesSeen);
+  const [wizard, setWizard] = useState(false);
+  const [gesturePicker, setGesturePicker] = useState(false);
+  const [assignScope, setAssignScope] = useState<number | null>(null);
+  // 「在其他程序中使用」：打开该手势详情时直接弹出程序选择
+  const [assignFor, setAssignFor] = useState<string | null>(null);
+  const [pendingAssign, setPendingAssign] = useState(false);
   const [autoPickKey, setAutoPickKey] = useState<string | null>(null);
   // 分类与筛选跨作用域保留（切到某个程序时仍停在「触发角」）
   const [listTab, setListTab] = useState<ListTab>("gesture");
@@ -83,6 +120,13 @@ function Main({ init }: { init: InitState }) {
   const [engine, setEngine] = useState<EngineStatus>(init.engine);
   const [saveState, setSaveState] = useState<SaveState>("idle");
   const [toast, setToast] = useState<ToastMsg | null>(null);
+  /** 刚在「在其他程序中使用」里新建的绑定（手势详情里高亮这一行）。 */
+  const [justAssigned, setJustAssigned] = useState<string | null>(null);
+  useEffect(() => {
+    if (!justAssigned) return;
+    const timer = setTimeout(() => setJustAssigned(null), 2500);
+    return () => clearTimeout(timer);
+  }, [justAssigned]);
   const [picking, setPicking] = useState(false);
   const [loadError, setLoadError] = useState(init.loadError);
   const [recovering, setRecovering] = useState(false);
@@ -117,7 +161,17 @@ function Main({ init }: { init: InitState }) {
     return () => { disposed = true; void off.then((f) => f()); void offSettings.then((f) => f()); };
   }, []);
 
-  const notify = useCallback((text: string, action?: string, onAction?: () => void) => setToast({ id: Date.now(), text, action, onAction }), []);
+  const notify = useCallback((text: string, action?: string, onAction?: () => void, extra?: ToastExtra) => setToast({ id: Date.now(), text, action, onAction, extra }), []);
+
+  // ---- 手势库引用的兜底提示：加载时（手改配置）与编辑时（界面漏改）
+  useEffect(() => {
+    if (init.detachedGestureRefs) notify(t("ui.gestures.detached", { count: init.detachedGestureRefs }));
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+  const lastRepairs = useRef(store.repairs);
+  useEffect(() => {
+    if (store.repairs > lastRepairs.current) notify(t("ui.gestures.repaired", { count: store.repairs - lastRepairs.current }));
+    lastRepairs.current = store.repairs;
+  }, [store.repairs, notify]);
 
   // ---- 语言变化 → 后端窗口标题与少量原生文字跟着换；动作目录的默认值（搜索引擎）也按新语言重取
   useEffect(() => {
@@ -184,10 +238,11 @@ function Main({ init }: { init: InitState }) {
         else if (k === "y" || (k === "z" && e.shiftKey)) (e.preventDefault(), redo());
       }
       if (e.key === "Escape" && !typing && selected != null) setSelected(null);
+      if (e.key === "Escape" && !typing && libSelected != null) setLibSelected(null);
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [undo, redo, selected]);
+  }, [undo, redo, selected, libSelected]);
 
   // 撤销可能删掉当前作用域/绑定：纠正越界的选择
   const scopeIdx = view.kind === "scope" ? Math.min(view.index, config.scopes.length - 1) : -1;
@@ -221,7 +276,8 @@ function Main({ init }: { init: InitState }) {
   const duplicateBinding = (i: number) => {
     if (!scope) return;
     const src = scope.bindings[i];
-    const copy: Binding = { ...structuredClone(src), uiId: uid(), name: t("ui.app.copy_of", { name: displayName(src.name, src.name_key) }), name_key: undefined };
+    // 副本改为本程序专用：复制通常是为了改手势，保留引用会让改副本同时改到原绑定
+    const copy: Binding = { ...structuredClone(src), uiId: uid(), gesture: undefined, name: t("ui.app.copy_of", { name: displayName(src.name, src.name_key) }), name_key: undefined };
     edit((c) => updateScope(c, scopeIdx, (s) => ({ ...s, bindings: [...s.bindings.slice(0, i + 1), copy, ...s.bindings.slice(i + 1)] })));
     setSelected(i + 1);
   };
@@ -231,7 +287,7 @@ function Main({ init }: { init: InitState }) {
    * 添加程序（已存在的直接跳过去）；多个时跳到第一个。`disable` = 在这些程序里禁用手势；
    * `names` = 内置清单程序的词条键（preset.app.*），缺省用 exe 文件名。
    */
-  const addApps = (exes: string[], disable = false, navigate = true, names: Record<string, string> = {}) => {
+  const addApps = (exes: string[], disable = false, navigate = true, names: Record<string, string> = {}): number => {
     setPicking(false);
     const same = (s: Scope, exe: string) => s.kind === "app" && appIdentity(s.app?.exe ?? "").toLowerCase() === appIdentity(exe).toLowerCase();
     const scopes = [...config.scopes];
@@ -257,15 +313,25 @@ function Main({ init }: { init: InitState }) {
       }
       if (first < 0) first = i;
     }
-    if (first < 0) return;
+    if (first < 0) return -1;
     if (scopes.some((s, i) => s !== config.scopes[i])) {
       edit((c) => ({ ...c, scopes: [...c.scopes.map((s, i) => (disable && scopes[i]?.id === s.id ? scopes[i] : s)), ...scopes.slice(c.scopes.length)] }));
     }
-    if (!navigate) return;
+    if (!navigate) return first;
     setView({ kind: "scope", index: first });
     setSelected(null);
+    return first;
   };
-  const addApp = (exe: string, disable = false, nameKey?: string) => addApps([exe], disable, true, nameKey ? { [exe]: nameKey } : {});
+  const addApp = (exe: string, disable = false, nameKey?: string) => {
+    // 「在其他程序中使用 → 添加程序」：加完直接为它选动作，留在手势库页
+    if (pendingAssign) {
+      setPendingAssign(false);
+      const idx = addApps([exe], false, false, nameKey ? { [exe]: nameKey } : {});
+      if (idx >= 0) setAssignScope(idx);
+      return;
+    }
+    addApps([exe], disable, true, nameKey ? { [exe]: nameKey } : {});
+  };
 
   // ---- 把程序或快捷方式拖进窗口 → 添加
   const [dropping, setDropping] = useState(false);
@@ -320,6 +386,132 @@ function Main({ init }: { init: InitState }) {
   const binding = scope && sel != null ? scope.bindings[sel] : null;
   const otherBindings = useMemo(() => scope?.bindings.filter((_, i) => i !== sel) ?? [], [scope, sel]);
 
+  // ---- 手势库
+  const bindingRef: BindingRef | null = binding && sel != null ? { scope: scopeIdx, binding: sel } : null;
+  const shared = useMemo(() => {
+    const g = gestureById(config, binding?.gesture);
+    if (!g || sel == null) return undefined;
+    const uses = gestureUses(config, g.id);
+    const others = uses.filter((u) => !(u.scope === scopeIdx && u.binding === sel));
+    return { gesture: g, uses: uses.length, places: others.map((u) => placeText(config, u)), conflicts: conflictLines(config, g.id, scopeIdx) };
+  }, [config, binding, scopeIdx, sel]);
+  const openView = (v: View) => {
+    setView(v);
+    setSelected(null);
+    if (v.kind === "gestures" && !seen) {
+      markGesturesSeen();
+      setSeen(true);
+    }
+  };
+  const showLibrary = (id: string | null) => {
+    openView({ kind: "gestures" });
+    setLibSelected(id);
+    const g = gestureById(config, id ?? undefined);
+    if (g) {
+      setLibTab(categoryOf(g.pattern));
+      setLibFilter("all");
+    }
+  };
+  const jumpTo = (ref: BindingRef) => {
+    setView({ kind: "scope", index: ref.scope });
+    setSelected(ref.binding);
+    setLibSelected(null);
+  };
+  const editPattern = (pattern: Step[]) => bindingRef && edit((c) => setBindingPattern(c, bindingRef, pattern));
+  const keepHere = (before: Step[]) => {
+    if (!bindingRef) return;
+    edit((c) => keepChangeHere(c, bindingRef, before));
+    notify(t("ui.gestures.kept_here"), t("common.undo"), undo);
+  };
+  const pickGesture = (id: string) => {
+    if (!bindingRef) return;
+    setGesturePicker(false);
+    edit((c) => link(c, bindingRef, id));
+    notify(t("ui.gestures.picked"), t("common.undo"), undo);
+  };
+  const pickInline = (source: BindingRef) => {
+    if (!bindingRef) return;
+    setGesturePicker(false);
+    const place = placeText(config, source);
+    edit((c) => {
+      const r = promote(c, source);
+      return r ? link(r.config, bindingRef, r.id) : c;
+    });
+    notify(t("ui.gestures.picked_shared", { place }), t("common.undo"), undo);
+  };
+  const recordNew = () => {
+    if (!bindingRef) return;
+    setGesturePicker(false);
+    // 改回本程序专用并清空笔画，录制器随即就绪；未录完前按草稿停用（不会变成单击手势）
+    edit((c) => {
+      const d = detach(c, bindingRef);
+      const b = d.scopes[bindingRef.scope].bindings[bindingRef.binding];
+      if (b.pattern[0]?.type === "edge") return d;
+      const press = b.pattern.find((s) => s.type === "press") ?? { type: "press", key: "mouse:right" };
+      return updateBinding(setBindingPattern(d, bindingRef, [press]), bindingRef.scope, bindingRef.binding, (x) => ({ ...x, draft: true, disabled: true }));
+    });
+  };
+  const promoteBinding = () => {
+    if (!bindingRef) return;
+    edit((c) => promote(c, bindingRef)?.config ?? c);
+    notify(t("ui.gestures.added"));
+  };
+  const useElsewhere = () => {
+    if (!bindingRef) return;
+    const r = promote(config, bindingRef);
+    if (!r) return;
+    edit(() => r.config);
+    showLibrary(r.id);
+    setAssignFor(r.id);
+  };
+  const assign = (scopeIndex: number, action: Action) => {
+    const id = libSelected;
+    setAssignScope(null);
+    if (!id || id === "new") return;
+    const preset = presetDefinition(action);
+    // 预置动作用动作名；高级动作（可能还没填内容）退回默认名，之后在编辑器里补全
+    // 发送快捷键以组合键命名（Ctrl+Shift+K），不用原始语法
+    const keyName = action.type === "key_sequence" && typeof action.keys === "string" ? keyseqToCaps(action.keys).map((g) => g.join("+")).join(" ") : "";
+    const name = (preset ? presetName(preset) : keyName || actionSummary(action)) || t("ui.app.new_gesture");
+    const b: Binding = { uiId: uid(), loaded: true, name, lastActionName: preset ? name : undefined, pattern: [], action, execute_on_match: false, hide_label: false, secured: false };
+    edit((c) => assignGesture(c, scopeIndex, id, b));
+    // 留在手势详情（常会连着分配给几个程序），新的一行高亮；提示条可直接去设置这一条
+    setJustAssigned(b.uiId ?? null);
+    const target = config.scopes[scopeIndex];
+    const open = () => {
+      const c = pending.current.config;
+      const si = c.scopes.findIndex((s) => s.bindings.some((x) => x.uiId === b.uiId));
+      if (si >= 0) jumpTo({ scope: si, binding: c.scopes[si].bindings.findIndex((x) => x.uiId === b.uiId) });
+    };
+    notify(t("ui.gestures.assigned", { scope: target ? scopeTitle(target) : "", name }), t("common.undo"), undo, { label: t("ui.gestures.go_edit"), run: open });
+  };
+  const removeGesture = (mode: "detach" | "cascade") => {
+    const g = gestureById(config, libSelected ?? undefined);
+    if (!g) return;
+    const n = gestureUses(config, g.id).length;
+    edit((c) => deleteGesture(c, g.id, mode));
+    setLibSelected(null);
+    const text = !n ? t("ui.gestures.deleted", { name: gestureName(g) }) : mode === "cascade" ? t("ui.gestures.deleted_cascade", { count: n }) : t("ui.gestures.deleted_detach", { count: n });
+    notify(text, t("common.undo"), () => {
+      undo();
+      setLibSelected(g.id);
+    });
+  };
+  const createGesture = (pattern: Step[], name: string) => {
+    const r = addGesture(config, pattern, name);
+    edit(() => r.config);
+    setLibSelected(r.id);
+    setLibTab(categoryOf(pattern));
+    notify(t("ui.gestures.added"));
+  };
+  const applyImport = (plan: ImportPlan, choices: GroupChoice[]) => {
+    const { stats } = applyImportPlan(config, plan, choices);
+    setWizard(false);
+    edit((c) => applyImportPlan(c, plan, choices).config);
+    showLibrary(null);
+    notify(t("ui.gestures.imported", { count: stats.added }), t("common.undo"), undo);
+  };
+
   // 编辑中把触发方式改成边角（或反过来）→ 列表分类跟过去，选中项不会"消失"
   const bindingTab: ListTab | null = binding ? (decompose(binding.pattern).trigger.kind === "edge" ? "edge" : "gesture") : null;
   useEffect(() => {
@@ -331,14 +523,13 @@ function Main({ init }: { init: InitState }) {
   const conflictNames = sel != null ? (clash.get(sel) ?? []).map((j) => displayName(scope!.bindings[j].name, scope!.bindings[j].name_key)) : [];
 
   return (
-    <div className={`app ${binding ? "with-editor" : ""}`}>
+    <div className={`app ${binding || (view.kind === "gestures" && libSelected) ? "with-editor" : ""}`}>
       <Sidebar
         scopes={config.scopes}
         view={view}
-        onView={(v) => {
-          setView(v);
-          setSelected(null);
-        }}
+        onView={openView}
+        gestureCount={gesturesOf(config).length}
+        gesturesNew={!seen && gesturesOf(config).length === 0}
         onAddApp={() => setPicking(true)}
         engine={engine}
         onStartEngine={() => api.startEngine().then(setEngine, (e) => notify(errText(e)))}
@@ -388,6 +579,22 @@ function Main({ init }: { init: InitState }) {
             clash={clash}
           />
         )}
+        {view.kind === "gestures" && (
+          <GestureLibrary
+            config={config}
+            selected={libSelected}
+            onSelect={setLibSelected}
+            onNew={() => setLibSelected("new")}
+            onImport={() => setWizard(true)}
+            tab={libTab}
+            onTab={(tb) => {
+              setLibTab(tb);
+              setLibFilter("all");
+            }}
+            filter={libFilter}
+            onFilter={setLibFilter}
+          />
+        )}
         {view.kind === "prefs" && (
           <Prefs
             settings={config.settings}
@@ -411,12 +618,48 @@ function Main({ init }: { init: InitState }) {
           conflictWith={conflictNames}
           otherBindings={otherBindings}
           onChange={(f, k) => edit((c) => updateBinding(c, scopeIdx, sel, f), k && `b-${scopeIdx}-${sel}-${k}`)}
+          onPatternChange={editPattern}
+          shared={shared}
+          canAdopt={canAdopt(binding)}
+          onOpenPicker={() => setGesturePicker(true)}
+          onPromote={promoteBinding}
+          onUseElsewhere={useElsewhere}
+          onShowInLibrary={(id) => showLibrary(id)}
+          onKeepHere={keepHere}
           onDuplicate={() => duplicateBinding(sel)}
           onDelete={() => deleteBinding(sel)}
           onClose={() => setSelected(null)}
         />
       )}
 
+      {view.kind === "gestures" && libSelected && (
+        <GestureDetail
+          key={libSelected}
+          config={config}
+          id={libSelected}
+          assignScope={assignScope}
+          startAssign={assignFor === libSelected}
+          onAssignStarted={() => setAssignFor(null)}
+          onPattern={(p) => edit((c) => setGesturePattern(c, libSelected, p))}
+          onRename={(name) => edit((c) => renameGesture(c, libSelected, name), `gname-${libSelected}`)}
+          onCreate={createGesture}
+          highlight={justAssigned}
+          onJump={jumpTo}
+          onAssign={assign}
+          onAssignCancel={() => setAssignScope(null)}
+          onAssignScope={setAssignScope}
+          onAddApp={() => {
+            setPendingAssign(true);
+            setPicking(true);
+          }}
+          onDelete={removeGesture}
+          onClose={() => setLibSelected(null)}
+        />
+      )}
+      {gesturePicker && bindingRef && (
+        <GesturePicker config={config} target={bindingRef} onPickGesture={pickGesture} onPickInline={pickInline} onRecordNew={recordNew} onClose={() => setGesturePicker(false)} />
+      )}
+      {wizard && <ImportWizard config={config} onApply={applyImport} onClose={() => setWizard(false)} />}
       {picking && (
         <AppPicker
           scopes={config.scopes}
@@ -425,7 +668,10 @@ function Main({ init }: { init: InitState }) {
             addApps(apps.map((a) => a.exe), true, true, Object.fromEntries(apps.flatMap((a) => (a.name_key ? [[a.exe, a.name_key]] : []))) as Record<string, string>);
             notify(t("toast.apps_disabled", { count: apps.length }));
           }}
-          onClose={() => setPicking(false)}
+          onClose={() => {
+            setPicking(false);
+            setPendingAssign(false);
+          }}
         />
       )}
       {dropping && (
@@ -451,7 +697,7 @@ function Main({ init }: { init: InitState }) {
         />
       )}
       <TipLayer />
-      {toast && <Toast key={toast.id} text={toast.text} action={toast.action} onAction={toast.onAction} onDone={() => setToast(null)} />}
+      {toast && <Toast key={toast.id} text={toast.text} action={toast.action} onAction={toast.onAction} extra={toast.extra} onDone={() => setToast(null)} />}
     </div>
   );
 }

@@ -115,6 +115,8 @@ export interface Binding {
   name_key?: string;
   /** 上一次自动填入的动作名（用户没改名时跟随新动作）。 */
   lastActionName?: string;
+  /** 引用的手势库 id；缺省 = 本程序专用。有引用时 pattern 必须与库中一致（见 library.ts）。 */
+  gesture?: string;
   pattern: Step[];
   action: Action;
   execute_on_match: boolean;
@@ -162,10 +164,55 @@ export interface Settings {
   label: { show: boolean; pos: number; border: number; color_normal: string; color_matched: string };
 }
 
+/** 手势库中的一个手势：可被多个程序的绑定共享。 */
+export interface Gesture {
+  id: string;
+  /** 用户命名；空 = 按画法自动描述。 */
+  name?: string;
+  pattern: Step[];
+}
+
 export interface Config {
   version: number;
+  /** 手势库；为空时后端不写出此字段。 */
+  gestures?: Gesture[];
   scopes: Scope[];
   settings: Settings;
+}
+
+/** 整理并导入手势的来源（与 core::library::AdoptSource 一致）。 */
+export type ImportSource = "global" | "all";
+
+export interface ImportMember {
+  scope: number;
+  binding: number;
+  relation: "seed" | "linked" | "identical" | "equivalent" | "similar";
+  /** 与组代表的相似度（相同 / 等效为 1）。 */
+  score: number;
+  /** 明显相似（≥ 阈值 + MARGIN）。 */
+  strong: boolean;
+  consistency?: number;
+}
+
+export interface ImportGroup {
+  existing?: string;
+  kind: "identical" | "equivalent" | "similar";
+  /** 组代表的 pattern。 */
+  pattern: Step[];
+  consistency?: number;
+  score: number;
+  checked: boolean;
+  /** 建议以哪个成员为准；缺省 = 组代表。 */
+  choice?: number;
+  members: ImportMember[];
+  merged?: { templates: number[][]; consistency?: number };
+}
+
+/** 后端 analyze_gesture_import 的结果；下标对应分析时的配置。 */
+export interface ImportPlan {
+  source: ImportSource;
+  groups: ImportGroup[];
+  notes: { scope: number; first: number; second: number }[];
 }
 
 export interface EngineStatus {
@@ -183,6 +230,8 @@ export interface InitState {
   config: Config;
   configExists: boolean;
   loadError: string | null;
+  /** 加载时与手势库不一致、已改为本程序专用的绑定数。 */
+  detachedGestureRefs?: number;
   engine: EngineStatus;
   /** 系统首选界面语言列表（后端用 GetUserPreferredUILanguages 取得）。 */
   systemLangs: string[];

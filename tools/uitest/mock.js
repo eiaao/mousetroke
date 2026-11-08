@@ -37,6 +37,26 @@
     const cx = xs.reduce((a, b) => a + b, 0) / 64, cy = ys.reduce((a, b) => a + b, 0) / 64;
     return pts.flatMap(([x, y]) => [Math.round((x - cx) * 1000 / span), Math.round((y - cy) * 1000 / span)]);
   }
+  // 整理导入的简易替身：只做"完全相同 / 方向相同的折线"分组；相似形状的分析由 Rust 核心完成并有单独测试。
+  function analyzeImport(config, source) {
+    const dirs = (pts) => { const d = []; for (let i = 2; i + 1 < pts.length; i += 2) d.push(Math.sign(pts[i] - pts[i - 2]) + "," + Math.sign(pts[i + 1] - pts[i - 1])); return d.join(" "); };
+    const frame = (p) => JSON.stringify(p.map((s) => (s.type === "trace" ? { type: "trace", d: dirs(s.points) } : s)));
+    const order = config.scopes.map((s, i) => i).sort((a, b) => (config.scopes[a].kind === "global" ? -1 : 0) - (config.scopes[b].kind === "global" ? -1 : 0));
+    const groups = [];
+    for (const si of order) {
+      const scope = config.scopes[si];
+      scope.bindings.forEach((b, bi) => {
+        if (b.gesture || b.draft || !b.pattern.length) return;
+        const exact = groups.find((g) => JSON.stringify(g.pattern) === JSON.stringify(b.pattern));
+        if (exact) return void exact.members.push({ scope: si, binding: bi, relation: "identical", score: 1, strong: true });
+        const eq = groups.find((g) => frame(g.pattern) === frame(b.pattern) && b.pattern.some((s) => s.type === "trace") && !g.members.some((m) => m.scope === si));
+        if (eq) return void eq.members.push({ scope: si, binding: bi, relation: "equivalent", score: 1, strong: true });
+        if (source === "all" || scope.kind === "global") groups.push({ kind: "identical", pattern: b.pattern, score: 1, checked: true, members: [{ scope: si, binding: bi, relation: "seed", score: 1, strong: true }] });
+      });
+    }
+    for (const g of groups) if (g.members.some((m) => m.relation === "equivalent")) g.kind = "equivalent";
+    return { source, groups, notes: [] };
+  }
   function classifyStroke(raw) {
     if (raw.length < 2) return "trace";
     const xs = raw.map((p) => p[0]), ys = raw.map((p) => p[1]);
@@ -101,6 +121,7 @@
         case "app_icons": return Object.fromEntries(args.exes.map((e) => [e, /chrome/i.test(e) ? "data:image/svg+xml," + encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32"><circle cx="16" cy="16" r="15" fill="#db4437"/><circle cx="16" cy="16" r="7" fill="#4285f4" stroke="#fff" stroke-width="2"/></svg>') : null]));
         case "running_apps": return [{ exe: "C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe", title: "新标签页 - Google Chrome" }, { exe: "C:\\Windows\\explorer.exe", title: "下载" }, { exe: "C:\\Users\\me\\AppData\\Local\\Programs\\Microsoft VS Code\\Code.exe", title: "main.rs - mousetroke" }];
         case "save_config": window.__saved = args.config; return null;
+        case "analyze_gesture_import": return analyzeImport(args.config, args.source);
         case "open_path":
           if (["log", "config_dir", "homepage", "github", "issues", "releases"].includes(args.what)) return null;
           throw { key: "error.unknown_location", params: { what: args.what } };

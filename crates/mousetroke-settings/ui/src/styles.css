@@ -1964,6 +1964,45 @@ select.lang-select {
   padding: 10px;
 }
 
+/* 「发送快捷键」：固定在分类下方，任何分类都能直接用 */
+.act-custom {
+  flex-shrink: 0;
+  border: 1px solid var(--line-soft);
+  border-radius: var(--radius-m);
+  background: var(--panel-2);
+}
+
+.act-custom.open {
+  border-color: var(--trail);
+}
+
+.act-custom-head {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  width: 100%;
+  padding: 8px 10px;
+  border: 0;
+  background: none;
+  text-align: left;
+}
+
+.act-custom-head .act-desc {
+  margin-left: auto;
+  font-size: 12px;
+  color: var(--muted);
+}
+
+.act-custom-icon {
+  font-size: 15px;
+  color: var(--trail-ink);
+}
+
+.act-custom .act-custom-form {
+  max-height: none;
+  padding: 10px;
+}
+
 .act-form {
   flex-shrink: 0;
   max-height: 42%;
@@ -2088,7 +2127,8 @@ select.lang-select {
   border: 0;
   border-radius: 8px;
   background: color-mix(in srgb, var(--trail) 30%, transparent);
-  color: color-mix(in srgb, var(--trail) 45%, #fff);
+  /* 提示条与主题反色：混入 --bg 而不是固定白色，深色主题下才看得见 */
+  color: color-mix(in srgb, var(--trail) 45%, var(--bg));
   font-weight: 600;
   white-space: normal;
   transition: background 0.12s;
@@ -3052,3 +3092,608 @@ select.lang-select {
 }
 .art-menubar .art-taskbar, .art-menubar .art-tray-icon { transform: translateY(-124px); }
 .art-menubar .art-menu { transform: translateY(-14px); }
+
+/* ------------------------------------------------------------ 手势库 */
+.nav-count.nav-new {
+  background: var(--hit);
+  color: #fff;
+  font-weight: 600;
+}
+
+.gesture-glyph {
+  position: relative;
+  display: inline-flex;
+  flex-shrink: 0;
+}
+
+.gesture-badge {
+  position: absolute;
+  right: -5px;
+  bottom: -4px;
+  display: grid;
+  place-items: center;
+  width: 17px;
+  height: 17px;
+  border: 1px solid var(--line);
+  border-radius: 50%;
+  background: var(--panel);
+  color: var(--muted);
+}
+
+.gesture-badge .ico {
+  width: 12px;
+  height: 12px;
+}
+
+.library .list-head {
+  align-items: flex-start;
+}
+
+.library-empty {
+  align-items: center;
+  max-width: 520px;
+  margin: 24px auto;
+  text-align: center;
+}
+
+.library-empty .btn-row {
+  justify-content: center;
+  margin-top: 10px;
+}
+
+.library-empty-art {
+  display: flex;
+  gap: 18px;
+  margin-bottom: 6px;
+  opacity: 0.85;
+}
+
+.library-empty-title {
+  margin: 4px 0 2px;
+  font-size: 16px;
+  font-weight: 600;
+}
+
+.gesture-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(128px, 1fr));
+  gap: 10px;
+  margin: 0;
+  padding: 2px 28px 24px;
+  list-style: none;
+  overflow-y: auto;
+}
+
+.gesture-grid.compact {
+  grid-template-columns: repeat(auto-fill, minmax(112px, 1fr));
+  padding: 0;
+  overflow: visible;
+}
+
+.gesture-card > button {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 5px;
+  width: 100%;
+  height: 100%;
+  padding: 14px 8px 10px;
+  border: 1px solid var(--line-soft);
+  border-radius: var(--radius-l);
+  background: var(--panel);
+  box-shadow: var(--shadow-card);
+  text-align: center;
+  transition: border-color 0.12s, box-shadow 0.12s;
+}
+
+.gesture-grid.compact .gesture-card > button {
+  padding: 10px 6px 8px;
+}
+
+.gesture-card > button:hover:not(:disabled) {
+  border-color: var(--line);
+  box-shadow: var(--shadow-lift);
+}
+
+.gesture-card.on > button {
+  border-color: var(--trail);
+  box-shadow: 0 0 0 1px var(--trail);
+}
+
+.gesture-card.dim > button {
+  opacity: 0.55;
+}
+
+.gesture-card > button:disabled {
+  cursor: default;
+}
+
+/* 自动名称（如「按住右键 + 画 ↑ + 左键」）较长：最多两行，画法部分不被截掉 */
+.gesture-card-name {
+  display: -webkit-box;
+  max-width: 100%;
+  overflow: hidden;
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 1.35;
+  overflow-wrap: anywhere;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+}
+
+.gesture-card-uses {
+  margin-top: auto;
+  font-size: 12px;
+  color: var(--muted);
+}
+
+.gesture-card-uses.warn {
+  color: var(--hit);
+}
+
+.section-hint {
+  margin-left: 8px;
+  font-size: 12px;
+  font-weight: 400;
+}
+
+.gesture-uses {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.gesture-uses li > button {
+  display: grid;
+  grid-template-columns: 18px 112px minmax(0, 1fr) auto 10px;
+  gap: 8px;
+  align-items: center;
+  width: 100%;
+  padding: 6px 8px;
+  border: 0;
+  border-radius: var(--radius-m);
+  background: none;
+  text-align: left;
+}
+
+.gesture-uses li > button:hover {
+  background: var(--panel-2);
+}
+
+/* 刚在其他程序中使用：淡出的高亮，提示新的一行在哪 */
+.gesture-uses li.just-added > button {
+  animation: just-added 2.4s ease-out;
+}
+
+@keyframes just-added {
+  0%,
+  40% {
+    background: color-mix(in srgb, var(--trail) 18%, transparent);
+  }
+  100% {
+    background: transparent;
+  }
+}
+
+.toast-action.subtle {
+  background: transparent;
+}
+
+.gesture-uses .use-scope,
+.gesture-uses .use-action {
+  overflow: hidden;
+  font-size: 12.5px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.gesture-uses .use-scope {
+  color: var(--muted);
+}
+
+.gesture-uses .use-dot {
+  width: 8px;
+  height: 8px;
+  border: 1.5px solid var(--faint);
+  border-radius: 50%;
+}
+
+.gesture-uses .use-dot.on {
+  border-color: var(--ok);
+  background: var(--ok);
+}
+
+.gesture-uses.compact li {
+  padding: 3px 0;
+}
+
+.assign-list li > button {
+  display: flex;
+  gap: 10px;
+}
+
+.assign-list li > button:disabled {
+  opacity: 0.55;
+}
+
+.assign-list .app-name {
+  flex: 1;
+  min-width: 0;
+}
+
+.assign-hint {
+  font-size: 12px;
+  color: var(--muted);
+}
+
+.assign-hint.warn {
+  color: var(--hit);
+}
+
+/* 编辑器的手势栏 */
+.gesture-ref {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 10px;
+  padding: 8px 10px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-m);
+  background: var(--panel-2);
+}
+
+.gesture-ref-main {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.gesture-ref-name {
+  overflow: hidden;
+  font-weight: 600;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.gesture-ref-sub {
+  font-size: 12px;
+  color: var(--muted);
+}
+
+.gesture-ref-sub .link {
+  font-size: 12px;
+}
+
+/* 本程序专用：与库手势卡片同样的框，「从手势库选择」是正常按钮，一眼能看到 */
+.gesture-inline {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 8px;
+  padding: 8px 10px;
+  border: 1px dashed var(--line);
+  border-radius: var(--radius-m);
+  font-size: 13px;
+}
+
+.gesture-inline > svg {
+  flex: none;
+  color: var(--muted);
+}
+
+.gesture-inline-text {
+  flex: 1;
+  min-width: 0;
+  font-weight: 600;
+}
+
+.gesture-inline-text small {
+  display: block;
+  font-size: 12px;
+  font-weight: 400;
+  color: var(--muted);
+}
+
+.picker-top {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.picker-top .search {
+  flex: 1;
+}
+
+.spacer {
+  flex: 1;
+}
+
+.more-menu {
+  position: relative;
+}
+
+.more-menu .popover {
+  right: 0;
+  left: auto;
+}
+
+.popover > button:disabled {
+  color: var(--faint);
+  cursor: not-allowed;
+}
+
+.popover > button:disabled:hover {
+  background: none;
+}
+
+.share-tag {
+  margin: 0 0 8px;
+  font-size: 12.5px;
+  color: var(--muted);
+}
+
+.share-bar {
+  margin: 0 0 10px;
+  padding: 9px 12px;
+  border: 1px solid color-mix(in srgb, var(--hit) 45%, var(--line));
+  border-radius: var(--radius-m);
+  background: color-mix(in srgb, var(--hit) 9%, var(--panel));
+  font-size: 12.5px;
+}
+
+.share-bar-title {
+  margin: 0;
+  font-weight: 600;
+  color: var(--hit);
+}
+
+.share-bar ul {
+  margin: 4px 0 0;
+  padding-left: 18px;
+}
+
+.share-bar-conflict {
+  margin: 4px 0 0;
+  color: var(--hit);
+}
+
+.share-bar .btn-row {
+  justify-content: flex-end;
+  margin-top: 8px;
+}
+
+/* 手势选择器 */
+.gesture-picker {
+  overflow-y: auto;
+  padding-bottom: 8px;
+}
+
+.picker-section {
+  margin: 8px 0 0;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--muted);
+}
+
+/* 整理并导入向导 */
+.import-source {
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+  padding: 10px 12px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-m);
+  cursor: pointer;
+}
+
+.import-source.on {
+  border-color: var(--trail);
+  background: var(--trail-soft);
+}
+
+.import-source small {
+  display: block;
+  margin-top: 2px;
+  color: var(--muted);
+}
+
+.import-review {
+  overflow-y: auto;
+  /* 顶部不留内边距：否则滚动内容会从吸顶摘要上方漏出 */
+  padding-top: 0;
+  padding-bottom: 10px;
+}
+
+.import-review > .field-help:first-child {
+  padding-top: 4px;
+}
+
+.import-summary {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  margin: 0;
+  padding: 6px 0 10px;
+  border-bottom: 1px solid var(--line-soft);
+  background: var(--panel);
+}
+
+.import-summary b {
+  color: var(--trail-ink);
+}
+
+.import-change {
+  color: var(--hit);
+}
+
+.import-section h3,
+.import-section-head {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  margin: 6px 0 0;
+  padding: 0;
+  border: 0;
+  background: none;
+  font-size: 13.5px;
+  font-weight: 600;
+}
+
+.import-twist {
+  width: 14px;
+  color: var(--muted);
+}
+
+.import-section-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.import-bulk {
+  display: inline-flex;
+  gap: 10px;
+  margin: 6px 0 0 auto;
+  font-size: 12.5px;
+}
+
+/* 「直接收入」展开后的清单：每行可取消勾选（不导入，保持专用） */
+.import-direct {
+  margin: 0;
+  padding: 0;
+  overflow: hidden;
+  border: 1px solid var(--line-soft);
+  border-radius: var(--radius-m);
+  list-style: none;
+}
+
+.import-direct li + li {
+  border-top: 1px solid var(--line-soft);
+}
+
+.import-direct label {
+  display: grid;
+  grid-template-columns: auto 30px minmax(0, 14em) minmax(0, 1fr);
+  gap: 8px;
+  align-items: center;
+  padding: 4px 10px;
+  font-size: 12.5px;
+  cursor: pointer;
+}
+
+.import-direct label:hover {
+  background: var(--panel-2);
+}
+
+.import-direct li.off .import-direct-name,
+.import-direct li.off svg {
+  opacity: 0.45;
+}
+
+.import-direct-name {
+  overflow: hidden;
+  font-weight: 600;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.import-direct-where {
+  overflow: hidden;
+  font-size: 12px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.import-group {
+  margin: 8px 0;
+  overflow: hidden;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-m);
+}
+
+.import-group.off {
+  opacity: 0.75;
+}
+
+.import-group-head {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 10px;
+  background: var(--panel-2);
+  font-size: 12.5px;
+}
+
+.import-group-title {
+  flex: 1;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.import-low {
+  color: var(--hit);
+}
+
+.import-member {
+  display: grid;
+  grid-template-columns: 44px minmax(0, 1fr) auto;
+  gap: 10px;
+  align-items: center;
+  padding: 6px 10px;
+  border-top: 1px solid var(--line-soft);
+  font-size: 13px;
+}
+
+.import-who small {
+  display: block;
+  font-size: 12px;
+  color: var(--muted);
+}
+
+.import-who small.import-change {
+  color: var(--hit);
+}
+
+.import-choice {
+  display: inline-flex;
+  gap: 5px;
+  align-items: center;
+  font-size: 12.5px;
+}
+
+.import-merge {
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  border-top-style: dashed;
+}
+
+.import-samples {
+  display: flex;
+  gap: 2px;
+}
+
+.import-note {
+  margin: 8px 0 0;
+  padding: 4px 10px;
+  border-left: 3px solid var(--line);
+  font-size: 12.5px;
+  color: var(--muted);
+}
+
+.import-nothing {
+  padding: 24px 0;
+  color: var(--muted);
+  text-align: center;
+}
+
+.modal-foot.btn-row {
+  align-items: center;
+}
+
+.modal-foot-hint {
+  margin-right: auto;
+  font-size: 12.5px;
+}
