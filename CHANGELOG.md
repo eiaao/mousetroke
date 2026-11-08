@@ -7,10 +7,14 @@ Each version lists its highlights in English, then in Chinese. The release page,
 ### English
 
 - Automatic update checks now read a small `latest.txt` version marker before querying GitHub release information. The release API remains authoritative; manual checks continue to use only the API.
+- Gesture library: define a gesture once and use it in several apps with different actions. Re-recording a shared gesture updates every app at once, with one set of samples. Editing a shared gesture shows where it is used and any new conflicts; **Only change this one** keeps the edit to the current app. Existing setups are left untouched until you run **Organize and import**, which merges identical gestures and lets you confirm similar shapes; new installs start with the built-in gestures already in the library. Older versions still read the configuration normally.
+- The action picker has a **Send a shortcut** entry: record a key combination such as Ctrl+Shift+K right in the picker and use it as the action.
 
 ### 中文
 
 - 自动更新检查先读取小型 `latest.txt` 版本标记，再查询 GitHub 发布信息；始终以发布 API 为准，手动检查仍只请求 API。
+- 手势库：同一个手势定义一次，即可在多个程序里执行不同动作；重录共享手势时所有程序同时生效，样本只有一份。修改共享手势时会显示用到它的位置和新产生的冲突，「只改这里」可把修改只留给当前程序。已有配置在运行「整理并导入」之前保持原样：相同的手势自动合并，相似的形状由你确认；新安装的内置手势直接放在手势库中。旧版本仍能正常读取配置。
+- 动作选择器新增「发送快捷键」：在选择器里直接录制一个组合键（如 Ctrl+Shift+K）作为动作。
 
 ## 0.2.2 — 2026-10-27
 
