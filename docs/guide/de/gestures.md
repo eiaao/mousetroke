@@ -10,7 +10,7 @@ order: 3
 
 Öffnen Sie **Alle Apps → Mausgesten → Neue Geste**. Benennen Sie sie und wählen Sie dann unter **Wie sie beginnt**: **Die rechte Maustaste gedrückt halten**, **Die mittlere Maustaste gedrückt halten**, **Die seitliche Taste 1 gedrückt halten** oder **Die seitliche Taste 2 gedrückt halten**. Die seitlichen Tasten entsprechen X1 und X2.
 
-Halten Sie im Zeichenbereich die linke oder rechte Maustaste gedrückt, zeichnen Sie und lassen Sie los. Der Aufnahmebereich akzeptiert beide Tasten unabhängig von dem ausgewählten Auslöser. Gerade Segmente werden zu einer gerichteten Zeichenfolge wie `←` oder `↓→`; zeichnen Sie erneut, um sie zu ersetzen. Klicken Sie auf **Aktion auswählen**, suchen oder stöbern Sie in der [Aktionsbibliothek](action-library.md), wählen Sie eine Voreinstellung und legen Sie die nötigen Parameter fest. Eigene Tastenfolgen, Befehle, Lua oder Menüs finden Sie unter **Erweitert**; siehe [Aktionen](actions.md). Probieren Sie die Geste außerhalb der Einstellungen mit der tatsächlichen Auslösertaste aus.
+Halten Sie im Zeichenbereich die linke oder rechte Maustaste gedrückt, zeichnen Sie und lassen Sie los. Der Aufnahmebereich akzeptiert beide Tasten unabhängig von dem ausgewählten Auslöser. Gerade Segmente werden zu einer gerichteten Zeichenfolge wie `←` oder `↓→`; zeichnen Sie erneut, um sie zu ersetzen. Klicken Sie auf **Aktion auswählen**, suchen oder stöbern Sie in der [Aktionsbibliothek](action-library.md), wählen Sie eine Voreinstellung und legen Sie die nötigen Parameter fest. Eigene Tastenkürzel nehmen Sie oben in der Auswahl mit **Tastenkürzel senden…** auf; Befehle, Lua oder Menüs finden Sie unter **Erweitert**; siehe [Aktionen](actions.md). Probieren Sie die Geste außerhalb der Einstellungen mit der tatsächlichen Auslösertaste aus.
 
 ## Eine Form aufnehmen
 
@@ -44,4 +44,4 @@ Drücken Sie **Strg+F** unter Windows oder **⌘+F** auf dem Mac, um die aktuell
 
 Wählen Sie eine Geste und klicken Sie auf **Duplizieren**, um eine Kopie zu erstellen (Strg+D / ⌘+D). Geben Sie der Kopie eine andere Zeichenfolge: Identische Zeichnungen im selben Bereich kollidieren; verlassen Sie sich bei der Auswahl einer Aktion also nicht auf die Reihenfolge in der Liste. Verwenden Sie den Schalter **Ein** / **Aus** des Editors oder die Leertaste in einer ausgewählten Listenzeile, um eine Bindung zu deaktivieren, ohne sie zu löschen. Deaktivierte Bindungen reservieren ihre Auslösertaste nicht mehr von selbst.
 
-Weiter: [Bildschirmränder](screen-edges.md), [App-spezifische Regeln](per-app.md), [Syntax für Tasten senden](key-sequences.md).
+Weiter: [Gestenbibliothek](gesture-library.md), [Bildschirmränder](screen-edges.md), [App-spezifische Regeln](per-app.md), [Syntax für Tasten senden](key-sequences.md).

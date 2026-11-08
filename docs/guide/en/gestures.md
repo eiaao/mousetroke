@@ -10,7 +10,7 @@ order: 3
 
 Open **All apps → Mouse gestures → New gesture**. Name it, then choose **How it starts**: **Hold down the right button**, **Hold down the middle button**, **Hold down the side button 1** or **Hold down the side button 2**. Side buttons correspond to X1 and X2.
 
-In the drawing area, hold the left or right button, draw and release. The recording canvas accepts either button independently of the trigger you selected. Straight segments become a directional stroke, such as `←` or `↓→`; redraw to replace it. Click **Choose action**, search or browse the [action library](action-library.md), then select a preset and fill any parameters. Use **Advanced** for custom keys, commands, Lua or menus; see [Actions](actions.md). Try the gesture outside settings with its actual trigger button.
+In the drawing area, hold the left or right button, draw and release. The recording canvas accepts either button independently of the trigger you selected. Straight segments become a directional stroke, such as `←` or `↓→`; redraw to replace it. Click **Choose action**, search or browse the [action library](action-library.md), then select a preset and fill any parameters. Record a custom shortcut with **Send a shortcut…** at the top of the picker, and use **Advanced** for commands, Lua or menus; see [Actions](actions.md). Try the gesture outside settings with its actual trigger button.
 
 ## Record a shape
 
@@ -44,4 +44,4 @@ Press **Ctrl+F** on Windows or **⌘+F** on Mac to search the current list by na
 
 Select a gesture and click **Duplicate** to make a copy (Ctrl+D / ⌘+D). Give the copy a different pattern: identical drawings in one scope conflict, so do not rely on their list order to choose an action. Use the editor's **On** / **Off** switch or Space on a selected list row to disable it without deleting it. Disabled bindings no longer reserve their trigger by themselves.
 
-Next: [screen edges](screen-edges.md), [per-app overrides](per-app.md), [send-keys syntax](key-sequences.md).
+Next: [gesture library](gesture-library.md), [screen edges](screen-edges.md), [per-app overrides](per-app.md), [send-keys syntax](key-sequences.md).

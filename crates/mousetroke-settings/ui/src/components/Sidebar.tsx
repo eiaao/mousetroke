@@ -3,7 +3,7 @@ import { fileName } from "../gesture";
 import { currentLang, displayName, t } from "../i18n";
 import { AppIcon, NavIcon } from "./Icons";
 
-export type View = { kind: "scope"; index: number } | { kind: "prefs" } | { kind: "data" } | { kind: "about" };
+export type View = { kind: "scope"; index: number } | { kind: "gestures" } | { kind: "prefs" } | { kind: "data" } | { kind: "about" };
 
 export function scopeTitle(s: Scope): string {
   if (s.kind === "global") return t("scope.global");
@@ -28,7 +28,13 @@ export function Sidebar({
   engine,
   onStartEngine,
   saveState,
+  gestureCount,
+  gesturesNew,
 }: {
+  /** 手势库中的手势数。 */
+  gestureCount: number;
+  /** 老用户还没建库、也没看过手势库页时显示"新"标记。 */
+  gesturesNew: boolean;
   scopes: Scope[];
   view: View;
   onView: (v: View) => void;
@@ -73,6 +79,11 @@ export function Sidebar({
       </div>
 
       <div className="nav-group nav-bottom">
+        <button type="button" className={`nav-item ${view.kind === "gestures" ? "on" : ""}`} onClick={() => onView({ kind: "gestures" })}>
+          <NavIcon kind="gestures" />
+          <span className="nav-label">{t("ui.sidebar.gestures")}</span>
+          {gesturesNew ? <span className="nav-count nav-new">{t("ui.sidebar.new_badge")}</span> : gestureCount > 0 && <span className="nav-count">{gestureCount}</span>}
+        </button>
         <button type="button" className={`nav-item ${view.kind === "prefs" ? "on" : ""}`} onClick={() => onView({ kind: "prefs" })}>
           <NavIcon kind="prefs" />
           {t("ui.sidebar.prefs")}

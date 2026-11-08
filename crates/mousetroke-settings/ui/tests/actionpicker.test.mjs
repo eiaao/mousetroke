@@ -22,6 +22,7 @@ const { BindingList } = await server.ssrLoadModule("/src/components/BindingList.
 const { persistedConfig, withBindingIds, updateBinding, updateScope, useConfigStore } = await server.ssrLoadModule("/src/store.ts");
 const { api } = await server.ssrLoadModule("/src/api.ts");
 const { Editor } = await server.ssrLoadModule("/src/components/Editor.tsx");
+const library = await server.ssrLoadModule("/src/library.ts");
 
 const pasteDelayParam = { name: "paste_delay_ms", label_key: "preset.param.paste_delay_ms", kind: { type: "number", min: 50, max: 5000, step: 50 }, default: { kind: "literal", value: "150" }, visible_when: { param: "method", equals: "paste" } };
 
@@ -341,6 +342,8 @@ async function mountGestureEditor(binding = keys.newBinding(), fromDisk = false)
     return createElement(Editor, {
       binding: store.config.scopes[0].bindings[0], bindingKey: "gesture", conflictWith: [], otherBindings: [],
       onChange: (f, coalesce) => store.edit((c) => updateBinding(c, 0, 0, f), coalesce),
+      onPatternChange: (pattern) => store.edit((c) => library.setBindingPattern(c, { scope: 0, binding: 0 }, pattern)),
+      canAdopt: false, onOpenPicker() {}, onPromote() {}, onUseElsewhere() {}, onShowInLibrary() {}, onKeepHere() {},
       onDuplicate() {}, onDelete() {}, onClose() {},
     });
   }
@@ -710,8 +713,12 @@ test("empty key sequence stays editable, including after clearing keys (C2)", as
     return createElement(ActionEditor, { action: binding.action, unselected: binding.actionUnselected, autoPick: true, onChange: (action) => update({ ...binding, action, actionUnselected: false }) });
   }
   const fresh = await mount(createElement(Unselected));
-  await click([...fresh.el.querySelectorAll('.act-list button')].find((b) => b.textContent.startsWith(t("action.key_sequence"))));
-  assert.ok(fresh.el.querySelector('.keys-input input'));
+  assert.ok(![...fresh.el.querySelectorAll('.act-list button')].some((b) => b.textContent.startsWith(t("action.key_sequence"))), "send keys is only offered via the inline recorder");
+  api.validateKeys = async () => null;
+  await click(fresh.el.querySelector('.act-custom-head'));
+  await input(fresh.el.querySelector('.act-custom-form .keys-input input'), "^c");
+  await click(fresh.el.querySelector('.act-custom-form .btn.primary'));
+  assert.equal(fresh.el.querySelector('.keys-input input')?.value, "^c");
   assert.ok(!fresh.el.querySelector('[role="dialog"]'));
   await fresh.close();
 });
@@ -1195,4 +1202,50 @@ for (const id of ["text.type", "text.datetime"]) test(`${id} shows a paste delay
     assert.equal(picked[1].params.method, "type");
     assert.equal("paste_delay_ms" in picked[1].params, false);
   } finally { await view.close(); api.validatePreset = original; }
+});
+
+test("send a shortcut records custom keys inline and picks a key sequence", async () => {
+  setup();
+  const picked = [];
+  let closed = 0;
+  const view = await mount(createElement(ActionPicker, { onPick: (a) => picked.push(a), onClose: () => closed++ }));
+  const head = view.el.querySelector(".act-custom-head");
+  assert.ok(head.textContent.includes(t("ui.actpick.send_keys")));
+  await click(head);
+  const field = view.el.querySelector(".act-custom-form .keys-input input");
+  const apply = () => view.el.querySelector(".act-custom-form .btn.primary");
+  assert.ok(apply().disabled, "没有按键时不能选用");
+  await input(field, "^+k");
+  // 后端判定无效：留在表单并提示
+  api.validateKeys = async () => "bad keys";
+  await click(apply());
+  assert.equal(picked.length, 0);
+  assert.ok(view.el.querySelector(".act-custom-form .field-error").textContent.includes("bad keys"));
+  api.validateKeys = async () => null;
+  await click(apply());
+  assert.deepEqual(picked, [{ type: "key_sequence", keys: "^+k", activate_target: false }]);
+  // Esc 先收起表单，再关闭选择器
+  await key(view.el.querySelector(".act-custom-form .keys-input input"), "Escape");
+  assert.equal(view.el.querySelector(".act-custom-form"), null);
+  assert.equal(closed, 0);
+  await view.close();
+});
+
+test("send a shortcut replaces the keys of an existing key sequence in the editor", async () => {
+  setup();
+  api.validateKeys = async () => null;
+  let latest;
+  function Harness() {
+    const [action, change] = useState({ type: "key_sequence", keys: "^c", activate_target: false });
+    latest = action;
+    return createElement(ActionEditor, { action, onChange: change });
+  }
+  const view = await mount(createElement(Harness));
+  await click([...view.el.querySelectorAll(".action-picker-bar .btn")][0]);
+  await click(document.querySelector(".act-custom-head"));
+  await input(document.querySelector(".act-custom-form .keys-input input"), "^+k");
+  await click(document.querySelector(".act-custom-form .btn.primary"));
+  assert.equal(latest.keys, "^+k");
+  assert.equal(view.el.querySelector(".keys-input input").value, "^+k");
+  await view.close();
 });

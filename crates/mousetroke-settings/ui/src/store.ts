@@ -2,6 +2,7 @@ import { useCallback, useReducer } from "react";
 import type { Config } from "./types";
 import { persistedAction } from "./actions";
 import { hasConflictPattern, uid } from "./gesture";
+import { checkRefs, repairRefs } from "./library";
 
 // 配置编辑状态：不可变更新 + 撤销/重做。
 // 同一字段的连续输入（相同 coalesce 键、间隔 < 1s）合并为一步撤销。
@@ -14,6 +15,8 @@ interface State {
   revision: number;
   lastKey: string | null;
   lastAt: number;
+  /** 编辑后兜底解除的手势库引用累计数（正式构建；界面据此提示）。 */
+  repairs: number;
 }
 
 type Msg =
@@ -24,15 +27,21 @@ type Msg =
 
 const HISTORY = 100;
 
-function reducer(s: State, m: Msg): State {
+/** 导出供测试直接驱动（含手势库不变式检查）。 */
+export function reducer(s: State, m: Msg): State {
   switch (m.t) {
     case "edit": {
       const next = m.f(s.config);
       if (next === s.config) return s;
       const now = Date.now();
       const merge = m.key != null && m.key === s.lastKey && now - s.lastAt < 1000;
+      // 手势库不变式：所有 pattern 修改都应经过 library.ts；漏掉的写入路径在开发阶段直接暴露。
+      const broken = checkRefs(next);
+      if (broken.length && import.meta.env.DEV) throw new Error(`gesture library out of sync at ${JSON.stringify(broken)}`); // i18n:allow 开发期断言
+      if (broken.length) console.warn("gesture references detached", broken, new Error().stack);
       return {
-        config: withBindingIds(next),
+        repairs: s.repairs + broken.length,
+        config: withBindingIds(broken.length ? repairRefs(next) : next),
         past: merge ? s.past : [...s.past.slice(-HISTORY + 1), s.config],
         future: [],
         revision: s.revision + 1,
@@ -42,6 +51,7 @@ function reducer(s: State, m: Msg): State {
     }
     case "load":
       return {
+        ...s,
         config: loadedConfig(m.config),
         past: m.keepHistory ? [...s.past.slice(-HISTORY + 1), s.config] : [],
         future: [],
@@ -70,6 +80,7 @@ export function useConfigStore(initial: Config) {
     revision: 0,
     lastKey: null,
     lastAt: 0,
+    repairs: 0,
   });
   const edit = useCallback((f: (c: Config) => Config, key?: string) => dispatch({ t: "edit", f, key }), []);
   const load = useCallback((config: Config, keepHistory = true) => dispatch({ t: "load", config, keepHistory }), []);
@@ -80,6 +91,7 @@ export function useConfigStore(initial: Config) {
     revision: s.revision,
     canUndo: s.past.length > 0,
     canRedo: s.future.length > 0,
+    repairs: s.repairs,
     edit,
     load,
     undo,
@@ -97,8 +109,10 @@ export function updateScope(c: Config, scopeIdx: number, f: (s: Config["scopes"]
 }
 
 /** 加载和导入的绑定保留单击手势能力；先标记来源再归一化草稿。 */
+/** 导入的配置也先维护手势库不变式（后端加载已检查，这里兜底）。 */
 function loadedConfig(config: Config): Config {
-  return withBindingIds({ ...config, scopes: config.scopes.map((scope) => ({ ...scope, bindings: scope.bindings.map((binding) => ({ ...binding, loaded: true })) })) });
+  const c = repairRefs({ ...config, gestures: config.gestures ?? [] });
+  return withBindingIds({ ...c, scopes: c.scopes.map((scope) => ({ ...scope, bindings: scope.bindings.map((binding) => ({ ...binding, loaded: true })) })) });
 }
 
 /** 稳定标识跨编辑与排序保留；界面新建的未完成手势始终以草稿停用。 */
@@ -113,7 +127,10 @@ export function withBindingIds(config: Config): Config {
 }
 
 export function persistedConfig(config: Config): Config {
-  return { ...config, scopes: config.scopes.map((scope) => ({ ...scope, bindings: scope.bindings.map((binding) => {
+  // 空手势库不写出（与旧版本逐字节一致）；未命名的手势不写 name。
+  const { gestures, ...rest } = config;
+  const library = (gestures ?? []).map(({ id, name, pattern }) => (name ? { id, name, pattern } : { id, pattern }));
+  return { ...rest, ...(library.length ? { gestures: library } : {}), scopes: config.scopes.map((scope) => ({ ...scope, bindings: scope.bindings.map((binding) => {
     // 纵深兜底：界面新建的未完成手势不允许启用落盘，磁盘载入的单击手势除外。
     const incompleteNew = !binding.loaded && !binding.disabled && !binding.draft && !hasConflictPattern(binding.pattern);
     const { uiId: _id, actionUnselected: _unselected, lastActionName: _name, loaded: _loaded, ...saved } = binding;

@@ -18,6 +18,7 @@ use std::path::{Path, PathBuf};
 use std::sync::atomic::{AtomicBool, Ordering};
 
 use mousetroke_core::i18n::{keys, t};
+use mousetroke_core::library::{self, AdoptSource, ImportPlan};
 use mousetroke_core::schema::{Action, Config, Step};
 use mousetroke_core::presets::actions::{self as action_presets, Params};
 use mousetroke_core::shape;
@@ -87,6 +88,8 @@ struct InitState {
     config_exists: bool,
     /// 配置文件存在但解析失败时的错误（界面提示并允许重新导入/重置）。
     load_error: Option<String>,
+    /// 加载时因与手势库不一致（手改配置等）而改为本程序专用的绑定数，界面提示一次。
+    detached_gesture_refs: usize,
     engine: EngineStatus,
     /// 系统首选界面语言列表（前端在 language = auto 时用，不依赖 WebView 或浏览器语言）。
     system_langs: Vec<String>,
@@ -191,6 +194,7 @@ fn init_state(paths: State<AppPaths>) -> InitState {
         permissions: mac_permissions::get_permissions(),
         platform: if cfg!(target_os = "macos") { "macos" } else { "windows" },
         config_path: path.to_string_lossy().into_owned(),
+        detached_gesture_refs: config.detached_gesture_refs,
         config,
         config_exists: exists,
         load_error,
@@ -236,7 +240,7 @@ fn save_config(paths: State<AppPaths>, config: Config) -> MsgResult<()> {
 }
 
 fn save_config_at(path: &Path, config: &Config) -> MsgResult<()> {
-    validate_strokes(config)?;
+    validate_config(config)?;
     config.save_live(path).map_err(|e| Msg::new(keys::ERROR_SAVE, &[("path", path.display().to_string()), ("err", e)]))
 }
 
@@ -302,7 +306,13 @@ fn shape_limits(sample: Vec<i32>) -> ShapeLimits {
     ShapeLimits { accept, margin: shape::MARGIN }
 }
 
-/// 空笔画是尚未录完的编辑状态，不能覆盖磁盘上的有效配置。
+/// 写盘前校验：空笔画是尚未录完的编辑状态，不能覆盖磁盘上的有效配置；
+/// 手势库必须完整且与引用它的绑定一致（界面维护，这里兜底）。
+fn validate_config(config: &Config) -> MsgResult<()> {
+    validate_strokes(config)?;
+    library::validate(config).map_err(|_| Msg::new(keys::UI_GESTURES_SAVE_INVALID, &[]))
+}
+
 fn validate_strokes(config: &Config) -> MsgResult<()> {
     for binding in config.scopes.iter().flat_map(|s| &s.bindings) {
         for step in &binding.pattern {
@@ -318,6 +328,12 @@ fn validate_strokes(config: &Config) -> MsgResult<()> {
         }
     }
     Ok(())
+}
+
+/// 整理并导入手势：分析相同 / 方向相同的折线 / 相似形状，不修改配置；由界面展示并按用户选择应用。
+#[tauri::command]
+fn analyze_gesture_import(config: Config, source: AdoptSource) -> ImportPlan {
+    library::analyze(&config, source)
 }
 
 #[tauri::command]
@@ -340,14 +356,14 @@ fn load_config_file(path: String) -> MsgResult<Config> {
 
 #[tauri::command]
 fn export_config(path: String, config: Config) -> MsgResult<()> {
-    validate_strokes(&config)?;
+    validate_config(&config)?;
     config.save(Path::new(&path)).map_err(|e| Msg::new(keys::ERROR_SAVE, &[("path", path), ("err", e)]))
 }
 
 #[tauri::command]
 fn recover_config(paths: State<AppPaths>, config: Option<Config>) -> MsgResult<Config> {
     let recovered = if let Some(config) = config {
-        validate_strokes(&config)?;
+        validate_config(&config)?;
         Config::recover_to(&paths.config, config, std::time::SystemTime::now())
     } else {
         Config::recover_defaults(&paths.config, std::time::SystemTime::now())
@@ -642,6 +658,7 @@ pub fn run(config: Option<PathBuf>) {
             shape_sample,
             shape_compare,
             shape_limits,
+            analyze_gesture_import,
             import_legacy,
             load_config_file,
             export_config,
@@ -690,6 +707,20 @@ pub fn run(config: Option<PathBuf>) {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn saving_requires_a_consistent_gesture_library() {
+        let config = Config::builtin();
+        assert!(!config.gestures.is_empty());
+        assert!(validate_config(&config).is_ok());
+        let mut broken = config.clone();
+        let binding = broken.scopes.iter_mut().flat_map(|s| &mut s.bindings).find(|b| b.gesture.is_some()).unwrap();
+        binding.pattern = vec![Step::Edge { edge: 1 }];
+        assert_eq!(validate_config(&broken).unwrap_err().key, keys::UI_GESTURES_SAVE_INVALID);
+        // 整理分析只读配置
+        let plan = analyze_gesture_import(config.clone(), AdoptSource::Global);
+        assert!(plan.groups.is_empty(), "内置配置的通用手势已全部入库");
+    }
 
     #[test]
     fn settings_never_saves_fallback_defaults_over_an_unparseable_file() {
@@ -899,14 +930,14 @@ mod tests {
         let expected = shape_sample(raw).unwrap();
         for text in [include_str!("../../../tools/uitest/config.json"), include_str!("../../../tools/uitest/config-en.json")] {
             let mut config: Config = serde_json::from_str(text).unwrap();
-            assert!(validate_strokes(&config).is_ok());
+            assert!(validate_config(&config).is_ok());
             let step = config.scopes[0].bindings.iter_mut().flat_map(|b| &mut b.pattern).find(|s| matches!(s, Step::Shape { .. })).unwrap();
             let Step::Shape { templates } = step else { unreachable!() };
             assert_eq!(templates, &vec![expected.clone()]);
             templates.clear();
-            assert_eq!(validate_strokes(&config).unwrap_err().key, keys::UI_SHAPE_NEEDS_SAMPLE);
+            assert_eq!(validate_config(&config).unwrap_err().key, keys::UI_SHAPE_NEEDS_SAMPLE);
             config.scopes[0].bindings.last_mut().unwrap().pattern = vec![Step::Trace { points: vec![] }];
-            assert_eq!(validate_strokes(&config).unwrap_err().key, keys::UI_RECORDER_TOO_SHORT);
+            assert_eq!(validate_config(&config).unwrap_err().key, keys::UI_RECORDER_TOO_SHORT);
         }
     }
 }

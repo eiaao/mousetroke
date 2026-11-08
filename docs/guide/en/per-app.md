@@ -21,7 +21,7 @@ Windows rules can match an executable name or full path, case-insensitively. Mac
 
 **All apps** contains global gestures. An app-specific gesture takes priority over the corresponding global gesture. With **Also use global gestures** checked, global bindings remain available when the app's bindings do not match. Uncheck it to use only that app's gestures.
 
-For example, add a browser, create a right-button `↓→` gesture and assign a different action there. Other apps keep the global `↓→` action. To copy an existing setup, use [Duplicate](gestures.md#find-copy-and-turn-off) within its scope and edit the binding.
+For example, add a browser, create a right-button `↓→` gesture and assign a different action there. Other apps keep the global `↓→` action. To copy an existing setup, use [Duplicate](gestures.md#find-copy-and-turn-off) within its scope and edit the binding. To record a drawing once and give it a different action in each app, use the [gesture library](gesture-library.md).
 
 ## Turn gestures off in an app
 
@@ -37,4 +37,4 @@ For a windowed game or remote desktop, add an explicit exclusion. To pause every
 
 The first-run guide shows detected apps that commonly need their own mouse dragging. Checked entries are disabled when you finish. Review them before continuing. Mac's built-in configuration also includes disabled scopes for its suggested exclusion apps; these have no app-specific bindings. You can change exclusions later from the sidebar.
 
-Next: [actions](actions.md), [configuration backup](config.md), [troubleshooting](troubleshooting.md).
+Next: [gesture library](gesture-library.md), [actions](actions.md), [configuration backup](config.md), [troubleshooting](troubleshooting.md).

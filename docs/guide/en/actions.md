@@ -8,11 +8,11 @@ order: 5
 
 Select or create a gesture, then click **Choose action** under **Action**. Search for what you want to do, or browse a category; fill any parameters and click **Use this action**. The [action library](action-library.md) lists all presets and their Windows/Mac availability, including literal text, date/time, window layout and power actions.
 
-Existing actions show **Change**. Presets that map to an editable advanced action also offer **Convert to advanced action**; native presets explain why conversion is unavailable. The **Advanced** category opens send keys, commands, Lua and menus. The editors below remain available, including through **Change action type**.
+Existing actions show **Change**. Presets that map to an editable advanced action also offer **Convert to advanced action**; native presets explain why conversion is unavailable. **Send a shortcut…** at the top of the picker records a key combination on the spot; the **Advanced** category opens commands, Lua and menus. The editors below remain available, including through **Change action type**.
 
 ## Send keys
 
-Enter a [key sequence](key-sequences.md), or click **Record**, press the shortcut and click **Done**. For example, `^c` copies on Windows; `#c` copies on Mac. **Syntax help** opens the syntax guide.
+To create this action, click **Send a shortcut…** at the top of the picker, record or type a combination, then click **Use this action**; edit it here afterwards. Enter a [key sequence](key-sequences.md), or click **Record**, press the shortcut and click **Done**. For example, `^c` copies on Windows; `#c` copies on Mac. **Syntax help** opens the syntax guide.
 
 **Activate the window under the cursor before sending** activates the gesture target first. Without it, shortcuts go to whichever application receives keyboard input. The target also follows **Preferences → Gestures act on**. For literal text, choose **Type text** from the [action library](action-library.md), or use [text-first input](key-sequences.md#text-and-escaping) through Lua.
 

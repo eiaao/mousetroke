@@ -384,3 +384,18 @@ export function newBinding(): Binding {
 export function uid(): string {
   return Math.random().toString(36).slice(2, 10) + Date.now().toString(36);
 }
+
+/** 按当前语言加引号：zh「a」，en “a”（引号来自词条）。 */
+export function quote(name: string): string {
+  return `${t("ui.editor.q_open")}${name}${t("ui.editor.q_close")}`;
+}
+
+/** 名单逐个加引号并按语言连接。 */
+export function quoteJoin(names: string[]): string {
+  return names.map(quote).join(t("ui.editor.q_sep"));
+}
+
+/** 手势库条目的显示名：用户命名，否则按画法自动描述（随语言变化）。 */
+export function gestureName(g: { name?: string; pattern: Step[] }): string {
+  return g.name || describePattern(g.pattern);
+}

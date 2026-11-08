@@ -14,6 +14,7 @@ Ces guides couvrent Windows et macOS. La prise en charge du Mac est en version b
 
 - [Premiers pas](getting-started.md) : installation, premier lancement, gestes par défaut et pause.
 - [Gestes de souris](gestures.md) : enregistrer des tracés et des formes, ajouter des boutons ou des touches, et rechercher ou modifier des gestes.
+- [Bibliothèque de gestes](gesture-library.md) : utiliser un geste dans plusieurs applications avec des actions différentes et organiser vos gestes dans la bibliothèque.
 - [Coins et bords de l’écran](screen-edges.md) : volume, luminosité, clics et frottement des bords.
 - [Bibliothèque d’actions](action-library.md) : rechercher des actions prédéfinies, régler les paramètres et vérifier leur disponibilité par plateforme.
 - [Actions](actions.md) : choisir ce que fait un geste, y compris la recherche web sur le texte sélectionné.

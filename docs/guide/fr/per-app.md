@@ -21,7 +21,7 @@ Les règles Windows peuvent correspondre à un nom d’exécutable ou à un chem
 
 **Toutes les applications** contient les gestes globaux. Un geste propre à une application est prioritaire sur le geste global correspondant. Avec **Utiliser aussi les gestes globaux** coché, les liaisons globales restent disponibles quand les liaisons de l’application ne correspondent pas. Décochez-le pour n’utiliser que les gestes de cette application.
 
-Par exemple, ajoutez un navigateur, créez un geste `↓→` au bouton droit et assignez-y une action différente. Les autres applications conservent l’action globale de `↓→`. Pour copier une configuration existante, utilisez [Dupliquer](gestures.md#rechercher-copier-et-désactiver) dans sa portée et modifiez la liaison.
+Par exemple, ajoutez un navigateur, créez un geste `↓→` au bouton droit et assignez-y une action différente. Les autres applications conservent l’action globale de `↓→`. Pour copier une configuration existante, utilisez [Dupliquer](gestures.md#rechercher-copier-et-désactiver) dans sa portée et modifiez la liaison. Pour enregistrer un tracé une seule fois et lui donner une action différente dans chaque application, utilisez la [bibliothèque de gestes](gesture-library.md).
 
 ## Désactiver les gestes dans une appli
 
@@ -37,4 +37,4 @@ Pour un jeu en fenêtre ou un bureau à distance, ajoutez une exclusion explicit
 
 Le guide de premier lancement montre les applications détectées qui ont souvent besoin de leur propre glisser à la souris. Les entrées cochées sont désactivées quand vous le terminez. Vérifiez-les avant de continuer. La configuration intégrée du Mac comprend aussi des portées désactivées pour ses applications d’exclusion suggérées ; celles-ci n’ont pas de liaisons propres. Vous pouvez modifier les exclusions plus tard depuis la barre latérale.
 
-Suivant : [actions](actions.md), [sauvegarde de la configuration](config.md), [dépannage](troubleshooting.md).
+Suivant : [bibliothèque de gestes](gesture-library.md), [actions](actions.md), [sauvegarde de la configuration](config.md), [dépannage](troubleshooting.md).

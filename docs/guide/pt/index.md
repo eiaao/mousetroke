@@ -14,6 +14,7 @@ Estes guias cobrem Windows e macOS. O suporte ao Mac está em beta; as diferenç
 
 - [Primeiros passos](getting-started.md): instalação, primeira execução, gestos padrão e pausa.
 - [Gestos de mouse](gestures.md): gravar traçados e formas, adicionar botões ou teclas, e encontrar ou editar gestos.
+- [Biblioteca de gestos](gesture-library.md): usar um gesto em vários aplicativos com ações diferentes e organizar seus gestos na biblioteca.
 - [Cantos e bordas da tela](screen-edges.md): volume, brilho, cliques e o esfregar na borda.
 - [Biblioteca de ações](action-library.md): pesquisar ações predefinidas, definir parâmetros e verificar a disponibilidade por plataforma.
 - [Ações](actions.md): escolher o que um gesto faz, incluindo a pesquisa na web com o texto selecionado.

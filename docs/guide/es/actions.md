@@ -8,11 +8,11 @@ order: 5
 
 Selecciona o crea un gesto y haz clic en **Elegir acción** dentro de **Acción**. Busca lo que quieres hacer o explora una categoría, rellena los parámetros necesarios y haz clic en **Usar esta acción**. La [biblioteca de acciones](action-library.md) enumera todas las acciones predefinidas y su disponibilidad en Windows y Mac, incluidas las de texto literal, fecha y hora, distribución de ventanas y energía.
 
-Las acciones existentes muestran **Cambiar**. Las acciones predefinidas que se pueden representar como una acción avanzada editable también ofrecen **Convertir en acción avanzada**; las nativas explican por qué no se pueden convertir. La categoría **Avanzadas** abre el envío de teclas, los comandos, Lua y los menús. Los editores siguientes siguen disponibles, también desde **Cambiar tipo de acción**.
+Las acciones existentes muestran **Cambiar**. Las acciones predefinidas que se pueden representar como una acción avanzada editable también ofrecen **Convertir en acción avanzada**; las nativas explican por qué no se pueden convertir. **Enviar un atajo…**, arriba del selector, graba una combinación de teclas en el momento; la categoría **Avanzadas** abre los comandos, Lua y los menús. Los editores siguientes siguen disponibles, también desde **Cambiar tipo de acción**.
 
 ## Enviar teclas
 
-Introduce una [secuencia de teclas](key-sequences.md), o haz clic en **Grabar**, pulsa el atajo y haz clic en **Hecho**. Por ejemplo, `^c` copia en Windows; `#c` copia en Mac. **Ayuda de sintaxis** abre la guía de sintaxis.
+Para crear esta acción, haz clic en **Enviar un atajo…** arriba del selector, graba o escribe una combinación y haz clic en **Usar esta acción**; después edítala aquí. Introduce una [secuencia de teclas](key-sequences.md), o haz clic en **Grabar**, pulsa el atajo y haz clic en **Hecho**. Por ejemplo, `^c` copia en Windows; `#c` copia en Mac. **Ayuda de sintaxis** abre la guía de sintaxis.
 
 **Activar antes la ventana bajo el cursor** activa primero el objetivo del gesto. Sin esta opción, los atajos van a la aplicación que reciba la entrada de teclado. El objetivo también sigue **Preferencias → Los gestos actúan sobre**. Para escribir texto literalmente, elige **Insertar texto** en la [biblioteca de acciones](action-library.md), o usa la [entrada en modo texto](key-sequences.md#texto-y-escape) mediante Lua.
 

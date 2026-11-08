@@ -25,7 +25,7 @@ import { defaultAction } from "../gesture";
 import { currentLang, t, type MsgKey } from "../i18n";
 import { api, errText, type Msg } from "../api";
 import { Modal } from "./Dialogs";
-import { Caps } from "./KeysInput";
+import { Caps, KeysInput } from "./KeysInput";
 
 /**
  * 动作选择器：按"我想做什么"选动作。搜索框自动聚焦；
@@ -56,6 +56,13 @@ export function ActionPicker({
   const [announce, setAnnounce] = useState("");
   const [formError, setFormError] = useState("");
   const [submitting, setSubmitting] = useState(false);
+  /** 「发送快捷键」：就地录制一个组合键，选用后即按键序列动作。 */
+  const [customOpen, setCustomOpen] = useState(false);
+  const [customKeys, setCustomKeys] = useState<string>(() => {
+    const keys = current?.type === "key_sequence" ? current.keys : undefined;
+    return typeof keys === "string" ? keys : "";
+  });
+  const [customError, setCustomError] = useState("");
   const submission = useRef<{ id: string } | null>(null);
   const listRef = useRef<HTMLUListElement>(null);
   const bodyRef = useRef<HTMLDivElement>(null);
@@ -63,7 +70,8 @@ export function ActionPicker({
   // 首次挂载（含 initialId）不重置分类/表单
   const mounted = useRef(false);
 
-  const advanced = useMemo(() => ADVANCED_PICKS.filter((a) => !(depth > 0 && a.type === "menu")), [depth]);
+  // 发送按键由上方「发送快捷键」就地录制，不再单列一行（避免选中后按键为空）
+  const advanced = useMemo(() => ADVANCED_PICKS.filter((a) => a.type !== "key_sequence" && !(depth > 0 && a.type === "menu")), [depth]);
   const presets = useMemo(() => visiblePresets(cat, q), [cat, q]);
   const searching = q.trim() !== "";
   const advancedVisible = searching
@@ -86,6 +94,24 @@ export function ActionPicker({
     invalidateValidation();
     setFormId(null);
     setValues({});
+    setCustomOpen(false);
+    setCustomError("");
+  };
+  const customVisible = !searching || matchAdvancedPick("ui.actpick.send_keys", "ui.actpick.send_keys_desc", q) || matchAdvancedPick("action.key_sequence", "ui.actpick.adv_key_sequence", q);
+  const openCustom = () => {
+    closeForm();
+    setCustomOpen(true);
+    setAnnounce(t("ui.actpick.form_opened", { name: t("ui.actpick.send_keys") }));
+  };
+  const applyCustom = async () => {
+    const keys = customKeys.trim();
+    if (!keys) return;
+    const error = await api.validateKeys(keys);
+    if (error) {
+      setCustomError(error);
+      return;
+    }
+    onPick({ type: "key_sequence", keys, activate_target: false });
   };
   const closePicker = () => {
     invalidateValidation();
@@ -194,7 +220,7 @@ export function ActionPicker({
     if (e.key === "Escape") {
       e.stopPropagation();
       // 有展开的表单时先收起表单并把焦点回到搜索框；没有表单时才关闭
-      if (formId) {
+      if (formId || customOpen) {
         closeForm();
         searchRef.current?.focus();
       } else {
@@ -203,6 +229,13 @@ export function ActionPicker({
       return;
     }
     if (e.key === "Enter") {
+      if (inForm && target.closest(".act-custom-form")) {
+        if (target.tagName === "INPUT") {
+          e.preventDefault();
+          void applyCustom();
+        }
+        return;
+      }
       if (inForm) {
         if (target.tagName === "TEXTAREA") {
           if ((e.ctrlKey || e.metaKey) && formPreset) {
@@ -245,7 +278,7 @@ export function ActionPicker({
 
   return (
     <Modal title={t("ui.actpick.title")} onClose={closePicker} wide onEscape={() => {
-      if (!formId) return false;
+      if (!formId && !customOpen) return false;
       closeForm(); searchRef.current?.focus(); return true;
     }}>
       <div ref={bodyRef} className="modal-body act-pick" onKeyDown={onKeyDown}>
@@ -275,6 +308,25 @@ export function ActionPicker({
             </button>
           ))}
         </div>
+        {customVisible && (
+          <div className={`act-custom ${customOpen ? "open" : ""}`}>
+            <button type="button" className="act-custom-head" aria-expanded={customOpen} onClick={() => (customOpen ? closeForm() : openCustom())}>
+              <span className="act-custom-icon" aria-hidden>⌨</span>
+              <span className="act-name">{t("ui.actpick.send_keys")}…</span>
+              <span className="act-desc">{t("ui.actpick.send_keys_desc")}</span>
+            </button>
+            {customOpen && (
+              <div className="act-form act-custom-form">
+                <KeysInput single value={customKeys} onChange={(v) => { setCustomKeys(v); setCustomError(""); }} />
+                {customError && <p className="field-error" role="alert">{customError}</p>}
+                <div className="act-form-foot">
+                  <span className="muted">{t("ui.actpick.send_keys_hint")}</span>
+                  <button type="button" className="btn primary small" disabled={!customKeys.trim()} onClick={() => void applyCustom()}>{t("ui.actpick.apply")}</button>
+                </div>
+              </div>
+            )}
+          </div>
+        )}
         <p className="act-search-hint muted" aria-live="polite">{searching ? t("ui.actpick.search_all_cats") : "\u00a0"}</p>
         <ul ref={listRef} id="actpick-list" className="act-list" role="listbox" tabIndex={0} aria-label={t("ui.actpick.list_aria")}>
           {presets.map((p, i) => {
@@ -311,7 +363,7 @@ export function ActionPicker({
               </li>
             );
           })}
-          {rowCount === 0 && <li className="muted act-none">{t("ui.actpick.no_match")}</li>}
+          {rowCount === 0 && !customVisible && <li className="muted act-none">{t("ui.actpick.no_match")}</li>}
         </ul>
         <p className="act-detail muted">{presets[activeRow] ? presetDescription(presets[activeRow]) : "\u00a0"}</p>
         {formError && <p className="field-error" role="alert">{formError}</p>}

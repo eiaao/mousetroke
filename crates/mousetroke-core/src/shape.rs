@@ -229,6 +229,39 @@ pub fn similarity(a: &[(f64, f64)], b: &[(f64, f64)]) -> f64 {
     score(dot, cross, a_energy, b_energy)
 }
 
+/// 一组样本的一致度：两两相似度的最小值（与设置界面显示的"样本一致度"同口径）。
+/// 有效样本少于两个时返回 `None`。
+pub fn consistency(templates: &[Vec<i32>]) -> Option<f64> {
+    let paths: Vec<_> = templates.iter().filter_map(|t| decode(t)).collect();
+    let mut lowest: Option<f64> = None;
+    for (i, a) in paths.iter().enumerate() {
+        for b in &paths[i + 1..] {
+            let s = similarity(a, b);
+            lowest = Some(lowest.map_or(s, |l| l.min(s)));
+        }
+    }
+    lowest
+}
+
+/// 两组样本的交叉相似度：A 的每个样本取它与 B 各样本的最高分求平均，B 对 A 同样计算，取较小者。
+/// 含义是"用一方的样本去画，引擎能否认出另一方"，两个方向都要成立。任一方没有有效样本时为 0。
+pub fn cross_similarity(a: &[Vec<i32>], b: &[Vec<i32>]) -> f64 {
+    let a: Vec<_> = a.iter().filter_map(|t| decode(t)).collect();
+    let b: Vec<_> = b.iter().filter_map(|t| decode(t)).collect();
+    if a.is_empty() || b.is_empty() {
+        return 0.0;
+    }
+    let directed = |from: &[Vec<(f64, f64)>], to: &[Vec<(f64, f64)>]| {
+        from.iter().map(|p| to.iter().map(|q| similarity(p, q)).fold(0.0f64, f64::max)).sum::<f64>() / from.len() as f64
+    };
+    directed(&a, &b).min(directed(&b, &a))
+}
+
+/// 两组样本互相作为绘制输入时的接受阈值：取所有样本中最严格的一档（与引擎匹配同口径）。
+pub fn pair_threshold(a: &[Vec<i32>], b: &[Vec<i32>]) -> f64 {
+    a.iter().chain(b).filter_map(|t| decode(t)).map(|p| acceptance_threshold(&p)).fold(ACCEPT_CURVE, f64::max)
+}
+
 fn encoded_similarity(path: &[(f64, f64)], path_energy: f64, template: &[i32]) -> f64 {
     if !valid_encoding(template) {
         return 0.0;

@@ -40,7 +40,12 @@ export function ActionEditor({ action, onChange, depth = 0, autoPick, unselected
   /** 选择器里选了别的动作：高级类型走记忆，预置/未知动作直接替换。 */
   const pick = (a: Action) => {
     setPicking(false);
-    if (unselected || !isAdvancedAction(a) || a.type !== action.type) {
+    // 「发送快捷键」带着已录好的按键回来：直接采用，不被记忆里的旧值覆盖
+    const configured = isAdvancedAction(a) && JSON.stringify(a) !== JSON.stringify(defaultAction(a.type));
+    if (configured) {
+      if (a.type !== action.type) memory.current[action.type] = action;
+      onChange(a);
+    } else if (unselected || !isAdvancedAction(a) || a.type !== action.type) {
       if (isAdvancedAction(a)) {
         memory.current[action.type] = action;
         onChange(memory.current[a.type] ?? a);

@@ -14,6 +14,7 @@ Queste guide trattano Windows e macOS. Il supporto per Mac è in beta; le differ
 
 - [Primi passi](getting-started.md): installazione, primo avvio, gesti predefiniti e pausa.
 - [Gesti del mouse](gestures.md): registrare tracciati e forme, aggiungere pulsanti o tasti, e trovare o modificare i gesti.
+- [Libreria dei gesti](gesture-library.md): usare un gesto in più app con azioni diverse e riordinare i gesti esistenti nella libreria.
 - [Angoli e bordi dello schermo](screen-edges.md): volume, luminosità, clic e sfregamento dei bordi.
 - [Libreria delle azioni](action-library.md): cercare azioni predefinite, impostare i parametri e verificarne la disponibilità sulle piattaforme.
 - [Azioni](actions.md): scegliere cosa fa un gesto, inclusa la ricerca web sul testo selezionato.

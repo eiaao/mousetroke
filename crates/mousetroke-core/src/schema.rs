@@ -9,21 +9,46 @@ use serde::ser::SerializeStruct;
 // ================================================================ 配置根
 
 /// config.json 根结构。
-#[derive(Debug, Clone, PartialEq, Deserialize)]
+#[derive(Debug, Clone, Deserialize)]
 #[serde(default)]
 pub struct Config {
     /// schema 版本，用于未来迁移。
     pub version: u32,
+    /// 手势库：可被多个绑定共享的手势定义（见 [`crate::library`]）。旧版本忽略此字段。
+    pub gestures: Vec<Gesture>,
     pub scopes: Vec<Scope>,
     pub settings: Settings,
+    /// 加载时因与手势库不一致而解除引用的绑定数（仅运行期诊断，不写盘、不参与比较）。
+    #[serde(skip)]
+    pub detached_gesture_refs: usize,
+}
+
+impl PartialEq for Config {
+    fn eq(&self, other: &Self) -> bool {
+        self.version == other.version && self.gestures == other.gestures && self.scopes == other.scopes && self.settings == other.settings
+    }
+}
+
+/// 手势库中的一个手势。绑定通过 [`Binding::gesture`] 引用它，并在 `pattern` 中保存一份相同的副本，
+/// 因此引擎与旧版本只读绑定自己的 `pattern` 即可。
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub struct Gesture {
+    pub id: String,
+    /// 用户命名；空 = 界面按画法自动描述。
+    #[serde(default, skip_serializing_if = "String::is_empty")]
+    pub name: String,
+    pub pattern: Vec<Step>,
 }
 
 impl Default for Config {
     fn default() -> Self {
         Self {
             version: 1,
+            gestures: Vec::new(),
             scopes: Vec::new(),
             settings: Settings::default(),
+            detached_gesture_refs: 0,
         }
     }
 }
@@ -126,6 +151,9 @@ pub struct Binding {
     /// 显示；改名即清空。`name` 始终保留一份当时语言的文字，作为不认识该键时的回落。
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name_key: Option<String>,
+    /// 引用的手势库 id；`None` = 本程序专用（内联）。有引用时 `pattern` 必须与库中一致。
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub gesture: Option<String>,
     pub pattern: Vec<Step>,
     pub action: Action,
     /// 识别即执行（不等触发键释放）。
@@ -569,8 +597,10 @@ impl Config {
     }
 
     /// 幂等迁移：早期导入器未转换的旧格式占位符（`{<旧前缀>_SELECTED_TEXT}` 等）→ `%MS_*%`；
-    /// 曾被改写进配置的内置中文名 → 补上 `name_key`（`name` 原样不动）。
+    /// 曾被改写进配置的内置中文名 → 补上 `name_key`（`name` 原样不动）；
+    /// 与手势库不一致的引用改为内联（保留绑定自己的 pattern，见 [`crate::library::check_gesture_refs`]）。
     pub fn migrate(&mut self) {
+        self.detached_gesture_refs += crate::library::check_gesture_refs(self);
         use crate::vars::convert_legacy_placeholders as conv;
         crate::names::attach_name_keys(self);
         for scope in &mut self.scopes {
@@ -633,6 +663,8 @@ impl Config {
             cfg.scopes.retain(|scope| !scope.app.as_ref().is_some_and(|app| crate::presets::MAC_DISABLE_SUGGESTIONS.iter().any(|(identity, _, _)| app.exe == *identity)));
         }
         crate::names::localize_builtin(&mut cfg);
+        // 在按平台裁剪分组之后建库，被裁掉的分组不会留下未使用的手势。
+        crate::library::adopt_exact(&mut cfg, crate::library::AdoptSource::Global);
         cfg
     }
 
@@ -743,8 +775,14 @@ fn backup_timestamp(now: std::time::SystemTime) -> Result<String, String> {
 
 impl Serialize for Config {
     fn serialize<S: serde::Serializer>(&self, serializer: S) -> Result<S::Ok, S::Error> {
-        let mut state = serializer.serialize_struct("Config", 3)?;
+        let mut state = serializer.serialize_struct("Config", 4)?;
         state.serialize_field("version", &self.saved_version())?;
+        // 空手势库不写出：未使用手势库的配置与旧版本逐字节一致。
+        if self.gestures.is_empty() {
+            state.skip_field("gestures")?;
+        } else {
+            state.serialize_field("gestures", &self.gestures)?;
+        }
         state.serialize_field("scopes", &self.scopes)?;
         state.serialize_field("settings", &self.settings)?;
         state.end()

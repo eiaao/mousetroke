@@ -5,6 +5,7 @@ import type { Config, PresetApp, RunningApp, Scope } from "../types";
 import { api, errText } from "../api";
 import { fileName } from "../gesture";
 import { displayName, t } from "../i18n";
+import { mergeLibraries } from "../library";
 
 /** 通用模态框：Esc 关闭、点遮罩关闭、打开时聚焦第一个输入。 */
 export function Modal({ title, onClose, children, wide, onEscape }: { title: string; onClose: () => void; children: React.ReactNode; wide?: boolean; onEscape?: () => boolean }) {
@@ -255,24 +256,35 @@ export function DataPage({
   );
 }
 
-/** 合并：同名作用域（按 kind + exe）追加绑定，其余作用域整体加入；设置保持当前。 */
+/**
+ * 合并：同名作用域（按 kind + exe）追加绑定，其余作用域整体加入；设置保持当前。
+ * 两份配置的手势库各自编号，先合并手势库并改写导入绑定的引用，避免指向当前库里的另一个手势。
+ */
 export function mergeConfigs(base: Config, incoming: Config): Config {
   const keyOf = (s: Config["scopes"][0]) => `${s.kind}|${fileName(s.app?.exe ?? "").toLowerCase()}|${s.special ?? ""}`;
+  const { gestures, remap } = mergeLibraries(base, incoming);
+  const relinked = incoming.scopes.map((s) => ({ ...s, bindings: s.bindings.map((b) => (b.gesture ? { ...b, gesture: remap.get(b.gesture) } : b)) }));
   const scopes = base.scopes.map((s) => ({ ...s, bindings: [...s.bindings] }));
-  for (const s of incoming.scopes) {
+  for (const s of relinked) {
     const hit = scopes.find((x) => keyOf(x) === keyOf(s));
     if (hit) hit.bindings.push(...s.bindings);
     else scopes.push(s);
   }
-  return { ...base, scopes };
+  return { ...base, gestures, scopes };
 }
 
 /** 底部提示条（可带"撤销"）。 */
+/** 提示条上撤销之外的另一个操作（如「去设置」）。 */
+export interface ToastExtra {
+  label: string;
+  run: () => void;
+}
+
 /**
  * 底部提示条。带操作（撤销）的 15 秒、普通提示 4 秒后自动关闭；右侧关闭按钮外圈是倒计时圆环。
  * 倒计时就是圆环的 CSS 动画本身（animationend 即关闭），鼠标悬停时动画与计时一起暂停。
  */
-export function Toast({ text, action, onAction, onDone }: { text: string; action?: string; onAction?: () => void; onDone: () => void }) {
+export function Toast({ text, action, onAction, extra, onDone }: { text: string; action?: string; onAction?: () => void; extra?: ToastExtra; onDone: () => void }) {
   const [leaving, setLeaving] = useState(false);
   // 父组件每次渲染都会给新的 onDone：放进 ref，不让它重置倒计时（曾因此永远不消失）
   const done = useRef(onDone);
@@ -287,6 +299,18 @@ export function Toast({ text, action, onAction, onDone }: { text: string; action
       onAnimationEnd={(e) => e.animationName === "toast-out" && done.current()}
     >
       <span className="toast-text">{text}</span>
+      {extra && (
+        <button
+          type="button"
+          className="toast-action subtle"
+          onClick={() => {
+            extra.run();
+            close();
+          }}
+        >
+          {extra.label}
+        </button>
+      )}
       {action && (
         <button
           type="button"
