@@ -103,6 +103,7 @@ fn bind(name: &str, pattern: Vec<Step>) -> Binding {
     Binding {
         name: name.into(),
         name_key: None,
+        gesture: None,
         pattern,
         action: Action::Shell { script: name.into() },
         execute_on_match: false,

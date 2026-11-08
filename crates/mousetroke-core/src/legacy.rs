@@ -247,7 +247,7 @@ pub fn import(gestures_raw: &str, prefs_raw: Option<&str>) -> Result<Config, Str
     if let Some(v) = prefs.label_color_normal.filter(custom) { settings.label.color_normal = v; }
     if let Some(v) = prefs.label_color_executed { settings.label.color_matched = v; }
 
-    let mut cfg = Config { version: 1, scopes, settings };
+    let mut cfg = Config { version: 1, scopes, settings, ..Config::default() };
     cfg.migrate();
     // 旧格式默认英文名 → name_key + 当前语言的译文（migrate 只补 key 不动 name）
     crate::names::localize_builtin(&mut cfg);
@@ -258,6 +258,7 @@ fn convert_intent(i: &LegacyIntent) -> Binding {
     Binding {
         name: i.name.clone(),
         name_key: None,
+        gesture: None,
         pattern: i.gesture.iter().map(convert_element).collect(),
         action: convert_command(&i.command),
         execute_on_match: i.execute_on_recognize,

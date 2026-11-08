@@ -257,6 +257,7 @@ mod tests {
         Binding {
             name: name.into(),
             name_key: None,
+            gesture: None,
             pattern,
             action: Action::WindowOp { op: WindowOpKind::Close, allow_child: false },
             execute_on_match: false,
