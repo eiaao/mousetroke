@@ -21,7 +21,7 @@ Le regole Windows possono corrispondere a un nome di eseguibile o a un percorso 
 
 **Tutte le app** contiene i gesti globali. Un gesto specifico per un'app ha priorità sul gesto globale corrispondente. Con **Usa anche i gesti globali** spuntato, le associazioni globali restano disponibili quando quelle dell'app non corrispondono. Deseleionalo per usare solo i gesti di quell'app.
 
-Per esempio, aggiungi un browser, crea un gesto `↓→` col pulsante destro e assegnagli lì un'azione diversa. Le altre app mantengono l'azione globale di `↓→`. Per copiare una configurazione esistente, usa [Duplica](gestures.md#trovare-copiare-e-disattivare) dentro il suo ambito e modifica l'associazione.
+Per esempio, aggiungi un browser, crea un gesto `↓→` col pulsante destro e assegnagli lì un'azione diversa. Le altre app mantengono l'azione globale di `↓→`. Per copiare una configurazione esistente, usa [Duplica](gestures.md#trovare-copiare-e-disattivare) dentro il suo ambito e modifica l'associazione. Per registrare un tracciato una sola volta e dargli un'azione diversa in ogni app, usa la [libreria dei gesti](gesture-library.md).
 
 ## Disattivare i gesti in un'app
 
@@ -37,4 +37,4 @@ Per un gioco in finestra o per il desktop remoto, aggiungi un'esclusione esplici
 
 La guida iniziale mostra le app rilevate che di norma richiedono un proprio trascinamento del mouse. Le voci spuntate vengono disattivate al termine. Controllale prima di continuare. La configurazione integrata di Mac include anche ambiti disattivati per le app la cui esclusione è consigliata; questi non hanno associazioni specifiche. Puoi modificare le esclusioni in seguito dalla barra laterale.
 
-Successivo: [azioni](actions.md), [backup della configurazione](config.md), [risoluzione dei problemi](troubleshooting.md).
+Successivo: [libreria dei gesti](gesture-library.md), [azioni](actions.md), [backup della configurazione](config.md), [risoluzione dei problemi](troubleshooting.md).

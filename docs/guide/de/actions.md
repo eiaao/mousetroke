@@ -8,11 +8,11 @@ order: 5
 
 Wählen oder erstellen Sie eine Geste und klicken Sie unter **Aktion** auf **Aktion auswählen**. Suchen Sie nach der gewünschten Aufgabe oder sehen Sie eine Kategorie durch, legen Sie die nötigen Parameter fest und klicken Sie auf **Diese Aktion verwenden**. Die [Aktionsbibliothek](action-library.md) enthält alle Voreinstellungen und ihre Verfügbarkeit unter Windows und Mac, einschließlich Text, Datum und Uhrzeit, Fensterlayouts und Energieaktionen.
 
-Vorhandene Aktionen zeigen **Ersetzen**. Voreinstellungen, die sich als bearbeitbare erweiterte Aktion darstellen lassen, bieten außerdem **In erweiterte Aktion umwandeln**; native Voreinstellungen erklären, warum die Umwandlung nicht verfügbar ist. Die Kategorie **Erweitert** öffnet Tastenfolgen, Befehle, Lua und Menüs. Die folgenden Editoren bleiben verfügbar, auch über **Aktionstyp ändern**.
+Vorhandene Aktionen zeigen **Ersetzen**. Voreinstellungen, die sich als bearbeitbare erweiterte Aktion darstellen lassen, bieten außerdem **In erweiterte Aktion umwandeln**; native Voreinstellungen erklären, warum die Umwandlung nicht verfügbar ist. **Tastenkürzel senden…** oben in der Auswahl nimmt eine Tastenkombination direkt auf; die Kategorie **Erweitert** öffnet Befehle, Lua und Menüs. Die folgenden Editoren bleiben verfügbar, auch über **Aktionstyp ändern**.
 
 ## Tasten senden
 
-Geben Sie eine [Tastenfolge](key-sequences.md) ein, oder klicken Sie auf **Aufnehmen**, drücken Sie das Kürzel und klicken Sie auf **Fertig**. Zum Beispiel kopiert `^c` unter Windows und `#c` auf dem Mac. **Syntaxhilfe** öffnet die Syntaxanleitung.
+Um diese Aktion anzulegen, klicken Sie oben in der Auswahl auf **Tastenkürzel senden…**, nehmen eine Kombination auf oder tippen sie ein und klicken auf **Diese Aktion verwenden**; danach bearbeiten Sie sie hier. Geben Sie eine [Tastenfolge](key-sequences.md) ein, oder klicken Sie auf **Aufnehmen**, drücken Sie das Kürzel und klicken Sie auf **Fertig**. Zum Beispiel kopiert `^c` unter Windows und `#c` auf dem Mac. **Syntaxhilfe** öffnet die Syntaxanleitung.
 
 **Zuerst das Fenster unter dem Cursor aktivieren** aktiviert zuerst das Gestenziel. Ohne diese Option gehen Kürzel an die Anwendung, die gerade Tastatureingaben erhält. Das Ziel folgt außerdem **Einstellungen → Gesten wirken auf**. Für unveränderten Text wählen Sie **Text einfügen** in der [Aktionsbibliothek](action-library.md) oder nutzen die [Text-zuerst-Eingabe](key-sequences.md#text-und-escaping) über Lua.
 

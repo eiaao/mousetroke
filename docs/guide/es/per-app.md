@@ -21,7 +21,7 @@ Las reglas de Windows pueden coincidir con un nombre de ejecutable o una ruta co
 
 **Todas las aplicaciones** contiene los gestos globales. Un gesto específico de una aplicación tiene prioridad sobre el gesto global correspondiente. Con **Usar también los gestos globales** marcado, las asignaciones globales siguen disponibles cuando las de la aplicación no coinciden. Desmárcalo para usar solo los gestos de esa aplicación.
 
-Por ejemplo, añade un navegador, crea un gesto de botón derecho `↓→` y asigna allí una acción distinta. Las demás aplicaciones conservan la acción global de `↓→`. Para copiar una configuración existente, usa [Duplicar](gestures.md#buscar-copiar-y-desactivar) dentro de su ámbito y edita la asignación.
+Por ejemplo, añade un navegador, crea un gesto de botón derecho `↓→` y asigna allí una acción distinta. Las demás aplicaciones conservan la acción global de `↓→`. Para copiar una configuración existente, usa [Duplicar](gestures.md#buscar-copiar-y-desactivar) dentro de su ámbito y edita la asignación. Para grabar un trazo una sola vez y darle una acción distinta en cada aplicación, usa la [biblioteca de gestos](gesture-library.md).
 
 ## Desactivar los gestos en una aplicación
 
@@ -37,4 +37,4 @@ Para un juego en ventana o un escritorio remoto, añade una exclusión explícit
 
 La guía de primera ejecución muestra las aplicaciones detectadas que suelen necesitar su propio arrastre con el ratón. Las entradas marcadas quedan desactivadas al terminar. Revísalas antes de continuar. La configuración integrada de Mac también incluye ámbitos desactivados para sus aplicaciones de exclusión sugeridas; estos no tienen asignaciones específicas. Puedes cambiar las exclusiones más tarde desde la barra lateral.
 
-Siguiente: [acciones](actions.md), [copia de seguridad de la configuración](config.md), [solución de problemas](troubleshooting.md).
+Siguiente: [biblioteca de gestos](gesture-library.md), [acciones](actions.md), [copia de seguridad de la configuración](config.md), [solución de problemas](troubleshooting.md).

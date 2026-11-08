@@ -8,11 +8,11 @@ order: 5
 
 Sélectionnez ou créez un geste, puis cliquez sur **Choisir une action** sous **Action**. Recherchez ce que vous voulez faire ou parcourez une catégorie, renseignez les paramètres nécessaires et cliquez sur **Utiliser cette action**. La [bibliothèque d’actions](action-library.md) répertorie toutes les actions prédéfinies et leur disponibilité sous Windows et sur Mac, notamment le texte littéral, la date et l’heure, la disposition des fenêtres et l’alimentation.
 
-Les actions existantes affichent **Remplacer**. Les actions prédéfinies qui correspondent à une action avancée modifiable proposent aussi **Convertir en action avancée** ; les actions natives expliquent pourquoi la conversion est indisponible. La catégorie **Avancées** ouvre l’envoi de touches, les commandes, Lua et les menus. Les éditeurs ci-dessous restent accessibles, y compris par **Changer le type d'action**.
+Les actions existantes affichent **Remplacer**. Les actions prédéfinies qui correspondent à une action avancée modifiable proposent aussi **Convertir en action avancée** ; les actions natives expliquent pourquoi la conversion est indisponible. **Envoyer un raccourci…**, en haut du sélecteur, enregistre une combinaison de touches sur place ; la catégorie **Avancées** ouvre les commandes, Lua et les menus. Les éditeurs ci-dessous restent accessibles, y compris par **Changer le type d'action**.
 
 ## Envoyer des touches
 
-Saisissez une [séquence de touches](key-sequences.md), ou cliquez sur **Enregistrer**, appuyez sur le raccourci puis cliquez sur **Terminé**. Par exemple, `^c` copie sous Windows ; `#c` copie sur Mac. **Aide sur la syntaxe** ouvre le guide de syntaxe.
+Pour créer cette action, cliquez sur **Envoyer un raccourci…** en haut du sélecteur, enregistrez ou saisissez une combinaison, puis cliquez sur **Utiliser cette action** ; modifiez-la ensuite ici. Saisissez une [séquence de touches](key-sequences.md), ou cliquez sur **Enregistrer**, appuyez sur le raccourci puis cliquez sur **Terminé**. Par exemple, `^c` copie sous Windows ; `#c` copie sur Mac. **Aide sur la syntaxe** ouvre le guide de syntaxe.
 
 **Activer d’abord la fenêtre sous le curseur** active d’abord la cible du geste. Sans cela, les raccourcis vont à l’application qui reçoit la saisie au clavier. La cible suit aussi **Préférences → Les gestes agissent sur**. Pour saisir du texte littéral, choisissez **Insérer du texte** dans la [bibliothèque d’actions](action-library.md), ou utilisez la [saisie texte prioritaire](key-sequences.md#texte-et-échappement) via Lua.
 

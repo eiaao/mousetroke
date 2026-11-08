@@ -10,7 +10,7 @@ order: 3
 
 Apri **Tutte le app → Gesti del mouse → Nuovo gesto**. Dagli un nome, poi scegli **Come inizia**: **Tenere premuto il pulsante destro**, **Tenere premuto il pulsante centrale**, **Tenere premuto il pulsante laterale 1** o **Tenere premuto il pulsante laterale 2**. I pulsanti laterali corrispondono a X1 e X2.
 
-Nell'area di disegno, tieni premuto il pulsante sinistro o destro, disegna e rilascia. L'area di registrazione accetta entrambi i pulsanti, indipendentemente dall'attivatore scelto. I segmenti retti diventano un tracciato direzionale, come `←` o `↓→`; ridisegna per sostituirlo. Clicca **Scegli azione**, cerca o esplora la [libreria delle azioni](action-library.md), poi seleziona un’azione predefinita e compila i parametri necessari. Usa **Avanzate** per tasti, comandi, Lua o menu personalizzati; consulta [Azioni](actions.md). Prova il gesto fuori dalle impostazioni con il pulsante di attivazione effettivo.
+Nell'area di disegno, tieni premuto il pulsante sinistro o destro, disegna e rilascia. L'area di registrazione accetta entrambi i pulsanti, indipendentemente dall'attivatore scelto. I segmenti retti diventano un tracciato direzionale, come `←` o `↓→`; ridisegna per sostituirlo. Clicca **Scegli azione**, cerca o esplora la [libreria delle azioni](action-library.md), poi seleziona un’azione predefinita e compila i parametri necessari. Registra una scorciatoia personalizzata con **Invia una scorciatoia…** in cima al selettore e usa **Avanzate** per comandi, Lua o menu; consulta [Azioni](actions.md). Prova il gesto fuori dalle impostazioni con il pulsante di attivazione effettivo.
 
 ## Registrare una forma
 
@@ -44,4 +44,4 @@ Premi **Ctrl+F** su Windows o **⌘+F** su Mac per cercare nell'elenco attuale p
 
 Seleziona un gesto e clicca **Duplica** per farne una copia (Ctrl+D / ⌘+D). Dai alla copia un tracciato diverso: disegni identici nello stesso ambito vanno in conflitto, quindi non contare sull'ordine dell'elenco per scegliere un'azione. Usa l'interruttore **Attivo** / **Disattivato** dell'editor, oppure Spazio su una riga selezionata dell'elenco, per disattivare un gesto senza eliminarlo. Le associazioni disattivate non riservano più da sole il loro attivatore.
 
-Successivo: [bordi dello schermo](screen-edges.md), [sostituzioni per app](per-app.md), [sintassi di invio dei tasti](key-sequences.md).
+Successivo: [libreria dei gesti](gesture-library.md), [bordi dello schermo](screen-edges.md), [sostituzioni per app](per-app.md), [sintassi di invio dei tasti](key-sequences.md).

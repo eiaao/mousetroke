@@ -8,11 +8,11 @@ order: 5
 
 Seleziona o crea un gesto, poi clicca **Scegli azione** sotto **Azione**. Cerca ciò che vuoi fare o esplora una categoria, compila i parametri necessari e clicca **Usa questa azione**. La [libreria delle azioni](action-library.md) elenca tutte le azioni predefinite e la loro disponibilità su Windows e Mac, inclusi testo letterale, data e ora, disposizione delle finestre e alimentazione.
 
-Le azioni esistenti mostrano **Cambia**. Le azioni predefinite che corrispondono a un’azione avanzata modificabile offrono anche **Converti in azione avanzata**; quelle native spiegano perché la conversione non è disponibile. La categoria **Avanzate** apre invio di tasti, comandi, Lua e menu. Gli editor seguenti restano disponibili, anche da **Cambia tipo di azione**.
+Le azioni esistenti mostrano **Cambia**. Le azioni predefinite che corrispondono a un’azione avanzata modificabile offrono anche **Converti in azione avanzata**; quelle native spiegano perché la conversione non è disponibile. **Invia una scorciatoia…**, in cima al selettore, registra subito una combinazione di tasti; la categoria **Avanzate** apre comandi, Lua e menu. Gli editor seguenti restano disponibili, anche da **Cambia tipo di azione**.
 
 ## Inviare tasti
 
-Inserisci una [sequenza di tasti](key-sequences.md), oppure clicca **Registra**, premi la scorciatoia e clicca **Fatto**. Per esempio, `^c` copia su Windows; `#c` copia su Mac. **Guida alla sintassi** apre la guida dedicata alla sintassi.
+Per creare questa azione clicca **Invia una scorciatoia…** in cima al selettore, registra o digita una combinazione e clicca **Usa questa azione**; poi modificala qui. Inserisci una [sequenza di tasti](key-sequences.md), oppure clicca **Registra**, premi la scorciatoia e clicca **Fatto**. Per esempio, `^c` copia su Windows; `#c` copia su Mac. **Guida alla sintassi** apre la guida dedicata alla sintassi.
 
 **Attiva prima la finestra sotto il cursore** attiva prima il bersaglio del gesto. Senza questa opzione, le scorciatoie vanno all'applicazione che riceve l'input della tastiera. Il bersaglio segue anche **Preferenze → I gesti agiscono su**. Per inserire testo letterale, scegli **Inserisci testo** nella [libreria delle azioni](action-library.md), oppure usa l'[input in modalità testo](key-sequences.md#testo-ed-escape) tramite Lua.
 

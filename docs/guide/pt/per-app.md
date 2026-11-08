@@ -21,7 +21,7 @@ Regras do Windows podem corresponder a um nome de executável ou caminho complet
 
 **Todos os aplicativos** contém os gestos globais. Um gesto específico de um aplicativo tem prioridade sobre o gesto global correspondente. Com **Usar também os gestos globais** marcado, os vínculos globais continuam disponíveis quando os vínculos do aplicativo não corresponderem. Desmarque para usar apenas os gestos daquele aplicativo.
 
-Por exemplo, adicione um navegador, crie um gesto `↓→` com o botão direito e atribua lá uma ação diferente. Os outros aplicativos mantêm a ação global de `↓→`. Para copiar uma configuração existente, use [Duplicar](gestures.md#encontrar-copiar-e-desativar) dentro do escopo dela e edite o vínculo.
+Por exemplo, adicione um navegador, crie um gesto `↓→` com o botão direito e atribua lá uma ação diferente. Os outros aplicativos mantêm a ação global de `↓→`. Para copiar uma configuração existente, use [Duplicar](gestures.md#encontrar-copiar-e-desativar) dentro do escopo dela e edite o vínculo. Para gravar um traçado uma única vez e dar a ele uma ação diferente em cada aplicativo, use a [biblioteca de gestos](gesture-library.md).
 
 ## Desativar gestos em um aplicativo
 
@@ -37,4 +37,4 @@ Para um jogo em janela ou área de trabalho remota, adicione uma exclusão expl�
 
 O guia de primeiros passos mostra os aplicativos detectados que normalmente precisam do próprio arrastar do mouse. As entradas marcadas são desativadas quando você o conclui. Revise-as antes de continuar. A configuração integrada do Mac também inclui escopos desativados para seus aplicativos de exclusão sugeridos; eles não têm vínculos próprios. Você pode alterar as exclusões depois pela barra lateral.
 
-Próximo: [ações](actions.md), [backup da configuração](config.md), [solução de problemas](troubleshooting.md).
+Próximo: [biblioteca de gestos](gesture-library.md), [ações](actions.md), [backup da configuração](config.md), [solução de problemas](troubleshooting.md).

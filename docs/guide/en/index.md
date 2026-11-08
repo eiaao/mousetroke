@@ -14,6 +14,7 @@ These guides cover Windows and macOS. Mac support is in beta; platform differenc
 
 - [Getting started](getting-started.md): install, first run, default gestures and pause.
 - [Mouse gestures](gestures.md): record strokes and shapes, add buttons or keys, and find or edit gestures.
+- [Gesture library](gesture-library.md): use one gesture in several apps with different actions, and organize existing gestures into the library.
 - [Screen corners and edges](screen-edges.md): volume, brightness, clicks and edge rubbing.
 - [Action library](action-library.md): search ready-to-use presets, set parameters and check platform availability.
 - [Actions](actions.md): choose what a gesture does, including selected-text web search.

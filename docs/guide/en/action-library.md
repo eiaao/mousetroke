@@ -17,7 +17,7 @@ Presets describe what you want to do, such as close a tab or center a window. Mo
 
 The search box receives focus when the picker opens. Use Up/Down to move through available results and Enter to select. Esc closes the parameter form first, then the picker. In multiline text, Ctrl+Enter or Command+Enter confirms the form.
 
-**Convert to advanced action** replaces a preset with its current platform's editable keys, window operation, URL, app, command or system key. The confirmation explains that this is one way: the result no longer follows the preset's platform or language defaults. Native layout, power, literal-text, date/time, plain-copy, pause and settings actions keep their preset form; their cards explain why conversion is unavailable. The **Advanced** group at the end of the list offers send keys, commands, Lua and menus; the [advanced action reference](actions.md) also covers the existing editors.
+**Convert to advanced action** replaces a preset with its current platform's editable keys, window operation, URL, app, command or system key. The confirmation explains that this is one way: the result no longer follows the preset's platform or language defaults. Native layout, power, literal-text, date/time, plain-copy, pause and settings actions keep their preset form; their cards explain why conversion is unavailable. **Send a shortcut…** at the top of the picker records a key combination on the spot; the **Advanced** group at the end of the list offers commands, Lua and menus; the [advanced action reference](actions.md) also covers the existing editors.
 
 ## Text, windows and power
 

@@ -21,7 +21,7 @@ Windows-Regeln können einen exe-Namen oder einen vollständigen Pfad unabhängi
 
 **Alle Apps** enthält die globalen Gesten. Eine app-spezifische Geste hat Vorrang vor der entsprechenden globalen Geste. Ist **Auch globale Gesten verwenden** aktiviert, bleiben globale Bindungen verfügbar, wenn die Bindungen der App nicht passen. Deaktivieren Sie die Option, um nur die Gesten dieser App zu verwenden.
 
-Fügen Sie zum Beispiel einen Browser hinzu, erstellen Sie eine `↓→`-Geste mit rechter Taste und weisen Sie ihr dort eine andere Aktion zu. Andere Apps behalten die globale `↓→`-Aktion. Um ein vorhandenes Setup zu kopieren, verwenden Sie [Duplizieren](gestures.md#suchen-duplizieren-und-deaktivieren) im jeweiligen Bereich und bearbeiten Sie die Bindung.
+Fügen Sie zum Beispiel einen Browser hinzu, erstellen Sie eine `↓→`-Geste mit rechter Taste und weisen Sie ihr dort eine andere Aktion zu. Andere Apps behalten die globale `↓→`-Aktion. Um ein vorhandenes Setup zu kopieren, verwenden Sie [Duplizieren](gestures.md#suchen-duplizieren-und-deaktivieren) im jeweiligen Bereich und bearbeiten Sie die Bindung. Um eine Zeichnung nur einmal aufzunehmen und ihr in jeder App eine eigene Aktion zu geben, nutzen Sie die [Gestenbibliothek](gesture-library.md).
 
 ## Gesten in einer App deaktivieren
 
@@ -37,4 +37,4 @@ Für ein Fenster-Spiel oder Remotedesktop fügen Sie eine explizite Ausnahme hin
 
 Die Anleitung des ersten Starts zeigt erkannte Apps, die häufig eigenes Maus-Ziehen brauchen. Markierte Einträge werden beim Abschließen deaktiviert. Prüfen Sie sie, bevor Sie fortfahren. Die Mac-Grundkonfiguration enthält außerdem deaktivierte Bereiche für ihre empfohlenen Ausschluss-Apps; diese haben keine app-spezifischen Bindungen. Sie können Ausschlüsse später über die Seitenleiste ändern.
 
-Weiter: [Aktionen](actions.md), [Konfigurations-Backup](config.md), [Fehlerbehebung](troubleshooting.md).
+Weiter: [Gestenbibliothek](gesture-library.md), [Aktionen](actions.md), [Konfigurations-Backup](config.md), [Fehlerbehebung](troubleshooting.md).

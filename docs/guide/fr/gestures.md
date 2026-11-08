@@ -10,7 +10,7 @@ order: 3
 
 Ouvrez **Toutes les applications → Gestes de souris → Nouveau geste**. Nommez-le, puis choisissez **Comment ça commence** : **Maintenir le bouton droit enfoncé**, **Maintenir le bouton du milieu enfoncé**, **Maintenir le bouton latéral 1 enfoncé** ou **Maintenir le bouton latéral 2 enfoncé**. Les boutons latéraux correspondent à X1 et X2.
 
-Dans la zone de dessin, maintenez le bouton gauche ou droit, dessinez et relâchez. La zone d’enregistrement accepte l’un ou l’autre bouton, indépendamment du déclencheur choisi. Les segments droits deviennent un tracé directionnel, comme `←` ou `↓→` ; retracez pour le remplacer. Cliquez sur **Choisir une action**, recherchez ou parcourez la [bibliothèque d’actions](action-library.md), puis sélectionnez une action prédéfinie et renseignez les paramètres nécessaires. Utilisez **Avancées** pour les touches, commandes, scripts Lua ou menus personnalisés ; voir [Actions](actions.md). Essayez le geste en dehors des paramètres avec son vrai bouton déclencheur.
+Dans la zone de dessin, maintenez le bouton gauche ou droit, dessinez et relâchez. La zone d’enregistrement accepte l’un ou l’autre bouton, indépendamment du déclencheur choisi. Les segments droits deviennent un tracé directionnel, comme `←` ou `↓→` ; retracez pour le remplacer. Cliquez sur **Choisir une action**, recherchez ou parcourez la [bibliothèque d’actions](action-library.md), puis sélectionnez une action prédéfinie et renseignez les paramètres nécessaires. Enregistrez un raccourci personnalisé avec **Envoyer un raccourci…** en haut du sélecteur, et utilisez **Avancées** pour les commandes, scripts Lua ou menus ; voir [Actions](actions.md). Essayez le geste en dehors des paramètres avec son vrai bouton déclencheur.
 
 ## Enregistrer une forme
 
@@ -44,4 +44,4 @@ Appuyez sur **Ctrl+F** sous Windows ou **⌘+F** sur Mac pour rechercher dans la
 
 Sélectionnez un geste et cliquez sur **Dupliquer** pour en faire une copie (Ctrl+D / ⌘+D). Donnez à la copie un tracé différent : des dessins identiques dans une même portée entrent en conflit, ne comptez donc pas sur leur ordre dans la liste pour choisir une action. Utilisez l’interrupteur **Activé** / **Désactivé** de l’éditeur, ou la barre d’espace sur une ligne sélectionnée de la liste, pour désactiver un geste sans le supprimer. Les liaisons désactivées ne réservent plus leur déclencheur par elles-mêmes.
 
-Suivant : [bords de l’écran](screen-edges.md), [règles par application](per-app.md), [syntaxe d’envoi de touches](key-sequences.md).
+Suivant : [bibliothèque de gestes](gesture-library.md), [bords de l’écran](screen-edges.md), [règles par application](per-app.md), [syntaxe d’envoi de touches](key-sequences.md).

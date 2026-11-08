@@ -10,7 +10,7 @@ order: 3
 
 Abra **Todos os aplicativos → Gestos de mouse → Novo gesto**. Dê um nome a ele e escolha **Como começa**: **Segurar o botão direito**, **Segurar o botão do meio**, **Segurar o botão lateral 1** ou **Segurar o botão lateral 2**. Os botões laterais correspondem a X1 e X2.
 
-Na área de desenho, segure o botão esquerdo ou direito, desenhe e solte. A área de gravação aceita qualquer um dos dois botões, independentemente do gatilho escolhido. Segmentos retos tornam-se um traçado direcional, como `←` ou `↓→`; desenhe de novo para substituí-lo. Clique em **Escolher ação**, pesquise ou explore a [biblioteca de ações](action-library.md), selecione uma ação predefinida e preencha os parâmetros necessários. Use **Avançadas** para teclas, comandos, Lua ou menus personalizados; veja [Ações](actions.md). Experimente o gesto fora das configurações com o botão de disparo real.
+Na área de desenho, segure o botão esquerdo ou direito, desenhe e solte. A área de gravação aceita qualquer um dos dois botões, independentemente do gatilho escolhido. Segmentos retos tornam-se um traçado direcional, como `←` ou `↓→`; desenhe de novo para substituí-lo. Clique em **Escolher ação**, pesquise ou explore a [biblioteca de ações](action-library.md), selecione uma ação predefinida e preencha os parâmetros necessários. Grave um atalho personalizado com **Enviar um atalho…** no topo do seletor e use **Avançadas** para comandos, Lua ou menus; veja [Ações](actions.md). Experimente o gesto fora das configurações com o botão de disparo real.
 
 ## Gravar uma forma
 
@@ -44,4 +44,4 @@ Pressione **Ctrl+F** no Windows ou **⌘+F** no Mac para pesquisar a lista atual
 
 Selecione um gesto e clique em **Duplicar** para fazer uma cópia (Ctrl+D / ⌘+D). Dê à cópia um traçado diferente: desenhos idênticos em um mesmo escopo entram em conflito, então não conte com a ordem da lista para escolher a ação. Use o interruptor **Ativado** / **Desativado** do editor, ou a tecla Espaço em uma linha selecionada da lista, para desativar um gesto sem excluí-lo. Vínculos desativados deixam de reservar o gatilho por conta própria.
 
-Próximo: [bordas da tela](screen-edges.md), [substituições por aplicativo](per-app.md), [sintaxe de envio de teclas](key-sequences.md).
+Próximo: [biblioteca de gestos](gesture-library.md), [bordas da tela](screen-edges.md), [substituições por aplicativo](per-app.md), [sintaxe de envio de teclas](key-sequences.md).

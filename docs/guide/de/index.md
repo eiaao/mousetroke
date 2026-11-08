@@ -14,6 +14,7 @@ Diese Anleitungen behandeln Windows und macOS. Die Mac-Unterstützung ist beta; 
 
 - [Erste Schritte](getting-started.md): Installation, erster Start, Standardgesten und Pausieren.
 - [Mausgesten](gestures.md): Zeichenfolgen und Formen aufnehmen, Maustasten oder Tasten hinzufügen und Gesten finden oder bearbeiten.
+- [Gestenbibliothek](gesture-library.md): eine Geste in mehreren Apps mit unterschiedlichen Aktionen nutzen und vorhandene Gesten in die Bibliothek übernehmen.
 - [Bildschirmecken und -ränder](screen-edges.md): Lautstärke, Helligkeit, Klicks und Reiben am Rand.
 - [Aktionsbibliothek](action-library.md): fertige Voreinstellungen suchen, Parameter festlegen und die Plattformverfügbarkeit prüfen.
 - [Aktionen](actions.md): wählen, was eine Geste tut, einschließlich Websuche mit markiertem Text.
