@@ -2,6 +2,16 @@
 
 Each version lists its highlights in English, then in Chinese. The release page, the in-app update notes and the website changelog are all generated from this file.
 
+## 0.3.1 — 2026-11-14
+
+### English
+
+- Fixed vertical or horizontal strokes incorrectly triggering diagonal gestures when the corresponding straight gestures were disabled. Diagonal minimize and maximize gestures now require the matching direction while retaining tolerance for small angle and length variations. (#73)
+
+### 中文
+
+- 修复停用对应的上下左右手势后，直划可能误触发斜向手势的问题。斜向最小化、最大化等手势现在要求方向一致，同时保留轻微角度偏差和长度变化的容差。（#73）
+
 ## 0.3.0 — 2026-11-08
 
 ### English
