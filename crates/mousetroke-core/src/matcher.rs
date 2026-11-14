@@ -356,6 +356,30 @@ mod tests {
     }
 
     #[test]
+    fn disabled_axis_gestures_do_not_fall_back_to_diagonals() {
+        let mut cfg = Config::builtin_for(crate::caps::Platform::Windows);
+        let built = build_steps(Trigger::Button(MouseButton::Right), &[], Some(0));
+        for disabled in [false, true] {
+            for b in cfg.scopes.iter_mut().flat_map(|s| &mut s.bindings) {
+                if matches!(b.name_key.as_deref(), Some("builtin.gesture.copy" | "builtin.gesture.paste")) {
+                    b.disabled = disabled;
+                }
+            }
+            for (x, y, key) in [(0.0, -200.0, "builtin.gesture.copy"), (0.0, 200.0, "builtin.gesture.paste"),
+                (-160.0, 160.0, "builtin.gesture.minimize"), (160.0, -160.0, "builtin.gesture.maximize")] {
+                let raw: Vec<_> = (0..=40).map(|i| (x * i as f64 / 40.0, y * i as f64 / 40.0)).collect();
+                let mut tracker = PathTracker::new(30.0);
+                tracker.start(0.0, 0.0);
+                for &(px, py) in &raw { tracker.add_point(px, py); }
+                let scopes = resolve_scopes(&cfg, false, Some("explorer.exe"));
+                let hit = match_chain_path(&scopes, &built, &tracker.strokes(), Some(&raw));
+                let expected = if disabled && x == 0.0 { None } else { Some(key) };
+                assert_eq!(hit.and_then(|(b, _)| b.name_key.as_deref()), expected, "disabled={disabled}, stroke=({x}, {y})");
+            }
+        }
+    }
+
+    #[test]
     fn pure_edge_and_wheel() {
         let s = scope(
             ScopeKind::Global,

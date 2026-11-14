@@ -105,21 +105,24 @@ pub fn denoise(segs: &[Segment]) -> Vec<Segment> {
     kept
 }
 
-/// 笔画的方向箭头表示（如 `→ ↓ →`），用于屏幕上"未识别"提示。
-/// 每段按 8 方向吸附（次轴 < 主轴×tan22.5° 视为纯轴向）。
-pub fn arrows(segs: &[Segment]) -> String {
+/// 录制、识别和提示共用的八方向吸附（次轴 < 主轴×tan22.5° 视为纯轴向）。
+fn direction(x: i32, y: i32) -> (i32, i32) {
+    let (ax, ay) = (x.abs() as f64, y.abs() as f64);
     let tan = std::f64::consts::FRAC_PI_8.tan();
+    if ay < ax * tan {
+        (x.signum(), 0)
+    } else if ax < ay * tan {
+        (0, y.signum())
+    } else {
+        (x.signum(), y.signum())
+    }
+}
+
+/// 笔画的方向箭头表示（如 `→ ↓ →`），用于屏幕上"未识别"提示。
+pub fn arrows(segs: &[Segment]) -> String {
     segs.iter()
         .map(|s| {
-            let (ax, ay) = (s.x.abs() as f64, s.y.abs() as f64);
-            let (x, y) = if ay < ax * tan {
-                (s.x.signum(), 0)
-            } else if ax < ay * tan {
-                (0, s.y.signum())
-            } else {
-                (s.x.signum(), s.y.signum())
-            };
-            match (x, y) {
+            match direction(s.x, s.y) {
                 (1, 0) => '→',
                 (-1, 0) => '←',
                 (0, -1) => '↑',
@@ -141,10 +144,10 @@ pub const EXACT_EPS: f64 = 0.25;
 pub const ACCEPT_MAX: f64 = 1.25;
 
 /// 计算轨迹与 trace 点序列的匹配分（越小越像，归一化后）。
-/// 返回 `None` 表示结构不符（段数不同 / 非法编码）。
+/// 返回 `None` 表示方向或结构不符（段数不同 / 非法编码）。
 ///
 /// 旧格式 P 是**归一化**坐标（格数是相对量），因此先把实际轨迹按
-/// 总长度缩放到与期望一致，再做逐段比较；方向相反按段重罚。
+/// 总长度缩放到与期望一致，再做逐段比较；每段须属于相同的八方向。
 pub fn match_polyline(points: &[i32], segments: &[Segment]) -> Option<f64> {
     if points.len() < 4 || !points.len().is_multiple_of(2) {
         return None;
@@ -158,9 +161,13 @@ pub fn match_polyline(points: &[i32], segments: &[Segment]) -> Option<f64> {
     for i in 0..expected_len {
         let ex = (points[(i + 1) * 2] - points[i * 2]) / 50;
         let ey = (points[(i + 1) * 2 + 1] - points[i * 2 + 1]) / 50;
+        let seg = segments[i];
+        if direction(ex, ey) != direction(seg.x, seg.y) {
+            return None;
+        }
         expected.push((ex as f64, ey as f64));
     }
-    // 按段主轴长度（L∞）归一化：既能容忍划得长/短，又能区分 ← 与 ↙
+    // 按段主轴长度（L∞）归一化，容忍划得长/短。
     let linf = |x: f64, y: f64| x.abs().max(y.abs());
     let exp_total: f64 = expected.iter().map(|(x, y)| linf(*x, *y)).sum();
     let act_total: f64 = segments.iter().map(|s| linf(s.x as f64, s.y as f64)).sum();
@@ -173,18 +180,11 @@ pub fn match_polyline(points: &[i32], segments: &[Segment]) -> Option<f64> {
         let seg = segments[i];
         let (sx, sy) = (seg.x as f64 * scale, seg.y as f64 * scale);
         score += (ex - sx).abs() + (ey - sy).abs();
-        // 方向相反：重罚（除非实际分量几乎为零）
-        if *ex != 0.0 && sx.signum() != *ex && sx.abs() > 0.35 {
-            score += 1.5;
-        }
-        if *ey != 0.0 && sy.signum() != *ey && sy.abs() > 0.35 {
-            score += 1.5;
-        }
     }
     Some(score)
 }
 
-/// 从多个候选中选最佳匹配：先找精确匹配（0 分），否则取唯一的最小分（≤ 1）。
+/// 从多个候选中选最佳匹配：优先精确匹配，否则取不超过 [`ACCEPT_MAX`] 的唯一最小分。
 pub fn best_score(candidates: &[(&[i32], &[Segment])]) -> Option<(usize, f64)> {
     let mut best: Option<(usize, f64)> = None;
     let mut ties = false;
@@ -219,20 +219,9 @@ pub fn record_points(raw: &[(f64, f64)], grid: f64) -> Vec<i32> {
     for &(x, y) in &raw[1..] {
         t.add_point(x, y);
     }
-    let snap = |s: &Segment| -> (i32, i32) {
-        let (ax, ay) = (s.x.abs() as f64, s.y.abs() as f64);
-        let tan = std::f64::consts::FRAC_PI_8.tan(); // 22.5°
-        if ay < ax * tan {
-            (s.x.signum(), 0)
-        } else if ax < ay * tan {
-            (0, s.y.signum())
-        } else {
-            (s.x.signum(), s.y.signum())
-        }
-    };
     let mut dirs: Vec<(i32, i32)> = Vec::new();
     for s in t.strokes() {
-        let d = snap(&s);
+        let d = direction(s.x, s.y);
         if dirs.last() != Some(&d) {
             dirs.push(d);
         }
@@ -383,15 +372,28 @@ mod tests {
         // 最小化 ↙ = (-1,+1)；划长对角线也应命中（归一化）
         let long = [Segment { x: -3, y: 3 }];
         assert!(match_polyline(&[50, 0, 0, 50], &long).unwrap() < EXACT_EPS);
-        // 纯左划 (−1,0) 与 ↙ 有分差（1 分）——由 best_score 的"唯一最优"规则控制误匹配
-        let s = match_polyline(&[50, 0, 0, 50], &[Segment { x: -1, y: 0 }]).unwrap();
-        assert!((EXACT_EPS..=ACCEPT_MAX).contains(&s), "实际 {s}");
+        assert!(match_polyline(&[50, 0, 0, 50], &[Segment { x: -1, y: 0 }]).is_none());
+    }
+
+    #[test]
+    fn diagonals_reject_axis_strokes() {
+        for (x, y) in [(-1, 1), (1, -1), (-1, -1), (1, 1)] {
+            let points = [0, 0, x * 50, y * 50];
+            // 即使只有一个斜向候选，纯轴向和略偏斜的轴向笔画也不能命中。
+            for seg in [Segment { x: 0, y: y * 6 }, Segment { x: x * 6, y: 0 },
+                Segment { x, y: y * 6 }, Segment { x: x * 6, y }] {
+                assert!(best_score(&[(&points, &[seg])]).is_none(), "{points:?} accepted {seg:?}");
+            }
+            // 正常斜线仍容忍长度变化和轻微角度偏差。
+            for seg in [Segment { x, y }, Segment { x: x * 6, y: y * 6 }, Segment { x: x * 4, y: y * 6 }] {
+                assert!(best_score(&[(&points, &[seg])]).is_some(), "{points:?} rejected {seg:?}");
+            }
+        }
     }
 
     #[test]
     fn wrong_direction_does_not_match() {
-        let s = match_polyline(&[0, 50, 0, 0], &[Segment { x: 0, y: 1 }]).unwrap();
-        assert!(s > ACCEPT_MAX, "方向相反应被重罚, 实际 {s}");
+        assert!(match_polyline(&[0, 50, 0, 0], &[Segment { x: 0, y: 1 }]).is_none());
     }
 
     #[test]
@@ -401,16 +403,19 @@ mod tests {
 
     #[test]
     fn best_score_prefers_exact_then_unique() {
-        let segs = [Segment { x: -1, y: 0 }];
+        let segs = [Segment { x: 0, y: 4 }, Segment { x: 4, y: 0 }];
+        let fuzzy = [0, 0, 0, 100, 50, 100];
+        let exact = [0, 0, 0, 50, 50, 50];
         let cands: Vec<(&[i32], &[Segment])> = vec![
-            (&[0i32, 50, 0, 0], &segs),          // 2 分
-            (&[50, 0, 0, 50], &segs),            // 1 分（↙）
+            (&fuzzy, &segs), // 同方向、段长比例不同：1 分
+            (&exact, &segs), // 0 分
         ];
         assert_eq!(best_score(&cands).map(|(i, _)| i), Some(1));
-        // 出现并列 → 放弃模糊匹配（↙ [50,0,0,50] 与 ↖ [50,50,0,0] 对左划段同为 1 分）
+        assert_eq!(best_score(&cands[..1]), Some((0, 1.0)));
+        // 同方向的两个候选仅段长比例不同，同为 1 分时放弃模糊匹配。
         let cands2: Vec<(&[i32], &[Segment])> = vec![
-            (&[50, 0, 0, 50], &segs),
-            (&[50, 50, 0, 0], &segs),
+            (&fuzzy, &segs),
+            (&[0, 0, 0, 50, 100, 50], &segs),
         ];
         assert!(best_score(&cands2).is_none());
     }

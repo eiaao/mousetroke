@@ -710,7 +710,7 @@ fn app_shape_allows_global_straight_fallback() {
 fn path_matching_prefers_exact_trace_then_shape_then_fuzzy_trace() {
     let path = vec![(0.0, 0.0), (0.0, 200.0), (200.0, 200.0)];
     let segs = segments(&path);
-    let fuzzy = vec![0, 0, 50, 50, 100, 50];
+    let fuzzy = vec![0, 0, 0, 100, 50, 100]; // Same directions, different segment lengths.
     let exact = vec![0, 0, 0, 50, 50, 50];
     let fuzzy_score = best_score(&[(&fuzzy, &segs)]).unwrap().1;
     assert!((EXACT_EPS..=ACCEPT_MAX).contains(&fuzzy_score));
@@ -740,7 +740,7 @@ fn chain_keeps_fuzzy_match_ahead_of_less_specific_exact_trace() {
     let g = clean(Drawing::G, 0.0);
     let mut app = scope(vec![binding("app-g", vec![RIGHT, Step::shape_from_samples(&[g]).unwrap()])]);
     app.kind = ScopeKind::App;
-    let mut special = scope(vec![binding("special-fuzzy", vec![RIGHT, Step::Trace { points: vec![0, 0, 50, 50, 100, 50] }])]);
+    let mut special = scope(vec![binding("special-fuzzy", vec![RIGHT, Step::Trace { points: vec![0, 0, 0, 100, 50, 100] }])]);
     special.kind = ScopeKind::Special;
     let global = scope(vec![binding("global-exact", vec![RIGHT, Step::Trace { points: vec![0, 0, 0, 50, 50, 50] }])]);
     let built = matcher::build_steps(Trigger::Button(MouseButton::Right), &[], Some(0));
