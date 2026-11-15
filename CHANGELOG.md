@@ -7,10 +7,12 @@ Each version lists its highlights in English, then in Chinese. The release page,
 ### English
 
 - Fullscreen pause can now be turned off globally or overridden per app. Mouse gestures and screen-edge triggers share the same policy; existing configurations keep pausing in fullscreen by default. (#79)
+- The app page header is redesigned: **Use gestures**, **Also use global gestures** and **In fullscreen** sit together in one settings bar, and search shares the toolbar row with the tabs.
 
 ### 中文
 
 - 全屏暂停支持全局关闭和按程序设置例外，鼠标手势与触发角共用同一策略；已有配置仍默认在全屏时暂停。（#79）
+- 程序页顶部重新设计：“使用手势”“也使用通用手势”“全屏时”集中到一条设置栏，搜索框与分类标签同在一行。
 
 ## 0.3.1 — 2026-11-14
 

@@ -19,13 +19,13 @@ Las reglas de Windows pueden coincidir con un nombre de ejecutable o una ruta co
 
 ## Gestos específicos y globales
 
-**Todas las aplicaciones** contiene los gestos globales. Un gesto específico de una aplicación tiene prioridad sobre el gesto global correspondiente. Con **Usar también los gestos globales** marcado, las asignaciones globales siguen disponibles cuando las de la aplicación no coinciden. Desmárcalo para usar solo los gestos de esa aplicación.
+**Todas las aplicaciones** contiene los gestos globales. Un gesto específico de una aplicación tiene prioridad sobre el gesto global correspondiente. Con **Usar también los gestos globales** activado, las asignaciones globales siguen disponibles cuando las de la aplicación no coinciden. Desactívalo para usar solo los gestos de esa aplicación.
 
 Por ejemplo, añade un navegador, crea un gesto de botón derecho `↓→` y asigna allí una acción distinta. Las demás aplicaciones conservan la acción global de `↓→`. Para copiar una configuración existente, usa [Duplicar](gestures.md#buscar-copiar-y-desactivar) dentro de su ámbito y edita la asignación. Para grabar un trazo una sola vez y darle una acción distinta en cada aplicación, usa la [biblioteca de gestos](gesture-library.md).
 
 ## Desactivar los gestos en una aplicación
 
-Selecciona la aplicación en la barra lateral y activa **Desactivar gestos en esta aplicación**. Esto desactiva sus propios gestos, los gestos globales y los disparadores de borde. Los botones derecho, central y laterales pasan con normalidad. Las asignaciones guardadas se conservan; **Reactivar gestos** las restaura. **Quitar esta aplicación** elimina el ámbito específico de la aplicación.
+Selecciona la aplicación en la barra lateral y desactiva **Usar gestos**. Esto desactiva sus propios gestos, los gestos globales y los disparadores de borde. Los botones derecho, central y laterales pasan con normalidad. Las asignaciones guardadas se conservan; al volver a activar **Usar gestos** se restauran. El botón de papelera **Quitar esta aplicación**, arriba a la derecha de la página de la aplicación, elimina el ámbito específico de la aplicación.
 
 Esto es útil para el escritorio remoto, las máquinas virtuales, el modelado 3D, las herramientas de diseño y los editores de juegos que usan el arrastre con el botón derecho o central. La lista **Se sugiere desactivarlos** del selector incluye aplicaciones conocidas de estas categorías. Las aplicaciones instaladas detectadas se pueden añadir en grupo.
 

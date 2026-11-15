@@ -19,13 +19,13 @@ Les règles Windows peuvent correspondre à un nom d’exécutable ou à un chem
 
 ## Gestes propres à une appli et gestes globaux
 
-**Toutes les applications** contient les gestes globaux. Un geste propre à une application est prioritaire sur le geste global correspondant. Avec **Utiliser aussi les gestes globaux** coché, les liaisons globales restent disponibles quand les liaisons de l’application ne correspondent pas. Décochez-le pour n’utiliser que les gestes de cette application.
+**Toutes les applications** contient les gestes globaux. Un geste propre à une application est prioritaire sur le geste global correspondant. Avec **Utiliser aussi les gestes globaux** activé, les liaisons globales restent disponibles quand les liaisons de l’application ne correspondent pas. Désactivez-le pour n’utiliser que les gestes de cette application.
 
 Par exemple, ajoutez un navigateur, créez un geste `↓→` au bouton droit et assignez-y une action différente. Les autres applications conservent l’action globale de `↓→`. Pour copier une configuration existante, utilisez [Dupliquer](gestures.md#rechercher-copier-et-désactiver) dans sa portée et modifiez la liaison. Pour enregistrer un tracé une seule fois et lui donner une action différente dans chaque application, utilisez la [bibliothèque de gestes](gesture-library.md).
 
 ## Désactiver les gestes dans une appli
 
-Sélectionnez l’application dans la barre latérale et activez **Désactiver les gestes dans cette appli**. Cela désactive ses propres gestes, les gestes globaux et les déclencheurs de bords d’écran. Les boutons droit, du milieu et latéraux passent normalement. Les liaisons enregistrées sont conservées ; **Réactiver les gestes** les rétablit. **Retirer cette application** supprime la portée propre à l’application.
+Sélectionnez l’application dans la barre latérale et désactivez **Utiliser les gestes**. Cela désactive ses propres gestes, les gestes globaux et les déclencheurs de bords d’écran. Les boutons droit, du milieu et latéraux passent normalement. Les liaisons enregistrées sont conservées ; réactiver **Utiliser les gestes** les rétablit. Le bouton corbeille **Retirer cette application**, en haut à droite de la page de l’application, supprime la portée propre à l’application.
 
 C’est utile pour le bureau à distance, les machines virtuelles, la modélisation 3D, les outils de conception et les éditeurs de jeux qui utilisent le glisser au bouton droit ou du milieu. La liste **Désactivation conseillée** du sélecteur comprend des applications connues de ces catégories. Les applications installées détectées peuvent être ajoutées ensemble.
 

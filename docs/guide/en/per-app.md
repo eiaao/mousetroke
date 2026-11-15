@@ -19,13 +19,13 @@ Windows rules can match an executable name or full path, case-insensitively. Mac
 
 ## App-specific and global gestures
 
-**All apps** contains global gestures. An app-specific gesture takes priority over the corresponding global gesture. With **Also use global gestures** checked, global bindings remain available when the app's bindings do not match. Uncheck it to use only that app's gestures.
+**All apps** contains global gestures. An app-specific gesture takes priority over the corresponding global gesture. With **Also use global gestures** turned on, global bindings remain available when the app's bindings do not match. Turn it off to use only that app's gestures.
 
 For example, add a browser, create a right-button `↓→` gesture and assign a different action there. Other apps keep the global `↓→` action. To copy an existing setup, use [Duplicate](gestures.md#find-copy-and-turn-off) within its scope and edit the binding. To record a drawing once and give it a different action in each app, use the [gesture library](gesture-library.md).
 
 ## Turn gestures off in an app
 
-Select the app in the sidebar and enable **Turn off gestures in this app**. This disables its own gestures, global gestures and screen-edge triggers. Right, middle and side buttons pass through normally. The stored bindings remain; **Turn gestures back on** restores them. **Remove this app** removes the app-specific scope.
+Select the app in the sidebar and turn off **Use gestures**. This disables its own gestures, global gestures and screen-edge triggers. Right, middle and side buttons pass through normally. The stored bindings remain; turning **Use gestures** back on restores them. The trash-can button **Remove this app** at the top right of the app page removes the app-specific scope.
 
 This is useful for remote desktop, virtual machines, 3D modeling, design tools and game editors that use right/middle-button dragging. The picker’s **Suggested to turn off** list includes known applications from these categories. Detected installed apps can be added together.
 

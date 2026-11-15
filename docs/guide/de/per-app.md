@@ -19,13 +19,13 @@ Windows-Regeln können einen exe-Namen oder einen vollständigen Pfad unabhängi
 
 ## App-spezifische und globale Gesten
 
-**Alle Apps** enthält die globalen Gesten. Eine app-spezifische Geste hat Vorrang vor der entsprechenden globalen Geste. Ist **Auch globale Gesten verwenden** aktiviert, bleiben globale Bindungen verfügbar, wenn die Bindungen der App nicht passen. Deaktivieren Sie die Option, um nur die Gesten dieser App zu verwenden.
+**Alle Apps** enthält die globalen Gesten. Eine app-spezifische Geste hat Vorrang vor der entsprechenden globalen Geste. Ist **Auch globale Gesten verwenden** aktiviert, bleiben globale Bindungen verfügbar, wenn die Bindungen der App nicht passen. Schalten Sie die Option aus, um nur die Gesten dieser App zu verwenden.
 
 Fügen Sie zum Beispiel einen Browser hinzu, erstellen Sie eine `↓→`-Geste mit rechter Taste und weisen Sie ihr dort eine andere Aktion zu. Andere Apps behalten die globale `↓→`-Aktion. Um ein vorhandenes Setup zu kopieren, verwenden Sie [Duplizieren](gestures.md#suchen-duplizieren-und-deaktivieren) im jeweiligen Bereich und bearbeiten Sie die Bindung. Um eine Zeichnung nur einmal aufzunehmen und ihr in jeder App eine eigene Aktion zu geben, nutzen Sie die [Gestenbibliothek](gesture-library.md).
 
 ## Gesten in einer App deaktivieren
 
-Wählen Sie die App in der Seitenleiste und aktivieren Sie **Gesten in dieser App deaktivieren**. Das schaltet eigene Gesten, globale Gesten und Rand-Auslöser aus. Rechte, mittlere und seitliche Tasten werden normal durchgereicht. Die gespeicherten Bindungen bleiben; **Gesten wieder einschalten** stellt sie wieder her. **Diese App entfernen** entfernt den app-spezifischen Bereich.
+Wählen Sie die App in der Seitenleiste und schalten Sie **Gesten verwenden** aus. Das schaltet eigene Gesten, globale Gesten und Rand-Auslöser aus. Rechte, mittlere und seitliche Tasten werden normal durchgereicht. Die gespeicherten Bindungen bleiben; stellt **Gesten verwenden** sie wieder her, sobald Sie es wieder einschalten. Die Papierkorb-Schaltfläche **Diese App entfernen** oben rechts auf der App-Seite entfernt den app-spezifischen Bereich.
 
 Das ist nützlich für Remotedesktop, virtuelle Maschinen, 3D-Modellierung, Design-Werkzeuge und Spiele-Editoren, die Rechts-/Mittelklick-Ziehen verwenden. Die Liste **Ausschalten empfohlen** der Auswahl enthält bekannte Anwendungen aus diesen Kategorien. Erkannte installierte Apps lassen sich gemeinsam hinzufügen.
 

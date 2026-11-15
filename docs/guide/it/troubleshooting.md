@@ -13,7 +13,7 @@ Prova prima un gesto integrato semplice in una normale finestra del browser non 
 - Controlla il menu dell'area di notifica/barra dei menu. Su Windows seleziona **Riprendi i gesti** se proposto; su Mac clicca di nuovo **Metti in pausa i gesti** se è spuntato. Controlla **Preferenze → Tasto pausa / riprendi** se una scorciatoia ha messo in pausa il motore.
 - Controlla “Preferenze → Pausa i gesti a schermo intero” e “A schermo intero” per l’app. Per impostazione predefinita i gesti del mouse e gli attivatori sui bordi vengono sospesi; scegli “Mantieni attivi” oppure esci dallo schermo intero e riprova.
 - Su Windows alcune finestre UWP appartengono a `ApplicationFrameHost.exe`, quindi le eccezioni per l’app effettiva non corrispondono. Senza una regola per l’host si usa l’impostazione globale.
-- Seleziona l'app nelle impostazioni e controlla **Disattiva i gesti in questa app**. Controlla anche l'interruttore **Attivo** / **Disattivato** della singola associazione, **Usa anche i gesti globali**, il pulsante di attivazione ed eventuali passaggi extra.
+- Seleziona l'app nelle impostazioni e controlla che **Usa i gesti** sia attivo. Controlla anche l'interruttore **Attivo** / **Disattivato** della singola associazione, **Usa anche i gesti globali**, il pulsante di attivazione ed eventuali passaggi extra.
 - Muoviti prontamente dopo aver premuto il pulsante e disegna un tracciato più lungo. Regola **Quanto restare fermo perché diventi un clic** e **Sensibilità del tracciato** nelle Preferenze.
 - Se manca il feedback, controlla **Mostra la scia** e **Mostra il nome del gesto mentre disegni**. Una scia nascosta non significa di per sé che il riconoscimento sia spento.
 

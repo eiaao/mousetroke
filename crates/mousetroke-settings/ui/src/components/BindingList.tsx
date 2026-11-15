@@ -1,11 +1,11 @@
 import { primaryModifier } from "../platform";
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
-import type { Binding, MouseButton, Scope, Step } from "../types";
+import type { Binding, FullscreenPolicy, MouseButton, Scope, Step } from "../types";
 import { actionKeys, presetDefinition, presetTypeLabel } from "../actions";
 import { EDGE, actionSummary, buttonName, decompose, describePattern, edgeName, fileName, hasConflictPattern } from "../gesture";
-import { T, currentLang, displayName, t } from "../i18n";
+import { currentLang, displayName, t } from "../i18n";
 import { PatternGlyph } from "./Glyph";
-import { AppIcon, EdgeIcon, MouseIcon } from "./Icons";
+import { AppIcon, EdgeIcon, MouseIcon, TrashIcon } from "./Icons";
 import { Caps } from "./KeysInput";
 import { scopeTitle } from "./Sidebar";
 
@@ -177,60 +177,56 @@ export function BindingList({
                   : t("ui.list.sub_app", { where })}
           </p>
         </div>
-        {isApp && (
-          <div className="list-scope-tools">
-            <label className="scope-off" data-tip={t("ui.list.disable_tip", { where })}>
-              {t("ui.list.turn_off_gestures")}
-              <input type="checkbox" className="switch small danger" checked={off} onChange={(e) => setOff(e.target.checked)} />
-            </label>
-            <label className={`check inline ${off ? "muted" : ""}`}>
-              <input
-                type="checkbox"
-                disabled={off}
-                checked={scope.inherit_global !== false}
-                onChange={(e) => onScopeChange((s) => ({ ...s, inherit_global: e.target.checked }))}
-              />
-              {t("ui.list.inherit_global")}
-            </label>
-            {scope.kind === "app" && (
-              <button type="button" className="btn small subtle" onClick={onDeleteScope}>
-                {t("ui.list.remove_app")}
-              </button>
-            )}
-          </div>
+        {scope.kind === "app" && (
+          <button type="button" className="btn icon subtle remove-scope" aria-label={t("ui.list.remove_app")} data-tip={t("ui.list.remove_app")} onClick={onDeleteScope}>
+            <TrashIcon />
+          </button>
         )}
       </header>
 
-      {scope.kind === "app" && (
-        <div className="list-fullscreen">
-          <span>{t("ui.list.fullscreen")}</span>
-          <div className="segmented" role="group" aria-label={t("ui.list.fullscreen")}>
-            {(["inherit", "allow", "pause"] as const).map((policy) => (
-              <button
-                key={policy}
-                type="button"
-                className={(scope.fullscreen_policy ?? "inherit") === policy ? "on" : ""}
-                aria-pressed={(scope.fullscreen_policy ?? "inherit") === policy}
+      {isApp && (
+        <div className={`scope-props ${off ? "off" : ""}`}>
+          <label className="scope-prop scope-prop-main">
+            <span className="scope-prop-text">
+              <b>{t("ui.list.use_gestures")}</b>
+              <small>{off ? t("ui.list.use_gestures_off", { where }) : t("ui.list.use_gestures_on")}</small>
+            </span>
+            <input type="checkbox" className="switch" checked={!off} onChange={(e) => setOff(!e.target.checked)} />
+          </label>
+          <label className="scope-prop">
+            <span className="scope-prop-text">
+              <b>{t("ui.list.inherit_global")}</b>
+              <small>{t("ui.list.inherit_global_help")}</small>
+            </span>
+            <input
+              type="checkbox"
+              className="switch"
+              disabled={off}
+              checked={scope.inherit_global !== false}
+              onChange={(e) => onScopeChange((s) => ({ ...s, inherit_global: e.target.checked }))}
+            />
+          </label>
+          {scope.kind === "app" && (
+            <label className="scope-prop">
+              <span className="scope-prop-text">
+                <b>{t("ui.list.fullscreen")}</b>
+                <small>{t(scope.fullscreen_policy ? "ui.list.fullscreen_help_custom" : "ui.list.fullscreen_help_inherit")}</small>
+              </span>
+              <select
+                className="scope-select"
                 disabled={off}
-                onClick={() => onScopeChange((s) => ({ ...s, fullscreen_policy: policy === "inherit" ? undefined : policy }))}
+                value={scope.fullscreen_policy ?? "inherit"}
+                onChange={(e) => {
+                  const policy = e.target.value as FullscreenPolicy;
+                  onScopeChange((s) => ({ ...s, fullscreen_policy: policy === "inherit" ? undefined : policy }));
+                }}
               >
-                {policy === "inherit"
-                  ? t("ui.list.fullscreen_inherit", { state: t(pauseOnFullscreen ? "ui.list.fullscreen_state_pause" : "ui.list.fullscreen_state_allow") })
-                  : t(policy === "allow" ? "ui.list.fullscreen_allow" : "ui.list.fullscreen_pause")}
-              </button>
-            ))}
-          </div>
-        </div>
-      )}
-
-      {off && (
-        <div className="banner off-banner">
-          <span>
-            <T k="ui.list.off_banner" params={{ where }} />
-          </span>
-          <button type="button" className="btn small" onClick={() => setOff(false)}>
-            {t("ui.list.restore_gestures")}
-          </button>
+                <option value="inherit">{t("ui.list.fullscreen_inherit", { state: t(pauseOnFullscreen ? "ui.list.fullscreen_state_pause" : "ui.list.fullscreen_state_allow") })}</option>
+                <option value="allow">{t("ui.list.fullscreen_allow")}</option>
+                <option value="pause">{t("ui.list.fullscreen_pause")}</option>
+              </select>
+            </label>
+          )}
         </div>
       )}
 
@@ -255,13 +251,14 @@ export function BindingList({
             </button>
           ))}
         </div>
+        <input ref={search} className="search" type="search" placeholder={t("ui.list.search_ph")} value={query} onChange={(e) => setQuery(e.target.value)} />
         <button type="button" className="btn primary toolbar-add" onClick={add}>
           {addLabel}
         </button>
       </div>
 
+      {filters.length > 1 && (
       <div className={`filter-bar ${off ? "dimmed" : ""}`}>
-        {filters.length > 1 && (
         <div className="filters" role="radiogroup" aria-label={tab === "edge" ? t("ui.list.filter_edges") : t("ui.list.filter_buttons")}>
           <button type="button" role="radio" aria-checked={activeFilter === "all"} className={`filter ${activeFilter === "all" ? "on" : ""}`} onClick={() => onFilter("all")}>
             {t("common.all")}
@@ -285,9 +282,8 @@ export function BindingList({
             );
           })}
         </div>
-        )}
-        <input ref={search} className="search" type="search" placeholder={t("ui.list.search_ph")} value={query} onChange={(e) => setQuery(e.target.value)} />
       </div>
+      )}
 
       {visible.length === 0 && !query ? (
         <div className="empty">

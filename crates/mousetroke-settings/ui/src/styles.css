@@ -438,6 +438,87 @@ input.title-input:focus {
   padding-top: 4px;
 }
 
+/* 程序设置属性栏：使用手势 / 通用手势 / 全屏时 */
+.scope-props {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  margin: 0 28px 16px;
+  border: 1px solid var(--line-soft);
+  border-radius: var(--radius-l);
+  background: var(--panel);
+  box-shadow: var(--shadow-card);
+  overflow: hidden;
+}
+
+.scope-prop {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  min-height: 60px;
+  padding: 10px 16px;
+  /* 换行时也保持分隔线：每格画左边线和上边线，再用负边距藏到容器边框下 */
+  margin: -1px 0 0 -1px;
+  border-top: 1px solid var(--line-soft);
+  border-left: 1px solid var(--line-soft);
+}
+
+.scope-prop-text {
+  min-width: 0;
+}
+
+.scope-prop-text b {
+  display: block;
+  font-weight: 600;
+  font-size: 13px;
+}
+
+.scope-prop-text small {
+  display: block;
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.scope-props.off .scope-prop-main b {
+  color: var(--hit);
+}
+
+.scope-props.off .scope-prop:not(.scope-prop-main) .scope-prop-text {
+  opacity: 0.5;
+}
+
+.scope-select {
+  height: 32px;
+  max-width: 60%;
+  padding: 0 8px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-m);
+  background: var(--panel);
+  color: var(--ink);
+}
+
+.scope-select:disabled,
+.scope-prop .switch:disabled {
+  opacity: 0.45;
+}
+
+.remove-scope {
+  align-self: flex-start;
+  display: grid;
+  place-items: center;
+  width: 34px;
+  padding: 0;
+}
+
+.remove-scope:hover:not(:disabled) {
+  background: color-mix(in srgb, var(--danger) 9%, transparent);
+  color: var(--danger);
+}
+
+.list-toolbar .search + .toolbar-add {
+  margin-left: 0;
+}
+
 .list-toolbar {
   display: flex;
   flex-wrap: wrap;
@@ -1005,15 +1086,6 @@ select.lang-select {
 }
 
 /* 分段选择 */
-.list-fullscreen {
-  display: flex;
-  align-items: center;
-  flex-wrap: wrap;
-  gap: 8px;
-  margin: 0 28px 12px;
-  font-size: 13px;
-}
-
 .segmented {
   display: inline-flex;
   flex-wrap: wrap;
@@ -2283,25 +2355,6 @@ select.lang-select {
   from {
     opacity: 0;
   }
-}
-
-/* 在某个程序里禁用手势 */
-.scope-off {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  font-size: 13px;
-  font-weight: 600;
-}
-
-.switch.danger:checked {
-  border-color: var(--hit);
-  background: var(--hit);
-}
-
-.off-banner {
-  border-color: color-mix(in srgb, var(--hit) 35%, transparent);
-  background: color-mix(in srgb, var(--hit) 9%, transparent);
 }
 
 .dimmed {

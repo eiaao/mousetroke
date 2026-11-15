@@ -156,11 +156,12 @@ export function GestureLibrary({
             </button>
           ))}
         </div>
+        <input className="search" type="search" placeholder={t("ui.gestures.search_ph")} value={query} onChange={(e) => setQuery(e.target.value)} />
         <button type="button" className="btn primary toolbar-add" onClick={() => onNew(tab)}>{t("ui.gestures.new")}</button>
       </div>
 
-      <div className="filter-bar">
-        {filters.length > 0 && (
+      {filters.length > 0 && (
+        <div className="filter-bar">
           <div className="filters" role="radiogroup">
             <button type="button" role="radio" aria-checked={activeFilter === "all"} className={`filter ${activeFilter === "all" ? "on" : ""}`} onClick={() => onFilter("all")}>
               {t("common.all")}
@@ -178,9 +179,8 @@ export function GestureLibrary({
               );
             })}
           </div>
-        )}
-        <input className="search" type="search" placeholder={t("ui.gestures.search_ph")} value={query} onChange={(e) => setQuery(e.target.value)} />
-      </div>
+        </div>
+      )}
 
       {visible.length === 0 ? (
         <div className="empty"><p>{t("ui.gestures.no_match")}</p></div>

@@ -13,7 +13,7 @@ Testen Sie zuerst eine einfache integrierte Geste in einem normalen, nicht-vollb
 - Prüfen Sie das Menü im Infobereich bzw. in der Menüleiste. Wählen Sie unter Windows **Gesten fortsetzen**, falls angeboten; klicken Sie auf dem Mac erneut auf **Gesten pausieren**, falls es abgehakt ist. Prüfen Sie **Einstellungen → Kürzel für Pause / Fortsetzen**, falls ein Kürzel die Engine pausiert hat.
 - Prüfen Sie „Einstellungen → Gesten im Vollbild pausieren“ und „Im Vollbild“ bei der App. Standardmäßig pausieren Mausgesten und Rand-Auslöser im Vollbild; wählen Sie „Aktiv lassen“ für die App oder verlassen Sie das Vollbild zum Testen.
 - Unter Windows gehören manche UWP-Fenster zu `ApplicationFrameHost.exe`; Ausnahmen für die eigentliche App greifen dann nicht. Ohne passende Regel für den Host gilt die globale Einstellung.
-- Wählen Sie die App in den Einstellungen und prüfen Sie **Gesten in dieser App deaktivieren**. Prüfen Sie außerdem den Schalter **Ein** / **Aus** der einzelnen Bindung, **Auch globale Gesten verwenden**, die Auslösertaste und zusätzliche Schritte.
+- Wählen Sie die App in den Einstellungen und prüfen Sie, ob **Gesten verwenden** eingeschaltet ist. Prüfen Sie außerdem den Schalter **Ein** / **Aus** der einzelnen Bindung, **Auch globale Gesten verwenden**, die Auslösertaste und zusätzliche Schritte.
 - Bewegen Sie sich zügig, nachdem Sie die Taste gedrückt haben, und zeichnen Sie eine längere Zeichenfolge. Justieren Sie **Wartezeit bis zur Behandlung als Klick** und **Empfindlichkeit der Zeichenfolge** in den Einstellungen.
 - Fehlt das Feedback, prüfen Sie **Spur anzeigen** und **Gestenname beim Zeichnen anzeigen**. Eine ausgeblendete Spur bedeutet nicht von selbst, dass die Erkennung aus ist.
 

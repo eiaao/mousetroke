@@ -51,34 +51,58 @@ test("global toggle updates settings", async () => {
   } finally { await view.close(); }
 });
 
-test("app choice updates only that scope", async () => {
+test("app settings bar updates only that scope", async () => {
   let scope = { id: "chrome", name: "Chrome", kind: "app", app: { exe: "chrome.exe" }, inherit_global: false, bindings: [] };
   const original = structuredClone(scope);
   let pauseOnFullscreen = true;
   const props = () => ({ scope, pauseOnFullscreen, tab: "gesture", filter: "all", selected: null, clash: new Map(), onTab() {}, onFilter() {}, onSelect() {}, onAdd() {}, onDelete() {}, onDuplicate() {}, onToggle() {}, onDeleteScope() {}, onScopeChange: (f) => { scope = f(scope); } });
   const view = await mount(createElement(BindingList, props()));
+  const rerender = () => view.render(createElement(BindingList, props()));
+  const select = () => view.el.querySelector(".scope-props select");
+  const switches = () => [...view.el.querySelectorAll(".scope-props .switch")];
+  const choose = async (value) => act(async () => {
+    const el = select();
+    Object.getOwnPropertyDescriptor(dom.window.HTMLSelectElement.prototype, "value").set.call(el, value);
+    el.dispatchEvent(new dom.window.Event("change", { bubbles: true }));
+  });
   try {
-    const buttons = () => [...view.el.querySelectorAll('.list-fullscreen button')];
-    assert.equal(buttons()[0].getAttribute("aria-pressed"), "true");
-    assert.ok(buttons()[0].textContent.includes(t("ui.list.fullscreen_state_pause")));
-    for (const [index, policy] of [[1, "allow"], [2, "pause"], [0, undefined]]) {
-      await act(async () => buttons()[index].click());
-      assert.deepEqual(scope, { ...original, fullscreen_policy: policy });
-      await view.render(createElement(BindingList, props()));
-      assert.equal(buttons()[index].getAttribute("aria-pressed"), "true");
+    assert.equal(select().value, "inherit");
+    assert.equal(select().options[0].textContent, t("ui.list.fullscreen_inherit", { state: t("ui.list.fullscreen_state_pause") }));
+    for (const policy of ["allow", "pause", "inherit"]) {
+      await choose(policy);
+      assert.deepEqual(scope, { ...original, fullscreen_policy: policy === "inherit" ? undefined : policy });
+      await rerender();
+      assert.equal(select().value, policy);
     }
     pauseOnFullscreen = false;
-    await view.render(createElement(BindingList, props()));
-    assert.ok(buttons()[0].textContent.includes(t("ui.list.fullscreen_state_allow")));
-    scope = { ...scope, disabled: true, fullscreen_policy: "allow" };
-    await view.render(createElement(BindingList, props()));
-    assert.ok(buttons().every((b) => b.disabled));
-    await act(async () => buttons()[2].click());
+    await rerender();
+    assert.equal(select().options[0].textContent, t("ui.list.fullscreen_inherit", { state: t("ui.list.fullscreen_state_allow") }));
+
+    // 使用手势开关：关掉即 disabled=true，其余两项置灰但保留值；再打开即恢复。
+    const [use, inherit] = switches();
+    assert.equal(use.checked, true);
+    assert.equal(inherit.checked, false);
+    scope = { ...scope, fullscreen_policy: "allow" };
+    await rerender();
+    await act(async () => use.click());
+    assert.equal(scope.disabled, true);
+    await rerender();
+    assert.ok(view.el.textContent.includes(t("ui.list.use_gestures_off", { where: "chrome.exe" })));
+    assert.equal(switches()[1].disabled, true);
+    assert.equal(select().disabled, true);
+    assert.equal(select().value, "allow");
+    assert.equal(view.el.querySelector(".off-banner"), null);
+    await act(async () => switches()[0].click());
+    assert.equal(scope.disabled, undefined);
     assert.equal(scope.fullscreen_policy, "allow");
-    for (const kind of ["global", "special"]) {
-      scope = { ...original, kind };
-      await view.render(createElement(BindingList, props()));
-      assert.equal(buttons().length, 0);
-    }
+
+    // 桌面只有前两项；“所有程序”没有属性栏。
+    scope = { ...original, kind: "special", special: "desktop", app: undefined };
+    await rerender();
+    assert.equal(switches().length, 2);
+    assert.equal(select(), null);
+    scope = { ...original, kind: "global", app: undefined };
+    await rerender();
+    assert.equal(view.el.querySelector(".scope-props"), null);
   } finally { await view.close(); }
 });

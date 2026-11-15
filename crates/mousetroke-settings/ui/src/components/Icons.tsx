@@ -11,6 +11,15 @@ export function StarIcon() {
   );
 }
 
+/** 删除（移除程序）图标。 */
+export function TrashIcon() {
+  return (
+    <svg className="ico" width="16" height="16" viewBox="0 0 16 16" aria-hidden>
+      <path className="ico-line" d="M2.5 4h11M6.5 4V2.5h3V4M4 4l.7 9.5h6.6L12 4M6.8 6.5v4.5M9.2 6.5v4.5" />
+    </svg>
+  );
+}
+
 /** 小鼠标图标，高亮指定按键（筛选标签、触发方式用）。 */
 export function MouseIcon({ button, size = 16 }: { button?: MouseButton; size?: number }) {
   return (

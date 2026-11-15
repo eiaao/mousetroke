@@ -13,7 +13,7 @@ Prueba primero un gesto integrado sencillo en una ventana normal del navegador, 
 - Comprueba el menú de la bandeja o de la barra de menús. En Windows selecciona **Reanudar gestos** si aparece; en Mac haz clic de nuevo en **Pausar gestos** si está marcado. Comprueba **Preferencias → Atajo para pausar / reanudar** si un atajo pausó el motor.
 - Revisa “Preferencias → Pausar gestos en pantalla completa” y “En pantalla completa” en la aplicación. Por defecto se pausan los gestos del ratón y los activadores de bordes; elige “Mantener activos” o sal de la pantalla completa para probar.
 - En Windows, algunas ventanas UWP pertenecen a `ApplicationFrameHost.exe`, por lo que las excepciones de la aplicación real no coinciden. Sin una regla para el proceso anfitrión, se usa el ajuste global.
-- Selecciona la aplicación en la configuración y comprueba **Desactivar gestos en esta aplicación**. Revisa también el conmutador **Activado** / **Desactivado** de cada asignación, **Usar también los gestos globales**, el botón disparador y cualquier paso adicional.
+- Selecciona la aplicación en la configuración y comprueba que **Usar gestos** esté activado. Revisa también el conmutador **Activado** / **Desactivado** de cada asignación, **Usar también los gestos globales**, el botón disparador y cualquier paso adicional.
 - Muévete con presteza tras pulsar el botón y dibuja un trazo más largo. Ajusta el **Tiempo de espera antes de tratarlo como clic** y la **Sensibilidad del trazado** en Preferencias.
 - Si falta la respuesta visual, comprueba **Mostrar el rastro** y **Mostrar el nombre del gesto al dibujar**. Que el rastro esté oculto no significa por sí solo que el reconocimiento esté desactivado.
 

@@ -13,7 +13,7 @@ First test a simple built-in gesture in a normal, non-fullscreen browser window.
 - Check the tray/menu-bar menu. On Windows select **Resume gestures** if offered; on Mac click **Pause gestures** again if it is checked. Check **Preferences → Pause / resume hotkey** if a shortcut paused the engine.
 - Check “Preferences → Pause gestures in fullscreen” and the app’s “In fullscreen” setting. Fullscreen pauses mouse gestures and screen-edge triggers by default; choose “Keep enabled” for the app, or leave fullscreen and try again.
 - On Windows, some UWP windows belong to `ApplicationFrameHost.exe`, so exceptions for the actual app do not match. The global setting applies unless a rule matches the host.
-- Select the app in settings and check **Turn off gestures in this app**. Also check the individual binding's **On** / **Off** switch, **Also use global gestures**, the trigger button and any extra steps.
+- Select the app in settings and check that **Use gestures** is on. Also check the individual binding's **On** / **Off** switch, **Also use global gestures**, the trigger button and any extra steps.
 - Move promptly after pressing the button and draw a longer stroke. Tune **Hold-still time before treating it as a click** and **Stroke sensitivity** under Preferences.
 - If feedback is missing, check **Show the trail** and **Show the gesture name while drawing**. A hidden trail does not itself mean recognition is off.
 

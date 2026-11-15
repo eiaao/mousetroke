@@ -19,13 +19,13 @@ Le regole Windows possono corrispondere a un nome di eseguibile o a un percorso 
 
 ## Gesti specifici per app e gesti globali
 
-**Tutte le app** contiene i gesti globali. Un gesto specifico per un'app ha priorità sul gesto globale corrispondente. Con **Usa anche i gesti globali** spuntato, le associazioni globali restano disponibili quando quelle dell'app non corrispondono. Deseleionalo per usare solo i gesti di quell'app.
+**Tutte le app** contiene i gesti globali. Un gesto specifico per un'app ha priorità sul gesto globale corrispondente. Con **Usa anche i gesti globali** attivo, le associazioni globali restano disponibili quando quelle dell'app non corrispondono. Disattivalo per usare solo i gesti di quell'app.
 
 Per esempio, aggiungi un browser, crea un gesto `↓→` col pulsante destro e assegnagli lì un'azione diversa. Le altre app mantengono l'azione globale di `↓→`. Per copiare una configurazione esistente, usa [Duplica](gestures.md#trovare-copiare-e-disattivare) dentro il suo ambito e modifica l'associazione. Per registrare un tracciato una sola volta e dargli un'azione diversa in ogni app, usa la [libreria dei gesti](gesture-library.md).
 
 ## Disattivare i gesti in un'app
 
-Seleziona l'app nella barra laterale e attiva **Disattiva i gesti in questa app**. Questo disattiva i gesti propri dell'app, i gesti globali e gli attivatori di bordo. I pulsanti destro, centrale e laterali passano normalmente. Le associazioni salvate restano; **Riattiva i gesti** le ripristina. **Rimuovi questa app** elimina l'ambito specifico dell'app.
+Seleziona l'app nella barra laterale e disattiva **Usa i gesti**. Questo disattiva i gesti propri dell'app, i gesti globali e gli attivatori di bordo. I pulsanti destro, centrale e laterali passano normalmente. Le associazioni salvate restano; riattivando **Usa i gesti** si ripristinano. Il pulsante cestino **Rimuovi questa app**, in alto a destra nella pagina dell'app, elimina l'ambito specifico dell'app.
 
 È utile per desktop remoto, macchine virtuali, modellazione 3D, strumenti di progettazione ed editor di giochi che usano il trascinamento col destro/centrale. L'elenco **Consigliato disattivarli** del selettore include applicazioni note di queste categorie. Le app installate rilevate si possono aggiungere tutte insieme.
 
