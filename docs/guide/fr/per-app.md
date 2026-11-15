@@ -1,6 +1,6 @@
 ---
 title: "Règles par application"
-description: "Ajoutez des applications, substituez des gestes globaux, excluez les applications qui ont besoin du glisser à la souris et comprenez la pause automatique en plein écran."
+description: "Ajoutez des applications, personnalisez les gestes, excluez des applications et réglez la pause en plein écran avec des exceptions par application."
 order: 6
 ---
 
@@ -31,7 +31,9 @@ C’est utile pour le bureau à distance, les machines virtuelles, la modélisat
 
 ## Plein écran et premier démarrage
 
-La pause automatique en plein écran est automatique : le moteur évite de démarrer des gestes et des déclencheurs de bord tant que l’application au premier plan est détectée en plein écran. Cela couvre les jeux, la vidéo et les présentations en plein écran ; c’est distinct de l’état de pause manuel. Sous Windows, la détection vérifie une fenêtre sans bord couvrant son écran et exclut les fenêtres du bureau et du shell. Mac compare la fenêtre de l’application au premier plan aux limites de l’écran. Une application qui semble en plein écran peut donc se comporter différemment sur les deux plateformes.
+La pause automatique en plein écran est activée par défaut : le moteur évite de démarrer des gestes et des déclencheurs de bord tant que l’application au premier plan est détectée en plein écran. Cela couvre les jeux, la vidéo et les présentations en plein écran ; c’est distinct de l’état de pause manuel. Sous Windows, la détection vérifie une fenêtre sans bord couvrant son écran et exclut les fenêtres du bureau et du shell. Mac compare la fenêtre de l’application au premier plan aux limites de l’écran. Une application qui semble en plein écran peut donc se comporter différemment sur les deux plateformes.
+
+Désactivez « Mettre les gestes en pause en plein écran » dans les préférences pour modifier le réglage global. Chaque application propose « Suivre le réglage global », « Garder actifs » et « Mettre en pause » sous « En plein écran » ; un choix explicite par application est prioritaire. Pour utiliser les gestes globaux dans Chrome en plein écran, ajoutez Chrome, gardez l’héritage des gestes globaux et choisissez « Garder actifs ». Aucun geste propre à Chrome n’est nécessaire. La pause manuelle et les exclusions restent applicables.
 
 Pour un jeu en fenêtre ou un bureau à distance, ajoutez une exclusion explicite. Pour tout mettre en pause, utilisez la [commande de la zone de notification/barre des menus ou le raccourci de pause](getting-started.md#pause).
 

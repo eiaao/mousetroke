@@ -41,4 +41,4 @@ Für das Reiben fügen Sie **Zeichenfolge zeichnen** hinzu und zeichnen die wech
 
 Auf dem Mac warnt Mousetroke, wenn eine System-Hot Corner eine konfigurierte Ecke überlappt. Ändern Sie eine der Zuweisungen, um konkurrierende Aktionen zu vermeiden. Systemkurzbefehle wie F11 oder Control+Up hängen von den macOS-Kurzbefehleinstellungen ab.
 
-App-Ausschlüsse und die Vollbilderkennung unterdrücken auch Rand-Auslöser. Siehe [App-spezifische Regeln](per-app.md), wenn ein Rand in einer App funktioniert und in einer anderen nicht.
+App-Ausschlüsse unterdrücken auch Rand-Auslöser; die Vollbilderkennung tut dies standardmäßig ebenfalls. Siehe [App-spezifische Regeln](per-app.md), wenn ein Rand in einer App funktioniert und in einer anderen nicht.

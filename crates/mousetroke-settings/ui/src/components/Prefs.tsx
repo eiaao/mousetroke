@@ -154,6 +154,12 @@ export function Prefs({
             <KeysInput single value={s.pause_hotkey} onChange={(v) => onChange((x) => ({ ...x, pause_hotkey: v }), "hotkey")} />
           </span>
         </div>
+        <Toggle
+          label={t("ui.prefs.pause_on_fullscreen")}
+          help={t("ui.prefs.pause_on_fullscreen_help")}
+          checked={s.pause_on_fullscreen ?? true}
+          onChange={(v) => onChange((x) => ({ ...x, pause_on_fullscreen: v }))}
+        />
       </div>
 
       <div className="pref-group">

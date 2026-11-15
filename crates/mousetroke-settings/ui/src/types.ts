@@ -135,6 +135,8 @@ export interface AppMatch {
   regex?: boolean;
 }
 
+export type FullscreenPolicy = "inherit" | "allow" | "pause";
+
 export interface Scope {
   id: string;
   name: string;
@@ -145,6 +147,7 @@ export interface Scope {
   special?: "desktop" | "taskbar";
   /** 缺省 = true */
   inherit_global?: boolean;
+  fullscreen_policy?: FullscreenPolicy;
   /** 在这个程序里禁用所有手势（含通用手势与屏幕边角）。缺省 = false */
   disabled?: boolean;
   bindings: Binding[];
@@ -159,6 +162,7 @@ export interface Settings {
   min_stroke_px: number;
   target_mode: "under_cursor" | "focused";
   pause_hotkey: string;
+  pause_on_fullscreen?: boolean;
   show_tray: boolean;
   trail: { show: boolean; width: number; border: number; fade_out: boolean; color_normal: string; color_matched: string };
   label: { show: boolean; pos: number; border: number; color_normal: string; color_matched: string };

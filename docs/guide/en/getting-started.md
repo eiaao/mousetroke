@@ -42,4 +42,4 @@ Open **All apps → Mouse gestures → New gesture**, choose the trigger and rec
 
 On Windows choose **Pause gestures**, then **Resume gestures** to restore them. On Mac, **Pause gestures** stays the same label: its checkmark indicates manual pause, and clicking it again resumes. The default pause/resume hotkey is **Win+Esc** on Windows and **Control+Option+Command+P** on Mac. Change it under **Preferences → Pause / resume hotkey**.
 
-Fullscreen games, videos and presentations automatically suppress gestures while the foreground window is detected as fullscreen. See [per-app rules](per-app.md) for exclusions and [troubleshooting](troubleshooting.md) if nothing triggers.
+By default, fullscreen games, videos and presentations automatically suppress gestures while the foreground window is detected as fullscreen. See [per-app rules](per-app.md) for exclusions and [troubleshooting](troubleshooting.md) if nothing triggers.

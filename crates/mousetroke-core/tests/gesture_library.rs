@@ -51,6 +51,7 @@ fn scope(id: &str, kind: ScopeKind, bindings: Vec<Binding>) -> Scope {
         app: (kind == ScopeKind::App).then(|| AppMatch::new(format!("{id}.exe"))),
         special: None,
         inherit_global: true,
+        fullscreen_policy: Default::default(),
         disabled: false,
         bindings,
     }

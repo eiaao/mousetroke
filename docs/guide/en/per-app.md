@@ -1,6 +1,6 @@
 ---
 title: "Per-app rules"
-description: "Add apps, override global mouse gestures, exclude apps that need mouse dragging, and understand fullscreen auto-pause."
+description: "Add apps, override global gestures, exclude apps, and configure global fullscreen pause with per-app exceptions."
 order: 6
 ---
 
@@ -31,7 +31,9 @@ This is useful for remote desktop, virtual machines, 3D modeling, design tools a
 
 ## Fullscreen and first run
 
-Fullscreen auto-pause is automatic: the engine avoids starting gestures and edge triggers while the foreground app is detected as fullscreen. It covers fullscreen games, video and presentations; it is separate from the manual paused state. On Windows, detection checks a borderless window covering its monitor and excludes desktop/shell windows. Mac checks the foreground app's window against screen bounds. A fullscreen-looking app may therefore behave differently on the two platforms.
+By default, fullscreen auto-pause is enabled: the engine avoids starting gestures and edge triggers while the foreground app is detected as fullscreen. It covers fullscreen games, video and presentations; it is separate from the manual paused state. On Windows, detection checks a borderless window covering its monitor and excludes desktop/shell windows. Mac checks the foreground app's window against screen bounds. A fullscreen-looking app may therefore behave differently on the two platforms.
+
+Turn off “Pause gestures in fullscreen” in Preferences to change the global default. Each app offers “Follow global”, “Keep enabled” and “Pause gestures” under “In fullscreen”; an explicit app choice takes priority. To keep global gestures working in fullscreen Chrome, add Chrome, keep global gesture inheritance enabled and choose “Keep enabled”. No app-specific gestures are needed. Manual pause and app exclusions still apply.
 
 For a windowed game or remote desktop, add an explicit exclusion. To pause everywhere, use the [tray/menu-bar command or pause hotkey](getting-started.md#pause).
 

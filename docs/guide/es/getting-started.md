@@ -42,4 +42,4 @@ Abre **Todas las aplicaciones → Gestos de ratón → Nuevo gesto**, elige el d
 
 En Windows elige **Pausar gestos** y luego **Reanudar gestos** para restaurarlos. En Mac, **Pausar gestos** conserva la misma etiqueta: su marca de verificación indica una pausa manual y, al hacer clic de nuevo, se reanudan. El atajo predeterminado de pausa/reanudación es **Win+Esc** en Windows y **Control+Option+Command+P** en Mac. Cámbialo en **Preferencias → Atajo para pausar / reanudar**.
 
-Los juegos, vídeos y presentaciones a pantalla completa suprimen los gestos automáticamente mientras la ventana en primer plano se detecta a pantalla completa. Consulta las [reglas por aplicación](per-app.md) para las exclusiones y la [solución de problemas](troubleshooting.md) si nada se dispara.
+De forma predeterminada, los juegos, vídeos y presentaciones a pantalla completa suprimen los gestos automáticamente mientras la ventana en primer plano se detecta a pantalla completa. Consulta las [reglas por aplicación](per-app.md) para las exclusiones y la [solución de problemas](troubleshooting.md) si nada se dispara.

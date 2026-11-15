@@ -4,7 +4,7 @@ use std::cell::RefCell;
 use std::rc::Rc;
 
 use mousetroke_core::edge::{LEFT_BOTTOM, TOP};
-use mousetroke_core::schema::{Action, Binding, Config, MouseButton as B, PatternKey, Scope, ScopeKind, Step};
+use mousetroke_core::schema::{Action, AppMatch, Binding, Config, FullscreenPolicy, MouseButton as B, PatternKey, Scope, ScopeKind, Step};
 
 use super::*;
 
@@ -55,6 +55,7 @@ type Under = Rc<RefCell<(String, Option<String>)>>;
 struct FakeHost {
     log: Shared,
     under: Under,
+    fullscreen: Rc<RefCell<Option<Target>>>,
 }
 
 impl Host for FakeHost {
@@ -77,8 +78,8 @@ impl Host for FakeHost {
         Vec::new()
     }
     fn refresh_texts(&self) {}
-    fn foreground_fullscreen(&self) -> bool {
-        false
+    fn fullscreen_target(&self) -> Option<Target> {
+        self.fullscreen.borrow().clone()
     }
     fn replay(&self, btn: B, click: bool) {
         self.log.borrow_mut().replays.push((btn, click));
@@ -150,6 +151,7 @@ fn config(with_edge_combo: bool) -> Config {
         app: None,
         special: None,
         inherit_global: true,
+        fullscreen_policy: Default::default(),
         disabled: false,
         bindings,
     }];
@@ -164,6 +166,7 @@ struct T {
     e: Engine,
     log: Shared,
     under: Under,
+    fullscreen: Rc<RefCell<Option<Target>>>,
     pos: (i32, i32),
     _lang: std::sync::MutexGuard<'static, ()>,
 }
@@ -187,12 +190,16 @@ impl T {
         let lang = LANG_LOCK.lock().unwrap_or_else(|e| e.into_inner());
         let log = Shared::default();
         let under: Under = Rc::new(RefCell::new(("Chrome_WidgetWin_1".into(), Some(r"C:\app\chrome.exe".into()))));
-        let host = FakeHost { log: log.clone(), under: under.clone() };
+        let fullscreen = Rc::new(RefCell::new(None));
+        let host = FakeHost { log: log.clone(), under: under.clone(), fullscreen: fullscreen.clone() };
         let e = Engine::with_parts(cfg, None, Box::new(FakeCanvas(log.clone())), Box::new(host), shape_samples);
-        Self { e, log, under, pos: (960, 540), _lang: lang }
+        Self { e, log, under, fullscreen, pos: (960, 540), _lang: lang }
     }
     fn under(&self, class: &str, exe: Option<&str>) {
         *self.under.borrow_mut() = (class.into(), exe.map(Into::into));
+    }
+    fn fullscreen(&self, exe: Option<&str>) {
+        *self.fullscreen.borrow_mut() = Some(Target { wid: 1, pid: 1, exe: exe.map(Into::into), is_desktop: false, class: String::new() });
     }
     fn down(&mut self, btn: B) -> Verdict {
         let (x, y) = self.pos;
@@ -246,6 +253,75 @@ impl T {
             self.to(x, y);
         }
     }
+}
+
+fn fullscreen_config(policy: FullscreenPolicy) -> Config {
+    let mut cfg = config(false);
+    let mut app = cfg.scopes[0].clone();
+    app.id = "chrome".into();
+    app.kind = ScopeKind::App;
+    app.app = Some(AppMatch::new("chrome.exe"));
+    app.fullscreen_policy = policy;
+    app.bindings.clear(); // 程序只设置例外，动作继承通用手势。
+    cfg.scopes.push(app);
+    cfg
+}
+
+#[test]
+fn fullscreen_blocks_and_allows_button() {
+    for allow in [false, true] {
+        let mut t = T::with_config(fullscreen_config(if allow { FullscreenPolicy::Allow } else { FullscreenPolicy::Inherit }));
+        t.fullscreen(Some("chrome.exe"));
+        assert_eq!(t.down(B::Right), if allow { Verdict::Swallow } else { Verdict::Pass });
+        t.drag(960, 740);
+        t.up(B::Right);
+        assert_eq!(t.executed(), if allow { vec!["down"] } else { vec![] });
+        // 非全屏时无需例外。
+        *t.fullscreen.borrow_mut() = None;
+        t.to(960, 540);
+        assert_eq!(t.down(B::Right), Verdict::Swallow);
+        t.drag(960, 740);
+        t.up(B::Right);
+        assert_eq!(t.executed().last().map(String::as_str), Some("down"));
+    }
+}
+
+#[test]
+fn fullscreen_blocks_and_allows_edge() {
+    for allow in [false, true] {
+        for stationary in [false, true] {
+            let mut t = T::with_config(fullscreen_config(if allow { FullscreenPolicy::Allow } else { FullscreenPolicy::Inherit }));
+            t.fullscreen(Some("chrome.exe"));
+            t.to(0, 1079);
+            t.e.edge_pending.as_mut().unwrap().1 -= EDGE_DWELL;
+            if stationary { t.e.settle_edges(0, 1079); } else { t.to(0, 1079); }
+            assert_eq!(t.executed(), if allow { vec!["start"] } else { vec![] });
+        }
+    }
+}
+
+#[test]
+fn fullscreen_uses_foreground_identity() {
+    let mut t = T::with_config(fullscreen_config(FullscreenPolicy::Allow));
+    t.fullscreen(Some("game.exe"));
+    assert_eq!(t.down(B::Right), Verdict::Pass);
+    t.fullscreen(None);
+    assert_eq!(t.down(B::Right), Verdict::Pass);
+    t.e.cfg.settings.pause_on_fullscreen = false;
+    assert_eq!(t.down(B::Right), Verdict::Swallow);
+}
+
+#[test]
+fn fullscreen_allow_keeps_manual_pause() {
+    let mut t = T::with_config(fullscreen_config(FullscreenPolicy::Allow));
+    t.fullscreen(Some("chrome.exe"));
+    t.e.set_paused(true);
+    assert_eq!(t.down(B::Right), Verdict::Pass);
+    t.dwell(0, 1079);
+    assert!(t.executed().is_empty());
+    t.e.set_paused(false);
+    t.e.cfg.scopes[1].disabled = true;
+    assert_eq!(t.down(B::Right), Verdict::Pass);
 }
 
 /// 与 core 的 G 样本相同：逆时针 C 弧线，向上回钩，再向左收笔。
@@ -1187,6 +1263,7 @@ fn app_with_gestures_disabled_is_left_alone() {
         app: Some(mousetroke_core::schema::AppMatch { exe: "game.exe".into(), win_class: None, win_title: None, regex: false }),
         special: None,
         inherit_global: true,
+        fullscreen_policy: Default::default(),
         disabled: true,
         bindings: vec![],
     });

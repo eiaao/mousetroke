@@ -25,6 +25,7 @@ function classify(b: Binding): { tab: ListTab; key: string } {
 
 export function BindingList({
   scope,
+  pauseOnFullscreen,
   tab,
   onTab,
   filter,
@@ -40,6 +41,7 @@ export function BindingList({
   clash,
 }: {
   scope: Scope;
+  pauseOnFullscreen: boolean;
   tab: ListTab;
   onTab: (t: ListTab) => void;
   filter: ListFilter;
@@ -198,6 +200,28 @@ export function BindingList({
           </div>
         )}
       </header>
+
+      {scope.kind === "app" && (
+        <div className="list-fullscreen">
+          <span>{t("ui.list.fullscreen")}</span>
+          <div className="segmented" role="group" aria-label={t("ui.list.fullscreen")}>
+            {(["inherit", "allow", "pause"] as const).map((policy) => (
+              <button
+                key={policy}
+                type="button"
+                className={(scope.fullscreen_policy ?? "inherit") === policy ? "on" : ""}
+                aria-pressed={(scope.fullscreen_policy ?? "inherit") === policy}
+                disabled={off}
+                onClick={() => onScopeChange((s) => ({ ...s, fullscreen_policy: policy === "inherit" ? undefined : policy }))}
+              >
+                {policy === "inherit"
+                  ? t("ui.list.fullscreen_inherit", { state: t(pauseOnFullscreen ? "ui.list.fullscreen_state_pause" : "ui.list.fullscreen_state_allow") })
+                  : t(policy === "allow" ? "ui.list.fullscreen_allow" : "ui.list.fullscreen_pause")}
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
 
       {off && (
         <div className="banner off-banner">

@@ -561,6 +561,7 @@ function Main({ init }: { init: InitState }) {
           <BindingList
             key={scope.id}
             scope={scope}
+            pauseOnFullscreen={config.settings.pause_on_fullscreen ?? true}
             tab={listTab}
             onTab={(tb) => {
               setListTab(tb);

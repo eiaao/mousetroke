@@ -1,6 +1,6 @@
 ---
 title: "Regras por aplicativo"
-description: "Adicione aplicativos, substitua os gestos globais de mouse, exclua aplicativos que precisam de arrastar com o mouse e entenda a pausa automática em tela cheia."
+description: "Adicione aplicativos, personalize gestos, exclua aplicativos e configure a pausa em tela cheia com exceções por aplicativo."
 order: 6
 ---
 
@@ -31,7 +31,9 @@ Isso é útil para área de trabalho remota, máquinas virtuais, modelagem 3D, f
 
 ## Tela cheia e primeira execução
 
-A pausa automática em tela cheia é automática: o motor evita iniciar gestos e gatilhos de borda enquanto o aplicativo em primeiro plano for detectado como tela cheia. Ela cobre jogos em tela cheia, vídeos e apresentações; é separada do estado de pausa manual. No Windows, a detecção verifica uma janela sem bordas cobrindo o monitor dela e exclui janelas da área de trabalho/shell. O Mac compara a janela do aplicativo em primeiro plano com os limites da tela. Por isso, um aplicativo com aparência de tela cheia pode se comportar diferente nas duas plataformas.
+A pausa automática em tela cheia está ativada por padrão: o motor evita iniciar gestos e gatilhos de borda enquanto o aplicativo em primeiro plano for detectado como tela cheia. Ela cobre jogos em tela cheia, vídeos e apresentações; é separada do estado de pausa manual. No Windows, a detecção verifica uma janela sem bordas cobrindo o monitor dela e exclui janelas da área de trabalho/shell. O Mac compara a janela do aplicativo em primeiro plano com os limites da tela. Por isso, um aplicativo com aparência de tela cheia pode se comportar diferente nas duas plataformas.
+
+Desative “Pausar gestos em tela cheia” nas preferências para mudar o ajuste global. Em “Em tela cheia”, cada aplicativo oferece “Seguir ajuste global”, “Manter ativos” e “Pausar gestos”; a escolha explícita do aplicativo tem prioridade. Para usar gestos globais no Chrome em tela cheia, adicione o Chrome, mantenha a herança dos gestos globais e escolha “Manter ativos”. Não é preciso criar gestos próprios. A pausa manual e as exclusões continuam valendo.
 
 Para um jogo em janela ou área de trabalho remota, adicione uma exclusão explícita. Para pausar em todo lugar, use o [comando da área de notificação/barra de menus ou o atalho de pausa](getting-started.md#pausar).
 

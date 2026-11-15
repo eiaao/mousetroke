@@ -41,4 +41,4 @@ Su Mac, **Media e sistema → Aumenta luminosità** / **Riduci luminosità** inv
 
 Su Mac, Mousetroke avvisa se un angolo attivo di sistema si sovrappone a un angolo configurato. Cambia una delle due assegnazioni per evitare azioni in competizione. Le scorciatoie di sistema come F11 o Control+Up dipendono dalle impostazioni delle scorciatoie di macOS.
 
-Anche le esclusioni delle app e il rilevamento a schermo intero sopprimono gli attivatori di bordo. Vedi le [regole per app](per-app.md) quando un bordo funziona in un'app ma non in un'altra.
+Anche le esclusioni delle app sopprimono gli attivatori di bordo; il rilevamento a schermo intero lo fa per impostazione predefinita. Vedi le [regole per app](per-app.md) quando un bordo funziona in un'app ma non in un'altra.

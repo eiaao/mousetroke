@@ -181,6 +181,7 @@ pub fn import(gestures_raw: &str, prefs_raw: Option<&str>) -> Result<Config, Str
         app: None,
         special: None,
         inherit_global: true,
+        fullscreen_policy: Default::default(),
         disabled: false,
         bindings: wg.general.intents.iter().map(convert_intent).collect(),
     });
@@ -194,6 +195,7 @@ pub fn import(gestures_raw: &str, prefs_raw: Option<&str>) -> Result<Config, Str
             app: Some(AppMatch::new(&t.path)),
             special: None,
             inherit_global: true,
+            fullscreen_policy: Default::default(),
             disabled: false,
             bindings: t.intents.iter().map(convert_intent).collect(),
         });
@@ -215,6 +217,7 @@ pub fn import(gestures_raw: &str, prefs_raw: Option<&str>) -> Result<Config, Str
             app: None,
             special: Some(area),
             inherit_global: true,
+            fullscreen_policy: Default::default(),
             disabled: false,
             bindings: intents.iter().map(convert_intent).collect(),
         });

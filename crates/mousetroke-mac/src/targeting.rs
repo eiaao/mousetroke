@@ -258,8 +258,11 @@ pub fn at(x: i32, y: i32) -> Target {
         target
     })
 }
-pub fn fullscreen() -> bool {
-    SNAPSHOT.with(|s| s.borrow().fullscreen)
+pub fn fullscreen_target() -> Option<Target> {
+    SNAPSHOT.with(|s| {
+        let snapshot = s.borrow();
+        if snapshot.fullscreen { snapshot.front.clone() } else { None }
+    })
 }
 pub fn window(target: &Target) -> Option<Window> {
     SNAPSHOT.with(|s| {

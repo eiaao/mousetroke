@@ -67,8 +67,8 @@ impl Host for SystemHost {
     fn window_title(&self, wid: usize) -> String {
         targeting::window_title(windows::Win32::Foundation::HWND(wid as *mut _))
     }
-    fn foreground_fullscreen(&self) -> bool {
-        targeting::is_foreground_fullscreen()
+    fn fullscreen_target(&self) -> Option<Target> {
+        targeting::fullscreen_target().map(Into::into)
     }
     fn replay(&self, btn: MouseButton, click: bool) {
         std::thread::spawn(move || if click { input::replay_click(btn) } else { input::replay_down(btn) });

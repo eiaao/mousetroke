@@ -77,6 +77,9 @@ pub struct Scope {
     /// 本作用域未命中时是否回落到通用（global）手势。默认是。
     #[serde(default = "yes", skip_serializing_if = "is_true")]
     pub inherit_global: bool,
+    /// 程序全屏时的暂停策略；缺省跟随全局。
+    #[serde(default, skip_serializing_if = "FullscreenPolicy::is_inherit")]
+    pub fullscreen_policy: FullscreenPolicy,
     /// 在这个程序里禁用所有手势（含通用手势与屏幕边角）：鼠标键原样交给程序。
     #[serde(default, skip_serializing_if = "std::ops::Not::not")]
     pub disabled: bool,
@@ -105,6 +108,21 @@ pub enum ScopeKind {
     Global,
     App,
     Special,
+}
+
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum FullscreenPolicy {
+    #[default]
+    Inherit,
+    Allow,
+    Pause,
+}
+
+impl FullscreenPolicy {
+    fn is_inherit(&self) -> bool {
+        *self == Self::Inherit
+    }
 }
 
 /// 应用匹配规则。
@@ -500,6 +518,8 @@ pub struct Settings {
     pub target_mode: TargetMode,
     /// 暂停/恢复热键（keyseq 语法）。
     pub pause_hotkey: String,
+    /// 前台全屏时暂停鼠标手势和触发角，程序规则可覆盖。
+    pub pause_on_fullscreen: bool,
     pub show_tray: bool,
     /// 默认每天检查更新，可在偏好设置关闭；检查记录另存，不混入配置。
     #[serde(default = "yes")]
@@ -549,6 +569,7 @@ impl Default for Settings {
             min_stroke_px: 30,
             target_mode: TargetMode::UnderCursor,
             pause_hotkey: "#({ESC})".into(),
+            pause_on_fullscreen: true,
             show_tray: true,
             update_check: true,
             trail: Trail {

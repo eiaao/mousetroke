@@ -42,4 +42,4 @@ Ouvrez **Toutes les applications → Gestes de souris → Nouveau geste**, chois
 
 Sous Windows, choisissez **Mettre les gestes en pause**, puis **Reprendre les gestes** pour les rétablir. Sur Mac, l’élément garde le même libellé : sa coche indique une pause manuelle, et cliquer à nouveau dessus reprend les gestes. Le raccourci de pause/reprise par défaut est **Win+Esc** sous Windows et **Control+Option+Command+P** sur Mac. Modifiez-le sous **Préférences → Raccourci pause / reprise**.
 
-Les jeux, vidéos et présentations en plein écran suspendent automatiquement les gestes lorsque la fenêtre au premier plan est détectée en plein écran. Consultez les [règles par application](per-app.md) pour les exclusions et le [dépannage](troubleshooting.md) si rien ne se déclenche.
+Par défaut, les jeux, vidéos et présentations en plein écran suspendent automatiquement les gestes lorsque la fenêtre au premier plan est détectée en plein écran. Consultez les [règles par application](per-app.md) pour les exclusions et le [dépannage](troubleshooting.md) si rien ne se déclenche.

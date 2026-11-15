@@ -15,6 +15,10 @@ order: 11
 
 I log ruotano su `mousetroke.log.old` dopo aver superato 1 MB. **Informazioni → Posizioni dei file** mostra i percorsi effettivi. **Apri cartella** apre la cartella di configurazione; **Apri registro** apre il log di runtime. Sotto **Importa ed esporta**, **Mostra in Esplora file** su Windows o **Mostra nel Finder** su Mac rivela la configurazione.
 
+## Configurazione della pausa a schermo intero
+
+`settings.pause_on_fullscreen` è booleano, con valore predefinito `true`. `fullscreen_policy` nell’ambito dell’app accetta `"inherit"` (predefinito, impostazione globale), `"allow"` (mantieni attivi) o `"pause"` (pausa a schermo intero). Entrambe le impostazioni riguardano gesti del mouse e attivatori sui bordi. I campi assenti mantengono il comportamento precedente.
+
 ## Esportare, importare e ripristinare
 
 Sotto **Importa ed esporta → File di configurazione di Mousetroke**, clicca **Esporta…** e salva un backup JSON. **Importa da file…** legge un JSON di configurazione di Mousetroke e sostituisce la configurazione attuale, preferenze incluse. Non unisce quel file nelle associazioni attuali. In questo flusso non esiste un'opzione di unione della configurazione nativa. Puoi annullare l'importazione con Ctrl+Z su Windows o ⌘+Z su Mac mentre le impostazioni sono aperte.

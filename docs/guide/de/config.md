@@ -15,6 +15,10 @@ order: 11
 
 Protokolle wechseln nach dem Überschreiten von 1 MB zu `mousetroke.log.old`. **Über → Dateispeicherorte** zeigt die tatsächlichen Pfade an. **Ordner öffnen** öffnet den Konfigurationsordner; **Protokoll öffnen** das Laufzeitprotokoll. Unter **Import und Export** zeigt **Im Datei-Explorer anzeigen** unter Windows oder **Im Finder anzeigen** auf dem Mac die Konfiguration an.
 
+## Konfiguration der Vollbild-Pause
+
+`settings.pause_on_fullscreen` ist ein boolescher Wert mit Standard `true`. `fullscreen_policy` im App-Bereich akzeptiert `"inherit"` (Standard, globale Einstellung), `"allow"` (im Vollbild aktiv lassen) oder `"pause"` (im Vollbild pausieren). Beide Einstellungen gelten für Mausgesten und Rand-Auslöser. Fehlende Felder erhalten das bisherige Pausenverhalten.
+
 ## Exportieren, Importieren und Wiederherstellen
 
 Klicken Sie unter **Import und Export → Mousetroke-Konfigurationsdatei** auf **Exportieren…** und speichern Sie ein JSON-Backup. **Aus Datei importieren…** liest eine Mousetroke-Konfigurations-JSON und ersetzt die aktuelle Konfiguration, einschließlich der Einstellungen. Sie führt diese Datei nicht mit Ihren aktuellen Bindungen zusammen. Eine Zusammenführungsoption für die native Konfiguration gibt es in diesem Ablauf nicht. Sie können den Import mit Strg+Z unter Windows oder ⌘+Z auf dem Mac rückgängig machen, solange die Einstellungen geöffnet sind.

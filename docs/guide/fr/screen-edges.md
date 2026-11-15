@@ -41,4 +41,4 @@ Sur Mac, **Média et système → Luminosité +** / **Luminosité −** envoie l
 
 Sur Mac, Mousetroke avertit si un coin actif du système chevauche un coin configuré. Modifiez l’une des affectations pour éviter des actions concurrentes. Les raccourcis système comme F11 ou Control+Up dépendent des réglages de raccourcis de macOS.
 
-Les exclusions d’applications et la détection du plein écran suspendent aussi les déclencheurs de bord. Consultez les [règles par application](per-app.md) lorsqu’un bord fonctionne dans une application mais pas dans une autre.
+Les exclusions d’applications suspendent aussi les déclencheurs de bord ; la détection du plein écran le fait également par défaut. Consultez les [règles par application](per-app.md) lorsqu’un bord fonctionne dans une application mais pas dans une autre.

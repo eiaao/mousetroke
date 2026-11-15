@@ -759,7 +759,7 @@ test("unselected rows are muted and incomplete gestures do not conflict (C2, UI 
   assert.equal(keys.conflicts([trace, trace]).size, 0);
   const edge = { ...binding, pattern: [{ type: "edge", edge: 1 }] };
   assert.equal(keys.conflicts([edge, edge]).size, 2);
-  const html = render(createElement(BindingList, { scope: { id: "g", kind: "global", name: "g", bindings: [binding] }, tab: "gesture", filter: "all", selected: null, clash: new Map(), onSelect() {}, onTab() {}, onFilter() {}, onAdd() {}, onDelete() {}, onDuplicate() {}, onToggle() {}, onScopeChange() {}, onDeleteScope() {} }));
+  const html = render(createElement(BindingList, { pauseOnFullscreen: true, scope: { id: "g", kind: "global", name: "g", bindings: [binding] }, tab: "gesture", filter: "all", selected: null, clash: new Map(), onSelect() {}, onTab() {}, onFilter() {}, onAdd() {}, onDelete() {}, onDuplicate() {}, onToggle() {}, onScopeChange() {}, onDeleteScope() {} }));
   assert.ok(html.includes('class="row-action-text muted"'));
   assert.ok(html.includes(t("ui.actpick.unselected")));
 });
@@ -769,7 +769,7 @@ test("new gesture rows show no stroke yet with or without an action selected", (
   const binding = keys.newBinding();
   assert.equal(binding.disabled, true);
   assert.equal(binding.draft, true);
-  const props = { tab: "gesture", filter: "all", selected: null, clash: new Map(), onSelect() {}, onTab() {}, onFilter() {}, onAdd() {}, onDelete() {}, onDuplicate() {}, onToggle() {}, onScopeChange() {}, onDeleteScope() {} };
+  const props = { pauseOnFullscreen: true, tab: "gesture", filter: "all", selected: null, clash: new Map(), onSelect() {}, onTab() {}, onFilter() {}, onAdd() {}, onDelete() {}, onDuplicate() {}, onToggle() {}, onScopeChange() {}, onDeleteScope() {} };
   for (const actionUnselected of [true, false]) {
     for (const pattern of [[], binding.pattern]) {
       for (const state of [{ disabled: true, draft: true }]) {

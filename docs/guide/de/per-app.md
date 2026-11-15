@@ -1,6 +1,6 @@
 ---
 title: "App-spezifische Regeln"
-description: "Apps hinzufügen, globale Mausgesten überschreiben, Apps ausschließen, die Maus-Ziehen brauchen, und die Vollbild-Autopause verstehen."
+description: "Apps hinzufügen, globale Gesten überschreiben, Apps ausschließen und die Vollbild-Pause global oder pro App einstellen."
 order: 6
 ---
 
@@ -31,7 +31,9 @@ Das ist nützlich für Remotedesktop, virtuelle Maschinen, 3D-Modellierung, Desi
 
 ## Vollbild und erster Start
 
-Die Vollbild-Autopause ist automatisch: Die Engine vermeidet den Start von Gesten und Rand-Auslösern, solange die App im Vordergrund als Vollbild erkannt wird. Das gilt für Vollbildspiele, Video und Präsentationen; es ist vom manuellen Pausenzustand getrennt. Unter Windows prüft die Erkennung ein randloses Fenster, das seinen Monitor bedeckt, und schließt Desktop-/Shell-Fenster aus. Der Mac gleicht das Fenster der Vordergrund-App mit den Bildschirmgrenzen ab. Eine App, die wie Vollbild aussieht, kann sich auf den beiden Plattformen daher unterschiedlich verhalten.
+Die Vollbild-Autopause ist standardmäßig aktiviert: Die Engine vermeidet den Start von Gesten und Rand-Auslösern, solange die App im Vordergrund als Vollbild erkannt wird. Das gilt für Vollbildspiele, Video und Präsentationen; es ist vom manuellen Pausenzustand getrennt. Unter Windows prüft die Erkennung ein randloses Fenster, das seinen Monitor bedeckt, und schließt Desktop-/Shell-Fenster aus. Der Mac gleicht das Fenster der Vordergrund-App mit den Bildschirmgrenzen ab. Eine App, die wie Vollbild aussieht, kann sich auf den beiden Plattformen daher unterschiedlich verhalten.
+
+In den Einstellungen lässt sich „Gesten im Vollbild pausieren“ global ausschalten. Unter „Im Vollbild“ bietet jede App „Globale Einstellung“, „Aktiv lassen“ und „Gesten pausieren“; eine ausdrückliche App-Einstellung hat Vorrang. Für globale Gesten in Chrome im Vollbild: Chrome hinzufügen, die Übernahme globaler Gesten aktiviert lassen und „Aktiv lassen“ wählen. Eigene Gesten sind dafür nicht nötig. Manuelle Pause und App-Ausschlüsse gelten weiterhin.
 
 Für ein Fenster-Spiel oder Remotedesktop fügen Sie eine explizite Ausnahme hinzu. Um überall zu pausieren, verwenden Sie den [Befehl in Taskleiste/Menüleiste oder das Pause-Kürzel](getting-started.md#pausieren).
 

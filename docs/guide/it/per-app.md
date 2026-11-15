@@ -1,6 +1,6 @@
 ---
 title: "Regole per app"
-description: "Aggiungi app, sostituisci i gesti del mouse globali, escludi le app che richiedono il trascinamento del mouse e comprendi la sospensione automatica a schermo intero."
+description: "Aggiungi app, personalizza gesti, escludi app e configura la pausa a schermo intero con eccezioni per app."
 order: 6
 ---
 
@@ -31,7 +31,9 @@ Seleziona l'app nella barra laterale e attiva **Disattiva i gesti in questa app*
 
 ## Schermo intero e prima esecuzione
 
-La sospensione automatica a schermo intero è appunto automatica: il motore evita di avviare gesti e attivatori di bordo mentre l'app in primo piano viene rilevata a schermo intero. Copre giochi a schermo intero, video e presentazioni; è separata dallo stato di pausa manuale. Su Windows, il rilevamento controlla una finestra senza bordi che copre il suo monitor ed esclude le finestre desktop/shell. Su Mac confronta la finestra dell'app in primo piano con i limiti dello schermo. Un'app dall'aspetto a schermo intero può quindi comportarsi diversamente sulle due piattaforme.
+La sospensione automatica a schermo intero è attiva per impostazione predefinita: il motore evita di avviare gesti e attivatori di bordo mentre l'app in primo piano viene rilevata a schermo intero. Copre giochi a schermo intero, video e presentazioni; è separata dallo stato di pausa manuale. Su Windows, il rilevamento controlla una finestra senza bordi che copre il suo monitor ed esclude le finestre desktop/shell. Su Mac confronta la finestra dell'app in primo piano con i limiti dello schermo. Un'app dall'aspetto a schermo intero può quindi comportarsi diversamente sulle due piattaforme.
+
+Disattiva “Pausa i gesti a schermo intero” nelle preferenze per cambiare l’impostazione globale. In “A schermo intero”, ogni app offre “Segui impostazione globale”, “Mantieni attivi” e “Pausa i gesti”; la scelta esplicita per l’app ha priorità. Per usare i gesti globali in Chrome a schermo intero, aggiungi Chrome, mantieni l’eredità dei gesti globali e scegli “Mantieni attivi”. Non servono gesti specifici. La pausa manuale e le esclusioni restano valide.
 
 Per un gioco in finestra o per il desktop remoto, aggiungi un'esclusione esplicita. Per mettere in pausa ovunque, usa il [comando dall'area di notifica/barra dei menu o il tasto di pausa](getting-started.md#pausa).
 

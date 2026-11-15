@@ -48,8 +48,9 @@ pub trait Host {
     fn ignore_target(&self, target: &Target) -> bool;
     /// 查询目标标题以构建变量；捕获开始的输入回调调用，须快速返回。
     fn window_title(&self, wid: usize) -> String;
-    /// 查询前台是否全屏；输入回调调用，须快速返回。
-    fn foreground_fullscreen(&self) -> bool;
+    /// 查询前台全屏目标；None 表示非全屏，目标 exe 不可读时仍返回 Some。
+    /// 输入回调调用，须快速返回。
+    fn fullscreen_target(&self) -> Option<Target>;
     /// 异步补发触发键：click 为按下+抬起，否则只补发按下；输入回调不得等待。
     fn replay(&self, btn: MouseButton, click: bool);
     /// 异步执行动作；输入回调只投递，实际注入、脚本、菜单等在平台工作线程执行。

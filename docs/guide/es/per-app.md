@@ -1,6 +1,6 @@
 ---
 title: "Reglas por aplicación"
-description: "Añade aplicaciones, sobrescribe los gestos globales, excluye las que necesitan arrastrar con el ratón y entiende la pausa automática a pantalla completa."
+description: "Añade aplicaciones, personaliza gestos, excluye aplicaciones y configura la pausa a pantalla completa con excepciones por aplicación."
 order: 6
 ---
 
@@ -31,7 +31,9 @@ Esto es útil para el escritorio remoto, las máquinas virtuales, el modelado 3D
 
 ## Pantalla completa y primera ejecución
 
-La pausa automática a pantalla completa es automática: el motor evita iniciar gestos y disparadores de borde mientras la aplicación en primer plano se detecta a pantalla completa. Cubre los juegos, el vídeo y las presentaciones a pantalla completa; es independiente del estado de pausa manual. En Windows, la detección comprueba una ventana sin bordes que cubra su monitor y excluye las ventanas del escritorio o del shell. Mac compara la ventana de la aplicación en primer plano con los límites de la pantalla. Por eso, una aplicación con aspecto de pantalla completa puede comportarse de forma distinta en las dos plataformas.
+La pausa automática a pantalla completa está activada de forma predeterminada: el motor evita iniciar gestos y disparadores de borde mientras la aplicación en primer plano se detecta a pantalla completa. Cubre los juegos, el vídeo y las presentaciones a pantalla completa; es independiente del estado de pausa manual. En Windows, la detección comprueba una ventana sin bordes que cubra su monitor y excluye las ventanas del escritorio o del shell. Mac compara la ventana de la aplicación en primer plano con los límites de la pantalla. Por eso, una aplicación con aspecto de pantalla completa puede comportarse de forma distinta en las dos plataformas.
+
+Desactiva “Pausar gestos en pantalla completa” en Preferencias para cambiar el ajuste global. En “En pantalla completa”, cada aplicación ofrece “Seguir ajuste global”, “Mantener activos” y “Pausar gestos”; la elección explícita de la aplicación tiene prioridad. Para usar gestos globales en Chrome a pantalla completa, añade Chrome, conserva la herencia de gestos globales y elige “Mantener activos”. No hace falta añadir gestos propios. La pausa manual y las exclusiones siguen vigentes.
 
 Para un juego en ventana o un escritorio remoto, añade una exclusión explícita. Para pausar en todas partes, usa el [comando de la bandeja o de la barra de menús, o el atajo de pausa](getting-started.md#pausa).
 

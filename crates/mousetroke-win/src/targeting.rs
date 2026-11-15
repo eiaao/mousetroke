@@ -177,6 +177,17 @@ pub fn is_foreground_fullscreen() -> bool {
     is_fullscreen_window(unsafe { windows::Win32::UI::WindowsAndMessaging::GetForegroundWindow() })
 }
 
+/// 从同一个前台窗口读取全屏状态和程序身份。
+pub fn fullscreen_target() -> Option<Target> {
+    let hwnd = unsafe { windows::Win32::UI::WindowsAndMessaging::GetForegroundWindow() };
+    if !is_fullscreen_window(hwnd) {
+        return None;
+    }
+    let mut pid = 0;
+    unsafe { GetWindowThreadProcessId(hwnd, Some(&mut pid)); }
+    Some(Target { hwnd, pid, exe: exe_of(pid), is_desktop: false, class: class_name(hwnd) })
+}
+
 /// 见 [`is_foreground_fullscreen`]。
 pub fn is_fullscreen_window(hwnd: HWND) -> bool {
     use windows::Win32::Foundation::RECT;

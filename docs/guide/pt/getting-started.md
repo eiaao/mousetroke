@@ -42,4 +42,4 @@ Abra **Todos os aplicativos → Gestos de mouse → Novo gesto**, escolha o gati
 
 No Windows, escolha **Pausar gestos** e depois **Retomar gestos** para restaurá-los. No Mac, **Pausar gestos** mantém sempre o mesmo nome: a marcação indica pausa manual, e clicar novamente retoma. O atalho padrão de pausa/retomada é **Win+Esc** no Windows e **Control+Option+Command+P** no Mac. Altere-o em **Preferências → Atalho de pausar / retomar**.
 
-Jogos, vídeos e apresentações em tela cheia suprimem os gestos automaticamente enquanto a janela em primeiro plano for detectada como tela cheia. Veja as [regras por aplicativo](per-app.md) para exclusões e a [solução de problemas](troubleshooting.md) se nada disparar.
+Por padrão, jogos, vídeos e apresentações em tela cheia suprimem os gestos automaticamente enquanto a janela em primeiro plano for detectada como tela cheia. Veja as [regras por aplicativo](per-app.md) para exclusões e a [solução de problemas](troubleshooting.md) se nada disparar.

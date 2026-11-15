@@ -3,7 +3,7 @@
 //! 纯逻辑（不依赖平台），由引擎在识别中/识别结束时调用。
 
 use crate::recognizer::{best_score, Segment, EXACT_EPS};
-use crate::schema::{Action, Binding, Config, MouseButton, PatternKey, Scope, ScopeKind, Step};
+use crate::schema::{Action, Binding, Config, FullscreenPolicy, MouseButton, PatternKey, Scope, ScopeKind, Step};
 use crate::shape;
 
 /// 捕获会话的触发源。
@@ -142,6 +142,18 @@ fn step_equal(pattern: &Step, built: &Step) -> bool {
     }
 }
 
+/// 已确认前台全屏时，按前台程序例外或全局设置决定是否暂停。
+pub fn pause_in_fullscreen(cfg: &Config, foreground_exe: Option<&str>) -> bool {
+    let policy = foreground_exe.and_then(|exe| {
+        cfg.scopes.iter().find(|s| s.kind == ScopeKind::App && s.app.as_ref().is_some_and(|m| exe_matches(&m.exe, exe)))
+    }).map(|s| s.fullscreen_policy).unwrap_or_default();
+    match policy {
+        FullscreenPolicy::Inherit => cfg.settings.pause_on_fullscreen,
+        FullscreenPolicy::Allow => false,
+        FullscreenPolicy::Pause => true,
+    }
+}
+
 /// 根据目标窗口选择作用域链（按优先级）：桌面 → special；exe 命中 → app；最后 global。
 /// 特定作用域 `inherit_global = false` 时不回落到 global。
 pub fn resolve_scopes<'a>(cfg: &'a Config, is_desktop: bool, exe: Option<&str>) -> Vec<&'a Scope> {
@@ -269,7 +281,7 @@ mod tests {
     }
 
     fn scope(kind: ScopeKind, bindings: Vec<Binding>) -> Scope {
-        Scope { id: "s".into(), name: "s".into(), name_key: None, kind, app: None, special: None, inherit_global: true, disabled: false, bindings }
+        Scope { id: "s".into(), name: "s".into(), name_key: None, kind, app: None, special: None, inherit_global: true, fullscreen_policy: Default::default(), disabled: false, bindings }
     }
 
     const RIGHT: Step = Step::Press { key: PatternKey::Mouse(MouseButton::Right) };

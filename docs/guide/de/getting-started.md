@@ -42,4 +42,4 @@ Ein einfacher Rechtsklick öffnet weiterhin das Kontextmenü der Anwendung. Blei
 
 Unter Windows wählen Sie **Gesten pausieren**, dann **Gesten fortsetzen**, um sie wiederherzustellen. Auf dem Mac behält **Gesten pausieren** dieselbe Bezeichnung: Das Häkchen zeigt die manuelle Pause an, und ein erneuter Klick setzt fort. Das Standard-Kürzel für Pause/Fortsetzen ist **Win+Esc** unter Windows und **Control+Wahl+Command+P** auf dem Mac. Ändern Sie es unter **Einstellungen → Kürzel für Pause / Fortsetzen**.
 
-Vollbildspiele, Videos und Präsentationen unterdrücken Gesten automatisch, solange das Vordergrundfenster als Vollbild erkannt wird. Siehe [App-spezifische Regeln](per-app.md) für Ausnahmen und [Fehlerbehebung](troubleshooting.md), wenn nichts auslöst.
+Standardmäßig unterdrücken Vollbildspiele, Videos und Präsentationen Gesten automatisch, solange das Vordergrundfenster als Vollbild erkannt wird. Siehe [App-spezifische Regeln](per-app.md) für Ausnahmen und [Fehlerbehebung](troubleshooting.md), wenn nichts auslöst.

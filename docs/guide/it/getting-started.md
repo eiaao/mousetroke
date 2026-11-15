@@ -42,4 +42,4 @@ Apri **Tutte le app → Gesti del mouse → Nuovo gesto**, scegli il pulsante di
 
 Su Windows scegli **Metti in pausa i gesti**, poi **Riprendi i gesti** per ripristinarli. Su Mac, **Metti in pausa i gesti** mantiene la stessa etichetta: il segno di spunta indica la pausa manuale e cliccando di nuovo si riprende. Il tasto predefinito per pausa/riprendi è **Win+Esc** su Windows e **Control+Option+Command+P** su Mac. Cambialo sotto **Preferenze → Tasto pausa / riprendi**.
 
-Giochi, video e presentazioni a schermo intero sopprimono automaticamente i gesti mentre la finestra in primo piano viene rilevata a schermo intero. Vedi le [regole per app](per-app.md) per le esclusioni e la [risoluzione dei problemi](troubleshooting.md) se nulla si attiva.
+Per impostazione predefinita, giochi, video e presentazioni a schermo intero sopprimono automaticamente i gesti mentre la finestra in primo piano viene rilevata a schermo intero. Vedi le [regole per app](per-app.md) per le esclusioni e la [risoluzione dei problemi](troubleshooting.md) se nulla si attiva.

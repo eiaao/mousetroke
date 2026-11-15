@@ -11,7 +11,8 @@ order: 12
 Testez d’abord un geste intégré simple dans une fenêtre de navigateur normale, non plein écran.
 
 - Vérifiez le menu de la zone de notification/barre des menus. Sous Windows, sélectionnez **Reprendre les gestes** si c’est proposé ; sur Mac, cliquez à nouveau sur **Mettre les gestes en pause** si c’est coché. Vérifiez **Préférences → Raccourci pause / reprise** si un raccourci a mis le moteur en pause.
-- Quittez le plein écran. La suspension automatique en plein écran peut arrêter aussi bien les gestes de souris que les actions de bord, même quand la pause manuelle est désactivée.
+- Vérifiez « Préférences → Mettre les gestes en pause en plein écran » et « En plein écran » pour l’application. Par défaut, les gestes de souris et déclencheurs de bord sont suspendus ; choisissez « Garder actifs » ou quittez le plein écran pour tester.
+- Sous Windows, certaines fenêtres UWP appartiennent à `ApplicationFrameHost.exe` : les exceptions de l’application réelle ne correspondent pas. Sans règle pour cet hôte, le réglage global s’applique.
 - Sélectionnez l’application dans les paramètres et vérifiez **Désactiver les gestes dans cette appli**. Vérifiez aussi l’interrupteur **Activé** / **Désactivé** de la liaison concernée, **Utiliser aussi les gestes globaux**, le bouton déclencheur et les éventuelles étapes supplémentaires.
 - Bougez rapidement après avoir enfoncé le bouton et tracez un tracé plus long. Réglez **Durée d’immobilité avant de traiter en clic** et **Sensibilité du tracé** dans les Préférences.
 - Si le retour visuel manque, vérifiez **Afficher la traînée** et **Afficher le nom du geste pendant le tracé**. Une traînée masquée ne signifie pas en soi que la reconnaissance est désactivée.

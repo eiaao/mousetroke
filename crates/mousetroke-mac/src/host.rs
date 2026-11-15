@@ -126,8 +126,8 @@ impl Host for SystemHost {
     fn window_title(&self, wid: usize) -> String {
         crate::targeting::title(wid)
     }
-    fn foreground_fullscreen(&self) -> bool {
-        crate::targeting::fullscreen()
+    fn fullscreen_target(&self) -> Option<Target> {
+        crate::targeting::fullscreen_target()
     }
     fn replay(&self, button: MouseButton, click: bool) {
         REPLAYS.with(|slot| {

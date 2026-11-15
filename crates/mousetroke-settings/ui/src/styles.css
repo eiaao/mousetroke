@@ -1005,6 +1005,15 @@ select.lang-select {
 }
 
 /* 分段选择 */
+.list-fullscreen {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 0 28px 12px;
+  font-size: 13px;
+}
+
 .segmented {
   display: inline-flex;
   flex-wrap: wrap;

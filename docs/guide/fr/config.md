@@ -15,6 +15,10 @@ order: 11
 
 Les journaux tournent vers `mousetroke.log.old` après avoir dépassé 1 Mo. **À propos → Emplacements des fichiers** affiche les chemins réels. **Ouvrir le dossier** ouvre le répertoire de configuration ; **Ouvrir le journal** ouvre le journal d’exécution. Sous **Importer et exporter**, **Afficher dans l’Explorateur de fichiers** sous Windows ou **Afficher dans le Finder** sur Mac révèle la configuration.
 
+## Configuration de la pause en plein écran
+
+`settings.pause_on_fullscreen` est un booléen valant `true` par défaut. Le champ `fullscreen_policy` d’une application accepte `"inherit"` (par défaut, réglage global), `"allow"` (garder actifs) ou `"pause"` (mettre en pause en plein écran). Les deux réglages concernent les gestes de souris et les déclencheurs de bord. L’absence de ces champs conserve le comportement précédent.
+
 ## Exporter, importer et restaurer
 
 Sous **Importer et exporter → Fichier de configuration Mousetroke**, cliquez sur **Exporter…** et enregistrez une sauvegarde JSON. **Importer depuis un fichier…** lit un JSON de configuration Mousetroke et remplace la configuration actuelle, préférences comprises. Il ne fusionne pas ce fichier avec vos liaisons actuelles. Il n’y a pas d’option de fusion de configuration native dans ce flux. Vous pouvez annuler l’import avec Ctrl+Z sous Windows ou ⌘+Z sur Mac tant que les paramètres sont ouverts.

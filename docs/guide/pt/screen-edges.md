@@ -41,4 +41,4 @@ O **Mídia e sistema → Aumentar brilho** / **Diminuir brilho** do Mac envia ev
 
 No Mac, o Mousetroke avisa se um canto de acesso rápido do sistema coincidir com um canto configurado. Altere uma das atribuições para evitar ações concorrentes. Atalhos do sistema como F11 ou Control+Up dependem das configurações de atalhos do macOS.
 
-Exclusões de aplicativos e a detecção de tela cheia também suprimem os gatilhos de borda. Veja as [regras por aplicativo](per-app.md) quando uma borda funciona em um aplicativo e não em outro.
+As exclusões de aplicativos também suprimem os gatilhos de borda; a detecção de tela cheia faz o mesmo por padrão. Veja as [regras por aplicativo](per-app.md) quando uma borda funciona em um aplicativo e não em outro.

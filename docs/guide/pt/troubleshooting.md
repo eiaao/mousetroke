@@ -11,7 +11,8 @@ order: 12
 Primeiro teste um gesto integrado simples em uma janela de navegador normal, fora de tela cheia.
 
 - Verifique o menu da área de notificação/barra de menus. No Windows, selecione **Retomar gestos** se oferecido; no Mac, clique em **Pausar gestos** de novo se estiver marcado. Confira **Preferências → Atalho de pausar / retomar** se um atalho pausou o motor.
-- Saia da tela cheia. A supressão automática de tela cheia pode parar tanto os gestos de mouse quanto as ações de borda, mesmo com a pausa manual desligada.
+- Confira “Preferências → Pausar gestos em tela cheia” e “Em tela cheia” no aplicativo. Por padrão, gestos do mouse e gatilhos de borda são pausados; escolha “Manter ativos” ou saia da tela cheia e tente novamente.
+- No Windows, algumas janelas UWP pertencem a `ApplicationFrameHost.exe`, então as exceções do aplicativo real não correspondem. Sem uma regra para o host, vale o ajuste global.
 - Selecione o aplicativo nas configurações e confira **Desativar gestos neste aplicativo**. Verifique também o interruptor **Ativado** / **Desativado** do vínculo individual, **Usar também os gestos globais**, o botão de disparo e quaisquer etapas extras.
 - Mova-se logo após pressionar o botão e desenhe um traçado mais longo. Ajuste o **Tempo parado até tratar como clique** e a **Sensibilidade do traçado** nas Preferências.
 - Se faltar retorno visual, confira **Mostrar o rastro** e **Mostrar o nome do gesto ao desenhar**. Um rastro oculto, por si só, não significa que o reconhecimento esteja desligado.

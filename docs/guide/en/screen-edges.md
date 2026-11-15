@@ -41,4 +41,4 @@ Mac **Media & system → Brightness up** / **Brightness down** sends system brig
 
 On Mac, Mousetroke warns if a system Hot Corner overlaps a configured corner. Change one of the assignments to avoid competing actions. System shortcuts such as F11 or Control+Up depend on the macOS shortcut settings.
 
-App exclusions and fullscreen detection suppress edge triggers too. See [per-app rules](per-app.md) when an edge works in one app but not another.
+App exclusions also suppress edge triggers; fullscreen detection does so by default. See [per-app rules](per-app.md) when an edge works in one app but not another.

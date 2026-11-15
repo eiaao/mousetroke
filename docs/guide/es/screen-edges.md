@@ -41,4 +41,4 @@ Para frotar, añade **Dibujar un trazado** y graba las direcciones alternas. Un 
 
 En Mac, Mousetroke avisa si una esquina activa del sistema se solapa con una esquina configurada. Cambia una de las dos asignaciones para evitar acciones enfrentadas. Los atajos del sistema como F11 o Control+Up dependen de la configuración de atajos de macOS.
 
-Las exclusiones de aplicaciones y la detección de pantalla completa también suprimen los disparadores de borde. Consulta las [reglas por aplicación](per-app.md) cuando un borde funcione en una aplicación y en otra no.
+Las exclusiones de aplicaciones también suprimen los disparadores de borde; la detección de pantalla completa también lo hace de forma predeterminada. Consulta las [reglas por aplicación](per-app.md) cuando un borde funcione en una aplicación y en otra no.

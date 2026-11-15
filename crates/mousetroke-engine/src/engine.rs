@@ -419,9 +419,13 @@ impl Engine {
 
     // ------------------------------------------------------------ 输入事件
 
+    fn fullscreen_paused(&self) -> bool {
+        self.host.fullscreen_target().is_some_and(|target| matcher::pause_in_fullscreen(&self.cfg, target.exe.as_deref()))
+    }
+
     /// 无捕获时按下鼠标键：是触发键就开始按键手势。
     fn try_start_button(&mut self, btn: MouseButton, x: i32, y: i32) -> Verdict {
-        if !self.trigger_buttons.contains(&btn) || self.host.foreground_fullscreen() {
+        if !self.trigger_buttons.contains(&btn) || self.fullscreen_paused() {
             return Verdict::Pass;
         }
         let target = self.host.target_at(x, y);
@@ -705,7 +709,7 @@ impl Engine {
         let now = Instant::now();
         match (at.filter(|e| self.edge_triggers.contains(e)), self.edge_pending) {
             (Some(e), Some((pending, since))) if pending == e => {
-                if now.duration_since(since) >= EDGE_DWELL && !self.host.foreground_fullscreen() {
+                if now.duration_since(since) >= EDGE_DWELL && !self.fullscreen_paused() {
                     self.edge_pending = None;
                     self.start_edge_capture(e, x, y);
                 }
