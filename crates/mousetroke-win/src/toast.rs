@@ -105,10 +105,15 @@ pub fn show_update(version: &str, on_choice: impl Fn(Choice) + Send + Sync + 'st
 }
 
 /// 忽略此版本：写入共用状态文件，菜单提示随后刷新。
+/// 旧通知只在它的版本仍是最新版本时生效，不覆盖对更新版本的忽略。
 pub fn ignore(config: Option<PathBuf>, version: String) {
     let Some(config) = config else { return };
     let path = mousetroke_core::update::state_path(&config);
-    if mousetroke_core::update::UpdateState::update(&path, |s| s.ignored = Some(version)).is_err() {
+    if mousetroke_core::update::UpdateState::update(&path, |s| {
+        if s.latest.as_ref() == Some(&version) {
+            s.ignored = Some(version);
+        }
+    }).is_err() {
         crate::log!("忽略版本写入失败");
     }
     crate::update::wake();

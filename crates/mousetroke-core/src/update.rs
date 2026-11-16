@@ -472,6 +472,9 @@ impl UpdateState {
     pub fn save(&self, path: &Path) -> std::io::Result<()> {
         use std::io::Write;
         let tmp = path.with_extension("json.tmp");
+        if let Some(dir) = path.parent() {
+            std::fs::create_dir_all(dir)?;
+        }
         let mut file = std::fs::File::create(&tmp)?;
         file.write_all(&serde_json::to_vec(self)?)?;
         file.sync_all()?;
@@ -570,8 +573,9 @@ impl Automatic {
             return;
         }
         let Ok(result) = check() else { return };
-        state.latest = Some(result.latest.clone());
-        let _ = state.save(path);
+        // 联网期间设置进程可能写入了忽略：重新读取后只改自己的字段，判断也基于最新状态。
+        let _ = UpdateState::update(path, |s| s.latest = Some(result.latest.clone()));
+        let state = UpdateState::load(path);
         if !result.newer
             || state.last_notified.as_ref() == Some(&result.latest)
             || state.ignored.as_ref() == Some(&result.latest)
@@ -585,15 +589,15 @@ impl Automatic {
             *notice = Some((result.latest.clone(), tx));
         }
         if rx.recv_timeout(Duration::from_secs(5)) == Ok(true) {
-            state.last_notified = Some(result.latest);
-            let _ = state.save(path);
+            let _ = UpdateState::update(path, |s| s.last_notified = Some(result.latest));
         }
     }
 
     /// 主线程定时器取出通知；只有成功提交给界面才记录已通知版本。
     pub fn take_notice(&self) -> Option<(String, mpsc::Sender<bool>)> {
         let notice = self.notice.lock().ok()?.take()?;
-        if self.enabled() {
+        // 排队后用户可能关闭了自动检查或通知；拒绝的版本不记为已通知，重新开启后还能提示。
+        if self.enabled() && self.notify.load(Ordering::Acquire) {
             Some(notice)
         } else {
             let _ = notice.1.send(false);

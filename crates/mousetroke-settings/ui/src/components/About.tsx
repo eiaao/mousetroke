@@ -38,6 +38,7 @@ export function About({ engine, onShowGuide, notify }: { engine: EngineStatus; o
   const open = (what: Parameters<typeof api.openPath>[0]) => api.openPath(what).catch((e) => notify(errText(e)));
   const checkUpdate = async () => {
     setBusy("check"); setError(null);
+    autoChecked.current = true;
     try { setUpdate(await api.checkUpdate()); await refreshUpdateHint(); }
     catch (e) { setError(e); }
     finally { setBusy(null); }
@@ -46,7 +47,8 @@ export function About({ engine, onShowGuide, notify }: { engine: EngineStatus; o
   const hint = useUpdateHint();
   const autoChecked = useRef(false);
   useEffect(() => {
-    if (hint && !autoChecked.current) { autoChecked.current = true; checkUpdate(); }
+    // 手动检查进行中时它本身会显示结果，不再重复检查
+    if (hint && !autoChecked.current && busy === null) { autoChecked.current = true; checkUpdate(); }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [hint]);
   const installUpdate = async () => {

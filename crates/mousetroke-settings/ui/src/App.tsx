@@ -223,6 +223,8 @@ function Main({ init }: { init: InitState }) {
     // 窗口隐藏时不轮询；状态未变时保持同一对象，避免整棵树每 3 秒重渲染
     const t0 = setInterval(() => {
       if (document.hidden) return;
+      // 引擎在窗口打开期间发现的新版本也要及时显示（只读本地文件）
+      refreshUpdateHint();
       api.engineStatus().then(
         (next) => setEngine((prev) => (prev.running === next.running && prev.autostart === next.autostart && prev.exeFound === next.exeFound ? prev : next)),
         () => {},
