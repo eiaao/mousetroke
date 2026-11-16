@@ -1,5 +1,6 @@
 import { primaryModifier } from "../platform";
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import type { Binding, FullscreenPolicy, MouseButton, Scope, Step } from "../types";
 import { actionKeys, presetDefinition, presetTypeLabel } from "../actions";
 import { EDGE, actionSummary, buttonName, decompose, describePattern, edgeName, fileName, hasConflictPattern } from "../gesture";
@@ -35,6 +36,7 @@ export function BindingList({
   onAdd,
   onDelete,
   onDuplicate,
+  onTransfer,
   onToggle,
   onScopeChange,
   onDeleteScope,
@@ -52,6 +54,7 @@ export function BindingList({
   onAdd: (pattern: Step[]) => void;
   onDelete: (i: number) => void;
   onDuplicate: (i: number) => void;
+  onTransfer: (i: number) => void;
   onToggle: (i: number) => void;
   onScopeChange: (f: (s: Scope) => Scope, coalesce?: string) => void;
   onDeleteScope: () => void;
@@ -59,8 +62,19 @@ export function BindingList({
   clash: Map<number, number[]>;
 }) {
   const [query, setQuery] = useState("");
+  const [context, setContext] = useState<{ index: number; x: number; y: number } | null>(null);
   const search = useRef<HTMLInputElement>(null);
   const listRef = useRef<HTMLUListElement>(null);
+  const contextRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    if (!context) return;
+    contextRef.current?.querySelector<HTMLButtonElement>("button")?.focus();
+    const close = (e: MouseEvent) => { if (!contextRef.current?.contains(e.target as Node)) setContext(null); };
+    const escape = (e: KeyboardEvent) => { if (e.key === "Escape") { e.stopPropagation(); setContext(null); } };
+    window.addEventListener("mousedown", close);
+    window.addEventListener("keydown", escape, true);
+    return () => { window.removeEventListener("mousedown", close); window.removeEventListener("keydown", escape, true); };
+  }, [context]);
 
   const classes = useMemo(() => scope.bindings.map(classify), [scope.bindings]);
   const tabCount = (t0: ListTab) => classes.filter((c) => c.tab === t0).length;
@@ -312,15 +326,24 @@ export function BindingList({
       ) : (
         <ul key={`${tab}-${activeFilter}`} ref={listRef} className={`rows ${off ? "dimmed" : ""}`} role="listbox" aria-label={t("ui.list.rows_aria")} tabIndex={0} onKeyDown={onListKey}>
           {visible.map(({ b, i }, n) => (
-            <Row key={i} n={n} b={b} on={selected === i} clash={clash.has(i)} onClick={() => onSelect(i)} onToggle={() => onToggle(i)} />
+            <Row key={i} n={n} b={b} on={selected === i} clash={clash.has(i)} onClick={() => onSelect(i)} onToggle={() => onToggle(i)}
+              onContextMenu={(x, y) => {
+                onSelect(i);
+                setContext({ index: i, x: Math.max(8, Math.min(x, window.innerWidth - 230)), y: Math.max(8, Math.min(y, window.innerHeight - 90)) });
+              }} />
           ))}
         </ul>
+      )}
+      {context && createPortal(
+        <div ref={contextRef} className="gesture-context-menu popover" role="menu" style={{ position: "fixed", left: context.x, top: context.y, zIndex: 1000 }}>
+          <button type="button" role="menuitem" onClick={() => { onTransfer(context.index); setContext(null); }}>{t("ui.transfer.open")}</button>
+        </div>, document.body,
       )}
     </section>
   );
 }
 
-function Row({ n, b, on, clash, onClick, onToggle }: { n: number; b: Binding; on: boolean; clash: boolean; onClick: () => void; onToggle: () => void }) {
+function Row({ n, b, on, clash, onClick, onToggle, onContextMenu }: { n: number; b: Binding; on: boolean; clash: boolean; onClick: () => void; onToggle: () => void; onContextMenu: (x: number, y: number) => void }) {
   const name = displayName(b.name, b.name_key);
   const enabled = !b.disabled || !!b.draft;
   const incomplete = !!b.draft && !hasConflictPattern(b.pattern);
@@ -331,6 +354,7 @@ function Row({ n, b, on, clash, onClick, onToggle }: { n: number; b: Binding; on
       className={`row ${on ? "on" : ""} ${!enabled ? "off" : ""}`}
       style={{ "--i": Math.min(n, 12) } as React.CSSProperties}
       onClick={onClick}
+      onContextMenu={(e) => { e.preventDefault(); if (!b.draft) onContextMenu(e.clientX, e.clientY); }}
     >
       <span className="row-glyph">
         <PatternGlyph pattern={b.pattern} size={36} />

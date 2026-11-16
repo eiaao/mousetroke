@@ -36,11 +36,14 @@ export function Modal({ title, onClose, children, wide, onEscape }: { title: str
 /** 选择程序：列出正在运行的窗口，或浏览 exe。 */
 export function AppPicker({
   scopes,
+  setupOnly = false,
   onPick,
   onPickMany,
   onClose,
 }: {
   scopes: Scope[];
+  /** Adding a destination from a gesture transfer always creates an enabled app scope. */
+  setupOnly?: boolean;
   onPick: (exe: string, disable: boolean, name?: string) => void;
   /** 一次禁用多个（建议清单「全部禁用」）。 */
   onPickMany: (apps: PresetApp[]) => void;
@@ -86,14 +89,14 @@ export function AppPicker({
   return (
     <Modal title={t("ui.picker.title")} onClose={onClose}>
       <div className="modal-body">
-        <div className="segmented picker-mode" role="radiogroup" aria-label={t("ui.picker.mode_aria")}>
+        {!setupOnly && <div className="segmented picker-mode" role="radiogroup" aria-label={t("ui.picker.mode_aria")}>
           <button type="button" role="radio" aria-checked={!disable} className={!disable ? "on" : ""} onClick={() => setDisable(false)}>
             {t("ui.picker.mode_set")}
           </button>
           <button type="button" role="radio" aria-checked={disable} className={disable ? "on" : ""} onClick={() => setDisable(true)}>
             {t("ui.picker.mode_disable")}
           </button>
-        </div>
+        </div>}
         <input className="search" type="search" placeholder={disable ? t("ui.picker.search_off") : t("ui.picker.search_on")} value={q} onChange={(e) => setQ(e.target.value)} />
         <ul className="app-list">
           {disable && suggestions.length > 0 && (
