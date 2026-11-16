@@ -27,6 +27,7 @@ struct FakeCanvas(Shared);
 impl Canvas for FakeCanvas {
     fn set_color(&mut self, _: &str) {}
     fn set_width(&mut self, _: f64) {}
+    fn set_label_font_size(&mut self, _: u32) {}
     fn start_session(&mut self, _: i32, _: i32) {}
     fn line_to(&mut self, _: i32, _: i32) {
         self.0.borrow_mut().lines += 1;

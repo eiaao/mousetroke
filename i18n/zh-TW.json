@@ -447,6 +447,7 @@
   "ui.prefs.trail_matched": "識別成功時",
   "ui.prefs.fade_out": "完成後淡出",
   "ui.prefs.show_label": "畫的時候顯示手勢名",
+  "ui.prefs.label_font_size": "提示文字大小",
   "ui.prefs.label_color": "手勢名顏色",
   "ui.prefs.preview_label": "截圖",
   "ui.prefs.color_aria": "顏色",

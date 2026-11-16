@@ -167,7 +167,7 @@ export interface Settings {
   pause_on_fullscreen?: boolean;
   show_tray: boolean;
   trail: { show: boolean; width: number; border: number; fade_out: boolean; color_normal: string; color_matched: string };
-  label: { show: boolean; pos: number; border: number; color_normal: string; color_matched: string };
+  label: { show: boolean; font_size: number; pos: number; border: number; color_normal: string; color_matched: string };
 }
 
 /** 手势库中的一个手势：可被多个程序的绑定共享。 */

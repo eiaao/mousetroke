@@ -29,6 +29,9 @@ impl Canvas for Overlay {
     fn set_width(&mut self, width_px: f64) {
         Overlay::set_width(self, width_px)
     }
+    fn set_label_font_size(&mut self, size_px: u32) {
+        Overlay::set_label_font_size(self, size_px)
+    }
     fn start_session(&mut self, x: i32, y: i32) {
         Overlay::start_session(self, x, y)
     }

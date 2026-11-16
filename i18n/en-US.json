@@ -448,6 +448,7 @@
   "ui.prefs.trail_matched": "When recognized",
   "ui.prefs.fade_out": "Fade out when done",
   "ui.prefs.show_label": "Show the gesture name while drawing",
+  "ui.prefs.label_font_size": "Prompt text size",
   "ui.prefs.label_color": "Gesture name color",
   "ui.prefs.preview_label": "Snip",
   "ui.prefs.color_aria": "Color",
