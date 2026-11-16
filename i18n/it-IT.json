@@ -509,6 +509,8 @@
   "ui.about.star_button": "Lascia una stella su GitHub",
   "ui.about.homepage_address": "mousetroke.com",
   "ui.about.source_address": "github.com/eiaao/mousetroke",
+  "ui.about.author_x": "Autore su X (Twitter)",
+  "ui.about.author_x_address": "x.com/aming_ai",
   "ui.about.files_group": "Posizioni dei file",
   "ui.about.config_file": "File di configurazione",
   "ui.about.open_folder": "Apri cartella",

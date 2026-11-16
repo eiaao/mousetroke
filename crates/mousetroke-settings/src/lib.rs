@@ -515,6 +515,7 @@ const HOMEPAGE_PATHS: [(&str, &str); 10] = [
 ];
 const GITHUB_URL: &str = "https://github.com/eiaao/mousetroke";
 const ISSUES_URL: &str = "https://github.com/eiaao/mousetroke/issues";
+const AUTHOR_X_URL: &str = "https://x.com/aming_ai";
 
 /// 链接仅由后端白名单决定；没有对应首页的语言回退到英文。
 fn project_url(what: &str, lang: &str) -> Option<String> {
@@ -526,6 +527,7 @@ fn project_url(what: &str, lang: &str) -> Option<String> {
         "homepage" => language_prefix().to_string(),
         "github" => return Some(GITHUB_URL.into()),
         "issues" => return Some(ISSUES_URL.into()),
+        "author_x" => return Some(AUTHOR_X_URL.into()),
         "releases" => return Some(platform::update::RELEASES_URL.into()),
         "lua_basics" => format!("{}docs/lua-basics/", language_prefix()),
         "lua_api" => format!("{}docs/lua-api/", language_prefix()),
@@ -909,6 +911,7 @@ mod tests {
             assert_eq!(project_url("homepage", tag).as_deref(), Some(format!("https://mousetroke.com/{suffix}").as_str()));
             assert_eq!(project_url("github", tag).as_deref(), Some("https://github.com/eiaao/mousetroke"));
             assert_eq!(project_url("issues", tag).as_deref(), Some("https://github.com/eiaao/mousetroke/issues"));
+            assert_eq!(project_url("author_x", tag).as_deref(), Some("https://x.com/aming_ai"));
             assert_eq!(project_url("releases", tag).as_deref(), Some(platform::update::RELEASES_URL));
             // 文档链接跟随界面语言（zh-CN 无前缀，其余语言用自己的短码；未知语言回退 en/）
             for (what, destination) in [

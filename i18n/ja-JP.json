@@ -492,6 +492,8 @@
   "ui.about.star_button": "GitHub で Star を付ける",
   "ui.about.homepage_address": "mousetroke.com",
   "ui.about.source_address": "github.com/eiaao/mousetroke",
+  "ui.about.author_x": "作者の X（Twitter）",
+  "ui.about.author_x_address": "x.com/aming_ai",
   "ui.about.files_group": "ファイルの場所",
   "ui.about.config_file": "設定ファイル",
   "ui.about.open_folder": "フォルダーを開く",

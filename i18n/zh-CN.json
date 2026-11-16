@@ -509,6 +509,8 @@
   "ui.about.star_button": "去 GitHub 点 Star",
   "ui.about.homepage_address": "mousetroke.com",
   "ui.about.source_address": "github.com/eiaao/mousetroke",
+  "ui.about.author_x": "作者的 X（Twitter）",
+  "ui.about.author_x_address": "x.com/aming_ai",
   "ui.about.files_group": "文件位置",
   "ui.about.config_file": "配置文件",
   "ui.about.open_folder": "打开文件夹",

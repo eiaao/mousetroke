@@ -110,6 +110,15 @@ export function About({ engine, onShowGuide, notify }: { engine: EngineStatus; o
           </button>
         </div>
         <div className="pref-row">
+          <span className="pref-label" id="about-author-x">
+            {t("ui.about.author_x")}
+            <small>{t("ui.about.author_x_address")}</small>
+          </span>
+          <button type="button" className="btn small" aria-describedby="about-author-x" onClick={() => open("author_x")}>
+            {t("ui.about.open_link")}
+          </button>
+        </div>
+        <div className="pref-row">
           <span className="pref-label" id="about-feedback">
             {t("ui.about.feedback")}
             <small>{t("ui.about.feedback_help")}</small>
