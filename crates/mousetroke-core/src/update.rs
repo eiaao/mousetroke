@@ -431,9 +431,33 @@ pub fn checksum_for(text: &str, asset: &str) -> Result<String, Error> {
 #[serde(default)]
 pub struct UpdateState {
     pub last_check: Option<u64>,
+    /// 已通知过的版本。
     pub last_notified: Option<String>,
+    /// 最近一次检查（自动或手动）得到的最新版本。
+    pub latest: Option<String>,
+    /// 用户选择忽略的版本。
+    pub ignored: Option<String>,
 }
+
+/// 状态文件与配置同目录，引擎与设置进程共用。
+pub fn state_path(config: &Path) -> PathBuf {
+    config.with_file_name("update-state.json")
+}
+
 impl UpdateState {
+    /// 需要提示的新版本：比当前版本新，且不是被忽略的版本。更新后自然失效，不需清理。
+    pub fn pending(&self, current: &str) -> Option<String> {
+        let latest = self.latest.as_ref()?;
+        (version(latest) > version(current) && self.ignored.as_ref() != Some(latest)).then(|| latest.clone())
+    }
+
+    /// 读取、修改、原子写回。两个进程都很少写，不加锁；偶尔覆盖最多让一次提示多显示或少显示。
+    pub fn update(path: &Path, f: impl FnOnce(&mut Self)) -> std::io::Result<()> {
+        let mut state = Self::load(path);
+        f(&mut state);
+        state.save(path)
+    }
+
     pub fn due(&self, now: u64) -> bool {
         self.last_check
             .is_none_or(|last| now >= last && now - last >= DAY)
@@ -448,6 +472,9 @@ impl UpdateState {
     pub fn save(&self, path: &Path) -> std::io::Result<()> {
         use std::io::Write;
         let tmp = path.with_extension("json.tmp");
+        if let Some(dir) = path.parent() {
+            std::fs::create_dir_all(dir)?;
+        }
         let mut file = std::fs::File::create(&tmp)?;
         file.write_all(&serde_json::to_vec(self)?)?;
         file.sync_all()?;
@@ -459,16 +486,23 @@ impl UpdateState {
 /// 每日自动检查：平台只提供 `check` 与日志，开关、每日限制和通知握手共用。
 pub struct Automatic {
     enabled: AtomicBool,
+    notify: AtomicBool,
     worker: OnceLock<std::thread::Thread>,
     notice: Mutex<Option<(String, mpsc::Sender<bool>)>>,
+    pending: Mutex<Option<String>>,
 }
+
+/// 引擎启动后推迟第一次自动检查，避免开机即通知。
+const STARTUP_DELAY: Duration = Duration::from_secs(180);
 
 impl Automatic {
     pub const fn new() -> Self {
         Automatic {
             enabled: AtomicBool::new(false),
+            notify: AtomicBool::new(true),
             worker: OnceLock::new(),
             notice: Mutex::new(None),
+            pending: Mutex::new(None),
         }
     }
 
@@ -483,7 +517,24 @@ impl Automatic {
         self.enabled.load(Ordering::Acquire)
     }
 
-    /// 仅从引擎启动调用。关闭时线程不读状态、不联网；热加载只切换开关并唤醒线程。
+    /// 发现新版本时是否发通知（配置 `update_notify`）。
+    pub fn set_notify(&self, notify: bool) {
+        self.notify.store(notify, Ordering::Release);
+    }
+
+    /// 状态文件被其他地方改动（如忽略此版本）后立即刷新菜单提示。
+    pub fn wake(&self) {
+        if let Some(thread) = self.worker.get() {
+            thread.unpark();
+        }
+    }
+
+    /// 托盘/菜单栏要显示的新版本，由更新线程每轮从状态文件刷新（含手动检查与忽略的结果）。
+    pub fn pending(&self) -> Option<String> {
+        self.pending.lock().ok()?.clone()
+    }
+
+    /// 仅从引擎启动调用。关闭时不联网，只读本地状态刷新菜单提示；热加载只切换开关并唤醒线程。
     pub fn start(
         &'static self,
         config: PathBuf,
@@ -496,10 +547,14 @@ impl Automatic {
             .name("mousetroke-update".into())
             .spawn(move || {
                 let _ = self.worker.set(std::thread::current());
-                let path = config.with_file_name("update-state.json");
+                let path = state_path(&config);
+                let started = std::time::Instant::now();
                 loop {
-                    if self.enabled() {
+                    if self.enabled() && started.elapsed() >= STARTUP_DELAY {
                         self.run_once(&path, check, log);
+                    }
+                    if let Ok(mut pending) = self.pending.lock() {
+                        *pending = UpdateState::load(&path).pending(env!("CARGO_PKG_VERSION"));
                     }
                     std::thread::park_timeout(Duration::from_secs(60));
                 }
@@ -518,7 +573,14 @@ impl Automatic {
             return;
         }
         let Ok(result) = check() else { return };
-        if !result.newer || state.last_notified.as_ref() == Some(&result.latest) || !self.enabled()
+        // 联网期间设置进程可能写入了忽略：重新读取后只改自己的字段，判断也基于最新状态。
+        let _ = UpdateState::update(path, |s| s.latest = Some(result.latest.clone()));
+        let state = UpdateState::load(path);
+        if !result.newer
+            || state.last_notified.as_ref() == Some(&result.latest)
+            || state.ignored.as_ref() == Some(&result.latest)
+            || !self.enabled()
+            || !self.notify.load(Ordering::Acquire)
         {
             return;
         }
@@ -527,15 +589,15 @@ impl Automatic {
             *notice = Some((result.latest.clone(), tx));
         }
         if rx.recv_timeout(Duration::from_secs(5)) == Ok(true) {
-            state.last_notified = Some(result.latest);
-            let _ = state.save(path);
+            let _ = UpdateState::update(path, |s| s.last_notified = Some(result.latest));
         }
     }
 
     /// 主线程定时器取出通知；只有成功提交给界面才记录已通知版本。
     pub fn take_notice(&self) -> Option<(String, mpsc::Sender<bool>)> {
         let notice = self.notice.lock().ok()?.take()?;
-        if self.enabled() {
+        // 排队后用户可能关闭了自动检查或通知；拒绝的版本不记为已通知，重新开启后还能提示。
+        if self.enabled() && self.notify.load(Ordering::Acquire) {
             Some(notice)
         } else {
             let _ = notice.1.send(false);

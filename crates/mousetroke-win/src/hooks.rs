@@ -81,7 +81,7 @@ fn engine_main(cfg: Config, cfg_path: Option<std::path::PathBuf>) -> Result<(), 
 
     let pause_hotkey = cfg.settings.pause_hotkey.clone();
     let show_tray = cfg.settings.show_tray;
-    let update_check = cfg.settings.update_check;
+    let (update_check, update_notify) = (cfg.settings.update_check, cfg.settings.update_notify);
     let engine = crate::engine::new(cfg, cfg_path.clone()).ok_or_else(|| mousetroke_core::i18n::t(mousetroke_core::i18n::keys::CLI_OVERLAY_INIT_FAILED).to_string())?;
     mousetroke_engine::install(engine);
     if cfg_path.as_ref().is_some_and(|path| path.exists() && Config::load(path).is_err()) {
@@ -90,7 +90,7 @@ fn engine_main(cfg: Config, cfg_path: Option<std::path::PathBuf>) -> Result<(), 
 
     // 托盘 + 暂停热键
     let _tray = Tray::create(show_tray, &pause_hotkey, cfg_path.clone());
-    if let Some(path) = cfg_path { crate::update::start_automatic(path, update_check); }
+    if let Some(path) = cfg_path { crate::update::start_automatic(path, update_check, update_notify); }
 
     unsafe {
         let mouse_hook = SetWindowsHookExW(WH_MOUSE_LL, Some(mouse_proc), None, 0)

@@ -323,6 +323,21 @@ h3 {
   white-space: nowrap;
 }
 
+/* 关于入口的新版本圆点 */
+.nav-update-dot {
+  width: 7px;
+  height: 7px;
+  flex-shrink: 0;
+  margin-left: auto;
+  border-radius: 50%;
+  background: var(--trail);
+}
+
+/* 顶部新版本横幅：沿用 .banner 外观，按钮靠右 */
+.update-banner .btn {
+  flex-shrink: 0;
+}
+
 .nav-add,
 .nav-add .ico {
   color: var(--trail-ink);

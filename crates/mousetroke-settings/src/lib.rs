@@ -23,6 +23,7 @@ use mousetroke_core::schema::{Action, Config, Step};
 use mousetroke_core::presets::actions::{self as action_presets, Params};
 use mousetroke_core::shape;
 use mousetroke_core::caps;
+use mousetroke_core::update::{self, UpdateState};
 use serde::Serialize;
 use tauri::{Emitter, Manager, State, WebviewWindow};
 
@@ -615,11 +616,28 @@ fn show_setup(app: &tauri::AppHandle) {
     focus_window(app);
 }
 
+/// 手动检查同样记录最新版本，让侧栏标记、提示条和托盘菜单与检查结果一致。
 #[tauri::command]
-async fn check_update() -> MsgResult<platform::update::Check> {
-    tauri::async_runtime::spawn_blocking(platform::update::check).await
+async fn check_update(paths: State<'_, AppPaths>) -> MsgResult<platform::update::Check> {
+    let check = tauri::async_runtime::spawn_blocking(platform::update::check).await
         .map_err(|_| Msg::new(keys::UPDATE_ERROR_NETWORK, &[]))?
-        .map_err(|e| Msg::new(e.key(), &[]))
+        .map_err(|e| Msg::new(e.key(), &[]))?;
+    let _ = UpdateState::update(&update::state_path(&paths.config), |s| s.latest = Some(check.latest.clone()));
+    Ok(check)
+}
+
+/// 需要提示的新版本（比当前新、未被忽略），来自自动或手动检查记录；不联网。
+#[tauri::command]
+fn update_hint(paths: State<AppPaths>) -> Option<String> {
+    UpdateState::load(&update::state_path(&paths.config)).pending(env!("CARGO_PKG_VERSION"))
+}
+
+/// 忽略此版本：侧栏标记、提示条和托盘菜单都不再显示它，出现更新的版本后恢复。
+#[tauri::command]
+fn ignore_update(version: String, paths: State<AppPaths>) -> MsgResult<()> {
+    let path = update::state_path(&paths.config);
+    UpdateState::update(&path, |s| s.ignored = Some(version))
+        .map_err(|e| Msg::new(keys::ERROR_SAVE, &[("path", path.display().to_string()), ("err", e.to_string())]))
 }
 
 /// macOS 的手动下载后备入口；安装入口仍在原生侧重新解析发布信息。
@@ -729,6 +747,8 @@ pub fn run(config: Option<PathBuf>) {
             set_autostart,
             start_engine,
             reveal_config,
+            update_hint,
+            ignore_update,
         ])
         .setup(|app| {
             platform::setup(app);

@@ -771,15 +771,16 @@ fn preset_defaults_serialization_includes_default_settings() {
     let fixture = include_str!("../assets/default-config.json");
     let cfg = Config::from_json(fixture).unwrap();
     assert!(cfg.settings.update_check);
+    assert!(cfg.settings.update_notify);
     assert!(cfg.settings.pause_on_fullscreen);
     let json = cfg.to_json();
     let fingerprint = json.bytes().fold(0xcbf29ce484222325u64, |hash, byte| {
         (hash ^ byte as u64).wrapping_mul(0x100000001b3)
     });
     println!("preset defaults: {} bytes, FNV-1a {fingerprint:016x}", json.len());
-    // 冻结默认配置（含 update_check 和 pause_on_fullscreen）的序列化基线。
-    assert_eq!(json.len(), 36_473);
-    assert_eq!(fingerprint, 0xad9d33cd8d7cecc5);
+    // 冻结默认配置（含 update_check、update_notify 和 pause_on_fullscreen）的序列化基线。
+    assert_eq!(json.len(), 36_500);
+    assert_eq!(fingerprint, 0xe0a3c17ec659cb6a);
     assert_eq!(Config::from_json(&json).unwrap().to_json(), json);
 }
 

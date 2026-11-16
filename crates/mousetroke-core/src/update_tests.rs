@@ -282,6 +282,71 @@ fn state_waits_twenty_four_hours_and_handles_clock_rollback() {
 }
 
 #[test]
+fn pending_is_newer_latest_unless_ignored() {
+    let mut state = UpdateState::default();
+    assert_eq!(state.pending("0.3.2"), None);
+    state.latest = Some("0.3.2".into());
+    assert_eq!(state.pending("0.3.2"), None, "当前版本不提示");
+    state.latest = Some("0.4.0".into());
+    assert_eq!(state.pending("0.3.2").as_deref(), Some("0.4.0"));
+    assert_eq!(state.pending("0.4.0"), None, "更新后自然失效");
+    state.ignored = Some("0.4.0".into());
+    assert_eq!(state.pending("0.3.2"), None);
+    state.latest = Some("0.4.1".into());
+    assert_eq!(state.pending("0.3.2").as_deref(), Some("0.4.1"), "忽略只针对单个版本");
+}
+
+fn newer_check() -> Result<Check, Error> {
+    Ok(Check { current: "0.0.1", latest: "999.0.0".into(), newer: true, notes_url: String::new(), notes: vec![], download_url: None })
+}
+
+/// 在独立线程运行一次自动检查，主线程按 `ack` 应答通知；返回是否出现了通知。
+fn run_with_ack(auto: &'static Automatic, path: &Path, ack: bool) -> bool {
+    let path = path.to_path_buf();
+    let worker = std::thread::spawn(move || auto.run_once(&path, newer_check, |_| {}));
+    let mut noticed = false;
+    while !worker.is_finished() {
+        if let Some((version, tx)) = auto.take_notice() {
+            assert_eq!(version, "999.0.0");
+            noticed = true;
+            let _ = tx.send(ack);
+        }
+        std::thread::sleep(Duration::from_millis(5));
+    }
+    worker.join().unwrap();
+    noticed
+}
+
+#[test]
+fn automatic_check_records_latest_and_notifies_once_per_version() {
+    static AUTO: Automatic = Automatic::new();
+    AUTO.set(true);
+    let path = std::env::temp_dir().join(format!("mousetroke-update-state-{}.json", std::process::id()));
+    let _ = std::fs::remove_file(&path);
+    let reset = |path: &Path| UpdateState::update(path, |s| s.last_check = None).unwrap();
+
+    AUTO.set_notify(false);
+    assert!(!run_with_ack(&AUTO, &path, true), "关闭通知时不通知");
+    let state = UpdateState::load(&path);
+    assert_eq!(state.latest.as_deref(), Some("999.0.0"), "仍记录最新版本供菜单和提示条使用");
+    assert_eq!(state.last_notified, None);
+
+    AUTO.set_notify(true);
+    reset(&path);
+    assert!(run_with_ack(&AUTO, &path, false));
+    assert_eq!(UpdateState::load(&path).last_notified, None, "未成功提交不记为已通知");
+    reset(&path);
+    assert!(run_with_ack(&AUTO, &path, true));
+    assert_eq!(UpdateState::load(&path).last_notified.as_deref(), Some("999.0.0"));
+    reset(&path);
+    assert!(!run_with_ack(&AUTO, &path, true), "同一版本只通知一次");
+
+    UpdateState::update(&path, |s| { s.last_check = None; s.last_notified = None; s.ignored = Some("999.0.0".into()); }).unwrap();
+    assert!(!run_with_ack(&AUTO, &path, true), "忽略的版本不通知");
+    let _ = std::fs::remove_file(&path);
+}
+
+#[test]
 fn mac_release_requires_exact_dmg_and_sums_and_rejects_untrusted_urls() {
     let mut value = serde_json::json!({"tag_name":"v1.2.3", "draft":false, "prerelease":false,
         "html_url":"https://github.com/eiaao/mousetroke/releases/tag/v1.2.3", "assets":[

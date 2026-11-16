@@ -30,6 +30,7 @@ pub mod preset_layout;
 pub mod preset_power;
 pub mod preset_text;
 pub mod targeting;
+mod toast;
 pub mod tray;
 pub mod update;
 

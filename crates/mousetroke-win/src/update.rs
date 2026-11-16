@@ -182,10 +182,17 @@ pub fn wait_for_previous(pids: &[u32]) -> Result<(), Error> {
 
 static AUTOMATIC: Automatic = Automatic::new();
 
-pub fn set_automatic(enabled: bool) { AUTOMATIC.set(enabled); }
+pub fn set_automatic(enabled: bool, popup: bool) { AUTOMATIC.set_notify(popup); AUTOMATIC.set(enabled); }
+
+/// 状态文件变化后立即刷新托盘菜单提示。
+pub fn wake() { AUTOMATIC.wake(); }
+
+/// 托盘菜单要显示的新版本（未忽略、比当前新）。
+pub fn pending() -> Option<String> { AUTOMATIC.pending() }
 
 /// 仅从引擎启动调用；每日限制与通知握手见 core。
-pub fn start_automatic(config: PathBuf, enabled: bool) {
+pub fn start_automatic(config: PathBuf, enabled: bool, popup: bool) {
+    AUTOMATIC.set_notify(popup);
     AUTOMATIC.start(config, enabled, check_automatic, |message| crate::log!("{message}"));
 }
 

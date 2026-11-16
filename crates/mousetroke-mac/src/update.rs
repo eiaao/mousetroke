@@ -62,11 +62,18 @@ pub fn download() -> Result<String, Error> {
 
 static AUTOMATIC: Automatic = Automatic::new();
 
-pub fn set_automatic(enabled: bool) {
+pub fn set_automatic(enabled: bool, popup: bool) {
+    AUTOMATIC.set_notify(popup);
     AUTOMATIC.set(enabled);
 }
 
-pub fn start_automatic(config: PathBuf, enabled: bool) {
+/// 菜单栏要显示的新版本（未忽略、比当前新）。
+pub fn pending() -> Option<String> {
+    AUTOMATIC.pending()
+}
+
+pub fn start_automatic(config: PathBuf, enabled: bool, popup: bool) {
+    AUTOMATIC.set_notify(popup);
     AUTOMATIC.start(config, enabled, check_automatic, |message| {
         crate::log!("{message}")
     });

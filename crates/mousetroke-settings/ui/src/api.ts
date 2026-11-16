@@ -45,6 +45,10 @@ export const api = {
   downloadUpdate: () => invoke<void>("download_update"),
   installUpdate: () => invoke<void>("install_update"),
   takeAboutRequest: () => invoke<boolean>("take_about_request"),
+  /** 需要提示的新版本（不联网），无则为 null。 */
+  updateHint: () => invoke<string | null>("update_hint"),
+  /** 忽略此版本，不再提示。 */
+  ignoreUpdate: (version: string) => invoke<void>("ignore_update", { version }),
   takeSetupRequest: () => invoke<boolean>("take_setup_request"),
   getPermissions: () => invoke<PermissionStatus>("get_permissions"),
   restartEngine: () => invoke<void>("restart_engine"),
