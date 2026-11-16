@@ -20,6 +20,8 @@ import { ImportWizard } from "./components/ImportWizard";
 import { Sidebar, scopeTitle, type View } from "./components/Sidebar";
 import { BindingList, type ListFilter, type ListTab } from "./components/BindingList";
 import { Editor } from "./components/Editor";
+import { TransferDialog } from "./components/TransferDialog";
+import { transferBinding, transferTargets, type ConflictChoice, type TransferMode } from "./transfer";
 import { Prefs } from "./components/Prefs";
 import { AppPicker, DataPage, Toast, type ToastExtra } from "./components/Dialogs";
 import { NavIcon } from "./components/Icons";
@@ -106,6 +108,8 @@ function Main({ init }: { init: InitState }) {
     return () => void off.then((f) => f());
   }, []);
   const [selected, setSelected] = useState<number | null>(null);
+  const [transferRef, setTransferRef] = useState<BindingRef | null>(null);
+  const [transferAddingApp, setTransferAddingApp] = useState(false);
   // 手势库：选中的手势（"new" = 新建）、分类与筛选、弹窗
   const [libSelected, setLibSelected] = useState<string | null>(null);
   const [libTab, setLibTab] = useState<LibraryTab>("gesture");
@@ -394,6 +398,15 @@ function Main({ init }: { init: InitState }) {
 
   // ---- 手势库
   const bindingRef: BindingRef | null = binding && sel != null ? { scope: scopeIdx, binding: sel } : null;
+  const transferSource = transferRef && config.scopes[transferRef.scope]?.bindings[transferRef.binding];
+  const applyTransfer = (ref: BindingRef, mode: TransferMode, destinations: number[], choices: Record<number, ConflictChoice>) => {
+    const count = transferTargets(config, ref, destinations, choices).length;
+    if (!count) return;
+    edit((c) => transferBinding(c, ref, destinations, mode, choices));
+    setTransferRef(null);
+    if (mode === "move") setSelected(null);
+    notify(t(mode === "copy" ? "ui.transfer.copied" : "ui.transfer.moved", { count }), t("common.undo"), undo);
+  };
   const shared = useMemo(() => {
     const g = gestureById(config, binding?.gesture);
     if (!g || sel == null) return undefined;
@@ -587,6 +600,7 @@ function Main({ init }: { init: InitState }) {
             onAdd={addBinding}
             onDelete={deleteBinding}
             onDuplicate={duplicateBinding}
+            onTransfer={(i) => setTransferRef({ scope: scopeIdx, binding: i })}
             onToggle={toggleBinding}
             onScopeChange={(f, k) => edit((c) => updateScope(c, scopeIdx, f), k)}
             onDeleteScope={deleteScope}
@@ -627,6 +641,7 @@ function Main({ init }: { init: InitState }) {
         <Editor
           binding={binding}
           bindingKey={binding.uiId!}
+          scopeName={scopeTitle(scope!)}
           autoPickAction={autoPickKey === binding.uiId}
           onPickerShown={() => setAutoPickKey((key) => key === binding.uiId ? null : key)}
           conflictWith={conflictNames}
@@ -673,11 +688,28 @@ function Main({ init }: { init: InitState }) {
       {gesturePicker && bindingRef && (
         <GesturePicker config={config} target={bindingRef} onPickGesture={pickGesture} onPickInline={pickInline} onRecordNew={recordNew} onClose={() => setGesturePicker(false)} />
       )}
+      {transferRef && transferSource && (
+        <TransferDialog
+          key={`${transferRef.scope}-${transferRef.binding}`}
+          config={config}
+          source={transferRef}
+          onApply={(mode, destinations, choices) => applyTransfer(transferRef, mode, destinations, choices)}
+          onAddApp={() => { setTransferAddingApp(true); setPicking(true); }}
+          onClose={() => setTransferRef(null)}
+        />
+      )}
       {wizard && <ImportWizard config={config} onApply={applyImport} onClose={() => setWizard(false)} />}
       {picking && (
         <AppPicker
           scopes={config.scopes}
-          onPick={addApp}
+          setupOnly={transferAddingApp}
+          onPick={(exe, disable, nameKey) => {
+            if (transferAddingApp) {
+              addApps([exe], false, false, nameKey ? { [exe]: nameKey } : {});
+              setTransferAddingApp(false);
+              setPicking(false);
+            } else addApp(exe, disable, nameKey);
+          }}
           onPickMany={(apps) => {
             addApps(apps.map((a) => a.exe), true, true, Object.fromEntries(apps.flatMap((a) => (a.name_key ? [[a.exe, a.name_key]] : []))) as Record<string, string>);
             notify(t("toast.apps_disabled", { count: apps.length }));
@@ -685,6 +717,7 @@ function Main({ init }: { init: InitState }) {
           onClose={() => {
             setPicking(false);
             setPendingAssign(false);
+            setTransferAddingApp(false);
           }}
         />
       )}
