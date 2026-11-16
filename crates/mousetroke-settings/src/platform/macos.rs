@@ -44,6 +44,17 @@ pub fn setup(app: &tauri::App) {
 }
 
 /// 被第二次启动唤醒时应用可能在后台；LSUIElement 引擎同 bundle，需要显式激活。
+/// 当前引擎 PID；引擎重启后会变，用于重发录制画布位置。
+pub fn engine_id() -> Option<isize> {
+    mousetroke_mac::instance::engine_pid().map(|pid| pid as isize)
+}
+/// 录制画布的全局坐标（点，与引擎事件位置一致）。
+pub fn send_canvas(engine: isize, rect: Option<(i32, i32, i32, i32)>) {
+    let _ = mousetroke_mac::instance::send_canvas(engine as u32, rect);
+}
+/// 引擎事件坐标的单位：macOS 为点。
+pub const ENGINE_USES_PHYSICAL_PIXELS: bool = false;
+
 pub fn bring_to_front() {
     if let Some(mtm) = MainThreadMarker::new() {
         #[allow(deprecated)]

@@ -17,6 +17,7 @@ export const api = {
   expandPreset: (id: string, params: Record<string, unknown>, uiLang: string) => invoke<Action>("expand_preset", { id, params, uiLang }),
   validatePreset: (id: string, params: Record<string, string>, uiLang: string) => invoke<void>("validate_preset", { id, params, uiLang }),
   saveConfig: (config: Config) => invoke<void>("save_config", { config: persistedConfig(config) }),
+  setRecorderArea: (rect: { x: number; y: number; w: number; h: number } | null) => invoke<void>("set_recorder_area", { rect }),
   engineStatus: () => invoke<EngineStatus>("get_engine_status"),
   setUiLang: (tag: string) => invoke<void>("set_ui_lang", { tag }),
   /** 校验结果直接给出已翻译的错误文本；合法返回 null。 */

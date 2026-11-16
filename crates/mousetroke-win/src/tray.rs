@@ -48,6 +48,26 @@ pub const WM_ENGINE_CMD: u32 = WM_APP + 7;
 pub const CMD_TOGGLE_PAUSE: usize = 1;
 pub const CMD_PAUSE_ON: usize = 2;
 pub const CMD_PAUSE_OFF: usize = 3;
+/// 设置进程上报录制画布的屏幕矩形，LPARAM 为 [`pack_rect`] 的结果；0 表示清除。
+pub const CMD_SETTINGS_CANVAS: usize = 4;
+
+/// 把屏幕矩形（左、上、右、下，物理像素）按 4 个 i16 打包进 LPARAM。
+pub fn pack_rect(rect: Option<(i32, i32, i32, i32)>) -> isize {
+    let Some((l, t, r, b)) = rect else { return 0 };
+    let p = |v: i32, shift: u32| (v.clamp(i16::MIN as i32, i16::MAX as i32) as i16 as u16 as u64) << shift;
+    (p(l, 0) | p(t, 16) | p(r, 32) | p(b, 48)) as isize
+}
+
+pub fn unpack_rect(v: isize) -> Option<(i32, i32, i32, i32)> {
+    let v = v as u64;
+    let g = |shift: u32| (v >> shift) as u16 as i16 as i32;
+    (v != 0).then(|| (g(0), g(16), g(32), g(48)))
+}
+
+/// 设置进程调用：把录制画布位置发给 [`engine_window`] 找到的引擎控制窗口。
+pub fn send_settings_canvas(engine: isize, rect: Option<(i32, i32, i32, i32)>) -> bool {
+    unsafe { PostMessageW(Some(HWND(engine as *mut core::ffi::c_void)), WM_ENGINE_CMD, WPARAM(CMD_SETTINGS_CANVAS), LPARAM(pack_rect(rect))).is_ok() }
+}
 
 /// 控制窗口句柄的全局镜像（跨线程 PostMessage 用）。
 static TRAY_HWND_GLOBAL: std::sync::atomic::AtomicIsize = std::sync::atomic::AtomicIsize::new(0);
@@ -351,6 +371,10 @@ unsafe extern "system" fn tray_wndproc(hwnd: HWND, msg: u32, wparam: WPARAM, lpa
             sync_pause_ui(true);
             LRESULT(0)
         }
+        WM_ENGINE_CMD if wparam.0 == CMD_SETTINGS_CANVAS => {
+            with_engine(|e| e.set_settings_canvas(unpack_rect(lparam.0)));
+            LRESULT(0)
+        }
         WM_ENGINE_CMD => {
             with_engine(|e| match wparam.0 {
                 CMD_TOGGLE_PAUSE => e.toggle_paused(),
@@ -497,4 +521,17 @@ fn seg_dist(p: (f32, f32), a: (f32, f32), b: (f32, f32)) -> f32 {
     let t = (((p.0 - a.0) * abx + (p.1 - a.1) * aby) / (abx * abx + aby * aby)).clamp(0.0, 1.0);
     let (qx, qy) = (a.0 + abx * t, a.1 + aby * t);
     ((p.0 - qx).powi(2) + (p.1 - qy).powi(2)).sqrt()
+}
+
+#[cfg(test)]
+mod tests {
+    use super::{pack_rect, unpack_rect};
+
+    #[test]
+    fn canvas_rect_round_trips_through_lparam() {
+        for rect in [(10, 20, 300, 400), (-1920, -200, -1500, 100), (0, 0, 1, 1)] {
+            assert_eq!(unpack_rect(pack_rect(Some(rect))), Some(rect));
+        }
+        assert_eq!(unpack_rect(pack_rect(None)), None);
+    }
 }

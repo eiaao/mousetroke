@@ -212,6 +212,9 @@ impl Runtime {
                 self.permission_probe = None;
             }
         }
+        if let Some(rect) = crate::control::take_canvas() {
+            with_engine(|engine| engine.set_settings_canvas(rect));
+        }
         if crate::control::take(crate::control::Request::Quit) {
             crate::log!("设置页请求更新退出引擎");
             request_quit(0);

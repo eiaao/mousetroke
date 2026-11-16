@@ -27,6 +27,16 @@ pub fn engine_status() -> EngineStatus {
 }
 
 pub fn bring_to_front() {}
+/// 当前引擎控制窗口；引擎重启后会变，用于重发录制画布位置。
+pub fn engine_id() -> Option<isize> {
+    mousetroke_win::tray::engine_window().map(|(hwnd, _)| hwnd.0 as isize)
+}
+/// 引擎钩子坐标的单位：Windows 为物理像素（引擎按每显示器 DPI 感知运行）。
+pub const ENGINE_USES_PHYSICAL_PIXELS: bool = true;
+/// 录制画布的屏幕矩形（物理像素，与引擎钩子坐标一致）。
+pub fn send_canvas(engine: isize, rect: Option<(i32, i32, i32, i32)>) {
+    mousetroke_win::tray::send_settings_canvas(engine, rect);
+}
 pub fn setup(_app: &tauri::App) {}
 pub fn refresh_texts(_window: &tauri::WebviewWindow) {}
 pub fn running_apps() -> Vec<RunningApp> {

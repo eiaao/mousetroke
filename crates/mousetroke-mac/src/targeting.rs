@@ -108,6 +108,12 @@ pub fn ignored(target: &Target) -> bool {
     target.pid == std::process::id() || ignored_bundle(&target.class)
 }
 
+/// 本程序的设置窗口（不含引擎自身进程）；按键手势只在其录制画布上放行。
+pub fn is_settings(target: &Target) -> bool {
+    target.pid != std::process::id()
+        && matches!(target.class.as_str(), "io.github.eiaao.mousetroke" | "io.github.eiaao.mousetroke-settings" | "dev.mousetroke.settings")
+}
+
 /// 自身与系统外壳不作为手势目标，也不出现在设置的作用域候选里。
 pub fn ignored_bundle(id: &str) -> bool {
     matches!(
