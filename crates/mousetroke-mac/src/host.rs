@@ -121,7 +121,10 @@ impl Host for SystemHost {
         crate::targeting::at(x, y)
     }
     fn ignore_target(&self, target: &Target) -> bool {
-        crate::targeting::ignored(target)
+        crate::targeting::ignored(target) && !crate::targeting::is_settings(target)
+    }
+    fn is_settings_target(&self, target: &Target) -> bool {
+        crate::targeting::is_settings(target)
     }
     fn window_title(&self, wid: usize) -> String {
         crate::targeting::title(wid)

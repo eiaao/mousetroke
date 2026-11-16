@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import { useRecorderArea } from "../recorderArea";
 import { api, errText } from "../api";
 import { arrows } from "../gesture";
 import { t } from "../i18n";
@@ -22,6 +23,7 @@ export function Recorder({ points, onChange, hint, mode = "trace", disabled = fa
   const onChangeRef = useRef(onChange);
   onChangeRef.current = onChange;
   const pointsRef = useRef(points);
+  useRecorderArea(wrap);
   pointsRef.current = points;
   const [animKey, setAnimKey] = useState(0);
   const [size, setSize] = useState({ w: 400, h: 200 });

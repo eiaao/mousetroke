@@ -234,6 +234,45 @@ fn set_ui_lang(tag: String, window: WebviewWindow) {
     platform::refresh_texts(&window);
 }
 
+/// 录制画布在页面中的位置（CSS 像素，相对窗口内容区）。
+#[derive(Clone, Copy, PartialEq, serde::Deserialize)]
+struct CssRect {
+    x: f64,
+    y: f64,
+    w: f64,
+    h: f64,
+}
+
+type ScreenRect = (i32, i32, i32, i32);
+/// 最近一次的画布页面位置，窗口移动或缩放变化时据此重算屏幕位置。
+static CANVAS: std::sync::Mutex<Option<CssRect>> = std::sync::Mutex::new(None);
+
+/// 换算画布的屏幕位置并发给引擎；`css` 为 None 时沿用上次的页面位置（窗口移动、缩放变化）。
+/// 不去重：前端定时重报，丢失的消息和重启后的引擎都能自然补上。
+fn sync_canvas(window: &WebviewWindow, css: Option<Option<CssRect>>) {
+    let mut state = CANVAS.lock().unwrap_or_else(|e| e.into_inner());
+    if let Some(css) = css {
+        *state = css;
+    }
+    let rect: Option<ScreenRect> = state.and_then(|c| {
+        let (pos, scale) = (window.inner_position().ok()?, window.scale_factor().ok()?);
+        // 先换算成逻辑坐标，再按引擎事件的单位输出：Windows 为物理像素，macOS 为点
+        let unit = if platform::ENGINE_USES_PHYSICAL_PIXELS { scale } else { 1.0 };
+        let (ox, oy) = (pos.x as f64 / scale, pos.y as f64 / scale);
+        let at = |o: f64, v: f64| ((o + v) * unit).round() as i32;
+        Some((at(ox, c.x), at(oy, c.y), at(ox, c.x + c.w), at(oy, c.y + c.h)))
+    });
+    if let Some(engine) = platform::engine_id() {
+        platform::send_canvas(engine, rect);
+    }
+}
+
+/// 录制画布挂载、移动或卸载时由前端调用：画布区域内的按键不触发手势。
+#[tauri::command]
+fn set_recorder_area(rect: Option<CssRect>, window: WebviewWindow) {
+    sync_canvas(&window, Some(rect));
+}
+
 #[tauri::command]
 fn save_config(paths: State<AppPaths>, config: Config) -> MsgResult<()> {
     save_config_at(&paths.config, &config)
@@ -650,6 +689,7 @@ pub fn run(config: Option<PathBuf>) {
             expand_preset,
             validate_preset,
             save_config,
+            set_recorder_area,
             get_engine_status,
             set_ui_lang,
             validate_keys,
@@ -694,6 +734,14 @@ pub fn run(config: Option<PathBuf>) {
             // 前端 init 后的 set_ui_lang 才来不及闪）；兜底：1.5s 后仍未显示则强制显示，避免"打不开"
             let w = app.get_webview_window("main").expect("main 窗口"); // i18n:allow 内部断言
             let _ = w.set_title(t(keys::UI_WINDOW_TITLE));
+            // 清除上一个设置进程可能留下的画布位置；窗口移动或缩放变化时重发
+            sync_canvas(&w, Some(None));
+            let moved = w.clone();
+            w.on_window_event(move |e| {
+                if matches!(e, tauri::WindowEvent::Moved(_) | tauri::WindowEvent::Resized(_) | tauri::WindowEvent::ScaleFactorChanged { .. }) {
+                    sync_canvas(&moved, None);
+                }
+            });
             std::thread::spawn(move || {
                 std::thread::sleep(std::time::Duration::from_millis(1500));
                 let _ = w.show();

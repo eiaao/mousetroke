@@ -66,7 +66,9 @@ impl Host for FakeHost {
     fn ignore_target(&self, target: &Target) -> bool {
         // 假宿主按 Windows 用例标记需要放行的窗口；平台判定留在宿主。
         ["Shell_TrayWnd", "NotifyIconOverflowWindow", "TopLevelWindowForOverflowXamlIsland", "#32768"].contains(&target.class.as_str())
-            || target.exe.as_deref().is_some_and(|e| matcher::file_name(e).eq_ignore_ascii_case("mousetroke-settings.exe"))
+    }
+    fn is_settings_target(&self, target: &Target) -> bool {
+        target.exe.as_deref().is_some_and(|e| matcher::file_name(e).eq_ignore_ascii_case("mousetroke-settings.exe"))
     }
     fn window_title(&self, _: usize) -> String {
         String::new()
@@ -910,11 +912,35 @@ fn taskbar_and_tray_are_left_to_the_shell() {
 }
 
 #[test]
-fn own_settings_window_is_left_alone() {
+fn settings_window_passes_only_its_recorder_canvas() {
     let mut t = T::new(false);
     t.under("Chrome_WidgetWin_1", Some(r"D:\x\mousetroke-settings.exe"));
+    // 没有画布时，设置窗口和其他程序一样识别手势
+    assert_eq!(t.down(B::Right), Verdict::Swallow);
+    t.drag(960, 740);
+    t.up(B::Right);
+    assert_eq!(t.executed(), ["down"]);
+
+    // 画布内按下放行，画布外照常识别
+    t.e.set_settings_canvas(Some((900, 500, 1000, 600)));
+    t.to(950, 550);
     assert_eq!(t.down(B::Right), Verdict::Pass);
     assert_eq!(t.up(B::Right), Verdict::Pass);
+    t.to(960, 340);
+    assert_eq!(t.down(B::Right), Verdict::Swallow);
+    t.drag(960, 540);
+    t.up(B::Right);
+    assert_eq!(t.executed(), ["down", "down"]);
+
+    // 同一区域里的其他程序不受影响；清除后画布位置也照常识别
+    t.under("Chrome_WidgetWin_1", Some(r"C:\app\chrome.exe"));
+    t.to(950, 550);
+    assert_eq!(t.down(B::Right), Verdict::Swallow);
+    t.up(B::Right);
+    t.under("Chrome_WidgetWin_1", Some(r"D:\x\mousetroke-settings.exe"));
+    t.e.set_settings_canvas(None);
+    assert_eq!(t.down(B::Right), Verdict::Swallow);
+    t.up(B::Right);
 }
 
 #[test]

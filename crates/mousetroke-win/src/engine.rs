@@ -62,7 +62,11 @@ impl Host for SystemHost {
         targeting::resolve_under_cursor(x, y).into()
     }
     fn ignore_target(&self, target: &Target) -> bool {
-        is_own_settings(target) || targeting::is_shell_ui_class(&target.class)
+        // 引擎自身的窗口（弹出菜单、托盘菜单等）始终放行；设置窗口只放行录制画布，见 is_settings_target
+        target.pid == std::process::id() || targeting::is_shell_ui_class(&target.class)
+    }
+    fn is_settings_target(&self, target: &Target) -> bool {
+        target.pid != std::process::id() && is_own_settings(target)
     }
     fn window_title(&self, wid: usize) -> String {
         targeting::window_title(windows::Win32::Foundation::HWND(wid as *mut _))
@@ -244,12 +248,20 @@ mod tests {
         }
         target.class = "Chrome_WidgetWin_1".into();
         assert!(!SystemHost.ignore_target(&target));
-        target.exe = Some(r"D:\x\MOUSETROKE-SETTINGS.EXE".into());
+        // 设置窗口不再整体放行，只识别出来交给引擎按录制画布放行
+        for exe in [r"D:\x\MOUSETROKE-SETTINGS.EXE".to_string(), targeting::own_exe_name()] {
+            target.exe = Some(exe);
+            assert!(!SystemHost.ignore_target(&target));
+            assert!(SystemHost.is_settings_target(&target));
+        }
+        // 引擎自身的窗口（弹出菜单等）始终放行，也不算设置窗口
+        target.pid = std::process::id();
         assert!(SystemHost.ignore_target(&target));
-        target.exe = Some(targeting::own_exe_name());
-        assert!(SystemHost.ignore_target(&target));
+        assert!(!SystemHost.is_settings_target(&target));
+        target.pid = 0;
         target.exe = Some(r"C:\app\chrome.exe".into());
         assert!(!SystemHost.ignore_target(&target));
+        assert!(!SystemHost.is_settings_target(&target));
     }
 
     #[test]

@@ -217,6 +217,8 @@ pub struct Engine {
     edge_pending: Option<(u8, Instant)>,
     /// 边角触发/取消后需先离开所有边缘才重新武装。
     edge_disarmed: bool,
+    /// 设置窗口里录制画布的屏幕矩形（左、上、右、下）；按键在其中按下时放行，供画布自己画轨迹。
+    settings_canvas: Option<(i32, i32, i32, i32)>,
     watch: Option<ConfigWatch>,
 }
 
@@ -251,6 +253,7 @@ impl Engine {
             recent_replays: VecDeque::new(),
             edge_pending: None,
             edge_disarmed: false,
+            settings_canvas: None,
             watch: cfg_path.map(ConfigWatch::new),
         };
         engine.apply_config(cfg);
@@ -317,6 +320,11 @@ impl Engine {
     /// 淡出动画一帧（overlay 窗口 WM_TIMER 驱动）。
     pub fn overlay_tick(&mut self) {
         self.overlay.tick_fade();
+    }
+
+    /// 设置进程上报录制画布的位置；None 表示没有画布。
+    pub fn set_settings_canvas(&mut self, rect: Option<(i32, i32, i32, i32)>) {
+        self.settings_canvas = rect.filter(|&(l, t, r, b)| r > l && b > t);
     }
 
     pub fn set_paused(&mut self, on: bool) {
@@ -431,6 +439,10 @@ impl Engine {
         let target = self.host.target_at(x, y);
         // 设置程序的录制画布要用右键画手势；任务栏/托盘的右键菜单交给系统
         if self.host.ignore_target(&target) {
+            return Verdict::Pass;
+        }
+        // 设置窗口的录制画布要用触发键画手势：只放行画布区域，设置窗口其余位置照常识别
+        if self.settings_canvas.is_some_and(|(l, t, r, b)| (l..r).contains(&x) && (t..b).contains(&y)) && self.host.is_settings_target(&target) {
             return Verdict::Pass;
         }
         // 用户在这个程序里禁用了手势：完全不拦截

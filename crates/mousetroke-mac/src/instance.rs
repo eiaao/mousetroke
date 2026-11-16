@@ -118,6 +118,11 @@ pub fn request_restart() -> io::Result<()> {
     crate::control::send(pid, crate::control::Request::Restart)
 }
 
+/// 设置进程上报录制画布位置（全局坐标，单位为点）；None 表示清除。
+pub fn send_canvas(pid: u32, rect: Option<(i32, i32, i32, i32)>) -> io::Result<()> {
+    crate::control::send_canvas(pid, rect)
+}
+
 /// 更新请求只控制当前锁持有者；退出和重启共用无文件轮询的通知通道。
 pub fn request_quit(pid: u32) -> io::Result<()> {
     crate::control::send(pid, crate::control::Request::Quit)

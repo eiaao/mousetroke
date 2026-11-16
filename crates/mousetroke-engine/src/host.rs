@@ -46,6 +46,10 @@ pub trait Host {
     fn target_at(&self, x: i32, y: i32) -> Target;
     /// 判断设置界面/系统外壳等应直接放行的目标；按键捕获前调用。
     fn ignore_target(&self, target: &Target) -> bool;
+    /// 目标是否为本程序的设置窗口（不含引擎自身的窗口）；录制画布区域据此放行。
+    fn is_settings_target(&self, _target: &Target) -> bool {
+        false
+    }
     /// 查询目标标题以构建变量；捕获开始的输入回调调用，须快速返回。
     fn window_title(&self, wid: usize) -> String;
     /// 查询前台全屏目标；None 表示非全屏，目标 exe 不可读时仍返回 Some。
