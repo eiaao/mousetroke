@@ -1,9 +1,10 @@
 import { isMac } from "../platform";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import type { AppInfo, EngineStatus } from "../types";
 import { api, errText, type Msg } from "../api";
 import { t } from "../i18n";
 import { StarIcon } from "./Icons";
+import { ignoreUpdateVersion, refreshUpdateHint, useUpdateHint } from "../updateHint";
 
 /** 设置界面里的键盘操作（关于页列出，便于发现）。 */
 const SHORTCUTS: [string, keyof typeof KEY_LABELS][] = [
@@ -37,10 +38,17 @@ export function About({ engine, onShowGuide, notify }: { engine: EngineStatus; o
   const open = (what: Parameters<typeof api.openPath>[0]) => api.openPath(what).catch((e) => notify(errText(e)));
   const checkUpdate = async () => {
     setBusy("check"); setError(null);
-    try { setUpdate(await api.checkUpdate()); }
+    try { setUpdate(await api.checkUpdate()); await refreshUpdateHint(); }
     catch (e) { setError(e); }
     finally { setBusy(null); }
   };
+  // 已知有新版本时进入关于页自动查一次，让更新说明和安装按钮直接出现
+  const hint = useUpdateHint();
+  const autoChecked = useRef(false);
+  useEffect(() => {
+    if (hint && !autoChecked.current) { autoChecked.current = true; checkUpdate(); }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [hint]);
   const installUpdate = async () => {
     setBusy("install"); setError(null);
     try { await api.installUpdate(); }
@@ -86,7 +94,7 @@ export function About({ engine, onShowGuide, notify }: { engine: EngineStatus; o
           </button>
         </div>
         <UpdateStatus update={update} busy={busy} error={error} onInstall={installUpdate}
-          onDownload={() => isMac() && !error ? downloadUpdate() : open("releases")} onNotes={() => open("releases")} />
+          onDownload={() => isMac() && !error ? downloadUpdate() : open("releases")} onNotes={() => open("releases")} onIgnore={(v) => ignoreUpdateVersion(v)} />
       </div>
 
       <div className="pref-group about-project" role="group" aria-labelledby="about-project-title">
@@ -199,13 +207,14 @@ export function About({ engine, onShowGuide, notify }: { engine: EngineStatus; o
 }
 
 /** 两个平台共用更新状态和主要操作，Mac 另外保留手动下载。 */
-export function UpdateStatus({ update, busy, error, onInstall, onDownload, onNotes }: {
+export function UpdateStatus({ update, busy, error, onInstall, onDownload, onNotes, onIgnore }: {
   update: Awaited<ReturnType<typeof api.checkUpdate>> | null;
   busy: "check" | "install" | null;
   error: unknown;
   onInstall: () => void;
   onDownload: () => void;
   onNotes: () => void;
+  onIgnore?: (version: string) => void;
 }) {
   return <div className="update-status" role="status" aria-live="polite">
     {isMac() && update && <p>{t("mac.ui.update.latest", { version: update.latest })}</p>}
@@ -218,6 +227,7 @@ export function UpdateStatus({ update, busy, error, onInstall, onDownload, onNot
         {update.notes.map((note, index) => <li key={index}>{note}</li>)}
       </ul>}
       <div className="update-actions">
+        {onIgnore && <button type="button" className="btn small update-ignore" disabled={busy !== null} onClick={() => onIgnore(update.latest)}>{t("ui.update.ignore")}</button>}
         <button type="button" className="btn small update-notes" disabled={busy !== null} onClick={onNotes}>{t("ui.update.notes")}</button>
         {isMac() && <button type="button" className="btn small update-download" disabled={busy !== null} onClick={onDownload}>{t("mac.ui.update.download")}</button>}
         <button type="button" className="btn primary update-install" disabled={busy !== null} onClick={onInstall}>{t("ui.update.install")}</button>

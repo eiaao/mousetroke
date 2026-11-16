@@ -39,6 +39,7 @@ const MENU_QUIT: u32 = 2;
 const MENU_SETTINGS: u32 = 3;
 const MENU_OPEN_DIR: u32 = 4;
 const MENU_AUTOSTART: u32 = 5;
+const MENU_UPDATE: u32 = 6;
 const HOTKEY_PAUSE_ID: i32 = 1;
 const TOAST_TIMER_ID: usize = 2;
 const CONFIG_TIMER_ID: usize = 3;
@@ -313,8 +314,8 @@ fn poll_config(hwnd: HWND) {
     match with_engine(|e| e.poll_config()).flatten() {
         Some(Reload::Applied { scopes, bindings, hotkey_changed }) => {
             crate::log!("配置已热加载: {scopes} 作用域 / {bindings} 绑定");
-            if let Some(enabled) = with_engine(|e| e.config().settings.update_check) {
-                crate::update::set_automatic(enabled);
+            if let Some((enabled, popup)) = with_engine(|e| (e.config().settings.update_check, e.config().settings.update_notify)) {
+                crate::update::set_automatic(enabled, popup);
             }
             crate::engine::push_toast(t(keys::TOAST_CONFIG_UPDATED).into(), 1200);
             if let Some(hk) = hotkey_changed {
@@ -348,6 +349,7 @@ unsafe extern "system" fn tray_wndproc(hwnd: HWND, msg: u32, wparam: WPARAM, lpa
                     sync_pause_ui(true);
                 }
                 MENU_SETTINGS => open_settings(),
+                MENU_UPDATE => open_settings_page(true),
                 MENU_OPEN_DIR => open_config_dir(),
                 MENU_AUTOSTART => {
                     let on = !crate::autostart::is_enabled();
@@ -387,8 +389,19 @@ unsafe extern "system" fn tray_wndproc(hwnd: HWND, msg: u32, wparam: WPARAM, lpa
         }
         WM_TIMER if wparam.0 == TOAST_TIMER_ID => {
             if let Some((version, ack)) = crate::update::take_notice() {
-                let shown = notify(&tf(keys::UPDATE_AVAILABLE, &[("version", &version)]));
-                UPDATE_BALLOON.store(shown, std::sync::atomic::Ordering::Relaxed);
+                // 系统通知（通知中心，按钮可查看或忽略）；不可用时回退到托盘气泡
+                let shown = match crate::toast::show_update(&version, |choice| match choice {
+                    crate::toast::Choice::View => open_settings_page(true),
+                    crate::toast::Choice::Ignore(version) => crate::toast::ignore(cfg_path(), version),
+                }) {
+                    Ok(()) => true,
+                    Err(e) => {
+                        crate::log!("系统通知失败，改用托盘气泡: {e}");
+                        let shown = notify(&tf(keys::UPDATE_AVAILABLE, &[("version", &version)]));
+                        UPDATE_BALLOON.store(shown, std::sync::atomic::Ordering::Relaxed);
+                        shown
+                    }
+                };
                 let _ = ack.send(shown);
             }
             with_engine(|e| e.toast_tick());
@@ -439,6 +452,10 @@ unsafe fn show_menu(hwnd: HWND) {
     let sep = || {
         let _ = AppendMenuW(menu, MF_SEPARATOR, 0, PCWSTR::null());
     };
+    if let Some(version) = crate::update::pending() {
+        item(MENU_UPDATE, &tf(keys::UPDATE_AVAILABLE, &[("version", &version)]), false);
+        sep();
+    }
     item(MENU_SETTINGS, t(keys::TRAY_MENU_SETTINGS), false);
     item(MENU_TOGGLE_PAUSE, t(if paused { keys::TRAY_MENU_RESUME } else { keys::TRAY_MENU_PAUSE }), false);
     sep();

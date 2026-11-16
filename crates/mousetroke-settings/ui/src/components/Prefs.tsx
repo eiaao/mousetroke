@@ -1,6 +1,7 @@
 import type { EngineStatus, Settings } from "../types";
 import { KeysInput } from "./KeysInput";
 import { LANGS, t, useLang, type Lang, type LangSetting, type MsgKey } from "../i18n";
+import { isMac } from "../platform";
 
 /** #RRGGBBAA ⇄ (#RRGGBB, alpha 0..1) */
 function splitColor(c: string): [string, number] {
@@ -29,14 +30,14 @@ function ColorField({ label, value, onChange }: { label: string; value: string; 
   );
 }
 
-function Toggle({ label, help, checked, onChange }: { label: string; help?: string; checked: boolean; onChange: (v: boolean) => void }) {
+function Toggle({ label, help, checked, disabled, onChange }: { label: string; help?: string; checked: boolean; disabled?: boolean; onChange: (v: boolean) => void }) {
   return (
     <label className="pref-row toggle-row">
       <span className="pref-label">
         {label}
         {help && <small>{help}</small>}
       </span>
-      <input type="checkbox" className="switch" checked={checked} onChange={(e) => onChange(e.target.checked)} />
+      <input type="checkbox" className="switch" checked={checked} disabled={disabled} onChange={(e) => onChange(e.target.checked)} />
     </label>
   );
 }
@@ -144,6 +145,8 @@ export function Prefs({
         <Toggle label={t("ui.prefs.show_tray")} checked={s.show_tray} onChange={(v) => onChange((x) => ({ ...x, show_tray: v }))} />
         <div className="update-preference">
           <Toggle label={t("ui.prefs.update_check")} help={t("ui.prefs.update_check_help")} checked={s.update_check ?? true} onChange={(v) => onChange((x) => ({ ...x, update_check: v }))} />
+          {/* macOS 不发系统通知，新版本只在菜单栏菜单和设置窗口中标记 */}
+          {!isMac() && <Toggle label={t("ui.prefs.update_notify")} help={t("ui.prefs.update_notify_help")} checked={s.update_notify ?? true} disabled={s.update_check === false} onChange={(v) => onChange((x) => ({ ...x, update_notify: v }))} />}
         </div>
         <div className="pref-row">
           <span className="pref-label">

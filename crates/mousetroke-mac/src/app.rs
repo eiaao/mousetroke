@@ -140,7 +140,7 @@ pub(crate) use mousetroke_engine::with_engine;
 fn apply_settings(config: &Config, selftest: bool) {
     menu::set_visible(config.settings.show_tray);
     events::set_pause_hotkey(&config.settings.pause_hotkey);
-    crate::update::set_automatic(config.settings.update_check);
+    crate::update::set_automatic(config.settings.update_check, config.settings.update_notify);
     if !selftest {
         crate::hot_corners::check(config);
     }
@@ -326,9 +326,13 @@ impl Runtime {
             test.tick(events::active());
         }
         if let Some((version, ack)) = crate::update::take_notice() {
+            // macOS 不发系统通知，菜单栏菜单项由下面的待更新版本驱动
             crate::log!("有新版本：{version}");
-            self.update_version = Some(version);
             let _ = ack.send(true);
+        }
+        let pending = crate::update::pending();
+        if pending != self.update_version {
+            self.update_version = pending;
             menu::request_refresh();
         }
         if menu::take_refresh() {
@@ -460,7 +464,7 @@ fn run_main(mtm: MainThreadMarker, config_path: Option<std::path::PathBuf>) -> R
     events::prepare();
     crate::lua::initialize();
     let displays = DisplayObserver::new();
-    let automatic_updates = config.settings.update_check;
+    let automatic_updates = (config.settings.update_check, config.settings.update_notify);
     let restart_path = path.clone();
     let update_path = path.clone();
     let engine = Engine::new(
@@ -475,7 +479,7 @@ fn run_main(mtm: MainThreadMarker, config_path: Option<std::path::PathBuf>) -> R
         mousetroke_engine::push_toast(t("config.unreadable_notice").into(), 8000);
     }
     if !selftest {
-        crate::update::start_automatic(update_path, automatic_updates);
+        crate::update::start_automatic(update_path, automatic_updates.0, automatic_updates.1);
     }
     let permissions = permissions::check();
     if !selftest && (first_run || !permissions.ready()) {

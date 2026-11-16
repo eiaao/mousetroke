@@ -165,7 +165,7 @@ fn local_checks_download_verify_replace_and_rollback() {
     assert!(http::get(&source, &format!("{origin}/escape"), false, 100).is_err());
     assert!(http::get(&source, &format!("{origin}/exe"), false, 2).is_err());
     let state_path = dir.join("update-state.json");
-    let state = UpdateState { last_check: Some(now()), last_notified: Some("1.2.3".into()) };
+    let state = UpdateState { last_check: Some(now()), last_notified: Some("1.2.3".into()), ..Default::default() };
     state.save(&state_path).unwrap();
     state.save(&state_path).unwrap();
     assert!(!UpdateState::load(&state_path).due(now()));

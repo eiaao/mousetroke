@@ -524,6 +524,9 @@ pub struct Settings {
     /// 默认每天检查更新，可在偏好设置关闭；检查记录另存，不混入配置。
     #[serde(default = "yes")]
     pub update_check: bool,
+    /// 自动检查首次发现某个新版本时发系统通知（Windows），每个版本一次。
+    #[serde(default = "yes")]
+    pub update_notify: bool,
     pub trail: Trail,
     pub label: Label,
 }
@@ -572,6 +575,7 @@ impl Default for Settings {
             pause_on_fullscreen: true,
             show_tray: true,
             update_check: true,
+            update_notify: true,
             trail: Trail {
                 show: true,
                 width: 2.0,
@@ -961,5 +965,7 @@ mod update_schema_tests {
         let copy: Config = serde_json::from_str(&serde_json::to_string(&cfg).unwrap()).unwrap();
         assert!(!copy.settings.update_check);
         assert!(!serde_json::from_str::<Config>(r#"{"settings":{"update_check":false}}"#).unwrap().settings.update_check);
+        assert!(serde_json::from_str::<Config>(r#"{"settings":{}}"#).unwrap().settings.update_notify, "旧配置默认开启通知");
+        assert!(!serde_json::from_str::<Config>(r#"{"settings":{"update_notify":false}}"#).unwrap().settings.update_notify);
     }
 }

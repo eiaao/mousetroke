@@ -26,6 +26,7 @@ import { NavIcon } from "./components/Icons";
 import { TipLayer } from "./components/Tip";
 import { Guide, guideUnseen, permissionsReady } from "./components/Guide";
 import { About } from "./components/About";
+import { ignoreUpdateVersion, refreshUpdateHint, useUpdateHint } from "./updateHint";
 
 export function App() {
   const [init, setInit] = useState<InitState | null>(null);
@@ -91,6 +92,9 @@ function Main({ init }: { init: InitState }) {
   const { config, edit, undo, redo } = store;
   // 语言订阅放在根组件：切换语言时整棵树重渲染（t() 在渲染期取词条）
   const [lang] = useLang();
+  const updateHint = useUpdateHint();
+  // 启动时读一次本地记录的新版本提示
+  useEffect(() => { refreshUpdateHint(); }, []);
   const globalIdx = Math.max(0, config.scopes.findIndex((s) => s.kind === "global"));
   const [view, setView] = useState<View>(init.about ? { kind: "about" } : { kind: "scope", index: globalIdx });
   // 再次打开设置（如托盘「关于」）时由后端推送，不再轮询
@@ -537,6 +541,13 @@ function Main({ init }: { init: InitState }) {
       />
 
       <main className="main">
+        {updateHint && view.kind !== "about" && (
+          <div className="banner update-banner" role="status">
+            <span>{t("ui.update.banner", { version: updateHint })}</span>
+            <button type="button" className="btn small primary" onClick={() => setView({ kind: "about" })}>{t("ui.update.view")}</button>
+            <button type="button" className="btn small" onClick={() => ignoreUpdateVersion(updateHint)}>{t("ui.update.ignore")}</button>
+          </div>
+        )}
         {loadError && (
           <div className="banner error" role="alert">
             <p>{t("ui.app.load_error", { error: loadError })}</p>

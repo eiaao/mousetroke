@@ -2,6 +2,7 @@ import type { EngineStatus, Scope } from "../types";
 import { fileName } from "../gesture";
 import { currentLang, displayName, t } from "../i18n";
 import { AppIcon, NavIcon } from "./Icons";
+import { useUpdateHint } from "../updateHint";
 
 export type View = { kind: "scope"; index: number } | { kind: "gestures" } | { kind: "prefs" } | { kind: "data" } | { kind: "about" };
 
@@ -43,6 +44,7 @@ export function Sidebar({
   onStartEngine: () => void;
   saveState: "idle" | "saving" | "saved" | "error" | "incomplete";
 }) {
+  const updateHint = useUpdateHint();
   // 通用在最前，其次特殊区域，再按名称排列应用（排序跟随当前语言）
   const order = scopes
     .map((s, i) => ({ s, i }))
@@ -95,6 +97,7 @@ export function Sidebar({
         <button type="button" className={`nav-item ${view.kind === "about" ? "on" : ""}`} onClick={() => onView({ kind: "about" })}>
           <NavIcon kind="about" />
           {t("ui.sidebar.about")}
+          {updateHint && <span className="nav-update-dot" role="img" aria-label={t("ui.sidebar.update_badge")} data-tip={t("ui.sidebar.update_badge")} />}
         </button>
       </div>
 

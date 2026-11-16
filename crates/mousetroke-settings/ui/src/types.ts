@@ -155,6 +155,8 @@ export interface Scope {
 
 export interface Settings {
   update_check?: boolean;
+  /** 发现新版本时是否打开窗口提示。缺省 = true */
+  update_notify?: boolean;
   /** auto | zh-CN | en-US */
   language?: string;
   drag_timeout_ms: number;
