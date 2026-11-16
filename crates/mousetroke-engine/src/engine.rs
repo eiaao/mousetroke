@@ -281,6 +281,7 @@ impl Engine {
         self.tracker = PathTracker::new(cfg.settings.min_stroke_px as f64);
         self.overlay.set_color(&cfg.settings.trail.color_normal);
         self.overlay.set_width(cfg.settings.trail.width);
+        self.overlay.set_label_font_size(cfg.settings.label.font_size);
         self.cfg = cfg;
     }
 

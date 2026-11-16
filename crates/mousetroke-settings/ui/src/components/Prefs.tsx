@@ -64,6 +64,12 @@ function Slider({ label, help, value, min, max, step, unit, onChange }: { label:
 function TrailPreview({ s }: { s: Settings }) {
   const [rgb, a] = splitColor(s.trail.color_normal);
   const [lrgb, la] = splitColor(s.label.color_normal);
+  // 預覽採 50% 比例，讓 96 px 的上限仍能完整放進設定卡片。
+  const labelFontSize = (s.label.font_size ?? 24) / 2;
+  const labelHeight = labelFontSize * 1.2 + 10;
+  const labelWidth = Math.min(180, 88 + Math.max(0, labelFontSize - 12) * 2.5);
+  const labelX = (240 - labelWidth) / 2;
+  const labelY = 88 - labelHeight;
   return (
     <div className="trail-preview" aria-hidden>
       <svg viewBox="0 0 240 90" width="240" height="90">
@@ -72,8 +78,8 @@ function TrailPreview({ s }: { s: Settings }) {
         )}
         {s.label.show && (
           <g>
-            <rect x="76" y="60" width="88" height="24" rx="7" fill="rgba(20,24,28,.78)" />
-            <text x="120" y="77" textAnchor="middle" fontSize="13" fontWeight="600" fill={lrgb} fillOpacity={la}>
+            <rect x={labelX} y={labelY} width={labelWidth} height={labelHeight} rx="7" fill="rgba(20,24,28,.78)" />
+            <text x="120" y={labelY + labelHeight / 2} dominantBaseline="central" textAnchor="middle" fontSize={labelFontSize} fontWeight="600" fill={lrgb} fillOpacity={la}>
               {t("ui.prefs.preview_label")}
             </text>
           </g>
@@ -213,6 +219,7 @@ export function Prefs({
         <ColorField label={t("ui.prefs.trail_matched")} value={s.trail.color_matched} onChange={(v) => onChange((x) => ({ ...x, trail: { ...x.trail, color_matched: v } }), "tm")} />
         <Toggle label={t("ui.prefs.fade_out")} checked={s.trail.fade_out} onChange={(v) => onChange((x) => ({ ...x, trail: { ...x.trail, fade_out: v } }))} />
         <Toggle label={t("ui.prefs.show_label")} checked={s.label.show} onChange={(v) => onChange((x) => ({ ...x, label: { ...x.label, show: v } }))} />
+        <Slider label={t("ui.prefs.label_font_size")} value={s.label.font_size ?? 24} min={16} max={96} step={4} unit=" px" onChange={(v) => onChange((x) => ({ ...x, label: { ...x.label, font_size: v } }), "lfs")} />
         <ColorField label={t("ui.prefs.label_color")} value={s.label.color_normal} onChange={(v) => onChange((x) => ({ ...x, label: { ...x.label, color_normal: v } }), "lc")} />
       </div>
     </section>

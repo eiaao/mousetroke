@@ -432,6 +432,7 @@
   "ui.prefs.trail_matched": "识别成功时",
   "ui.prefs.fade_out": "完成后淡出",
   "ui.prefs.show_label": "画的时候显示手势名",
+  "ui.prefs.label_font_size": "提示文字大小",
   "ui.prefs.label_color": "手势名颜色",
   "ui.prefs.preview_label": "截图",
   "ui.prefs.color_aria": "颜色",

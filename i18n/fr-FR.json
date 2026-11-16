@@ -432,6 +432,7 @@
   "ui.prefs.trail_matched": "En cas de succès",
   "ui.prefs.fade_out": "Estomper à la fin",
   "ui.prefs.show_label": "Afficher le nom du geste pendant le tracé",
+  "ui.prefs.label_font_size": "Taille du texte d’indication",
   "ui.prefs.label_color": "Couleur du nom",
   "ui.prefs.preview_label": "Capture",
   "ui.prefs.color_aria": "Couleur",

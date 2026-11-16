@@ -5,6 +5,7 @@ use std::collections::VecDeque;
 enum Command {
     Color(String),
     Width(f64),
+    LabelFontSize(u32),
     Start(i32, i32),
     Line(i32, i32),
     Finish,
@@ -50,6 +51,9 @@ impl Canvas for DeferredCanvas {
     fn set_width(&mut self, width: f64) {
         self.push(Command::Width(width));
     }
+    fn set_label_font_size(&mut self, size: u32) {
+        self.push(Command::LabelFontSize(size));
+    }
     fn start_session(&mut self, x: i32, y: i32) {
         self.push(Command::Start(x, y));
     }
@@ -76,6 +80,7 @@ impl Canvas for DeferredCanvas {
             match command {
                 Command::Color(value) => self.inner.set_color(&value),
                 Command::Width(width) => self.inner.set_width(width),
+                Command::LabelFontSize(size) => self.inner.set_label_font_size(size),
                 Command::Start(x, y) => self.inner.start_session(x, y),
                 Command::Line(x, y) => self.inner.line_to(x, y),
                 Command::Finish => self.inner.finish(),
@@ -100,6 +105,9 @@ mod tests {
         }
         fn set_width(&mut self, _: f64) {
             self.0.borrow_mut().push("width");
+        }
+        fn set_label_font_size(&mut self, _: u32) {
+            self.0.borrow_mut().push("label-size");
         }
         fn start_session(&mut self, _: i32, _: i32) {
             self.0.borrow_mut().push("start");
@@ -133,6 +141,7 @@ mod tests {
         let mut canvas = DeferredCanvas::new(Box::new(Probe(calls.clone())));
         canvas.set_color("red");
         canvas.set_width(3.0);
+        canvas.set_label_font_size(32);
         canvas.start_session(1, 2);
         canvas.line_to(3, 4);
         canvas.draw_label("label", 1, 2, "white");
@@ -143,7 +152,7 @@ mod tests {
         canvas.tick_fade();
         assert_eq!(
             *calls.borrow(),
-            ["color", "width", "start", "line", "label", "fade", "clear", "finish", "tick"]
+            ["color", "width", "label-size", "start", "line", "label", "fade", "clear", "finish", "tick"]
         );
         for i in 0..10_000 {
             canvas.line_to(i, i);

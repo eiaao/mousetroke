@@ -417,6 +417,7 @@
   "ui.prefs.trail_matched": "인식되었을 때",
   "ui.prefs.fade_out": "끝나면 서서히 사라지기",
   "ui.prefs.show_label": "그리는 동안 제스처 이름 표시",
+  "ui.prefs.label_font_size": "안내 문구 크기",
   "ui.prefs.label_color": "제스처 이름 색",
   "ui.prefs.preview_label": "캡처",
   "ui.prefs.color_aria": "색",

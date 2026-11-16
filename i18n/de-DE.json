@@ -432,6 +432,7 @@
   "ui.prefs.trail_matched": "Bei Treffer",
   "ui.prefs.fade_out": "Am Ende ausblenden",
   "ui.prefs.show_label": "Gestenname beim Zeichnen anzeigen",
+  "ui.prefs.label_font_size": "Größe des Hinweistextes",
   "ui.prefs.label_color": "Farbe des Gestennamens",
   "ui.prefs.preview_label": "Schnappschuss",
   "ui.prefs.color_aria": "Farbe",

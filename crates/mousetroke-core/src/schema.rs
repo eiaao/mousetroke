@@ -556,6 +556,8 @@ pub struct Trail {
 #[serde(default, rename_all = "snake_case")]
 pub struct Label {
     pub show: bool,
+    /// 提示文字大小（逻辑像素；平台渲染端限制在 16..96）。
+    pub font_size: u32,
     /// 标签在轨迹上的位置（0..1）。
     pub pos: f64,
     pub border: u32,
@@ -587,6 +589,7 @@ impl Default for Settings {
             },
             label: Label {
                 show: true,
+                font_size: 24,
                 pos: 0.25,
                 border: 1,
                 color_normal: "#FFFFFFE6".into(),
@@ -955,6 +958,18 @@ mod builtin_tests {
 #[cfg(test)]
 mod update_schema_tests {
     use super::*;
+    #[test]
+    fn label_font_size_defaults_for_existing_configs_and_round_trips() {
+        let old: Config = serde_json::from_str(r#"{"settings":{"label":{"show":false}}}"#).unwrap();
+        assert_eq!(old.settings.label.font_size, 24);
+        assert!(!old.settings.label.show);
+
+        let mut changed = old;
+        changed.settings.label.font_size = 96;
+        let copy: Config = serde_json::from_str(&serde_json::to_string(&changed).unwrap()).unwrap();
+        assert_eq!(copy.settings.label.font_size, 96);
+    }
+
     #[test]
     fn update_check_defaults_on_and_explicit_false_round_trips() {
         let mut cfg: Config = serde_json::from_str("{}").unwrap();

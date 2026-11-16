@@ -432,6 +432,7 @@
   "ui.prefs.trail_matched": "Al riconoscimento",
   "ui.prefs.fade_out": "Sfuma al termine",
   "ui.prefs.show_label": "Mostra il nome del gesto mentre disegni",
+  "ui.prefs.label_font_size": "Dimensione del testo di avviso",
   "ui.prefs.label_color": "Colore del nome",
   "ui.prefs.preview_label": "Ritaglio",
   "ui.prefs.color_aria": "Colore",

@@ -21,6 +21,8 @@ pub trait Canvas {
     fn set_color(&mut self, color: &str);
     /// 设置轨迹宽度；配置更新时调用。
     fn set_width(&mut self, width_px: f64);
+    /// 设置提示文字大小；配置更新时调用。
+    fn set_label_font_size(&mut self, size_px: u32);
     /// 在屏幕坐标开始一次绘制；输入回调调用，须快速返回。
     fn start_session(&mut self, x: i32, y: i32);
     /// 追加屏幕坐标轨迹点；高频输入回调调用，不得无界扩容。
