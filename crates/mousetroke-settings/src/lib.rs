@@ -243,17 +243,18 @@ struct CssRect {
     h: f64,
 }
 
-/// 最近一次的画布页面位置，以及已发给引擎的（引擎窗口, 屏幕矩形），用于去重和引擎重启后重发。
 type ScreenRect = (i32, i32, i32, i32);
-static CANVAS: std::sync::Mutex<(Option<CssRect>, Option<(isize, Option<ScreenRect>)>)> = std::sync::Mutex::new((None, None));
+/// 最近一次的画布页面位置，窗口移动或缩放变化时据此重算屏幕位置。
+static CANVAS: std::sync::Mutex<Option<CssRect>> = std::sync::Mutex::new(None);
 
 /// 换算画布的屏幕位置并发给引擎；`css` 为 None 时沿用上次的页面位置（窗口移动、缩放变化）。
+/// 不去重：前端定时重报，丢失的消息和重启后的引擎都能自然补上。
 fn sync_canvas(window: &WebviewWindow, css: Option<Option<CssRect>>) {
     let mut state = CANVAS.lock().unwrap_or_else(|e| e.into_inner());
     if let Some(css) = css {
-        state.0 = css;
+        *state = css;
     }
-    let rect = state.0.and_then(|c| {
+    let rect: Option<ScreenRect> = state.and_then(|c| {
         let (pos, scale) = (window.inner_position().ok()?, window.scale_factor().ok()?);
         // 先换算成逻辑坐标，再按引擎事件的单位输出：Windows 为物理像素，macOS 为点
         let unit = if platform::ENGINE_USES_PHYSICAL_PIXELS { scale } else { 1.0 };
@@ -261,10 +262,8 @@ fn sync_canvas(window: &WebviewWindow, css: Option<Option<CssRect>>) {
         let at = |o: f64, v: f64| ((o + v) * unit).round() as i32;
         Some((at(ox, c.x), at(oy, c.y), at(ox, c.x + c.w), at(oy, c.y + c.h)))
     });
-    let Some(engine) = platform::engine_id() else { return };
-    if state.1 != Some((engine, rect)) {
+    if let Some(engine) = platform::engine_id() {
         platform::send_canvas(engine, rect);
-        state.1 = Some((engine, rect));
     }
 }
 
