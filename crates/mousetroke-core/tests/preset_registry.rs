@@ -4,7 +4,7 @@ use mousetroke_core::presets::native::{NativeAction, PreparedAction, TextMethod}
 use std::collections::{BTreeMap, BTreeSet};
 
 const LANGS: &[(&str, Lang)] = &[
-    ("zh-CN", Lang::ZhCn), ("en-US", Lang::EnUs), ("es-ES", Lang::EsEs), ("fr-FR", Lang::FrFr),
+    ("zh-CN", Lang::ZhCn), ("zh-TW", Lang::ZhTw), ("en-US", Lang::EnUs), ("es-ES", Lang::EsEs), ("fr-FR", Lang::FrFr),
     ("de-DE", Lang::DeDe), ("ja-JP", Lang::JaJp), ("pt-BR", Lang::PtBr), ("ru-RU", Lang::RuRu),
     ("it-IT", Lang::ItIt), ("ko-KR", Lang::KoKr),
 ];
@@ -168,7 +168,13 @@ fn locale_defaults_and_translation_targets_follow_ui_language() {
             let params = serde_json::from_value(json!({"service":service})).unwrap();
             let translated = expand("text.translate", Platform::Macos, &params, *lang).unwrap();
             let Action::OpenUrl { url_template, .. } = translated else { panic!() };
-            let target = match (service, lang) { ("google", Lang::ZhCn) => "zh-CN", ("bing", Lang::ZhCn) => "zh-Hans", _ => tag.split('-').next().unwrap() };
+            let target = match (service, lang) {
+                ("google", Lang::ZhCn) => "zh-CN",
+                ("google", Lang::ZhTw) => "zh-TW",
+                ("bing", Lang::ZhCn) => "zh-Hans",
+                ("bing" | "deepl", Lang::ZhTw) => "zh-Hant",
+                _ => tag.split('-').next().unwrap(),
+            };
             assert!(url_template.contains(&format!("/{target}/")) || url_template.contains(&format!("={target}&")), "{url_template}");
         }
     }

@@ -28,6 +28,7 @@ fn localized_text(lang: Lang) -> DocText {
             "必填", "默认", "简体中文界面默认百度，其他语言默认 Google",
             "；仅当{field}为{choice}时",
         ),
+        Lang::ZhTw => unreachable!("Traditional Chinese guide is not part of this documentation set"),
         Lang::DeDe => (
             "| Aktion / ID | Funktion und Einsatzbereich | Parameter | Windows | Mac |\n",
             "erforderlich", "Standard:", "Baidu bei vereinfachter chinesischer Oberfläche, sonst Google",

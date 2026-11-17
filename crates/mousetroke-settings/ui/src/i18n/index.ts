@@ -2,13 +2,14 @@ import { isMac } from "../platform";
 // i18n 运行时（设计见 docs/I18N-DESIGN.md §4）。
 //
 // - 词条与 Rust 侧共用仓库根目录的 i18n/*.json（vite 原生支持 JSON 导入），
-//   十种语言全部内嵌（gzip 后约 100 KB，设置界面按需打开，不值得按需加载）。
+//   所有语言全部内嵌（设置界面按需打开，不值得按需加载）。
 // - 键名由 `typeof zh` 推导：写错键名 tsc 报错；en-US 标注为 Record<keyof Catalog, string>，
 //   少键编译不过，多出的键由 Rust 侧的目录一致性测试抓出来。
 // - 语言状态是模块级小 store（useSyncExternalStore 订阅）；不要把 t 一层层当 props 传，
 //   在根组件 useLang() 一次，切换语言时整棵树重渲染。
 import { createElement, Fragment, useSyncExternalStore } from "react";
 import zh from "../../../../../i18n/zh-CN.json";
+import zhTw from "../../../../../i18n/zh-TW.json";
 import en from "../../../../../i18n/en-US.json";
 import es from "../../../../../i18n/es-ES.json";
 import fr from "../../../../../i18n/fr-FR.json";
@@ -27,6 +28,7 @@ export type MsgKey = StripPlural<keyof Catalog>;
 
 export type Lang =
   | "zh-CN"
+  | "zh-TW"
   | "en-US"
   | "es-ES"
   | "fr-FR"
@@ -42,7 +44,7 @@ export type LangSetting = "auto" | Exclude<Lang, "qps-ploc">;
 
 /** 界面语言下拉框的顺序（语言自名永远用它自己的语言显示）。 */
 export const LANGS: readonly Exclude<Lang, "qps-ploc">[] = [
-  "zh-CN", "en-US", "es-ES", "fr-FR", "de-DE", "ja-JP", "pt-BR", "ru-RU", "it-IT", "ko-KR",
+  "zh-CN", "zh-TW", "en-US", "es-ES", "fr-FR", "de-DE", "ja-JP", "pt-BR", "ru-RU", "it-IT", "ko-KR",
 ];
 
 // en-US：少键在这里就编译不过（其余语言由 Rust 侧目录测试保证）
@@ -50,6 +52,7 @@ const enFull: Record<keyof Catalog, string> = en;
 
 const BASE: Record<Exclude<Lang, "qps-ploc">, Record<string, string>> = {
   "zh-CN": zh,
+  "zh-TW": zhTw,
   "en-US": enFull,
   "es-ES": es,
   "fr-FR": fr,
@@ -76,13 +79,14 @@ function applyDocLang() {
   document.documentElement.lang = resolved === "qps-ploc" ? "en" : resolved;
 }
 
-/** 主标签 → 基准语言；地区变体归并（zh-TW 词条就绪前 → zh-CN）。 */
-const PRIMARY: Partial<Record<string, Lang>> = {
+/** 主标签 → 基准语言；繁体中文变体在 fromTag 中单独处理。 */
+const PRIMARY: Partial<Record<string, Exclude<Lang, "qps-ploc">>> = {
   zh: "zh-CN", en: "en-US", es: "es-ES", fr: "fr-FR", de: "de-DE", ja: "ja-JP", pt: "pt-BR", ru: "ru-RU", it: "it-IT", ko: "ko-KR",
 };
 
-function fromTag(s: string): Lang | null {
-  const [p] = s.trim().toLowerCase().split("-");
+function fromTag(s: string): Exclude<Lang, "qps-ploc"> | null {
+  const [p, ...subtags] = s.trim().toLowerCase().split("-");
+  if (p === "zh" && subtags.some((part) => ["tw", "hk", "mo", "hant"].includes(part))) return "zh-TW";
   return PRIMARY[p] ?? null;
 }
 
@@ -99,7 +103,7 @@ function resolveLang(setting: LangSetting, system: string[]): Lang {
 export function initLang(o: { setting?: string; systemLangs?: string[]; url?: string }): Lang {
   systemLangs = o.systemLangs ?? [];
   const s = o.setting ?? "auto";
-  setting = s === "auto" || fromTag(s) ? (s as LangSetting) : "auto";
+  setting = s === "auto" ? "auto" : (fromTag(s) ?? "auto");
   resolved = resolveLang(setting, systemLangs);
   // URL 参数强制（qps-ploc 只在这里认：设置值不暴露伪语言）
   const q = new URLSearchParams(o.url ?? location.search).get("lang");
