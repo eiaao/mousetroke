@@ -82,20 +82,65 @@ pub fn send_wheel(delta: i32, horizontal: bool) {
     unsafe { SendInput(&[input], std::mem::size_of::<INPUT>() as i32) };
 }
 
-fn send_vk(vk: u16, down: bool) {
-    let input = INPUT {
+/// 虚拟键对应的扫描码与是否扩展键；`map` 为 VK→扫描码换算（`MapVirtualKeyW`）。
+///
+/// 浏览器按扫描码生成 `KeyboardEvent.code`，扫描码为 0 时 `code` 为空，依赖它的网页快捷键不响应（#84）。
+/// 只给有固定物理位置的键补扫描码；媒体、浏览器、输入法等键换算结果可能撞上普通键（如音量+ 得到 B 的位置），保持 0。
+/// 导航键与小键盘数字键共用扫描码，必须带扩展标志，否则会被当成小键盘键，NumLock 开启时 Shift+Home 还会被系统插入松开 Shift。
+fn scan_code(vk: u16, map: impl FnOnce(u16) -> u32) -> (u16, bool) {
+    let extended = matches!(
+        vk,
+        0x21..=0x28 // PageUp PageDown End Home ←↑→↓
+            | 0x2C..=0x2E // PrintScreen Insert Delete
+            | 0x5B..=0x5D // 左右 Win、菜单键
+            | 0x6F // 小键盘 /
+            | 0x90 // NumLock
+            | 0xA3 | 0xA5 // 右 Ctrl、右 Alt
+    );
+    let physical = matches!(
+        vk,
+        0x08 | 0x09 | 0x0D // Backspace Tab Enter
+            | 0x10..=0x12 | 0x14 | 0x1B | 0x20 // Shift Ctrl Alt CapsLock Esc 空格
+            | 0x30..=0x39 | 0x41..=0x5A // 数字、字母
+            | 0x60..=0x6B | 0x6D | 0x6E // 小键盘（不含分隔键）
+            | 0x70..=0x87 // F1–F24
+            | 0x91 | 0xA0..=0xA5 // ScrollLock、左右修饰键
+            | 0xBA..=0xC0 | 0xDB..=0xDF | 0xE2 // 标点键
+    );
+    match vk {
+        0x2C => (0x37, true), // PrintScreen 物理扫描码 E0 37；换算结果是 Alt+PrintScreen 的 SysRq
+        _ if extended || physical => match map(vk) {
+            // 只取低字节；换算失败时不标扩展，与原来一致
+            0 => (0, false),
+            sc => ((sc & 0xFF) as u16, extended),
+        },
+        _ => (0, false),
+    }
+}
+
+fn key_input(vk: u16, down: bool) -> INPUT {
+    use windows::Win32::UI::Input::KeyboardAndMouse::{MapVirtualKeyW, KEYEVENTF_EXTENDEDKEY, MAPVK_VK_TO_VSC};
+    let (scan, extended) = scan_code(vk, |vk| unsafe { MapVirtualKeyW(vk as u32, MAPVK_VK_TO_VSC) });
+    let mut flags = if down { KEYBD_EVENT_FLAGS(0) } else { KEYEVENTF_KEYUP };
+    if extended {
+        flags |= KEYEVENTF_EXTENDEDKEY;
+    }
+    INPUT {
         r#type: INPUT_KEYBOARD,
         Anonymous: INPUT_0 {
             ki: windows::Win32::UI::Input::KeyboardAndMouse::KEYBDINPUT {
                 wVk: VIRTUAL_KEY(vk),
-                wScan: 0,
-                dwFlags: if down { KEYBD_EVENT_FLAGS(0) } else { KEYEVENTF_KEYUP },
+                wScan: scan,
+                dwFlags: flags,
                 time: 0,
                 dwExtraInfo: INJECT_TAG,
             },
         },
-    };
-    unsafe { SendInput(&[input], std::mem::size_of::<INPUT>() as i32) };
+    }
+}
+
+fn send_vk(vk: u16, down: bool) {
+    unsafe { SendInput(&[key_input(vk, down)], std::mem::size_of::<INPUT>() as i32) };
 }
 
 fn mod_vk(m: ModKey) -> u16 {
@@ -205,13 +250,7 @@ pub(crate) fn send_text_checked(text: &str) -> Result<(), String> {
 /// 原生文字动作用完整的一组按下/抬起事件，并把注入失败交给调用方报告。
 pub(crate) fn send_shortcut_checked(vk: u16, modifier: ModKey) -> Result<(), String> {
     let modifier = mod_vk(modifier);
-    let inputs = [(modifier, true), (vk, true), (vk, false), (modifier, false)].map(|(key, down)| INPUT {
-        r#type: INPUT_KEYBOARD,
-        Anonymous: INPUT_0 { ki: windows::Win32::UI::Input::KeyboardAndMouse::KEYBDINPUT {
-            wVk: VIRTUAL_KEY(key), dwFlags: if down { KEYBD_EVENT_FLAGS(0) } else { KEYEVENTF_KEYUP },
-            dwExtraInfo: INJECT_TAG, ..Default::default()
-        } },
-    });
+    let inputs = [(modifier, true), (vk, true), (vk, false), (modifier, false)].map(|(key, down)| key_input(key, down));
     if unsafe { SendInput(&inputs, std::mem::size_of::<INPUT>() as i32) } == inputs.len() as u32 {
         Ok(())
     } else {
@@ -908,5 +947,68 @@ mod app_identity_tests {
         for class in ["CabinetWClass", "Notepad", "Chrome_WidgetWin_1"] {
             assert!(app_activation_class_eligible(class), "{class}");
         }
+    }
+}
+
+#[cfg(test)]
+mod scan_code_tests {
+    use super::scan_code;
+
+    /// 美式布局下 MapVirtualKeyW(MAPVK_VK_TO_VSC) 的典型结果。
+    fn us(vk: u16) -> u32 {
+        match vk {
+            0x24 => 0x47, // Home 与小键盘 7 同码
+            0x25 => 0x4B,
+            0x2E => 0x53,
+            0x08 => 0x0E,
+            0x11 => 0x1D,
+            0x52 => 0x13,
+            0x5B => 0x5B,
+            0xA5 => 0x38,
+            0x67 => 0x47,
+            0xAF => 0x30, // 音量+ 换算成 B 的位置
+            0x2C => 0x54,
+            _ => 0,
+        }
+    }
+
+    #[test]
+    fn navigation_keys_are_extended_and_keep_their_scan_code() {
+        assert_eq!(scan_code(0x24, us), (0x47, true));
+        assert_eq!(scan_code(0x25, us), (0x4B, true));
+        assert_eq!(scan_code(0x2E, us), (0x53, true));
+        assert_eq!(scan_code(0x5B, us), (0x5B, true));
+        assert_eq!(scan_code(0xA5, us), (0x38, true));
+    }
+
+    #[test]
+    fn ordinary_keys_get_plain_scan_codes() {
+        assert_eq!(scan_code(0x52, us), (0x13, false)); // R
+        assert_eq!(scan_code(0x08, us), (0x0E, false)); // Backspace
+        assert_eq!(scan_code(0x11, us), (0x1D, false)); // Ctrl
+        assert_eq!(scan_code(0x67, us), (0x47, false)); // 小键盘 7 与 Home 区分只靠扩展标志
+    }
+
+    #[test]
+    fn media_and_unknown_keys_keep_scan_code_zero() {
+        assert_eq!(scan_code(0xAF, us), (0, false));
+        assert_eq!(scan_code(0xB3, us), (0, false));
+        assert_eq!(scan_code(0x15, us), (0, false)); // 输入法键
+        assert_eq!(scan_code(0x41, |_| 0), (0, false)); // 换算失败
+    }
+
+    #[test]
+    fn print_screen_uses_its_physical_scan_code() {
+        assert_eq!(scan_code(0x2C, us), (0x37, true));
+    }
+
+    #[test]
+    fn real_keyboard_layout_maps_navigation_keys() {
+        use windows::Win32::UI::Input::KeyboardAndMouse::{MapVirtualKeyW, MAPVK_VK_TO_VSC};
+        let map = |vk: u16| unsafe { MapVirtualKeyW(vk as u32, MAPVK_VK_TO_VSC) };
+        let (home, ext) = scan_code(0x24, map);
+        assert!(home != 0 && ext);
+        assert_eq!(scan_code(0x24, map).0, scan_code(0x67, map).0);
+        assert!(scan_code(0x52, map).0 != 0);
     }
 }
