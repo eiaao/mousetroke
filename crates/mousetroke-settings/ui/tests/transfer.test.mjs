@@ -115,21 +115,24 @@ test("transfer dialog requires an explicit choice for a conflicting destination"
   dom.window.close();
 });
 
-test("right-click offers one transfer action without making the row draggable", async () => {
+test("right-click offers duplicate, transfer and delete; drafts omit transfer", async () => {
   const dom = new JSDOM("<!doctype html><html><body></body></html>", { url: "http://localhost/" });
   Object.assign(globalThis, { window: dom.window, document: dom.window.document, HTMLElement: dom.window.HTMLElement, location: dom.window.location, IS_REACT_ACT_ENVIRONMENT: true });
   dom.window.HTMLElement.prototype.scrollIntoView = () => {};
   const { createRoot } = await import("react-dom/client");
   const config = fixture();
-  let transferred;
+  const actions = [];
   const host = document.createElement("div");
   document.body.append(host);
   const root = createRoot(host);
   const noop = () => {};
   await act(async () => root.render(createElement(BindingList, {
       scope: config.scopes[0], pauseOnFullscreen: false, tab: "gesture", onTab: noop, filter: "all", onFilter: noop,
-      selected: null, onSelect: noop, onAdd: noop, onDelete: noop, onDuplicate: noop, onToggle: noop,
-      onTransfer: (i) => { transferred = i; },
+      selected: null, onSelect: noop, onAdd: noop,
+      onDelete: (i) => actions.push(["delete", i]),
+      onDuplicate: (i) => actions.push(["duplicate", i]),
+      onToggle: noop,
+      onTransfer: (i) => actions.push(["transfer", i]),
       onScopeChange: noop, onDeleteScope: noop, clash: new Map(),
   })));
   const row = host.querySelector(".row");
@@ -137,9 +140,27 @@ test("right-click offers one transfer action without making the row draggable", 
   await act(async () => row.dispatchEvent(new dom.window.MouseEvent("contextmenu", { bubbles: true, clientX: 10, clientY: 10 })));
   const menu = document.body.querySelector(".gesture-context-menu");
   assert.ok(menu);
-  assert.equal(menu.querySelectorAll("button").length, 1);
+  assert.equal(menu.querySelectorAll("button").length, 3);
+  assert.equal(menu.querySelectorAll('[role="separator"]').length, 1);
   await act(async () => menu.querySelector("button").click());
-  assert.equal(transferred, 0);
+  assert.deepEqual(actions, [["duplicate", 0]]);
+
+  const draftScope = structuredClone(config.scopes[0]);
+  draftScope.bindings[0].draft = true;
+  await act(async () => root.render(createElement(BindingList, {
+      scope: draftScope, pauseOnFullscreen: false, tab: "gesture", onTab: noop, filter: "all", onFilter: noop,
+      selected: null, onSelect: noop, onAdd: noop,
+      onDelete: (i) => actions.push(["delete", i]),
+      onDuplicate: (i) => actions.push(["duplicate", i]),
+      onToggle: noop, onTransfer: (i) => actions.push(["transfer", i]),
+      onScopeChange: noop, onDeleteScope: noop, clash: new Map(),
+  })));
+  const draftRow = host.querySelector(".row");
+  await act(async () => draftRow.dispatchEvent(new dom.window.MouseEvent("contextmenu", { bubbles: true, clientX: 10, clientY: 10 })));
+  const draftMenu = document.body.querySelector(".gesture-context-menu");
+  assert.equal(draftMenu.querySelectorAll("button").length, 2);
+  await act(async () => draftMenu.querySelector("button.context-danger").click());
+  assert.deepEqual(actions, [["duplicate", 0], ["delete", 0]]);
   await act(async () => root.unmount());
   host.remove();
   dom.window.close();

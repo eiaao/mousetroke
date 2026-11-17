@@ -75,6 +75,13 @@ export function BindingList({
     window.addEventListener("keydown", escape, true);
     return () => { window.removeEventListener("mousedown", close); window.removeEventListener("keydown", escape, true); };
   }, [context]);
+  useLayoutEffect(() => {
+    if (!context || !contextRef.current) return;
+    const rect = contextRef.current.getBoundingClientRect();
+    const x = Math.max(8, Math.min(context.x, window.innerWidth - rect.width - 8));
+    const y = Math.max(8, Math.min(context.y, window.innerHeight - rect.height - 8));
+    if (x !== context.x || y !== context.y) setContext({ ...context, x, y });
+  }, [context]);
 
   const classes = useMemo(() => scope.bindings.map(classify), [scope.bindings]);
   const tabCount = (t0: ListTab) => classes.filter((c) => c.tab === t0).length;
@@ -329,14 +336,19 @@ export function BindingList({
             <Row key={i} n={n} b={b} on={selected === i} clash={clash.has(i)} onClick={() => onSelect(i)} onToggle={() => onToggle(i)}
               onContextMenu={(x, y) => {
                 onSelect(i);
-                setContext({ index: i, x: Math.max(8, Math.min(x, window.innerWidth - 230)), y: Math.max(8, Math.min(y, window.innerHeight - 90)) });
+                setContext({ index: i, x, y });
               }} />
           ))}
         </ul>
       )}
       {context && createPortal(
         <div ref={contextRef} className="gesture-context-menu popover" role="menu" style={{ position: "fixed", left: context.x, top: context.y, zIndex: 1000 }}>
-          <button type="button" role="menuitem" onClick={() => { onTransfer(context.index); setContext(null); }}>{t("ui.transfer.open")}</button>
+          <button type="button" role="menuitem" onClick={() => { onDuplicate(context.index); setContext(null); }}>{t("ui.editor.duplicate")}</button>
+          {!scope.bindings[context.index]?.draft && (
+            <button type="button" role="menuitem" onClick={() => { onTransfer(context.index); setContext(null); }}>{t("ui.transfer.open")}</button>
+          )}
+          <div className="popover-separator" role="separator" />
+          <button type="button" role="menuitem" className="context-danger" onClick={() => { onDelete(context.index); setContext(null); }}>{t("common.delete")}</button>
         </div>, document.body,
       )}
     </section>
@@ -354,7 +366,7 @@ function Row({ n, b, on, clash, onClick, onToggle, onContextMenu }: { n: number;
       className={`row ${on ? "on" : ""} ${!enabled ? "off" : ""}`}
       style={{ "--i": Math.min(n, 12) } as React.CSSProperties}
       onClick={onClick}
-      onContextMenu={(e) => { e.preventDefault(); if (!b.draft) onContextMenu(e.clientX, e.clientY); }}
+      onContextMenu={(e) => { e.preventDefault(); onContextMenu(e.clientX, e.clientY); }}
     >
       <span className="row-glyph">
         <PatternGlyph pattern={b.pattern} size={36} />

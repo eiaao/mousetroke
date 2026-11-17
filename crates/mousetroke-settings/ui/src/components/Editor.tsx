@@ -42,7 +42,6 @@ export interface EditorProps {
   onShowInLibrary: (id: string) => void;
   /** 「只改这里」：把本次会话的修改收回到当前绑定，库与其他引用处恢复为 before。 */
   onKeepHere: (before: Step[]) => void;
-  onDuplicate: () => void;
   onDelete: () => void;
   onClose: () => void;
 }
@@ -65,7 +64,7 @@ function isUnknownPreset(b: Binding): boolean {
   return b.action.type === "preset" && !presetDefinition(b.action);
 }
 
-export function Editor({ binding, bindingKey, scopeName, conflictWith, otherBindings, autoPickAction, onPickerShown, onChange, onPatternChange, shared, canAdopt, onOpenPicker, onPromote, onUseElsewhere, onShowInLibrary, onKeepHere, onDuplicate, onDelete, onClose }: EditorProps) {
+export function Editor({ binding, bindingKey, scopeName, conflictWith, otherBindings, autoPickAction, onPickerShown, onChange, onPatternChange, shared, canAdopt, onOpenPicker, onPromote, onUseElsewhere, onShowInLibrary, onKeepHere, onDelete, onClose }: EditorProps) {
   // 草稿保留启用意图，用户仍可在完成前手动停用。
   const enabled = !binding.disabled || !!binding.draft;
   const conflict = conflictWith.length ? (
@@ -163,10 +162,7 @@ export function Editor({ binding, bindingKey, scopeName, conflictWith, otherBind
         </div>
       </div>
 
-      <footer className="editor-foot">
-        <button type="button" className="btn" onClick={onDuplicate}>
-          {t("ui.editor.duplicate")}
-        </button>
+      <footer className="editor-foot binding-editor-foot">
         <button type="button" className="btn danger" onClick={onDelete}>
           {t("common.delete")}
         </button>
