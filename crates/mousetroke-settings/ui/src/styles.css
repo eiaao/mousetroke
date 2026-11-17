@@ -53,8 +53,31 @@
   --font-display: "Segoe UI Variable Display", "Malgun Gothic", "Segoe UI", system-ui, sans-serif;
 }
 
+:root[data-theme="dark"] {
+  --bg: #111519;
+  --bg-tint: radial-gradient(1200px 600px at -10% -20%, rgba(46, 197, 255, 0.08), transparent 60%),
+    radial-gradient(900px 500px at 110% 120%, rgba(255, 138, 42, 0.04), transparent 60%);
+  --panel: #1b2128;
+  --panel-2: #20272e;
+  --ink: #e8edf2;
+  --muted: #9ba7b3;
+  --faint: #6f7b87;
+  --line: #2e3740;
+  --line-soft: #262e36;
+  --trail: #2ec5ff;
+  --trail-ink: #7ad8ff;
+  --trail-soft: rgba(46, 197, 255, 0.13);
+  --hit: #ff8a2a;
+  --danger: #ff6b5e;
+  --ok: #4cc27f;
+  --shadow-card: 0 1px 2px rgba(0, 0, 0, 0.3);
+  --shadow-lift: 0 6px 20px rgba(0, 0, 0, 0.4), 0 1px 3px rgba(0, 0, 0, 0.3);
+  --shadow-pop: 0 12px 36px rgba(0, 0, 0, 0.55), 0 2px 6px rgba(0, 0, 0, 0.4);
+  color-scheme: dark;
+}
+
 @media (prefers-color-scheme: dark) {
-  :root {
+  :root:not([data-theme]) {
     --bg: #111519;
     --bg-tint: radial-gradient(1200px 600px at -10% -20%, rgba(46, 197, 255, 0.08), transparent 60%),
       radial-gradient(900px 500px at 110% 120%, rgba(255, 138, 42, 0.04), transparent 60%);
