@@ -21,7 +21,7 @@ Documentation / 文档: [User guide](docs/guide/en/index.md) · [使用指南](d
   media & system keys, popup menu, Lua script
 - Per-app rules, or turn gestures off entirely in remote-desktop / 3D / design apps
 - Pauses automatically for fullscreen games, video and presentations, with global and per-app controls; `Win+Esc` pauses any time
-- About 19 MB of memory; a single portable exe (≈13 MB); 10 interface languages
+- About 19 MB of memory; a single portable exe (≈13 MB); 11 interface languages
 
 ## Install
 
