@@ -636,8 +636,11 @@ impl Engine {
         match cap.trigger {
             Trigger::Button(_) => self.track(x, y, true),
             Trigger::Edge(e) => {
-                let away = edge::distance_from(e, x, y, cap.edge_screen.unwrap_or_else(|| self.overlay.virtual_rect()));
-                if cap.held.is_empty() && cap.presses.is_empty() && away > EDGE_LEAVE_PX {
+                let screen = cap.edge_screen.unwrap_or_else(|| self.overlay.virtual_rect());
+                // 移到另一块屏幕也算离开：起始屏幕的距离在那里没有意义
+                let away = edge::distance_from(e, x, y, screen) > EDGE_LEAVE_PX
+                    || edge::screen_at(x, y, &self.screens).is_some_and(|s| s != screen);
+                if cap.held.is_empty() && cap.presses.is_empty() && away {
                     self.end_edge_capture();
                     return Verdict::Pass;
                 }
@@ -1049,7 +1052,11 @@ impl Engine {
     /// 边缘捕获中，(x, y) 是否贴着该边/角（边缘手势的第一步按键/滚轮要求）。
     fn pressed_at_edge(&self, x: i32, y: i32) -> bool {
         match self.capture.as_ref().map(|c| c.trigger) {
-            Some(Trigger::Edge(e)) => edge::distance_from(e, x, y, self.edge_screen()) <= EDGE_PRESS_PX,
+            // 还要求当前位置仍是外边界：沿边移到交界或另一块屏时不算贴边
+            Some(Trigger::Edge(e)) => {
+                edge::distance_from(e, x, y, self.edge_screen()) <= EDGE_PRESS_PX
+                    && edge::edge_at_screens(x, y, &self.screens).is_some_and(|(at, _)| at & e == e)
+            }
             _ => false,
         }
     }

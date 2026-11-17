@@ -1040,6 +1040,32 @@ fn edge_capture_measures_distance_from_its_own_monitor() {
 }
 
 #[test]
+fn edge_capture_ends_when_moving_onto_another_monitor() {
+    // 两屏顶边对齐时沿上边移到另一块屏，按起始屏算仍贴边，但已换屏
+    let mut t = T::with_screens(config(false), vec![(0, 0, 1920, 1080), (1920, 0, 1920, 1080)]);
+    t.dwell(1900, 0);
+    t.to(1960, 0);
+    assert_eq!(t.wheel(-1), Verdict::Pass);
+    // #81 布局：从小屏上边横移进大屏中部，滚轮必须放行
+    drop(t);
+    let mut t = T::with_screens(config(false), SMALL_BIG.to_vec());
+    t.dwell(1900, 0);
+    t.to(2000, 0);
+    assert_eq!(t.wheel(-1), Verdict::Pass);
+    assert!(t.executed().is_empty());
+}
+
+#[test]
+fn first_press_requires_an_exposed_edge() {
+    // 小屏右上角附近沿上边贴到交界：上边仍有效
+    let mut t = T::with_screens(config(false), SMALL_BIG.to_vec());
+    t.dwell(1900, 0);
+    t.to(1919, 0);
+    assert_eq!(t.wheel(-1), Verdict::Swallow);
+    assert_eq!(t.executed(), ["vol_up"]);
+}
+
+#[test]
 fn monitor_seam_is_not_an_edge() {
     let mut cfg = config(false);
     for (name, e) in [("left", edge::LEFT), ("right", edge::RIGHT), ("right_top", edge::RIGHT_TOP)] {
