@@ -967,6 +967,10 @@ input.editor-name:focus {
   border-top: 1px solid var(--line-soft);
 }
 
+.binding-editor-foot {
+  justify-content: flex-end;
+}
+
 /* ------------------------------------------------------------ 表单 */
 
 .field {
@@ -1370,6 +1374,26 @@ select.lang-select {
   background: var(--panel);
   box-shadow: var(--shadow-pop);
   animation: pop 0.12s ease-out;
+}
+
+.gesture-context-menu {
+  max-width: calc(100vw - 16px);
+  min-width: min(220px, calc(100vw - 16px));
+}
+
+.popover-separator {
+  height: 1px;
+  margin: 5px 4px;
+  background: var(--line-soft);
+}
+
+.popover button.context-danger {
+  color: var(--danger);
+}
+
+.popover button.context-danger:hover,
+.popover button.context-danger:focus-visible {
+  background: color-mix(in srgb, var(--danger) 12%, transparent);
 }
 
 @keyframes pop {
@@ -1918,6 +1942,62 @@ select.lang-select {
   display: flex;
   justify-content: flex-end;
   padding: 12px 20px 16px;
+}
+
+.transfer-destinations {
+  max-height: 38vh;
+  overflow-y: auto;
+  border: 1px solid var(--line-soft);
+  border-radius: 8px;
+}
+
+.transfer-destination {
+  padding: 8px 10px;
+}
+
+.transfer-destination + .transfer-destination {
+  border-top: 1px solid var(--line-soft);
+}
+
+.transfer-destination .check {
+  margin: 0;
+  align-items: center;
+}
+
+.transfer-destination .check input {
+  margin: 0;
+}
+
+.transfer-destination-name {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.transfer-destination .transfer-destination-off {
+  display: inline;
+  flex: none;
+  margin-left: auto;
+  white-space: nowrap;
+}
+
+.transfer-conflict {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin: 5px 0 0 26px;
+  color: var(--warn, var(--muted));
+  font-size: 12px;
+}
+
+.transfer-conflict select {
+  flex: none;
+}
+
+.transfer-add-app {
+  align-self: flex-start;
 }
 
 .app-list {

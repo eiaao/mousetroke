@@ -23,6 +23,8 @@ Windows rules can match an executable name or full path, case-insensitively. Mac
 
 For example, add a browser, create a right-button `↓→` gesture and assign a different action there. Other apps keep the global `↓→` action. To copy an existing setup, use [Duplicate](gestures.md#find-copy-and-turn-off) within its scope and edit the binding. To record a drawing once and give it a different action in each app, use the [gesture library](gesture-library.md).
 
+The gesture editor shows where the binding is stored. Right-click the gesture in the list and choose **Copy to / Move to…**, select destination apps, then click **Copy** or **Move**. You can target several added apps at once or add an app from the dialog. Copies have independent settings; moving removes the binding from its original scope. If a destination already has the same drawing, choose whether to skip or replace it. The whole operation can be undone from the toast. A binding copied into an app with gestures turned off is retained but will not run until gestures are enabled there.
+
 ## Turn gestures off in an app
 
 Select the app in the sidebar and turn off **Use gestures**. This disables its own gestures, global gestures and screen-edge triggers. Right, middle and side buttons pass through normally. The stored bindings remain; turning **Use gestures** back on restores them. The trash-can button **Remove this app** at the top right of the app page removes the app-specific scope.
