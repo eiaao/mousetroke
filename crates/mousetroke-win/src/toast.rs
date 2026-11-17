@@ -16,6 +16,8 @@ use windows::Win32::System::Registry::{RegSetKeyValueW, HKEY_CURRENT_USER, REG_S
 const AUMID: &str = "io.github.eiaao.mousetroke";
 /// 提醒类通知会一直停留，到时从屏幕收起。
 const ON_SCREEN: Duration = Duration::from_secs(60);
+/// 通知中心副本等待用户处理的检查间隔。
+const KEEP_ALIVE_POLL: Duration = Duration::from_secs(5);
 
 /// 通知按钮的结果，交给托盘线程处理。
 pub enum Choice {
@@ -95,10 +97,18 @@ pub fn show_update(version: &str, on_choice: impl Fn(Choice) + Send + Sync + 'st
         let _ = notifier.Hide(&toast);
         let quiet = create(&version, &on_choice, &handled).and_then(|copy| {
             copy.SetSuppressPopup(true)?;
-            notifier.Show(&copy)
+            notifier.Show(&copy)?;
+            Ok(copy)
         });
-        if let Err(e) = quiet {
-            crate::log!("通知转入通知中心失败: {e}");
+        match quiet {
+            // 按钮回调挂在通知对象上：未注册 COM 激活器时，对象释放后从通知中心点击不会回调本进程，
+            // 所以持有副本直到用户处理（点击或关闭），进程退出时随之结束。
+            Ok(_copy) => {
+                while !handled.load(Ordering::Acquire) {
+                    std::thread::sleep(KEEP_ALIVE_POLL);
+                }
+            }
+            Err(e) => crate::log!("通知转入通知中心失败: {e}"),
         }
     });
     Ok(())
