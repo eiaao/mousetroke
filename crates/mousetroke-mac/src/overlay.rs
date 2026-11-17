@@ -483,6 +483,7 @@ mod tests {
             let mut canvas = Overlay {
                 windows: Vec::new(),
                 virtual_rect: (0, 0, 1, 1),
+                label_font_size: 24.0,
                 previous: None,
                 segments: 10,
                 dirty: true,
