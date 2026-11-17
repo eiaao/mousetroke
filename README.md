@@ -20,6 +20,7 @@ Documentation / 文档: [User guide](docs/guide/en/index.md) · [使用指南](d
 - Eight action types: send keys, window actions, open an app, open a URL, run a command,
   media & system keys, popup menu, Lua script
 - Per-app rules, or turn gestures off entirely in remote-desktop / 3D / design apps
+- Adjust the gesture name's text size in Preferences while keeping existing configurations compatible
 - Pauses automatically for fullscreen games, video and presentations, with global and per-app controls; `Win+Esc` pauses any time
 - About 19 MB of memory; a single portable exe (≈13 MB); 10 interface languages
 
