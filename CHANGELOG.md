@@ -2,6 +2,24 @@
 
 Each version lists its highlights in English, then in Chinese. The release page, the in-app update notes and the website changelog are all generated from this file.
 
+## 0.3.3 — 2026-11-16
+
+### English
+
+- New versions are easier to notice: the settings sidebar shows a dot on **About**, a banner appears at the top of the settings window, and the tray menu (menu bar on Mac) lists the new version. On Windows, a system notification appears once per new version; turn it off in Preferences or choose **Ignore this version**.
+- Screen edges and corners now work on every display in multi-monitor setups with different resolutions or offsets. Only outer edges where the pointer stops count; the boundary between two displays, and corners that touch another display, do not trigger. (#81)
+- Keys sent by Mousetroke on Windows now carry hardware scan codes, so web pages and browser extensions that read `KeyboardEvent.code` respond to them. Home, arrows and other navigation keys are no longer mistaken for numpad keys. (#84)
+- Gestures now work in the settings window, except inside the gesture recording area, which still records your stroke. Gestures no longer interfere with Mousetroke's own tray menu.
+- The About page links to the author's X account.
+
+### 中文
+
+- 新版本更容易发现：设置侧栏的“关于”上显示圆点，设置窗口顶部出现提示条，托盘菜单（Mac 为菜单栏）列出新版本。Windows 上每个新版本只弹出一次系统通知，可在偏好设置中关闭，或选择“忽略此版本”。
+- 多显示器分辨率或位置不同时，每块显示器的屏幕边角都能触发。只认鼠标会停住的外侧边缘；两块显示器的交界处、紧挨另一块屏的角不触发。（#81）
+- Windows 上 Mousetroke 发送的按键带上硬件扫描码，依赖 `KeyboardEvent.code` 的网页和浏览器扩展可以正常响应；Home、方向键等导航键不再被识别为小键盘键。（#84）
+- 设置窗口中也能使用手势，只有手势录制区域内仍用于录制笔画；手势不再干扰 Mousetroke 自己的托盘菜单。
+- 关于页加入作者的 X 账号链接。
+
 ## 0.3.2 — 2026-11-15
 
 ### English
