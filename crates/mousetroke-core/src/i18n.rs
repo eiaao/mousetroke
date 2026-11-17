@@ -374,24 +374,33 @@ mod tests {
     /// set_lang 是进程全局，动它的测试串行执行，避免与并行测试互相干扰。
     static LANG_LOCK: Mutex<()> = Mutex::new(());
 
+    fn assert_resolves(setting: &str, system: &[&str], expected: Lang) {
+        let system = system.iter().map(|tag| tag.to_string()).collect::<Vec<_>>();
+        assert_eq!(resolve(setting, &system), expected, "setting={setting:?}, system={system:?}");
+    }
+
     #[test]
-    fn resolve_setting_and_system() {
-        // 显式设置优先
-        assert_eq!(resolve("zh-CN", &["en-US".into()]), Lang::ZhCn);
-        assert_eq!(resolve("auto", &["zh-TW".into(), "en-US".into()]), Lang::ZhTw);
-        assert_eq!(resolve("EN-US", &[]), Lang::EnUs);
-        assert_eq!(resolve("pt-BR", &[]), Lang::PtBr);
-        // auto：跟随系统列表里第一个认识的
-        assert_eq!(resolve("auto", &["en-US".into(), "zh-CN".into()]), Lang::EnUs);
-        assert_eq!(resolve("auto", &["fr-FR".into(), "zh-Hans".into()]), Lang::FrFr);
-        assert_eq!(resolve("auto", &["fr-CA".into(), "en-US".into()]), Lang::FrFr);
-        assert_eq!(resolve("auto", &["ru-RU".into(), "en-US".into()]), Lang::RuRu);
-        // 不认识的设置值当 auto 处理；系统也全不认识 → en-US
-        assert_eq!(resolve("xx-YY", &["en-US".into()]), Lang::EnUs);
-        assert_eq!(resolve("auto", &["xx-YY".into()]), Lang::EnUs);
-        assert_eq!(resolve("", &[]), Lang::EnUs);
-        // 空白容忍
-        assert_eq!(resolve(" zh-CN ", &[]), Lang::ZhCn);
+    fn explicit_language_takes_priority() {
+        assert_resolves("zh-CN", &["en-US"], Lang::ZhCn);
+        assert_resolves("EN-US", &[], Lang::EnUs);
+        assert_resolves("pt-BR", &[], Lang::PtBr);
+        assert_resolves(" zh-CN ", &[], Lang::ZhCn);
+    }
+
+    #[test]
+    fn auto_uses_first_supported_system_language() {
+        assert_resolves("auto", &["zh-TW", "en-US"], Lang::ZhTw);
+        assert_resolves("auto", &["en-US", "zh-CN"], Lang::EnUs);
+        assert_resolves("auto", &["fr-FR", "zh-Hans"], Lang::FrFr);
+        assert_resolves("auto", &["fr-CA", "en-US"], Lang::FrFr);
+        assert_resolves("auto", &["ru-RU", "en-US"], Lang::RuRu);
+    }
+
+    #[test]
+    fn unknown_languages_fall_back() {
+        assert_resolves("xx-YY", &["en-US"], Lang::EnUs);
+        assert_resolves("auto", &["xx-YY"], Lang::EnUs);
+        assert_resolves("", &[], Lang::EnUs);
     }
 
     #[test]
