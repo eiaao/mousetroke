@@ -153,10 +153,6 @@ h3 {
   height: 100%;
 }
 
-.app.with-editor {
-  grid-template-columns: 236px minmax(340px, 1fr) minmax(400px, 460px);
-}
-
 .main {
   display: flex;
   flex-direction: column;
@@ -164,20 +160,15 @@ h3 {
   min-height: 0;
 }
 
-@media (max-width: 1080px) {
-  .app.with-editor {
-    grid-template-columns: 236px minmax(340px, 1fr);
-  }
-  .app.with-editor .editor {
-    position: fixed;
-    right: 0;
-    top: 0;
-    bottom: 0;
-    width: min(460px, 100vw - 240px);
-    box-shadow: var(--shadow-pop);
-    z-index: 20;
-    animation: slide-in 0.16s ease-out;
-  }
+.app.with-editor .editor {
+  position: fixed;
+  right: 0;
+  top: 0;
+  bottom: 0;
+  width: min(460px, calc(100vw - 240px));
+  box-shadow: var(--shadow-pop);
+  z-index: 20;
+  animation: slide-in 0.16s ease-out;
 }
 
 @keyframes slide-in {
@@ -773,11 +764,6 @@ input.title-input:focus {
   max-width: 240px;
   justify-self: end;
   overflow: hidden;
-}
-
-/* 编辑面板打开时列表变窄：动作摘要让位给手势名 */
-.app.with-editor .row-action {
-  max-width: 140px;
 }
 
 .row-action-text {
