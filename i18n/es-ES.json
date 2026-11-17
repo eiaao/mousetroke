@@ -433,6 +433,7 @@
   "ui.prefs.trail_matched": "Al reconocerse",
   "ui.prefs.fade_out": "Desvanecer al terminar",
   "ui.prefs.show_label": "Mostrar el nombre del gesto al dibujar",
+  "ui.prefs.label_font_size": "Tamaño del texto de aviso",
   "ui.prefs.label_color": "Color del nombre del gesto",
   "ui.prefs.preview_label": "Recorte",
   "ui.prefs.color_aria": "Color",

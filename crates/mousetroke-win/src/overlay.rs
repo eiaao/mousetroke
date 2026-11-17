@@ -80,7 +80,10 @@ pub struct Overlay {
     scratch_dc: HDC,
     scratch_ptr: *mut u32,
     _scratch_dib: HBITMAP,
+    scratch_width: i32,
+    scratch_height: i32,
     font: windows::Win32::Graphics::Gdi::HFONT,
+    font_size: u32,
     /// 标签字体创建时的语言标签（语言切换后丢弃重建）。
     font_tag: &'static str,
 }
@@ -209,7 +212,10 @@ impl Overlay {
                 scratch_dc: HDC(std::ptr::null_mut()),
                 scratch_ptr: std::ptr::null_mut(),
                 _scratch_dib: HBITMAP(std::ptr::null_mut()),
+                scratch_width: 0,
+                scratch_height: 0,
                 font: windows::Win32::Graphics::Gdi::HFONT::default(),
+                font_size: 24,
                 font_tag: "",
             })
         }
@@ -221,6 +227,15 @@ impl Overlay {
 
     pub fn set_width(&mut self, width_px: f64) {
         self.half_width = half_width(width_px);
+    }
+
+    pub fn set_label_font_size(&mut self, size_px: u32) {
+        let size = size_px.clamp(16, 96);
+        if self.font_size != size {
+            self.font_size = size;
+            // 下次绘制时在现有 DC 中换入新字体，再安全释放旧字体。
+            self.font_tag = "";
+        }
     }
 
     /// 手势会话开始：重置状态并**强制提交清掉上次残留**（区域级，代价小）。
@@ -498,38 +513,17 @@ impl Overlay {
     /// 以 (cx, cy)（屏幕坐标）为中心绘制手势名：深色半透明圆角底板 + 文字
     /// （GDI 灰度抗锯齿 → alpha 掩码）。底板保证白底网页上也看得清。
     pub fn draw_label(&mut self, text: &str, cx: i32, cy: i32, color: &str) {
-        const LW: i32 = 1024;
-        const LH: i32 = 64;
         unsafe {
-            // 懒初始化暂存资源；语言变化时字体丢弃重建（字体按语言选择）
+            // 懒初始化暂存 DC；字体随语言与字号更新。
             let lang = mousetroke_core::i18n::lang();
-            if self.scratch_ptr.is_null() {
-                let dc = CreateCompatibleDC(None);
-                let bmi = BITMAPINFO {
-                    bmiHeader: BITMAPINFOHEADER {
-                        biSize: std::mem::size_of::<BITMAPINFOHEADER>() as u32,
-                        biWidth: LW,
-                        biHeight: -LH,
-                        biPlanes: 1,
-                        biBitCount: 32,
-                        biCompression: BI_RGB.0,
-                        ..Default::default()
-                    },
-                    ..Default::default()
-                };
-                let mut bits: *mut core::ffi::c_void = std::ptr::null_mut();
-                let dib = CreateDIBSection(Some(dc), &bmi, DIB_RGB_COLORS, &mut bits, None, 0)
-                    .unwrap_or_default();
-                let _old = SelectObject(dc, HGDIOBJ(dib.0));
-                self.scratch_dc = dc;
-                self.scratch_ptr = bits as *mut u32;
-                self._scratch_dib = dib;
+            if self.scratch_dc.is_invalid() {
+                self.scratch_dc = CreateCompatibleDC(None);
             }
             if self.font_tag != lang.tag() {
                 use windows::Win32::Graphics::Gdi as gdi;
                 let face: Vec<u16> = mousetroke_core::i18n::ui_font(lang).encode_utf16().chain([0]).collect();
                 let font = gdi::CreateFontW(
-                    -24,
+                    -(self.font_size as i32),
                     0,
                     0,
                     0,
@@ -544,10 +538,10 @@ impl Overlay {
                     0,
                     PCWSTR(face.as_ptr()),
                 );
+                SelectObject(self.scratch_dc, HGDIOBJ(font.0));
                 if !self.font.is_invalid() {
                     let _ = DeleteObject(HGDIOBJ(self.font.0));
                 }
-                SelectObject(self.scratch_dc, HGDIOBJ(font.0));
                 self.font = font;
                 self.font_tag = lang.tag();
             }
@@ -560,11 +554,48 @@ impl Overlay {
             if !GetTextExtentPoint32W(self.scratch_dc, &wide, &mut size).as_bool() {
                 return;
             }
-            if size.cx > LW || size.cy > LH {
+            const PAD_X: i32 = 12;
+            const PAD_Y: i32 = 5;
+            if size.cx + PAD_X * 2 > self.width || size.cy + PAD_Y * 2 > self.height {
                 return;
             }
+            // 字号最高 96 px，文字宽度也可能远超旧的 1024 px；缓冲区只在需要时增长。
+            if self.scratch_ptr.is_null() || size.cx > self.scratch_width || size.cy > self.scratch_height {
+                let sw = (size.cx.max(1) as u32).next_power_of_two().max(256) as i32;
+                let sh = (size.cy.max(1) as u32).next_power_of_two().max(64) as i32;
+                let bmi = BITMAPINFO {
+                    bmiHeader: BITMAPINFOHEADER {
+                        biSize: std::mem::size_of::<BITMAPINFOHEADER>() as u32,
+                        biWidth: sw,
+                        biHeight: -sh,
+                        biPlanes: 1,
+                        biBitCount: 32,
+                        biCompression: BI_RGB.0,
+                        ..Default::default()
+                    },
+                    ..Default::default()
+                };
+                let mut bits: *mut core::ffi::c_void = std::ptr::null_mut();
+                let dib = CreateDIBSection(Some(self.scratch_dc), &bmi, DIB_RGB_COLORS, &mut bits, None, 0)
+                    .unwrap_or_default();
+                if dib.is_invalid() || bits.is_null() {
+                    return;
+                }
+                SelectObject(self.scratch_dc, HGDIOBJ(dib.0));
+                if !self._scratch_dib.is_invalid() {
+                    let _ = DeleteObject(HGDIOBJ(self._scratch_dib.0));
+                }
+                self._scratch_dib = dib;
+                self.scratch_ptr = bits as *mut u32;
+                self.scratch_width = sw;
+                self.scratch_height = sh;
+            }
             // 白字黑底 → 亮度即 alpha 掩码
-            std::ptr::write_bytes(self.scratch_ptr as *mut u8, 0, (LW * LH * 4) as usize);
+            std::ptr::write_bytes(
+                self.scratch_ptr as *mut u8,
+                0,
+                (self.scratch_width * self.scratch_height * 4) as usize,
+            );
             let _ = windows::Win32::Graphics::Gdi::SetTextColor(
                 self.scratch_dc,
                 COLORREF(0x00FFFFFF),
@@ -574,8 +605,6 @@ impl Overlay {
 
             let (a, r, g, b) = parse_argb(color);
             // 底板几何（本地坐标）：文字四周留白，圆角
-            const PAD_X: i32 = 12;
-            const PAD_Y: i32 = 5;
             const RADIUS: f32 = 9.0;
             const BG: (u8, u8, u8, u8) = (0xC8, 20, 24, 28);
             let (bw, bh) = (size.cx + PAD_X * 2, size.cy + PAD_Y * 2);
@@ -597,7 +626,7 @@ impl Overlay {
             }
             for row in 0..size.cy {
                 for col in 0..size.cx {
-                    let v = *self.scratch_ptr.add(row as usize * LW as usize + col as usize);
+                    let v = *self.scratch_ptr.add(row as usize * self.scratch_width as usize + col as usize);
                     let lum = (v >> 16) & 0xff; // 白字：R 通道即亮度
                     if lum >= 8 {
                         let k = ((row + PAD_Y) * bw + col + PAD_X) as usize;
@@ -786,8 +815,9 @@ mod tests {
     /// 显示器布局变化会在同一进程里重建覆盖层：类已注册不能导致创建失败，旧的要能正常释放。
     #[test]
     fn recreate_overlay_in_same_process() {
-        for _ in 0..3 {
+        for size in [16, 24, 96] {
             let mut o = Overlay::new("#00C2FF08", 2.0).expect("overlay");
+            o.set_label_font_size(size);
             o.start_session(o.vx + 10, o.vy + 10);
             o.line_to(o.vx + 40, o.vy + 10);
             o.draw_label("测试", o.vx + 100, o.vy + 100, "#FFFFFF08");

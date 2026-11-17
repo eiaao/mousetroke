@@ -418,6 +418,7 @@
   "ui.prefs.trail_matched": "認識できたとき",
   "ui.prefs.fade_out": "終わったらフェードアウト",
   "ui.prefs.show_label": "描いている間はジェスチャ名を表示",
+  "ui.prefs.label_font_size": "ヒント文字のサイズ",
   "ui.prefs.label_color": "ジェスチャ名の色",
   "ui.prefs.preview_label": "切り取り",
   "ui.prefs.color_aria": "色",

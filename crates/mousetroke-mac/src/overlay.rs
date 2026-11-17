@@ -204,6 +204,7 @@ pub struct Overlay {
     dirty: bool,
     fade_pending: bool,
     fade_deadline: Option<Instant>,
+    label_font_size: f64,
 }
 
 impl Overlay {
@@ -229,6 +230,7 @@ impl Overlay {
             dirty: false,
             fade_pending: false,
             fade_deadline: None,
+            label_font_size: 24.0,
         };
         overlay.set_color(color);
         overlay.set_width(width);
@@ -274,6 +276,14 @@ impl Canvas for Overlay {
         };
         for screen in &self.windows {
             screen.trail.setLineWidth(width);
+        }
+    }
+
+    fn set_label_font_size(&mut self, size: u32) {
+        let _tx = Transaction::new();
+        self.label_font_size = size.clamp(16, 96) as f64;
+        for screen in &self.windows {
+            screen.label.setFontSize(self.label_font_size);
         }
     }
 
@@ -383,7 +393,7 @@ impl Canvas for Overlay {
             self.reset();
         }
         let text = NSString::from_str(text);
-        let font = NSFont::systemFontOfSize(24.0);
+        let font = NSFont::systemFontOfSize(self.label_font_size);
         // 安全：字典的 NSFontAttributeName 对应 NSFont，满足 NSStringDrawing 的类型约定。
         let attributes =
             unsafe { NSDictionary::from_slices(&[NSFontAttributeName], &[font.as_ref()]) };

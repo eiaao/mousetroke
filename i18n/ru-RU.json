@@ -463,6 +463,7 @@
   "ui.prefs.trail_matched": "При распознавании",
   "ui.prefs.fade_out": "Растворять по завершении",
   "ui.prefs.show_label": "Показывать имя жеста при рисовании",
+  "ui.prefs.label_font_size": "Размер текста подсказок",
   "ui.prefs.label_color": "Цвет имени жеста",
   "ui.prefs.preview_label": "Фрагмент",
   "ui.prefs.color_aria": "Цвет",
