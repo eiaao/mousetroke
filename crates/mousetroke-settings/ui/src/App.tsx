@@ -250,6 +250,18 @@ function Main({ init }: { init: InitState }) {
     return () => window.removeEventListener("keydown", onKey);
   }, [undo, redo, selected, libSelected]);
 
+  // 浮動編輯器：點擊其餘介面時收起；清單項目與其他浮動介面保留各自的互動。
+  useEffect(() => {
+    if (selected == null && libSelected == null) return;
+    const onMouseDown = (e: MouseEvent) => {
+      if (!(e.target instanceof Element) || e.target.closest(".editor, .modal-backdrop, .popover, .toast, [role='option']")) return;
+      if (selected != null) setSelected(null);
+      if (libSelected != null) setLibSelected(null);
+    };
+    document.addEventListener("mousedown", onMouseDown);
+    return () => document.removeEventListener("mousedown", onMouseDown);
+  }, [selected, libSelected]);
+
   // 撤销可能删掉当前作用域/绑定：纠正越界的选择
   const scopeIdx = view.kind === "scope" ? Math.min(view.index, config.scopes.length - 1) : -1;
   const scope: Scope | undefined = scopeIdx >= 0 ? config.scopes[scopeIdx] : undefined;
