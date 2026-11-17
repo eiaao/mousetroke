@@ -720,8 +720,9 @@ unsafe fn build_menu(menu: HMENU_W, items: &[MenuItem], collected: &mut Vec<Menu
 
 // ---------------------------------------------------------------- Lua API 支撑
 
+use windows::Win32::Foundation::RECT;
 use windows::Win32::Graphics::Gdi::{
-    GetMonitorInfoW, MonitorFromPoint, MONITORINFO, MONITOR_DEFAULTTONEAREST,
+    EnumDisplayMonitors, GetMonitorInfoW, MonitorFromPoint, HDC, HMONITOR, MONITORINFO, MONITOR_DEFAULTTONEAREST,
 };
 use windows::Win32::System::Memory::{GlobalAlloc, GMEM_MOVEABLE};
 use windows::Win32::System::DataExchange::{EmptyClipboard, SetClipboardData};
@@ -864,6 +865,19 @@ pub fn screen_of(x: i32, y: i32) -> (i32, i32, i32, i32) {
             (0, 0, 0, 0)
         }
     }
+}
+
+/// 全部显示器的完整矩形 (x, y, w, h)，虚拟屏坐标。
+pub fn monitor_rects() -> Vec<(i32, i32, i32, i32)> {
+    unsafe extern "system" fn collect(_: HMONITOR, _: HDC, rect: *mut RECT, data: LPARAM) -> BOOL {
+        // 安全：EnumDisplayMonitors 同步调用；rect 为该显示器矩形，data 指向下面的 Vec。
+        let (rects, r) = unsafe { (&mut *(data.0 as *mut Vec<(i32, i32, i32, i32)>), *rect) };
+        rects.push((r.left, r.top, r.right - r.left, r.bottom - r.top));
+        BOOL(1)
+    }
+    let mut rects = Vec::new();
+    let _ = unsafe { EnumDisplayMonitors(None, None, Some(collect), LPARAM(&mut rects as *mut _ as isize)) };
+    rects
 }
 
 /// 按键是否处于按下状态。

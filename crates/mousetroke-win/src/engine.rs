@@ -58,6 +58,9 @@ impl Canvas for Overlay {
 pub(crate) struct SystemHost;
 
 impl Host for SystemHost {
+    fn screens(&self) -> Vec<mousetroke_core::edge::ScreenRect> {
+        input::monitor_rects()
+    }
     fn target_at(&self, x: i32, y: i32) -> Target {
         targeting::resolve_under_cursor(x, y).into()
     }

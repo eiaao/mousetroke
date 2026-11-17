@@ -33,6 +33,10 @@ Las acciones de esquina no necesitan botón: empuja el puntero contra la esquina
 
 Para frotar, añade **Dibujar un trazado** y graba las direcciones alternas. Un ejemplo útil es `↑↓↑↓` contra el borde derecho. Prueba primero con una acción inofensiva, como un aviso de Lua, antes de asignar algo disruptivo.
 
+## Varias pantallas
+
+Los bordes exteriores y las esquinas de cada pantalla pueden activar acciones, es decir, los lugares donde el puntero se detiene al empujarlo. El límite entre dos pantallas no cuenta como borde, para evitar activaciones accidentales al mover el puntero a la otra pantalla. Una esquina que toca otra pantalla tampoco cuenta como esquina: por ejemplo, si hay otra pantalla a la derecha de la esquina superior derecha, solo se trata como borde superior.
+
 ## Brillo y diferencias entre plataformas
 
 **Subir brillo** / **Bajar brillo** en Windows empieza con la pantalla bajo el cursor, ajusta en 10 puntos porcentuales y muestra el resultado. Prueba primero con DDC/CI y luego con WMI. Las pantallas externas deben admitir DDC/CI y permitirlo. La alternativa WMI usa el primer dispositivo de brillo de WMI, normalmente un panel integrado; no se corresponde con la pantalla del cursor. Si ambas vías fallan, aparece un mensaje en pantalla. Consulta las [recetas de Lua](lua-examples.md#brillo-de-la-pantalla-bajo-el-cursor) para un paso más pequeño.

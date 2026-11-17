@@ -33,6 +33,10 @@ Les actions de coin n’ont besoin d’aucun bouton : poussez le curseur dans le
 
 Pour le frottement, ajoutez **Tracer un geste** et enregistrez les directions alternées. Un exemple utile est `↑↓↑↓` contre le bord droit. Essayez avec une action anodine comme un toast Lua avant d’assigner quelque chose de perturbateur.
 
+## Plusieurs écrans
+
+Les bords extérieurs et les coins de chaque écran peuvent déclencher une action, c’est-à-dire les endroits où le curseur s’arrête lorsqu’on le pousse. La jonction entre deux écrans ne compte pas comme un bord, afin d’éviter un déclenchement accidentel en passant à l’autre écran. Un coin qui touche un autre écran n’est pas un coin non plus : par exemple, si un autre écran se trouve à droite du coin supérieur droit, seul le bord supérieur est pris en compte.
+
 ## Luminosité et différences entre plateformes
 
 Sous Windows, **Luminosité +** / **Luminosité −** commence par l’écran sous le curseur, ajuste de 10 points de pourcentage et affiche le résultat. Il essaie DDC/CI, puis WMI. Les écrans externes doivent prendre en charge et autoriser DDC/CI. Le recours à WMI utilise le premier périphérique de luminosité WMI, en général un écran intégré ; il n’est pas apparié à l’écran du curseur. Si les deux voies échouent, un message à l’écran apparaît. Voir les [recettes Lua](lua-examples.md#luminosité-sous-le-curseur) pour un pas plus petit.
