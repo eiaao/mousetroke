@@ -38,6 +38,11 @@
   --font-display: "Segoe UI Variable Display", "Microsoft YaHei UI", "Segoe UI", system-ui, sans-serif;
 }
 
+:root:lang(zh-TW) {
+  --font: "Segoe UI Variable Text", "Microsoft JhengHei UI", "Segoe UI", system-ui, sans-serif;
+  --font-display: "Segoe UI Variable Display", "Microsoft JhengHei UI", "Segoe UI", system-ui, sans-serif;
+}
+
 /* 日韩界面让各自系统 UI 字体优先（假名/谚文回退） */
 :root:lang(ja-JP) {
   --font: "Segoe UI Variable Text", "Yu Gothic UI", "Segoe UI", system-ui, sans-serif;
@@ -1146,6 +1151,7 @@ select.lang-select {
 
 /* 短标签保留原四列布局；其余语言及伪语言给完整单词留足空间。 */
 .action-types:lang(zh-CN),
+.action-types:lang(zh-TW),
 .action-types:lang(en-US),
 .action-types:lang(ja-JP),
 .action-types:lang(ko-KR) {

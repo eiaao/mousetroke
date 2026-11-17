@@ -924,7 +924,7 @@ mod tests {
     #[test]
     fn project_urls_follow_ui_language_and_only_allow_fixed_destinations() {
         for (tag, suffix) in [
-            ("zh-CN", ""), ("en-US", "en/"), ("es-ES", "es/"), ("fr-FR", "fr/"),
+            ("zh-CN", ""), ("zh-TW", "en/"), ("en-US", "en/"), ("es-ES", "es/"), ("fr-FR", "fr/"),
             ("de-DE", "de/"), ("ja-JP", "ja/"), ("pt-BR", "pt/"), ("ru-RU", "ru/"),
             ("it-IT", "it/"), ("ko-KR", "ko/"), ("qps-ploc", "en/"), ("unknown", "en/"),
         ] {
