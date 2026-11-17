@@ -33,6 +33,10 @@ Eckenaktionen brauchen keine Taste: Stoßen Sie den Zeiger in die Ecke. Randscro
 
 Für das Reiben fügen Sie **Zeichenfolge zeichnen** hinzu und zeichnen die wechselnden Richtungen auf. Ein nützliches Beispiel ist `↑↓↑↓` am rechten Rand. Testen Sie es mit einer harmlosen Aktion wie einem Lua-Hinweis, bevor Sie etwas Störendes zuweisen.
 
+## Mehrere Bildschirme
+
+Die äußeren Ränder und Ecken jedes Bildschirms können auslösen, also die Stellen, an denen der Mauszeiger beim Hinausschieben anhält. Die Grenze zwischen zwei Bildschirmen zählt nicht als Rand, damit beim Wechsel auf den anderen Bildschirm nichts versehentlich auslöst. Eine Ecke, die an einen anderen Bildschirm grenzt, zählt ebenfalls nicht als Ecke: Schließt sich rechts neben der oberen rechten Ecke ein weiterer Bildschirm an, gilt sie nur als oberer Rand.
+
 ## Helligkeit und Plattformunterschiede
 
 **Heller** / **Dunkler** unter Windows beginnt mit dem Bildschirm unter dem Cursor, stellt um 10 Prozentpunkte ein und zeigt das Ergebnis an. Es versucht DDC/CI, dann WMI. Externe Displays müssen DDC/CI unterstützen und erlauben. Der WMI-Fallback verwendet das erste WMI-Helligkeitsgerät, meist ein eingebautes Panel; es wird nicht dem Bildschirm unter dem Cursor zugeordnet. Schlagen beide Wege fehl, erscheint eine Bildschirmmeldung. Für einen kleineren Schritt siehe [Lua-Rezepte](lua-examples.md#helligkeit-unter-dem-cursor).

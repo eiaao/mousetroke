@@ -33,6 +33,10 @@ Corner actions need no button: push the pointer into the corner. Edge scrolling 
 
 For rubbing, add **Draw a stroke** and record the alternating directions. A useful example is `↑↓↑↓` against the right edge. Try with an innocuous action such as a Lua toast before assigning something disruptive.
 
+## Multiple displays
+
+Every display's outer edges and corners can trigger, meaning the places where the pointer stops when pushed. The boundary between two displays is not an edge, so moving the pointer to the other display does not trigger by accident. A corner that touches another display is not a corner either: for example, a top-right corner with another display to its right counts only as the top edge.
+
 ## Brightness and platform differences
 
 Windows **Brightness up** / **Brightness down** starts with the monitor under the cursor, adjusts by 10 percentage points and shows the result. It tries DDC/CI, then WMI. External displays must support and allow DDC/CI. The WMI fallback uses the first WMI brightness device, usually a built-in panel; it is not matched to the cursor's monitor. If both routes fail, an on-screen message appears. See [Lua recipes](lua-examples.md#brightness-under-the-cursor) for a smaller step.

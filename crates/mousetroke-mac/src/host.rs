@@ -107,6 +107,15 @@ pub fn screen_rect(x: i32, y: i32) -> Option<(i32, i32, i32, i32)> {
             })
     })
 }
+/// 全部屏幕的完整 frame (x, y, w, h)，Quartz 全局点；边角判定使用。
+pub fn screen_rects() -> Vec<(i32, i32, i32, i32)> {
+    SCREEN.with(|slot| {
+        slot.borrow().displays.iter().map(|d| {
+            let (l, t) = (d.frame.x as i32, d.frame.y as i32);
+            (l, t, (d.frame.x + d.frame.w) as i32 - l, (d.frame.y + d.frame.h) as i32 - t)
+        }).collect()
+    })
+}
 /// Lua 的缩放状态以屏幕工作区为准；缓存只能从主线程读取。
 pub(crate) fn work_areas() -> Vec<Rect> {
     SCREEN.with(|slot| slot.borrow().displays.iter().map(|d| d.visible).collect())
@@ -117,6 +126,9 @@ pub fn cursor_pos() -> Option<CGPoint> {
 
 pub struct SystemHost;
 impl Host for SystemHost {
+    fn screens(&self) -> Vec<mousetroke_core::edge::ScreenRect> {
+        screen_rects()
+    }
     fn target_at(&self, x: i32, y: i32) -> Target {
         crate::targeting::at(x, y)
     }

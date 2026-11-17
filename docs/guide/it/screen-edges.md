@@ -33,6 +33,10 @@ Le azioni degli angoli non richiedono pulsanti: spingi il puntatore nell'angolo.
 
 Per lo sfregamento, aggiungi **Disegnare un tracciato** e registra le direzioni alternate. Un esempio utile è `↑↓↑↓` contro il bordo destro. Prova prima con un'azione innocua, come un toast Lua, prima di assegnare qualcosa di invasivo.
 
+## Più schermi
+
+I bordi esterni e gli angoli di ogni schermo possono attivare le azioni, cioè i punti in cui il puntatore si ferma quando lo spingi. Il confine tra due schermi non è un bordo, per evitare attivazioni accidentali quando sposti il puntatore sull'altro schermo. Anche un angolo che tocca un altro schermo non è un angolo: per esempio, se a destra dell'angolo in alto a destra c'è un altro schermo, vale solo come bordo superiore.
+
 ## Luminosità e differenze tra piattaforme
 
 Su Windows, **Aumenta luminosità** / **Riduci luminosità** parte dal monitor sotto il cursore, regola di 10 punti percentuali e mostra il risultato. Prova prima DDC/CI, poi WMI. I display esterni devono supportare e consentire DDC/CI. Il fallback WMI usa il primo dispositivo di luminosità WMI, di norma un pannello integrato; non corrisponde al monitor del cursore. Se entrambe le strade falliscono, compare un messaggio a schermo. Vedi le [ricette Lua](lua-examples.md#luminosità-sotto-il-cursore) per un passo più piccolo.

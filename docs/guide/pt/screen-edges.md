@@ -33,6 +33,10 @@ As ações de canto não precisam de botão: empurre o cursor contra o canto. A 
 
 Para esfregar, adicione **Desenhar um traçado** e grave as direções alternadas. Um exemplo útil é `↑↓↑↓` contra a borda direita. Experimente com uma ação inofensiva, como um toast de Lua, antes de atribuir algo disruptivo.
 
+## Vários monitores
+
+As bordas externas e os cantos de cada monitor podem acionar ações, ou seja, os lugares onde o cursor para ao ser empurrado. A divisa entre dois monitores não conta como borda, para evitar acionamentos acidentais ao mover o cursor para o outro monitor. Um canto que encosta em outro monitor também não conta como canto: por exemplo, se há outro monitor à direita do canto superior direito, ele vale apenas como borda superior.
+
 ## Brilho e diferenças entre plataformas
 
 O **Aumentar brilho** / **Diminuir brilho** do Windows começa pelo monitor sob o cursor, ajusta em 10 pontos percentuais e mostra o resultado. Ele tenta DDC/CI e depois WMI. Monitores externos precisam suportar e permitir DDC/CI. O fallback WMI usa o primeiro dispositivo de brilho do WMI, normalmente um painel integrado; ele não corresponde ao monitor do cursor. Se ambas as rotas falharem, aparece uma mensagem na tela. Veja [receitas de Lua](lua-examples.md#brilho-sob-o-cursor) para um passo menor.

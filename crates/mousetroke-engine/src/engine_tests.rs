@@ -56,9 +56,13 @@ struct FakeHost {
     log: Shared,
     under: Under,
     fullscreen: Rc<RefCell<Option<Target>>>,
+    screens: Vec<edge::ScreenRect>,
 }
 
 impl Host for FakeHost {
+    fn screens(&self) -> Vec<edge::ScreenRect> {
+        self.screens.clone()
+    }
     fn target_at(&self, _: i32, _: i32) -> Target {
         let (class, exe) = self.under.borrow().clone();
         Target { wid: 0, pid: 0, exe, is_desktop: false, class }
@@ -188,12 +192,21 @@ impl T {
     }
 
     fn with_samples(cfg: Config, shape_samples: bool) -> Self {
+        Self::build(cfg, shape_samples, Vec::new())
+    }
+
+    /// 多显示器布局（x, y, w, h）。
+    fn with_screens(cfg: Config, screens: Vec<edge::ScreenRect>) -> Self {
+        Self::build(cfg, false, screens)
+    }
+
+    fn build(cfg: Config, shape_samples: bool, screens: Vec<edge::ScreenRect>) -> Self {
         // 某个测试失败导致锁中毒时照样拿锁，别把后面的测试连带弄红
         let lang = LANG_LOCK.lock().unwrap_or_else(|e| e.into_inner());
         let log = Shared::default();
         let under: Under = Rc::new(RefCell::new(("Chrome_WidgetWin_1".into(), Some(r"C:\app\chrome.exe".into()))));
         let fullscreen = Rc::new(RefCell::new(None));
-        let host = FakeHost { log: log.clone(), under: under.clone(), fullscreen: fullscreen.clone() };
+        let host = FakeHost { log: log.clone(), under: under.clone(), fullscreen: fullscreen.clone(), screens };
         let e = Engine::with_parts(cfg, None, Box::new(FakeCanvas(log.clone())), Box::new(host), shape_samples);
         Self { e, log, under, fullscreen, pos: (960, 540), _lang: lang }
     }
@@ -991,6 +1004,92 @@ fn right_click_near_top_edge_keeps_context_menu() {
         assert_eq!(t.replays(), [(B::Right, true)], "combo={combo}");
         assert!(t.executed().is_empty(), "combo={combo}");
     }
+}
+
+/// #81 布局：左 1080p，右 2K，大屏上下各多出 180。
+const SMALL_BIG: [edge::ScreenRect; 2] = [(0, 0, 1920, 1080), (1920, -180, 2560, 1440)];
+
+#[test]
+fn smaller_monitor_edges_and_corners_trigger() {
+    let mut cfg = config(false);
+    cfg.scopes[0].bindings.push(bind("left_top", vec![Step::Edge { edge: edge::LEFT_TOP }]));
+    let mut t = T::with_screens(cfg, SMALL_BIG.to_vec());
+    t.dwell(0, 1079);
+    t.to(500, 500);
+    t.dwell(0, 0);
+    t.to(500, 500);
+    t.dwell(500, 0);
+    assert_eq!(t.wheel(-1), Verdict::Swallow);
+    assert_eq!(t.executed(), ["start", "left_top", "vol_up"]);
+}
+
+#[test]
+fn edge_capture_measures_distance_from_its_own_monitor() {
+    let mut t = T::with_screens(config(false), SMALL_BIG.to_vec());
+    // 小屏上边离虚拟屏上沿 180px；按虚拟屏算会立即判为离开
+    t.dwell(500, 0);
+    t.to(500, 10);
+    t.to(500, 0);
+    assert_eq!(t.wheel(-1), Verdict::Swallow);
+    // 大屏上边同样可用
+    t.to(500, 300);
+    t.to(500, 400);
+    t.dwell(3000, -180);
+    assert_eq!(t.wheel(-1), Verdict::Swallow);
+    assert_eq!(t.executed(), ["vol_up", "vol_up"]);
+}
+
+#[test]
+fn edge_capture_ends_when_moving_onto_another_monitor() {
+    // 两屏顶边对齐时沿上边移到另一块屏，按起始屏算仍贴边，但已换屏
+    let mut t = T::with_screens(config(false), vec![(0, 0, 1920, 1080), (1920, 0, 1920, 1080)]);
+    t.dwell(1900, 0);
+    t.to(1960, 0);
+    assert_eq!(t.wheel(-1), Verdict::Pass);
+    // #81 布局：从小屏上边横移进大屏中部，滚轮必须放行
+    drop(t);
+    let mut t = T::with_screens(config(false), SMALL_BIG.to_vec());
+    t.dwell(1900, 0);
+    t.to(2000, 0);
+    assert_eq!(t.wheel(-1), Verdict::Pass);
+    assert!(t.executed().is_empty());
+}
+
+#[test]
+fn first_press_requires_an_exposed_edge() {
+    // 小屏右上角附近沿上边贴到交界：上边仍有效
+    let mut t = T::with_screens(config(false), SMALL_BIG.to_vec());
+    t.dwell(1900, 0);
+    t.to(1919, 0);
+    assert_eq!(t.wheel(-1), Verdict::Swallow);
+    assert_eq!(t.executed(), ["vol_up"]);
+}
+
+#[test]
+fn monitor_seam_is_not_an_edge() {
+    let mut cfg = config(false);
+    for (name, e) in [("left", edge::LEFT), ("right", edge::RIGHT), ("right_top", edge::RIGHT_TOP)] {
+        cfg.scopes[0].bindings.push(bind(name, vec![Step::Edge { edge: e }]));
+    }
+    let mut t = T::with_screens(cfg, SMALL_BIG.to_vec());
+    t.dwell(1919, 500);
+    t.dwell(1920, 500);
+    // 小屏右上角靠着大屏，降级为上边
+    t.dwell(1919, 0);
+    assert!(t.executed().is_empty());
+    assert_eq!(t.wheel(-1), Verdict::Swallow);
+    assert_eq!(t.executed(), ["vol_up"]);
+}
+
+#[test]
+fn display_change_rereads_monitors_and_rearms_edges() {
+    let mut t = T::with_screens(config(false), SMALL_BIG.to_vec());
+    t.to(0, 1079);
+    t.e.edge_pending.as_mut().unwrap().1 -= EDGE_DWELL;
+    t.e.on_display_change();
+    assert!(t.e.edge_pending.is_none());
+    t.dwell(0, 1079);
+    assert_eq!(t.executed(), ["start"]);
 }
 
 #[test]
