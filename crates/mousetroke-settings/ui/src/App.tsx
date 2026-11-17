@@ -40,6 +40,7 @@ export function App() {
         initPlatform(s.platform ?? "windows");
         initActionCatalog(s.actionCatalog);
         document.documentElement.dataset.platform = s.platform ?? "windows";
+        applyTheme(s.config.settings.theme);
         initLang({ setting: s.config.settings.language, systemLangs: s.systemLangs });
         setInit(s);
       },
@@ -55,6 +56,13 @@ export function App() {
   if (fatal) return <div className="fatal">{t("ui.app.fatal", { error: fatal })}</div>;
   if (!init) return null;
   return <Main init={init} />;
+}
+
+function applyTheme(theme: "system" | "light" | "dark" | undefined) {
+  const explicit = theme === "light" || theme === "dark" ? theme : null;
+  if (explicit) document.documentElement.dataset.theme = explicit;
+  else delete document.documentElement.dataset.theme;
+  getCurrentWindow().setTheme(explicit).catch(() => {});
 }
 
 type SaveState = "idle" | "saving" | "saved" | "error" | "incomplete";
@@ -94,6 +102,7 @@ function Main({ init }: { init: InitState }) {
   const { config, edit, undo, redo } = store;
   // 语言订阅放在根组件：切换语言时整棵树重渲染（t() 在渲染期取词条）
   const [lang] = useLang();
+  useEffect(() => applyTheme(config.settings.theme), [config.settings.theme]);
   const updateHint = useUpdateHint();
   // 启动时读一次本地记录的新版本提示
   useEffect(() => { refreshUpdateHint(); }, []);

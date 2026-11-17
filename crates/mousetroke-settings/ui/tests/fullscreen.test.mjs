@@ -51,6 +51,24 @@ test("global toggle updates settings", async () => {
   } finally { await view.close(); }
 });
 
+test("appearance theme defaults to system and updates immediately", async () => {
+  let settings = JSON.parse(readFileSync(new URL("../../../../tools/uitest/config.json", import.meta.url), "utf8")).settings;
+  delete settings.theme;
+  const props = () => ({ settings, onChange: (f) => { settings = f(settings); }, engine: { running: false, autostart: false, exeFound: true }, onAutostart() {} });
+  const view = await mount(createElement(Prefs, props()));
+  try {
+    const row = [...view.el.querySelectorAll(".pref-row")].find((el) => el.textContent.includes(t("ui.prefs.theme")));
+    const buttons = () => [...row.querySelectorAll("button")];
+    assert.equal(buttons()[0].getAttribute("aria-checked"), "true");
+    await act(async () => buttons()[2].click());
+    assert.equal(settings.theme, "dark");
+    await view.render(createElement(Prefs, props()));
+    assert.equal(buttons()[2].getAttribute("aria-checked"), "true");
+    await act(async () => buttons()[0].click());
+    assert.equal(settings.theme, undefined);
+  } finally { await view.close(); }
+});
+
 test("app settings bar updates only that scope", async () => {
   let scope = { id: "chrome", name: "Chrome", kind: "app", app: { exe: "chrome.exe" }, inherit_global: false, bindings: [] };
   const original = structuredClone(scope);

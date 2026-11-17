@@ -509,6 +509,9 @@ pub struct Settings {
     /// 用字符串而不是枚举：将来新增的语言写进配置后，旧版本读到不认识的值也不会解析失败。
     #[serde(default = "default_language", skip_serializing_if = "is_auto")]
     pub language: String,
+    /// 设置界面主题：system（跟随系统）| light | dark。
+    #[serde(default, skip_serializing_if = "UiTheme::is_system")]
+    pub theme: UiTheme,
     /// 按下触发键后超此时间(ms)未移动则放行为普通点击。
     pub drag_timeout_ms: u32,
     pub drag_timeout_hint: bool,
@@ -529,6 +532,21 @@ pub struct Settings {
     pub update_notify: bool,
     pub trail: Trail,
     pub label: Label,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum UiTheme {
+    #[default]
+    System,
+    Light,
+    Dark,
+}
+
+impl UiTheme {
+    fn is_system(&self) -> bool {
+        *self == Self::System
+    }
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Default, Serialize, Deserialize)]
@@ -569,6 +587,7 @@ impl Default for Settings {
     fn default() -> Self {
         Self {
             language: default_language(),
+            theme: UiTheme::System,
             drag_timeout_ms: 500,
             drag_timeout_hint: true,
             min_stroke_px: 30,
@@ -958,6 +977,16 @@ mod builtin_tests {
 #[cfg(test)]
 mod update_schema_tests {
     use super::*;
+    #[test]
+    fn ui_theme_defaults_to_system_and_nondefault_round_trips() {
+        let mut cfg: Config = serde_json::from_str(r#"{"settings":{}}"#).unwrap();
+        assert_eq!(cfg.settings.theme, UiTheme::System);
+        assert!(!serde_json::to_string(&cfg).unwrap().contains("\"theme\""));
+        cfg.settings.theme = UiTheme::Dark;
+        let copy: Config = serde_json::from_str(&serde_json::to_string(&cfg).unwrap()).unwrap();
+        assert_eq!(copy.settings.theme, UiTheme::Dark);
+    }
+
     #[test]
     fn label_font_size_defaults_for_existing_configs_and_round_trips() {
         let old: Config = serde_json::from_str(r#"{"settings":{"label":{"show":false}}}"#).unwrap();
