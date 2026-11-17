@@ -214,8 +214,8 @@ export function Prefs({
       <div className="pref-group">
         <h2>{t("ui.prefs.group_appearance")}</h2>
         <div className="pref-row">
-          <span className="pref-label">{t("ui.prefs.theme")}</span>
-          <div className="segmented" role="radiogroup">
+          <span className="pref-label" id="pref-theme-label">{t("ui.prefs.theme")}</span>
+          <div className="segmented" role="radiogroup" aria-labelledby="pref-theme-label">
             {(
               [
                 ["system", "ui.prefs.theme_system"],

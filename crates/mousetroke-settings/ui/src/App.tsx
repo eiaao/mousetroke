@@ -117,7 +117,8 @@ function Main({ init }: { init: InitState }) {
     return () => void off.then((f) => f());
   }, []);
   const [selected, setSelected] = useState<number | null>(null);
-  const [transferRef, setTransferRef] = useState<BindingRef | null>(null);
+  // 按作用域 id 与绑定 uiId 记住来源：对话框打开期间撤销会改变下标
+  const [transferRef, setTransferRef] = useState<{ scopeId: string; uiId: string } | null>(null);
   const [transferAddingApp, setTransferAddingApp] = useState(false);
   // 手势库：选中的手势（"new" = 新建）、分类与筛选、弹窗
   const [libSelected, setLibSelected] = useState<string | null>(null);
@@ -262,6 +263,13 @@ function Main({ init }: { init: InitState }) {
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
   }, [undo, redo, selected, libSelected]);
+
+  // 来源手势被撤销删除后关闭复制／移动对话框
+  useEffect(() => {
+    if (!transferRef) return;
+    const s = config.scopes.find((x) => x.id === transferRef.scopeId);
+    if (!s?.bindings.some((b) => b.uiId === transferRef.uiId)) setTransferRef(null);
+  }, [config, transferRef]);
 
   // 浮動編輯器：點擊其餘介面時收起；清單項目與其他浮動介面保留各自的互動。
   useEffect(() => {
@@ -419,8 +427,18 @@ function Main({ init }: { init: InitState }) {
 
   // ---- 手势库
   const bindingRef: BindingRef | null = binding && sel != null ? { scope: scopeIdx, binding: sel } : null;
-  const transferSource = transferRef && config.scopes[transferRef.scope]?.bindings[transferRef.binding];
-  const applyTransfer = (ref: BindingRef, mode: TransferMode, destinations: number[], choices: Record<number, ConflictChoice>) => {
+  const transferAt: BindingRef | null = (() => {
+    if (!transferRef) return null;
+    const s = config.scopes.findIndex((x) => x.id === transferRef.scopeId);
+    const b = s >= 0 ? config.scopes[s].bindings.findIndex((x) => x.uiId === transferRef.uiId) : -1;
+    return b >= 0 ? { scope: s, binding: b } : null;
+  })();
+  const applyTransfer = (ref: BindingRef, mode: TransferMode, destinationIds: string[], choiceIds: Record<string, ConflictChoice>) => {
+    // 目标同样按 id 解析为当前下标，已不存在的目标丢弃
+    const indexOf = (id: string) => config.scopes.findIndex((x) => x.id === id);
+    const destinations = destinationIds.map(indexOf).filter((i) => i >= 0);
+    const choices: Record<number, ConflictChoice> = {};
+    for (const [id, choice] of Object.entries(choiceIds)) if (indexOf(id) >= 0) choices[indexOf(id)] = choice;
     const count = transferTargets(config, ref, destinations, choices).length;
     if (!count) return;
     edit((c) => transferBinding(c, ref, destinations, mode, choices));
@@ -621,7 +639,10 @@ function Main({ init }: { init: InitState }) {
             onAdd={addBinding}
             onDelete={deleteBinding}
             onDuplicate={duplicateBinding}
-            onTransfer={(i) => setTransferRef({ scope: scopeIdx, binding: i })}
+            onTransfer={(i) => {
+              const b = scope?.bindings[i];
+              if (scope && b?.uiId) setTransferRef({ scopeId: scope.id, uiId: b.uiId });
+            }}
             onToggle={toggleBinding}
             onScopeChange={(f, k) => edit((c) => updateScope(c, scopeIdx, f), k)}
             onDeleteScope={deleteScope}
@@ -708,12 +729,12 @@ function Main({ init }: { init: InitState }) {
       {gesturePicker && bindingRef && (
         <GesturePicker config={config} target={bindingRef} onPickGesture={pickGesture} onPickInline={pickInline} onRecordNew={recordNew} onClose={() => setGesturePicker(false)} />
       )}
-      {transferRef && transferSource && (
+      {transferRef && transferAt && (
         <TransferDialog
-          key={`${transferRef.scope}-${transferRef.binding}`}
+          key={`${transferRef.scopeId}-${transferRef.uiId}`}
           config={config}
-          source={transferRef}
-          onApply={(mode, destinations, choices) => applyTransfer(transferRef, mode, destinations, choices)}
+          source={transferAt}
+          onApply={(mode, destinations, choices) => applyTransfer(transferAt, mode, destinations, choices)}
           onAddApp={() => { setTransferAddingApp(true); setPicking(true); }}
           onClose={() => setTransferRef(null)}
         />

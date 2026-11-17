@@ -62,7 +62,12 @@ export function BindingList({
   clash: Map<number, number[]>;
 }) {
   const [query, setQuery] = useState("");
-  const [context, setContext] = useState<{ index: number; x: number; y: number } | null>(null);
+  // 按 uiId 记住目标：菜单打开期间撤销会改变下标
+  const [context, setContext] = useState<{ uiId: string; x: number; y: number } | null>(null);
+  const contextIndex = context ? scope.bindings.findIndex((b) => b.uiId === context.uiId) : -1;
+  useEffect(() => {
+    if (context && contextIndex < 0) setContext(null);
+  }, [context, contextIndex]);
   const search = useRef<HTMLInputElement>(null);
   const listRef = useRef<HTMLUListElement>(null);
   const contextRef = useRef<HTMLDivElement>(null);
@@ -336,19 +341,19 @@ export function BindingList({
             <Row key={i} n={n} b={b} on={selected === i} clash={clash.has(i)} onClick={() => onSelect(i)} onToggle={() => onToggle(i)}
               onContextMenu={(x, y) => {
                 onSelect(i);
-                setContext({ index: i, x, y });
+                if (b.uiId) setContext({ uiId: b.uiId, x, y });
               }} />
           ))}
         </ul>
       )}
-      {context && createPortal(
+      {context && contextIndex >= 0 && createPortal(
         <div ref={contextRef} className="gesture-context-menu popover" role="menu" style={{ position: "fixed", left: context.x, top: context.y, zIndex: 1000 }}>
-          <button type="button" role="menuitem" onClick={() => { onDuplicate(context.index); setContext(null); }}>{t("ui.editor.duplicate")}</button>
-          {!scope.bindings[context.index]?.draft && (
-            <button type="button" role="menuitem" onClick={() => { onTransfer(context.index); setContext(null); }}>{t("ui.transfer.open")}</button>
+          <button type="button" role="menuitem" onClick={() => { onDuplicate(contextIndex); setContext(null); }}>{t("ui.editor.duplicate")}</button>
+          {!scope.bindings[contextIndex]?.draft && (
+            <button type="button" role="menuitem" onClick={() => { onTransfer(contextIndex); setContext(null); }}>{t("ui.transfer.open")}</button>
           )}
           <div className="popover-separator" role="separator" />
-          <button type="button" role="menuitem" className="context-danger" onClick={() => { onDelete(context.index); setContext(null); }}>{t("common.delete")}</button>
+          <button type="button" role="menuitem" className="context-danger" onClick={() => { onDelete(contextIndex); setContext(null); }}>{t("common.delete")}</button>
         </div>, document.body,
       )}
     </section>

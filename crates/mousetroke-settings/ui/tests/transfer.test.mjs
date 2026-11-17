@@ -107,9 +107,9 @@ test("transfer dialog requires an explicit choice for a conflicting destination"
   assert.equal(copyButton.disabled, false);
   assert.equal(moveButton.disabled, false);
   await act(async () => copyButton.click());
-  assert.deepEqual(applied, ["copy", [1], { 1: "replace" }]);
+  assert.deepEqual(applied, ["copy", ["chrome"], { chrome: "replace" }]);
   await act(async () => moveButton.click());
-  assert.deepEqual(applied, ["move", [1], { 1: "replace" }]);
+  assert.deepEqual(applied, ["move", ["chrome"], { chrome: "replace" }]);
   await act(async () => root.unmount());
   host.remove();
   dom.window.close();
@@ -161,6 +161,72 @@ test("right-click offers duplicate, transfer and delete; drafts omit transfer", 
   assert.equal(draftMenu.querySelectorAll("button").length, 2);
   await act(async () => draftMenu.querySelector("button.context-danger").click());
   assert.deepEqual(actions, [["duplicate", 0], ["delete", 0]]);
+  await act(async () => root.unmount());
+  host.remove();
+  dom.window.close();
+});
+
+test("transfer dialog keeps choices on the same app when scope order changes", async () => {
+  const dom = new JSDOM("<!doctype html><html><body></body></html>", { url: "http://localhost/" });
+  Object.assign(globalThis, { window: dom.window, document: dom.window.document, HTMLElement: dom.window.HTMLElement, location: dom.window.location, IS_REACT_ACT_ENVIRONMENT: true });
+  const { createRoot } = await import("react-dom/client");
+  const config = fixture();
+  config.scopes[2].bindings.push(binding("existing"));
+  const host = document.createElement("div");
+  document.body.append(host);
+  const root = createRoot(host);
+  let applied;
+  const props = (c) => ({ config: c, source: { scope: 0, binding: 0 }, onApply: (...args) => { applied = args; }, onAddApp: () => {}, onClose: () => {} });
+  await act(async () => root.render(createElement(TransferDialog, props(config))));
+  const firefox = [...host.querySelectorAll("label")].find((label) => label.textContent.includes("Firefox"));
+  await act(async () => firefox.querySelector("input").click());
+  const choice = host.querySelector(".transfer-conflict select");
+  await act(async () => {
+    choice.value = "replace";
+    choice.dispatchEvent(new dom.window.Event("change", { bubbles: true }));
+  });
+  // 撤销恢复了一个排在前面的程序：下标整体后移，选择仍属于 Firefox
+  const restored = structuredClone(config);
+  restored.scopes.splice(1, 0, { id: "edge", name: "Edge", kind: "app", app: { exe: "msedge.exe" }, bindings: [binding("edge-existing")] });
+  await act(async () => root.render(createElement(TransferDialog, props(restored))));
+  await act(async () => host.querySelector(".modal-foot button").click());
+  assert.deepEqual(applied, ["copy", ["firefox"], { firefox: "replace" }]);
+  await act(async () => root.unmount());
+  host.remove();
+  dom.window.close();
+});
+
+test("context menu follows its gesture and closes when the gesture disappears", async () => {
+  const dom = new JSDOM("<!doctype html><html><body></body></html>", { url: "http://localhost/" });
+  Object.assign(globalThis, { window: dom.window, document: dom.window.document, HTMLElement: dom.window.HTMLElement, location: dom.window.location, IS_REACT_ACT_ENVIRONMENT: true });
+  dom.window.HTMLElement.prototype.scrollIntoView = () => {};
+  const { createRoot } = await import("react-dom/client");
+  const scope = { id: "global", name: "All", kind: "global", bindings: [binding("a"), binding("a-copy"), binding("b")] };
+  const actions = [];
+  const host = document.createElement("div");
+  document.body.append(host);
+  const root = createRoot(host);
+  const noop = () => {};
+  const props = (s) => ({
+    scope: s, pauseOnFullscreen: false, tab: "gesture", onTab: noop, filter: "all", onFilter: noop,
+    selected: null, onSelect: noop, onAdd: noop, onToggle: noop, onScopeChange: noop, onDeleteScope: noop, clash: new Map(),
+    onDelete: (i) => actions.push(["delete", i]), onDuplicate: (i) => actions.push(["duplicate", i]), onTransfer: (i) => actions.push(["transfer", i]),
+  });
+  await act(async () => root.render(createElement(BindingList, props(scope))));
+  const row = host.querySelectorAll(".row")[1];
+  await act(async () => row.dispatchEvent(new dom.window.MouseEvent("contextmenu", { bubbles: true, clientX: 10, clientY: 10 })));
+  // 前面插入一条：菜单仍作用于 a-copy（现在是第 3 条）
+  const inserted = { ...scope, bindings: [binding("new"), ...scope.bindings] };
+  await act(async () => root.render(createElement(BindingList, props(inserted))));
+  await act(async () => document.body.querySelector(".gesture-context-menu button.context-danger").click());
+  assert.deepEqual(actions, [["delete", 2]]);
+  // 撤销删掉了菜单指向的手势：菜单关闭，不会落到别的手势上
+  const copyRow = host.querySelectorAll(".row")[2]; // inserted 中的 a-copy
+  await act(async () => copyRow.dispatchEvent(new dom.window.MouseEvent("contextmenu", { bubbles: true, clientX: 10, clientY: 10 })));
+  assert.ok(document.body.querySelector(".gesture-context-menu"), "菜单应已打开");
+  const removed = { ...scope, bindings: [binding("a"), binding("b")] };
+  await act(async () => root.render(createElement(BindingList, props(removed))));
+  assert.ok(!document.body.querySelector(".gesture-context-menu"), "菜单应已关闭");
   await act(async () => root.unmount());
   host.remove();
   dom.window.close();

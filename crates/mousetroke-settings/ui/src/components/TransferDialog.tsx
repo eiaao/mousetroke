@@ -8,16 +8,20 @@ import { scopeTitle } from "./Sidebar";
 export function TransferDialog({ config, source, onApply, onAddApp, onClose }: {
   config: Config;
   source: TransferSource;
-  onApply: (mode: TransferMode, destinations: number[], choices: Record<number, ConflictChoice>) => void;
+  /** 目标与冲突处理都按作用域 id 传出：对话框打开期间撤销会改变下标。 */
+  onApply: (mode: TransferMode, destinationIds: string[], choiceIds: Record<string, ConflictChoice>) => void;
   onAddApp: () => void;
   onClose: () => void;
 }) {
   const binding = config.scopes[source.scope].bindings[source.binding];
-  const [selected, setSelected] = useState<number[]>([]);
-  const [choices, setChoices] = useState<Record<number, ConflictChoice>>({});
+  const [selected, setSelected] = useState<string[]>([]);
+  const [choices, setChoices] = useState<Record<string, ConflictChoice>>({});
   const destinations = config.scopes.map((scope, index) => ({ scope, index })).filter(({ index }) => index !== source.scope);
-  const toggle = (index: number) => setSelected((before) => before.includes(index) ? before.filter((i) => i !== index) : [...before, index]);
-  const ready = transferTargets(config, source, selected, choices).length > 0;
+  const toggle = (id: string) => setSelected((before) => before.includes(id) ? before.filter((i) => i !== id) : [...before, id]);
+  const indexChoices: Record<number, ConflictChoice> = {};
+  for (const { scope, index } of destinations) if (choices[scope.id]) indexChoices[index] = choices[scope.id];
+  const selectedIndexes = destinations.filter(({ scope }) => selected.includes(scope.id)).map(({ index }) => index);
+  const ready = transferTargets(config, source, selectedIndexes, indexChoices).length > 0;
   return (
     <Modal title={t("ui.transfer.title")} onClose={onClose}>
       <div className="modal-body">
@@ -28,20 +32,20 @@ export function TransferDialog({ config, source, onApply, onAddApp, onClose }: {
         </p>
         <p className="field-help">{t("ui.transfer.destinations")}</p>
         <div className="transfer-destinations">
-          {destinations.map(({ scope, index }) => {
+          {destinations.map(({ scope }) => {
             const clashes = transferConflicts(scope, binding);
-            const checked = selected.includes(index);
+            const checked = selected.includes(scope.id);
             return (
               <div key={scope.id} className="transfer-destination">
                 <label className="check">
-                  <input type="checkbox" checked={checked} onChange={() => toggle(index)} />
+                  <input type="checkbox" checked={checked} onChange={() => toggle(scope.id)} />
                   <span className="transfer-destination-name">{scopeTitle(scope)}</span>
                   {scope.disabled && <small className="transfer-destination-off">{t("ui.transfer.off")}</small>}
                 </label>
                 {checked && clashes.length > 0 && (
                   <div className="transfer-conflict">
                     <span>{t("ui.transfer.conflict", { names: clashes.map((i) => displayName(scope.bindings[i].name, scope.bindings[i].name_key)).join(", ") })}</span>
-                    <select value={choices[index] ?? "skip"} aria-label={t("ui.transfer.conflict_action", { scope: scopeTitle(scope) })} onChange={(e) => setChoices((before) => ({ ...before, [index]: e.target.value as ConflictChoice }))}>
+                    <select value={choices[scope.id] ?? "skip"} aria-label={t("ui.transfer.conflict_action", { scope: scopeTitle(scope) })} onChange={(e) => setChoices((before) => ({ ...before, [scope.id]: e.target.value as ConflictChoice }))}>
                       <option value="skip">{t("ui.transfer.skip")}</option>
                       <option value="replace">{t("ui.transfer.replace")}</option>
                     </select>
