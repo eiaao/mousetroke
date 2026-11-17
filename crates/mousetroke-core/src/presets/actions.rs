@@ -162,7 +162,7 @@ const TRANSLATE_PARAMS: &[Param] = &[
     ] }, default: ParamDefault::Literal("google"), visible_when: None },
     Param { name: "target_language", label_key: "preset.param.target_language", kind: ParamKind::Choice { choices: &[
         Choice { value: "ui", label_key: "preset.choice.ui" },
-        Choice { value: "zh-CN", label_key: "lang.name.zh_cn" }, Choice { value: "en-US", label_key: "lang.name.en_us" },
+        Choice { value: "zh-CN", label_key: "lang.name.zh_cn" }, Choice { value: "zh-TW", label_key: "lang.name.zh_tw" }, Choice { value: "en-US", label_key: "lang.name.en_us" },
         Choice { value: "es-ES", label_key: "lang.name.es_es" }, Choice { value: "fr-FR", label_key: "lang.name.fr_fr" },
         Choice { value: "de-DE", label_key: "lang.name.de_de" }, Choice { value: "ja-JP", label_key: "lang.name.ja_jp" },
         Choice { value: "pt-BR", label_key: "lang.name.pt_br" }, Choice { value: "ru-RU", label_key: "lang.name.ru_ru" },
@@ -393,9 +393,9 @@ pub fn resolve(id: &str, platform: Platform, params: &Params, ui_lang: Lang) -> 
             let lang = if lang == Lang::QpsPloc { Lang::EnUs } else { lang };
             let primary = lang.tag().split('-').next().unwrap_or("en");
             let url = match required(&values, "service")? {
-                "google" => format!("https://translate.google.com/?sl=auto&tl={}&text=%MS_SELECTED_TEXT%&op=translate", if lang == Lang::ZhCn { "zh-CN" } else { primary }),
-                "deepl" => format!("https://www.deepl.com/translator#auto/{primary}/%MS_SELECTED_TEXT%"),
-                "bing" => format!("https://www.bing.com/translator?from=auto-detect&to={}&text=%MS_SELECTED_TEXT%", if lang == Lang::ZhCn { "zh-Hans" } else { primary }),
+                "google" => format!("https://translate.google.com/?sl=auto&tl={}&text=%MS_SELECTED_TEXT%&op=translate", match lang { Lang::ZhCn => "zh-CN", Lang::ZhTw => "zh-TW", _ => primary }),
+                "deepl" => format!("https://www.deepl.com/translator#auto/{}/%MS_SELECTED_TEXT%", if lang == Lang::ZhTw { "zh-Hant" } else { primary }),
+                "bing" => format!("https://www.bing.com/translator?from=auto-detect&to={}&text=%MS_SELECTED_TEXT%", match lang { Lang::ZhCn => "zh-Hans", Lang::ZhTw => "zh-Hant", _ => primary }),
                 _ => return Err(invalid("service")),
             };
             url_action(url)

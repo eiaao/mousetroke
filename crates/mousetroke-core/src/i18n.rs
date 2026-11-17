@@ -1,7 +1,7 @@
 //! 多语言词条运行时（设计见 `docs/I18N-DESIGN.md`）。
 //!
 //! - 词条在编译期嵌入（`include_str!`），首次取用时才解析（`OnceLock` + `Box::leak`，
-//!   常驻内存约几十 KB；10 种语言合计几百 KB）。
+//!   常驻内存约几十 KB；各语言合计几百 KB）。
 //! - 当前语言是进程全局原子量：引擎在 `apply_config`、设置界面在启动与切换语言、
 //!   命令行在 `main` 开头调用 [`set_lang`]。
 //! - 取词条缺失时回退 zh-CN，再缺失返回键名本身（debug 构建同时 eprintln 一次）。
@@ -20,6 +20,7 @@ use std::sync::OnceLock;
 #[repr(u8)]
 pub enum Lang {
     ZhCn,
+    ZhTw,
     EnUs,
     EsEs,
     FrFr,
@@ -35,15 +36,16 @@ pub enum Lang {
 }
 
 /// 枚举值个数（含伪语言；必须与 [`Lang`] 的变体数一致）。
-const LANG_COUNT: usize = 11;
+const LANG_COUNT: usize = 12;
 
 const TAGS: [&str; LANG_COUNT] = [
-    "zh-CN", "en-US", "es-ES", "fr-FR", "de-DE", "ja-JP", "pt-BR", "ru-RU", "it-IT", "ko-KR", "qps-ploc",
+    "zh-CN", "zh-TW", "en-US", "es-ES", "fr-FR", "de-DE", "ja-JP", "pt-BR", "ru-RU", "it-IT", "ko-KR", "qps-ploc",
 ];
 
 /// 各语言的词条源（编译期嵌入；伪语言由 en-US 生成，为空）。
 const SOURCES: [Option<&str>; LANG_COUNT] = [
     Some(include_str!("../../../i18n/zh-CN.json")),
+    Some(include_str!("../../../i18n/zh-TW.json")),
     Some(include_str!("../../../i18n/en-US.json")),
     Some(include_str!("../../../i18n/es-ES.json")),
     Some(include_str!("../../../i18n/fr-FR.json")),
@@ -72,7 +74,7 @@ pub fn lang() -> Lang {
 
 /// 索引 → 枚举（`lang()` 用；保持与声明顺序一致）。
 const TAGS_BY_INDEX: [Lang; LANG_COUNT] = [
-    Lang::ZhCn, Lang::EnUs, Lang::EsEs, Lang::FrFr, Lang::DeDe, Lang::JaJp, Lang::PtBr, Lang::RuRu,
+    Lang::ZhCn, Lang::ZhTw, Lang::EnUs, Lang::EsEs, Lang::FrFr, Lang::DeDe, Lang::JaJp, Lang::PtBr, Lang::RuRu,
     Lang::ItIt, Lang::KoKr, Lang::QpsPloc,
 ];
 
@@ -83,8 +85,8 @@ impl Lang {
     }
 
     /// 解析标签（大小写不敏感），地区变体映射到基准语言：
-    /// `zh` / `zh-Hans` / `zh-SG` → ZhCn；`zh-TW` / `zh-HK` 在 zh-TW 词条就绪前也映射到
-    /// ZhCn；`es-*` → EsEs、`fr-*` → FrFr、`de-*` → DeDe、`pt-*` → PtBr、`ru-*` → RuRu、
+    /// `zh` / `zh-Hans` / `zh-SG` → ZhCn；`zh-TW` / `zh-HK` / `zh-MO` / `zh-Hant` → ZhTw；
+    /// `es-*` → EsEs、`fr-*` → FrFr、`de-*` → DeDe、`pt-*` → PtBr、`ru-*` → RuRu、
     /// `it-*` → ItIt、`ko-*` → KoKr；`qps-ploc` 仅 debug 构建认识。
     pub fn from_tag(s: &str) -> Option<Lang> {
         let norm = s.trim().to_lowercase();
@@ -93,8 +95,11 @@ impl Lang {
             None => (norm.as_str(), None),
         };
         match primary {
-            // zh-TW 词条就绪后把 tw/hk/hant 分支改成返回 ZhTw
-            "zh" => Some(Lang::ZhCn),
+            "zh" => Some(if norm.split('-').skip(1).any(|part| matches!(part, "tw" | "hk" | "mo" | "hant")) {
+                Lang::ZhTw
+            } else {
+                Lang::ZhCn
+            }),
             "en" => Some(Lang::EnUs),
             "es" => Some(Lang::EsEs),
             "fr" => Some(Lang::FrFr),
@@ -152,7 +157,7 @@ fn leak(s: String) -> &'static str {
 fn catalog(lang: Lang) -> &'static Catalog {
     static CATALOGS: [OnceLock<Catalog>; LANG_COUNT] = [
         OnceLock::new(), OnceLock::new(), OnceLock::new(), OnceLock::new(), OnceLock::new(), OnceLock::new(),
-        OnceLock::new(), OnceLock::new(), OnceLock::new(), OnceLock::new(), OnceLock::new(),
+        OnceLock::new(), OnceLock::new(), OnceLock::new(), OnceLock::new(), OnceLock::new(), OnceLock::new(),
     ];
     CATALOGS[lang as usize].get_or_init(|| match SOURCES[lang as usize] {
         Some(src) => parse(src),
@@ -209,7 +214,7 @@ fn plural_category(lang: Lang, n: i64) -> &'static str {
     let (n10, n100) = (n % 10, n % 100);
     match lang {
         // 亚洲语言无复数
-        Lang::ZhCn | Lang::JaJp | Lang::KoKr => "other",
+        Lang::ZhCn | Lang::ZhTw | Lang::JaJp | Lang::KoKr => "other",
         // fr / pt-BR：0 和 1 都是单数
         Lang::FrFr | Lang::PtBr => {
             if (0..=1).contains(&n) {
@@ -295,9 +300,10 @@ fn interpolate(templ: &str, args: &[(&str, &str)]) -> String {
 pub fn ui_font(lang: Lang) -> &'static str {
     match lang {
         Lang::ZhCn => "Microsoft YaHei UI",
+        Lang::ZhTw => "Microsoft JhengHei UI",
         Lang::JaJp => "Yu Gothic UI",
         Lang::KoKr => "Malgun Gothic",
-        // zh-TW → Microsoft JhengHei UI（加语言时在这里补）；西文与西里尔 Segoe UI 都覆盖
+        // 西文与西里尔 Segoe UI 都覆盖
         _ => "Segoe UI",
     }
 }
@@ -372,6 +378,7 @@ mod tests {
     fn resolve_setting_and_system() {
         // 显式设置优先
         assert_eq!(resolve("zh-CN", &["en-US".into()]), Lang::ZhCn);
+        assert_eq!(resolve("auto", &["zh-TW".into(), "en-US".into()]), Lang::ZhTw);
         assert_eq!(resolve("EN-US", &[]), Lang::EnUs);
         assert_eq!(resolve("pt-BR", &[]), Lang::PtBr);
         // auto：跟随系统列表里第一个认识的
@@ -393,9 +400,11 @@ mod tests {
         assert_eq!(Lang::from_tag("ZH-cn"), Some(Lang::ZhCn));
         assert_eq!(Lang::from_tag("zh-Hans"), Some(Lang::ZhCn));
         assert_eq!(Lang::from_tag("zh-SG"), Some(Lang::ZhCn));
-        // zh-TW 词条就绪前映射到 zh-CN
-        assert_eq!(Lang::from_tag("zh-TW"), Some(Lang::ZhCn));
-        assert_eq!(Lang::from_tag("zh-HK"), Some(Lang::ZhCn));
+        assert_eq!(Lang::from_tag("zh-TW"), Some(Lang::ZhTw));
+        assert_eq!(Lang::from_tag("zh-HK"), Some(Lang::ZhTw));
+        assert_eq!(Lang::from_tag("zh-MO"), Some(Lang::ZhTw));
+        assert_eq!(Lang::from_tag("zh-Hant"), Some(Lang::ZhTw));
+        assert_eq!(Lang::from_tag("zh-Hant-TW"), Some(Lang::ZhTw));
         assert_eq!(Lang::from_tag("en"), Some(Lang::EnUs));
         assert_eq!(Lang::from_tag("en-GB"), Some(Lang::EnUs));
         // 新语言与地区变体
@@ -413,6 +422,7 @@ mod tests {
         assert_eq!(Lang::from_tag("ar-SA"), None, "RTL 一期不支持");
         assert_eq!(Lang::from_tag("qps-ploc"), cfg!(debug_assertions).then_some(Lang::QpsPloc));
         assert_eq!(Lang::ZhCn.tag(), "zh-CN");
+        assert_eq!(Lang::ZhTw.tag(), "zh-TW");
         assert_eq!(Lang::EnUs.tag(), "en-US");
         assert_eq!(Lang::RuRu.tag(), "ru-RU");
     }
@@ -423,6 +433,7 @@ mod tests {
         use Lang::*;
         // 无复数
         assert_eq!(plural_category(ZhCn, 1), "other");
+        assert_eq!(plural_category(ZhTw, 1), "other");
         assert_eq!(plural_category(JaJp, 1), "other");
         assert_eq!(plural_category(KoKr, 3), "other");
         // n == 1 → one
@@ -474,6 +485,7 @@ mod tests {
     #[test]
     fn ui_font_per_lang() {
         assert_eq!(ui_font(Lang::ZhCn), "Microsoft YaHei UI");
+        assert_eq!(ui_font(Lang::ZhTw), "Microsoft JhengHei UI");
         assert_eq!(ui_font(Lang::EnUs), "Segoe UI");
         assert_eq!(ui_font(Lang::RuRu), "Segoe UI");
         assert_eq!(ui_font(Lang::JaJp), "Yu Gothic UI");

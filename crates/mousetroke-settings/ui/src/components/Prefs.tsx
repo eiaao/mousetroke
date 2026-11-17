@@ -86,6 +86,7 @@ function TrailPreview({ s }: { s: Settings }) {
 /** 语言选项用它自己的语言显示名称（English 永远显示 English）。 */
 const TAG_TO_NAME: Record<Lang, MsgKey> = {
   "zh-CN": "lang.name.zh_cn",
+  "zh-TW": "lang.name.zh_tw",
   "en-US": "lang.name.en_us",
   "es-ES": "lang.name.es_es",
   "fr-FR": "lang.name.fr_fr",
