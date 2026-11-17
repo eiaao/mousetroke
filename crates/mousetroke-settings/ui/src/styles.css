@@ -967,6 +967,10 @@ input.editor-name:focus {
   border-top: 1px solid var(--line-soft);
 }
 
+.binding-editor-foot {
+  justify-content: flex-end;
+}
+
 /* ------------------------------------------------------------ 表单 */
 
 .field {
@@ -1375,6 +1379,21 @@ select.lang-select {
 .gesture-context-menu {
   max-width: calc(100vw - 16px);
   min-width: min(220px, calc(100vw - 16px));
+}
+
+.popover-separator {
+  height: 1px;
+  margin: 5px 4px;
+  background: var(--line-soft);
+}
+
+.popover button.context-danger {
+  color: var(--danger);
+}
+
+.popover button.context-danger:hover,
+.popover button.context-danger:focus-visible {
+  background: color-mix(in srgb, var(--danger) 12%, transparent);
 }
 
 @keyframes pop {

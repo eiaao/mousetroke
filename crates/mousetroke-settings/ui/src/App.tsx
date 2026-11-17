@@ -655,7 +655,6 @@ function Main({ init }: { init: InitState }) {
           onUseElsewhere={useElsewhere}
           onShowInLibrary={(id) => showLibrary(id)}
           onKeepHere={keepHere}
-          onDuplicate={() => duplicateBinding(sel)}
           onDelete={() => deleteBinding(sel)}
           onClose={() => setSelected(null)}
         />
