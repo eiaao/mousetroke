@@ -84,9 +84,21 @@ const PRIMARY: Partial<Record<string, Exclude<Lang, "qps-ploc">>> = {
   zh: "zh-CN", en: "en-US", es: "es-ES", fr: "fr-FR", de: "de-DE", ja: "ja-JP", pt: "pt-BR", ru: "ru-RU", it: "it-IT", ko: "ko-KR",
 };
 
+/** 中文标签是否用繁体：显式文字子标签优先，其次看地区；扩展与私用段（单字母之后）不参与。 */
+function zhTraditional(subtags: string[]): boolean {
+  let region = false;
+  for (const part of subtags) {
+    if (part.length <= 1) break;
+    if (part === "hant") return true;
+    if (part === "hans") return false;
+    if (part === "tw" || part === "hk" || part === "mo") region = true;
+  }
+  return region;
+}
+
 function fromTag(s: string): Exclude<Lang, "qps-ploc"> | null {
   const [p, ...subtags] = s.trim().toLowerCase().split("-");
-  if (p === "zh" && subtags.some((part) => ["tw", "hk", "mo", "hant"].includes(part))) return "zh-TW";
+  if (p === "zh" && zhTraditional(subtags)) return "zh-TW";
   return PRIMARY[p] ?? null;
 }
 

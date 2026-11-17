@@ -72,6 +72,22 @@ pub fn lang() -> Lang {
     }
 }
 
+/// 中文标签是否用繁体：显式文字子标签（`Hant`/`Hans`）优先，没有时按地区（台港澳）判断；
+/// 扩展与私用段（单字母子标签之后）不参与，避免 `zh-CN-x-tw` 之类被误判。
+fn zh_traditional(norm: &str) -> bool {
+    let subtags = norm.split('-').skip(1).take_while(|part| part.len() > 1);
+    let mut region = false;
+    for part in subtags {
+        match part {
+            "hant" => return true,
+            "hans" => return false,
+            "tw" | "hk" | "mo" => region = true,
+            _ => {}
+        }
+    }
+    region
+}
+
 /// 索引 → 枚举（`lang()` 用；保持与声明顺序一致）。
 const TAGS_BY_INDEX: [Lang; LANG_COUNT] = [
     Lang::ZhCn, Lang::ZhTw, Lang::EnUs, Lang::EsEs, Lang::FrFr, Lang::DeDe, Lang::JaJp, Lang::PtBr, Lang::RuRu,
@@ -95,11 +111,7 @@ impl Lang {
             None => (norm.as_str(), None),
         };
         match primary {
-            "zh" => Some(if norm.split('-').skip(1).any(|part| matches!(part, "tw" | "hk" | "mo" | "hant")) {
-                Lang::ZhTw
-            } else {
-                Lang::ZhCn
-            }),
+            "zh" => Some(if zh_traditional(&norm) { Lang::ZhTw } else { Lang::ZhCn }),
             "en" => Some(Lang::EnUs),
             "es" => Some(Lang::EsEs),
             "fr" => Some(Lang::FrFr),
@@ -405,6 +417,9 @@ mod tests {
         assert_eq!(Lang::from_tag("zh-MO"), Some(Lang::ZhTw));
         assert_eq!(Lang::from_tag("zh-Hant"), Some(Lang::ZhTw));
         assert_eq!(Lang::from_tag("zh-Hant-TW"), Some(Lang::ZhTw));
+        assert_eq!(Lang::from_tag("zh-Hans-HK"), Some(Lang::ZhCn), "显式简体优先于地区");
+        assert_eq!(Lang::from_tag("zh-Hant-CN"), Some(Lang::ZhTw));
+        assert_eq!(Lang::from_tag("zh-CN-x-tw"), Some(Lang::ZhCn), "私用段不参与");
         assert_eq!(Lang::from_tag("en"), Some(Lang::EnUs));
         assert_eq!(Lang::from_tag("en-GB"), Some(Lang::EnUs));
         // 新语言与地区变体
