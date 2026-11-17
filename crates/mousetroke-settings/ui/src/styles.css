@@ -53,8 +53,31 @@
   --font-display: "Segoe UI Variable Display", "Malgun Gothic", "Segoe UI", system-ui, sans-serif;
 }
 
+:root[data-theme="dark"] {
+  --bg: #111519;
+  --bg-tint: radial-gradient(1200px 600px at -10% -20%, rgba(46, 197, 255, 0.08), transparent 60%),
+    radial-gradient(900px 500px at 110% 120%, rgba(255, 138, 42, 0.04), transparent 60%);
+  --panel: #1b2128;
+  --panel-2: #20272e;
+  --ink: #e8edf2;
+  --muted: #9ba7b3;
+  --faint: #6f7b87;
+  --line: #2e3740;
+  --line-soft: #262e36;
+  --trail: #2ec5ff;
+  --trail-ink: #7ad8ff;
+  --trail-soft: rgba(46, 197, 255, 0.13);
+  --hit: #ff8a2a;
+  --danger: #ff6b5e;
+  --ok: #4cc27f;
+  --shadow-card: 0 1px 2px rgba(0, 0, 0, 0.3);
+  --shadow-lift: 0 6px 20px rgba(0, 0, 0, 0.4), 0 1px 3px rgba(0, 0, 0, 0.3);
+  --shadow-pop: 0 12px 36px rgba(0, 0, 0, 0.55), 0 2px 6px rgba(0, 0, 0, 0.4);
+  color-scheme: dark;
+}
+
 @media (prefers-color-scheme: dark) {
-  :root {
+  :root:not([data-theme]) {
     --bg: #111519;
     --bg-tint: radial-gradient(1200px 600px at -10% -20%, rgba(46, 197, 255, 0.08), transparent 60%),
       radial-gradient(900px 500px at 110% 120%, rgba(255, 138, 42, 0.04), transparent 60%);
@@ -153,10 +176,6 @@ h3 {
   height: 100%;
 }
 
-.app.with-editor {
-  grid-template-columns: 236px minmax(340px, 1fr) minmax(400px, 460px);
-}
-
 .main {
   display: flex;
   flex-direction: column;
@@ -164,20 +183,15 @@ h3 {
   min-height: 0;
 }
 
-@media (max-width: 1080px) {
-  .app.with-editor {
-    grid-template-columns: 236px minmax(340px, 1fr);
-  }
-  .app.with-editor .editor {
-    position: fixed;
-    right: 0;
-    top: 0;
-    bottom: 0;
-    width: min(460px, 100vw - 240px);
-    box-shadow: var(--shadow-pop);
-    z-index: 20;
-    animation: slide-in 0.16s ease-out;
-  }
+.app.with-editor .editor {
+  position: fixed;
+  right: 0;
+  top: 0;
+  bottom: 0;
+  width: min(460px, calc(100vw - 240px));
+  box-shadow: var(--shadow-pop);
+  z-index: 20;
+  animation: slide-in 0.16s ease-out;
 }
 
 @keyframes slide-in {
@@ -775,11 +789,6 @@ input.title-input:focus {
   overflow: hidden;
 }
 
-/* 编辑面板打开时列表变窄：动作摘要让位给手势名 */
-.app.with-editor .row-action {
-  max-width: 140px;
-}
-
 .row-action-text {
   display: block;
   color: var(--muted);
@@ -965,6 +974,10 @@ input.editor-name:focus {
   justify-content: space-between;
   padding: 12px 20px;
   border-top: 1px solid var(--line-soft);
+}
+
+.binding-editor-foot {
+  justify-content: flex-end;
 }
 
 /* ------------------------------------------------------------ 表单 */
@@ -1370,6 +1383,26 @@ select.lang-select {
   background: var(--panel);
   box-shadow: var(--shadow-pop);
   animation: pop 0.12s ease-out;
+}
+
+.gesture-context-menu {
+  max-width: calc(100vw - 16px);
+  min-width: min(220px, calc(100vw - 16px));
+}
+
+.popover-separator {
+  height: 1px;
+  margin: 5px 4px;
+  background: var(--line-soft);
+}
+
+.popover button.context-danger {
+  color: var(--danger);
+}
+
+.popover button.context-danger:hover,
+.popover button.context-danger:focus-visible {
+  background: color-mix(in srgb, var(--danger) 12%, transparent);
 }
 
 @keyframes pop {
@@ -1918,6 +1951,62 @@ select.lang-select {
   display: flex;
   justify-content: flex-end;
   padding: 12px 20px 16px;
+}
+
+.transfer-destinations {
+  max-height: 38vh;
+  overflow-y: auto;
+  border: 1px solid var(--line-soft);
+  border-radius: 8px;
+}
+
+.transfer-destination {
+  padding: 8px 10px;
+}
+
+.transfer-destination + .transfer-destination {
+  border-top: 1px solid var(--line-soft);
+}
+
+.transfer-destination .check {
+  margin: 0;
+  align-items: center;
+}
+
+.transfer-destination .check input {
+  margin: 0;
+}
+
+.transfer-destination-name {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.transfer-destination .transfer-destination-off {
+  display: inline;
+  flex: none;
+  margin-left: auto;
+  white-space: nowrap;
+}
+
+.transfer-conflict {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin: 5px 0 0 26px;
+  color: var(--warn, var(--muted));
+  font-size: 12px;
+}
+
+.transfer-conflict select {
+  flex: none;
+}
+
+.transfer-add-app {
+  align-self: flex-start;
 }
 
 .app-list {

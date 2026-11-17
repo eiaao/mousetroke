@@ -16,11 +16,13 @@ Documentation / 文档: [User guide](docs/guide/en/index.md) · [使用指南](d
 ![Mousetroke settings](docs/images/settings-en.png)
 
 - About 50 built-in gestures, all editable; record your own by drawing it once
+- Gesture editors float over the list and close when you click outside them
 - Screen corners and edges: Start menu, show desktop, volume, brightness (DDC/CI for external monitors)
 - Eight action types: send keys, window actions, open an app, open a URL, run a command,
   media & system keys, popup menu, Lua script
 - Per-app rules, or turn gestures off entirely in remote-desktop / 3D / design apps
 - Adjust the gesture name's text size in Preferences while keeping existing configurations compatible
+- Copy or move gestures between apps from the gesture menu, with a choice when patterns conflict
 - Pauses automatically for fullscreen games, video and presentations, with global and per-app controls; `Win+Esc` pauses any time
 - About 19 MB of memory; a single portable exe (≈13 MB); 11 interface languages
 

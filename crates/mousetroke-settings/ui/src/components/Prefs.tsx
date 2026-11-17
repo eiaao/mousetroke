@@ -213,6 +213,22 @@ export function Prefs({
 
       <div className="pref-group">
         <h2>{t("ui.prefs.group_appearance")}</h2>
+        <div className="pref-row">
+          <span className="pref-label" id="pref-theme-label">{t("ui.prefs.theme")}</span>
+          <div className="segmented" role="radiogroup" aria-labelledby="pref-theme-label">
+            {(
+              [
+                ["system", "ui.prefs.theme_system"],
+                ["light", "ui.prefs.theme_light"],
+                ["dark", "ui.prefs.theme_dark"],
+              ] as const
+            ).map(([v, k]) => (
+              <button key={v} type="button" role="radio" aria-checked={(s.theme ?? "system") === v} className={(s.theme ?? "system") === v ? "on" : ""} onClick={() => onChange((x) => ({ ...x, theme: v === "system" ? undefined : v }))}>
+                {t(k)}
+              </button>
+            ))}
+          </div>
+        </div>
         <TrailPreview s={s} />
         <Toggle label={t("ui.prefs.show_trail")} checked={s.trail.show} onChange={(v) => onChange((x) => ({ ...x, trail: { ...x.trail, show: v } }))} />
         <Slider label={t("ui.prefs.trail_width")} value={s.trail.width} min={1} max={10} step={0.5} unit=" px" onChange={(v) => onChange((x) => ({ ...x, trail: { ...x.trail, width: v } }), "tw")} />

@@ -20,6 +20,8 @@ import { ImportWizard } from "./components/ImportWizard";
 import { Sidebar, scopeTitle, type View } from "./components/Sidebar";
 import { BindingList, type ListFilter, type ListTab } from "./components/BindingList";
 import { Editor } from "./components/Editor";
+import { TransferDialog } from "./components/TransferDialog";
+import { transferBinding, transferTargets, type ConflictChoice, type TransferMode } from "./transfer";
 import { Prefs } from "./components/Prefs";
 import { AppPicker, DataPage, Toast, type ToastExtra } from "./components/Dialogs";
 import { NavIcon } from "./components/Icons";
@@ -38,6 +40,7 @@ export function App() {
         initPlatform(s.platform ?? "windows");
         initActionCatalog(s.actionCatalog);
         document.documentElement.dataset.platform = s.platform ?? "windows";
+        applyTheme(s.config.settings.theme);
         initLang({ setting: s.config.settings.language, systemLangs: s.systemLangs });
         setInit(s);
       },
@@ -53,6 +56,13 @@ export function App() {
   if (fatal) return <div className="fatal">{t("ui.app.fatal", { error: fatal })}</div>;
   if (!init) return null;
   return <Main init={init} />;
+}
+
+function applyTheme(theme: "system" | "light" | "dark" | undefined) {
+  const explicit = theme === "light" || theme === "dark" ? theme : null;
+  if (explicit) document.documentElement.dataset.theme = explicit;
+  else delete document.documentElement.dataset.theme;
+  getCurrentWindow().setTheme(explicit).catch(() => {});
 }
 
 type SaveState = "idle" | "saving" | "saved" | "error" | "incomplete";
@@ -92,6 +102,7 @@ function Main({ init }: { init: InitState }) {
   const { config, edit, undo, redo } = store;
   // 语言订阅放在根组件：切换语言时整棵树重渲染（t() 在渲染期取词条）
   const [lang] = useLang();
+  useEffect(() => applyTheme(config.settings.theme), [config.settings.theme]);
   const updateHint = useUpdateHint();
   // 启动时读一次本地记录的新版本提示
   useEffect(() => { refreshUpdateHint(); }, []);
@@ -106,6 +117,9 @@ function Main({ init }: { init: InitState }) {
     return () => void off.then((f) => f());
   }, []);
   const [selected, setSelected] = useState<number | null>(null);
+  // 按作用域 id 与绑定 uiId 记住来源：对话框打开期间撤销会改变下标
+  const [transferRef, setTransferRef] = useState<{ scopeId: string; uiId: string } | null>(null);
+  const [transferAddingApp, setTransferAddingApp] = useState(false);
   // 手势库：选中的手势（"new" = 新建）、分类与筛选、弹窗
   const [libSelected, setLibSelected] = useState<string | null>(null);
   const [libTab, setLibTab] = useState<LibraryTab>("gesture");
@@ -249,6 +263,25 @@ function Main({ init }: { init: InitState }) {
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
   }, [undo, redo, selected, libSelected]);
+
+  // 来源手势被撤销删除后关闭复制／移动对话框
+  useEffect(() => {
+    if (!transferRef) return;
+    const s = config.scopes.find((x) => x.id === transferRef.scopeId);
+    if (!s?.bindings.some((b) => b.uiId === transferRef.uiId)) setTransferRef(null);
+  }, [config, transferRef]);
+
+  // 浮動編輯器：點擊其餘介面時收起；清單項目與其他浮動介面保留各自的互動。
+  useEffect(() => {
+    if (selected == null && libSelected == null) return;
+    const onMouseDown = (e: MouseEvent) => {
+      if (!(e.target instanceof Element) || e.target.closest(".editor, .modal-backdrop, .popover, .toast, [role='option']")) return;
+      if (selected != null) setSelected(null);
+      if (libSelected != null) setLibSelected(null);
+    };
+    document.addEventListener("mousedown", onMouseDown);
+    return () => document.removeEventListener("mousedown", onMouseDown);
+  }, [selected, libSelected]);
 
   // 撤销可能删掉当前作用域/绑定：纠正越界的选择
   const scopeIdx = view.kind === "scope" ? Math.min(view.index, config.scopes.length - 1) : -1;
@@ -394,6 +427,25 @@ function Main({ init }: { init: InitState }) {
 
   // ---- 手势库
   const bindingRef: BindingRef | null = binding && sel != null ? { scope: scopeIdx, binding: sel } : null;
+  const transferAt: BindingRef | null = (() => {
+    if (!transferRef) return null;
+    const s = config.scopes.findIndex((x) => x.id === transferRef.scopeId);
+    const b = s >= 0 ? config.scopes[s].bindings.findIndex((x) => x.uiId === transferRef.uiId) : -1;
+    return b >= 0 ? { scope: s, binding: b } : null;
+  })();
+  const applyTransfer = (ref: BindingRef, mode: TransferMode, destinationIds: string[], choiceIds: Record<string, ConflictChoice>) => {
+    // 目标同样按 id 解析为当前下标，已不存在的目标丢弃
+    const indexOf = (id: string) => config.scopes.findIndex((x) => x.id === id);
+    const destinations = destinationIds.map(indexOf).filter((i) => i >= 0);
+    const choices: Record<number, ConflictChoice> = {};
+    for (const [id, choice] of Object.entries(choiceIds)) if (indexOf(id) >= 0) choices[indexOf(id)] = choice;
+    const count = transferTargets(config, ref, destinations, choices).length;
+    if (!count) return;
+    edit((c) => transferBinding(c, ref, destinations, mode, choices));
+    setTransferRef(null);
+    if (mode === "move") setSelected(null);
+    notify(t(mode === "copy" ? "ui.transfer.copied" : "ui.transfer.moved", { count }), t("common.undo"), undo);
+  };
   const shared = useMemo(() => {
     const g = gestureById(config, binding?.gesture);
     if (!g || sel == null) return undefined;
@@ -587,6 +639,10 @@ function Main({ init }: { init: InitState }) {
             onAdd={addBinding}
             onDelete={deleteBinding}
             onDuplicate={duplicateBinding}
+            onTransfer={(i) => {
+              const b = scope?.bindings[i];
+              if (scope && b?.uiId) setTransferRef({ scopeId: scope.id, uiId: b.uiId });
+            }}
             onToggle={toggleBinding}
             onScopeChange={(f, k) => edit((c) => updateScope(c, scopeIdx, f), k)}
             onDeleteScope={deleteScope}
@@ -627,6 +683,7 @@ function Main({ init }: { init: InitState }) {
         <Editor
           binding={binding}
           bindingKey={binding.uiId!}
+          scopeName={scopeTitle(scope!)}
           autoPickAction={autoPickKey === binding.uiId}
           onPickerShown={() => setAutoPickKey((key) => key === binding.uiId ? null : key)}
           conflictWith={conflictNames}
@@ -640,7 +697,6 @@ function Main({ init }: { init: InitState }) {
           onUseElsewhere={useElsewhere}
           onShowInLibrary={(id) => showLibrary(id)}
           onKeepHere={keepHere}
-          onDuplicate={() => duplicateBinding(sel)}
           onDelete={() => deleteBinding(sel)}
           onClose={() => setSelected(null)}
         />
@@ -673,11 +729,28 @@ function Main({ init }: { init: InitState }) {
       {gesturePicker && bindingRef && (
         <GesturePicker config={config} target={bindingRef} onPickGesture={pickGesture} onPickInline={pickInline} onRecordNew={recordNew} onClose={() => setGesturePicker(false)} />
       )}
+      {transferRef && transferAt && (
+        <TransferDialog
+          key={`${transferRef.scopeId}-${transferRef.uiId}`}
+          config={config}
+          source={transferAt}
+          onApply={(mode, destinations, choices) => applyTransfer(transferAt, mode, destinations, choices)}
+          onAddApp={() => { setTransferAddingApp(true); setPicking(true); }}
+          onClose={() => setTransferRef(null)}
+        />
+      )}
       {wizard && <ImportWizard config={config} onApply={applyImport} onClose={() => setWizard(false)} />}
       {picking && (
         <AppPicker
           scopes={config.scopes}
-          onPick={addApp}
+          setupOnly={transferAddingApp}
+          onPick={(exe, disable, nameKey) => {
+            if (transferAddingApp) {
+              addApps([exe], false, false, nameKey ? { [exe]: nameKey } : {});
+              setTransferAddingApp(false);
+              setPicking(false);
+            } else addApp(exe, disable, nameKey);
+          }}
           onPickMany={(apps) => {
             addApps(apps.map((a) => a.exe), true, true, Object.fromEntries(apps.flatMap((a) => (a.name_key ? [[a.exe, a.name_key]] : []))) as Record<string, string>);
             notify(t("toast.apps_disabled", { count: apps.length }));
@@ -685,6 +758,7 @@ function Main({ init }: { init: InitState }) {
           onClose={() => {
             setPicking(false);
             setPendingAssign(false);
+            setTransferAddingApp(false);
           }}
         />
       )}

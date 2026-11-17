@@ -159,6 +159,8 @@ export interface Settings {
   update_notify?: boolean;
   /** auto | zh-CN | en-US */
   language?: string;
+  /** 缺省 = system */
+  theme?: "system" | "light" | "dark";
   drag_timeout_ms: number;
   drag_timeout_hint: boolean;
   min_stroke_px: number;
