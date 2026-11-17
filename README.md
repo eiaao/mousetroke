@@ -16,6 +16,7 @@ Documentation / 文档: [User guide](docs/guide/en/index.md) · [使用指南](d
 ![Mousetroke settings](docs/images/settings-en.png)
 
 - About 50 built-in gestures, all editable; record your own by drawing it once
+- Gesture editors float over the list and close when you click outside them
 - Screen corners and edges: Start menu, show desktop, volume, brightness (DDC/CI for external monitors)
 - Eight action types: send keys, window actions, open an app, open a URL, run a command,
   media & system keys, popup menu, Lua script
