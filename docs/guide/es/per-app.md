@@ -23,6 +23,8 @@ Las reglas de Windows pueden coincidir con un nombre de ejecutable o una ruta co
 
 Por ejemplo, añade un navegador, crea un gesto de botón derecho `↓→` y asigna allí una acción distinta. Las demás aplicaciones conservan la acción global de `↓→`. Para copiar una configuración existente, usa [Duplicar](gestures.md#buscar-copiar-y-desactivar) dentro de su ámbito y edita la asignación. Para grabar un trazo una sola vez y darle una acción distinta en cada aplicación, usa la [biblioteca de gestos](gesture-library.md).
 
+El editor de gestos muestra dónde se guarda la asignación. Haz clic derecho en el gesto de la lista y elige **Copiar a / Mover a…**, selecciona las aplicaciones de destino y haz clic en **Copiar** o **Mover**. Puedes elegir varias aplicaciones ya añadidas a la vez o añadir una aplicación desde el cuadro de diálogo. Las copias tienen ajustes independientes; al mover, la asignación se elimina de su ámbito original. Si un destino ya tiene el mismo dibujo, elige si omitirlo o reemplazarlo. Toda la operación se puede deshacer desde el aviso. Una asignación copiada a una aplicación con los gestos desactivados se conserva, pero no se ejecutará hasta que se activen los gestos en ella.
+
 ## Desactivar los gestos en una aplicación
 
 Selecciona la aplicación en la barra lateral y desactiva **Usar gestos**. Esto desactiva sus propios gestos, los gestos globales y los disparadores de borde. Los botones derecho, central y laterales pasan con normalidad. Las asignaciones guardadas se conservan; al volver a activar **Usar gestos** se restauran. El botón de papelera **Quitar esta aplicación**, arriba a la derecha de la página de la aplicación, elimina el ámbito específico de la aplicación.

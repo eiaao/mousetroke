@@ -36,12 +36,12 @@ Em **Preferências → Reconhecimento**:
 | Sensibilidade do traçado | Padrão de 30 px; controle de 10–80 px. Valores menores reconhecem traçados mais curtos, mas facilitam gestos acidentais. |
 | Os gestos agem sobre | Escolha **a janela sob o cursor** (padrão) ou **a janela ativa**. |
 
-Em **Aparência**, **Mostrar o rastro**, **Espessura do rastro**, **Cor do rastro**, **Ao reconhecer**, **Desvanecer ao terminar**, **Mostrar o nome do gesto ao desenhar** e **Cor do nome do gesto** controlam o retorno visual. Não há aqui um controle de limite para o reconhecimento de formas.
+Em **Aparência**, **Tema da interface** (**Sistema**, **Claro** ou **Escuro**; aplica-se imediatamente à janela de configurações), **Mostrar o rastro**, **Espessura do rastro**, **Cor do rastro**, **Ao reconhecer**, **Desvanecer ao terminar**, **Mostrar o nome do gesto ao desenhar**, **Tamanho do texto de aviso** (16–96 px, padrão 24 px; pode ser aumentado em telas de alta resolução) e **Cor do nome do gesto** controlam o retorno visual. Não há aqui um controle de limite para o reconhecimento de formas.
 
 ## Encontrar, copiar e desativar
 
 Pressione **Ctrl+F** no Windows ou **⌘+F** no Mac para pesquisar a lista atual por nome, traçado ou ação. Use **Gestos de mouse** / **Bordas da tela** e os filtros de botão/posição; **Desativado** mostra as entradas desativadas.
 
-Selecione um gesto e clique em **Duplicar** para fazer uma cópia (Ctrl+D / ⌘+D). Dê à cópia um traçado diferente: desenhos idênticos em um mesmo escopo entram em conflito, então não conte com a ordem da lista para escolher a ação. Use o interruptor **Ativado** / **Desativado** do editor, ou a tecla Espaço em uma linha selecionada da lista, para desativar um gesto sem excluí-lo. Vínculos desativados deixam de reservar o gatilho por conta própria.
+Clique com o botão direito em um gesto da lista e escolha **Duplicar**, ou selecione-o e pressione Ctrl+D / ⌘+D. **Copiar para / Mover para…** no menu de contexto coloca um gesto em outros aplicativos; veja [substituições por aplicativo](per-app.md). Dê à cópia um traçado diferente: desenhos idênticos em um mesmo escopo entram em conflito, então não conte com a ordem da lista para escolher a ação. Use o interruptor **Ativado** / **Desativado** do editor, ou a tecla Espaço em uma linha selecionada da lista, para desativar um gesto sem excluí-lo. Vínculos desativados deixam de reservar o gatilho por conta própria.
 
 Próximo: [biblioteca de gestos](gesture-library.md), [bordas da tela](screen-edges.md), [substituições por aplicativo](per-app.md), [sintaxe de envio de teclas](key-sequences.md).

@@ -36,12 +36,12 @@ Under **Preferences → Recognition**:
 | Stroke sensitivity | Default 30 px; slider 10–80 px. Smaller values recognize shorter strokes but make accidental gestures easier. |
 | Gestures act on | Choose **the window under the cursor** (default) or **the active window**. |
 
-Under **Appearance**, **Show the trail**, **Trail width**, **Trail color**, **When recognized**, **Fade out when done**, **Show the gesture name while drawing** and **Gesture name color** control feedback. There is no shape-recognition threshold slider here.
+Under **Appearance**, **Interface theme** (**System**, **Light** or **Dark**; applies to the settings window immediately), **Show the trail**, **Trail width**, **Trail color**, **When recognized**, **Fade out when done**, **Show the gesture name while drawing**, **Prompt text size** (16–96 px, default 24 px; can be increased on high-resolution screens) and **Gesture name color** control feedback. There is no shape-recognition threshold slider here.
 
 ## Find, copy and turn off
 
 Press **Ctrl+F** on Windows or **⌘+F** on Mac to search the current list by name, pattern or action. Use **Mouse gestures** / **Screen edges** and the button/position filters; **Off** shows disabled entries.
 
-Select a gesture and click **Duplicate** to make a copy (Ctrl+D / ⌘+D). Give the copy a different pattern: identical drawings in one scope conflict, so do not rely on their list order to choose an action. Use the editor's **On** / **Off** switch or Space on a selected list row to disable it without deleting it. Disabled bindings no longer reserve their trigger by themselves.
+Right-click a gesture in the list and choose **Duplicate**, or select it and press Ctrl+D / ⌘+D. **Copy to / Move to…** in the right-click menu puts a gesture into other apps; see [per-app overrides](per-app.md). Give the copy a different pattern: identical drawings in one scope conflict, so do not rely on their list order to choose an action. Use the editor's **On** / **Off** switch or Space on a selected list row to disable it without deleting it. Disabled bindings no longer reserve their trigger by themselves.
 
 Next: [gesture library](gesture-library.md), [screen edges](screen-edges.md), [per-app overrides](per-app.md), [send-keys syntax](key-sequences.md).

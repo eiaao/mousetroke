@@ -36,12 +36,12 @@ Unter **Einstellungen → Erkennung**:
 | Empfindlichkeit der Zeichenfolge | Standard 30 px; Regler 10–80 px. Kleinere Werte erkennen kürzere Striche, erleichtern aber versehentliche Gesten. |
 | Gesten wirken auf | Wählen Sie **das Fenster unter dem Cursor** (Standard) oder **das aktive Fenster**. |
 
-Unter **Erscheinungsbild** steuern **Spur anzeigen**, **Spurbreite**, **Spurfarbe**, **Bei Treffer**, **Am Ende ausblenden**, **Gestenname beim Zeichnen anzeigen** und **Farbe des Gestennamens** das Feedback. Ein Schwellwertsregler für die Formerkennung steht hier nicht zur Verfügung.
+Unter **Erscheinungsbild** steuern **Oberflächendesign** (**System**, **Hell** oder **Dunkel**; gilt sofort für das Einstellungsfenster), **Spur anzeigen**, **Spurbreite**, **Spurfarbe**, **Bei Treffer**, **Am Ende ausblenden**, **Gestenname beim Zeichnen anzeigen**, **Größe des Hinweistextes** (16–96 px, Standard 24 px; auf hochauflösenden Bildschirmen vergrößerbar) und **Farbe des Gestennamens** das Feedback. Ein Schwellwertsregler für die Formerkennung steht hier nicht zur Verfügung.
 
 ## Suchen, duplizieren und deaktivieren
 
 Drücken Sie **Strg+F** unter Windows oder **⌘+F** auf dem Mac, um die aktuelle Liste nach Name, Zeichenfolge oder Aktion zu durchsuchen. Nutzen Sie **Mausgesten** / **Bildschirmränder** und die Filter nach Taste/Position; **Aus** zeigt deaktivierte Einträge.
 
-Wählen Sie eine Geste und klicken Sie auf **Duplizieren**, um eine Kopie zu erstellen (Strg+D / ⌘+D). Geben Sie der Kopie eine andere Zeichenfolge: Identische Zeichnungen im selben Bereich kollidieren; verlassen Sie sich bei der Auswahl einer Aktion also nicht auf die Reihenfolge in der Liste. Verwenden Sie den Schalter **Ein** / **Aus** des Editors oder die Leertaste in einer ausgewählten Listenzeile, um eine Bindung zu deaktivieren, ohne sie zu löschen. Deaktivierte Bindungen reservieren ihre Auslösertaste nicht mehr von selbst.
+Klicken Sie in der Liste mit der rechten Maustaste auf eine Geste und wählen Sie **Duplizieren**, oder wählen Sie sie aus und drücken Sie Strg+D / ⌘+D. Mit **Kopieren nach / Verschieben nach…** im Kontextmenü legen Sie eine Geste in anderen Apps ab; siehe [App-spezifische Regeln](per-app.md). Geben Sie der Kopie eine andere Zeichenfolge: Identische Zeichnungen im selben Bereich kollidieren; verlassen Sie sich bei der Auswahl einer Aktion also nicht auf die Reihenfolge in der Liste. Verwenden Sie den Schalter **Ein** / **Aus** des Editors oder die Leertaste in einer ausgewählten Listenzeile, um eine Bindung zu deaktivieren, ohne sie zu löschen. Deaktivierte Bindungen reservieren ihre Auslösertaste nicht mehr von selbst.
 
 Weiter: [Gestenbibliothek](gesture-library.md), [Bildschirmränder](screen-edges.md), [App-spezifische Regeln](per-app.md), [Syntax für Tasten senden](key-sequences.md).

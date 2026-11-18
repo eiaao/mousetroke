@@ -23,6 +23,8 @@ Regras do Windows podem corresponder a um nome de executável ou caminho complet
 
 Por exemplo, adicione um navegador, crie um gesto `↓→` com o botão direito e atribua lá uma ação diferente. Os outros aplicativos mantêm a ação global de `↓→`. Para copiar uma configuração existente, use [Duplicar](gestures.md#encontrar-copiar-e-desativar) dentro do escopo dela e edite o vínculo. Para gravar um traçado uma única vez e dar a ele uma ação diferente em cada aplicativo, use a [biblioteca de gestos](gesture-library.md).
 
+O editor de gestos mostra onde o vínculo está armazenado. Clique com o botão direito no gesto da lista e escolha **Copiar para / Mover para…**, selecione os aplicativos de destino e clique em **Copiar** ou **Mover**. Você pode escolher vários aplicativos já adicionados de uma vez ou adicionar um aplicativo pela caixa de diálogo. As cópias têm configurações independentes; mover remove o vínculo do escopo original. Se um destino já tiver o mesmo desenho, escolha se deseja ignorá-lo ou substituí-lo. A operação inteira pode ser desfeita pelo aviso. Um vínculo copiado para um aplicativo com os gestos desativados é mantido, mas só será executado depois que os gestos forem ativados nele.
+
 ## Desativar gestos em um aplicativo
 
 Selecione o aplicativo na barra lateral e desative **Usar gestos**. Isso desativa os gestos dele, os gestos globais e os gatilhos de borda da tela. Os botões direito, do meio e laterais passam direto normalmente. Os vínculos armazenados permanecem; ao reativar **Usar gestos**, eles são restaurados. O botão de lixeira **Remover este aplicativo**, no canto superior direito da página do aplicativo, remove o escopo específico do aplicativo.
