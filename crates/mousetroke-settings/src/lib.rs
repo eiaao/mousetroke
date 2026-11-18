@@ -502,7 +502,7 @@ fn app_info(paths: State<AppPaths>) -> AppInfo {
 }
 
 const WEBSITE_ORIGIN: &str = "https://mousetroke.com";
-const HOMEPAGE_PATHS: [(&str, &str); 10] = [
+const HOMEPAGE_PATHS: [(&str, &str); 11] = [
     ("zh-CN", "/"),
     ("en-US", "/en/"),
     ("es-ES", "/es/"),
@@ -513,6 +513,7 @@ const HOMEPAGE_PATHS: [(&str, &str); 10] = [
     ("ru-RU", "/ru/"),
     ("it-IT", "/it/"),
     ("ko-KR", "/ko/"),
+    ("zh-TW", "/zh-tw/"),
 ];
 const GITHUB_URL: &str = "https://github.com/eiaao/mousetroke";
 const ISSUES_URL: &str = "https://github.com/eiaao/mousetroke/issues";
@@ -924,7 +925,7 @@ mod tests {
     #[test]
     fn project_urls_follow_ui_language_and_only_allow_fixed_destinations() {
         for (tag, suffix) in [
-            ("zh-CN", ""), ("zh-TW", "en/"), ("en-US", "en/"), ("es-ES", "es/"), ("fr-FR", "fr/"),
+            ("zh-CN", ""), ("zh-TW", "zh-tw/"), ("en-US", "en/"), ("es-ES", "es/"), ("fr-FR", "fr/"),
             ("de-DE", "de/"), ("ja-JP", "ja/"), ("pt-BR", "pt/"), ("ru-RU", "ru/"),
             ("it-IT", "it/"), ("ko-KR", "ko/"), ("qps-ploc", "en/"), ("unknown", "en/"),
         ] {
