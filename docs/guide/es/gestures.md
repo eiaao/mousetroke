@@ -36,12 +36,12 @@ En **Preferencias → Reconocimiento**:
 | Sensibilidad del trazado | Predeterminado: 30 px; control deslizante de 10–80 px. Los valores más pequeños reconocen trazos más cortos, pero facilitan los gestos accidentales. |
 | Los gestos actúan sobre | Elige **la ventana bajo el cursor** (predeterminado) o **la ventana activa**. |
 
-En **Aspecto**, **Mostrar el rastro**, **Grosor del rastro**, **Color del rastro**, **Al reconocerse**, **Desvanecer al terminar**, **Mostrar el nombre del gesto al dibujar** y **Color del nombre del gesto** controlan la respuesta visual. Aquí no hay ningún control deslizante de umbral de reconocimiento de formas.
+En **Aspecto**, **Tema de la interfaz** (**Sistema**, **Claro** u **Oscuro**; se aplica de inmediato a la ventana de ajustes), **Mostrar el rastro**, **Grosor del rastro**, **Color del rastro**, **Al reconocerse**, **Desvanecer al terminar**, **Mostrar el nombre del gesto al dibujar**, **Tamaño del texto de aviso** (16–96 px, 24 px por defecto; se puede aumentar en pantallas de alta resolución) y **Color del nombre del gesto** controlan la respuesta visual. Aquí no hay ningún control deslizante de umbral de reconocimiento de formas.
 
 ## Buscar, copiar y desactivar
 
 Pulsa **Ctrl+F** en Windows o **⌘+F** en Mac para buscar en la lista actual por nombre, trazado o acción. Usa **Gestos de ratón** / **Bordes de pantalla** y los filtros de botón/posición; **Desactivado** muestra las entradas desactivadas.
 
-Selecciona un gesto y haz clic en **Duplicar** para hacer una copia (Ctrl+D / ⌘+D). Dale a la copia un trazado distinto: los dibujos idénticos en un mismo ámbito entran en conflicto, así que no te fíes del orden de la lista para elegir una acción. Usa el conmutador **Activado** / **Desactivado** del editor, o Espacio sobre una fila seleccionada de la lista, para desactivarlo sin borrarlo. Las asignaciones desactivadas dejan por sí solas de reservar su disparador.
+Haz clic derecho en un gesto de la lista y elige **Duplicar**, o selecciónalo y pulsa Ctrl+D / ⌘+D. **Copiar a / Mover a…** del menú contextual coloca un gesto en otras aplicaciones; consulta [reglas por aplicación](per-app.md). Dale a la copia un trazado distinto: los dibujos idénticos en un mismo ámbito entran en conflicto, así que no te fíes del orden de la lista para elegir una acción. Usa el conmutador **Activado** / **Desactivado** del editor, o Espacio sobre una fila seleccionada de la lista, para desactivarlo sin borrarlo. Las asignaciones desactivadas dejan por sí solas de reservar su disparador.
 
 Siguiente: [biblioteca de gestos](gesture-library.md), [bordes de pantalla](screen-edges.md), [reglas por aplicación](per-app.md), [sintaxis de envío de teclas](key-sequences.md).

@@ -36,12 +36,12 @@ Sous **Préférences → Reconnaissance** :
 | Sensibilité du tracé | 30 px par défaut ; curseur de 10 à 80 px. Des valeurs plus faibles reconnaissent les tracés plus courts mais rendent les gestes accidentels plus faciles à déclencher. |
 | Les gestes agissent sur | Choisissez **la fenêtre sous le curseur** (par défaut) ou **la fenêtre active**. |
 
-Sous **Apparence**, **Afficher la traînée**, **Épaisseur de la traînée**, **Couleur de la traînée**, **En cas de succès**, **Estomper à la fin**, **Afficher le nom du geste pendant le tracé** et **Couleur du nom** contrôlent le retour visuel. Il n’y a pas de curseur de seuil de reconnaissance des formes ici.
+Sous **Apparence**, **Thème de l’interface** (**Système**, **Clair** ou **Sombre** ; s’applique immédiatement à la fenêtre des préférences), **Afficher la traînée**, **Épaisseur de la traînée**, **Couleur de la traînée**, **En cas de succès**, **Estomper à la fin**, **Afficher le nom du geste pendant le tracé**, **Taille du texte d’indication** (16–96 px, 24 px par défaut ; peut être augmentée sur les écrans haute résolution) et **Couleur du nom** contrôlent le retour visuel. Il n’y a pas de curseur de seuil de reconnaissance des formes ici.
 
 ## Rechercher, copier et désactiver
 
 Appuyez sur **Ctrl+F** sous Windows ou **⌘+F** sur Mac pour rechercher dans la liste actuelle par nom, tracé ou action. Utilisez **Gestes de souris** / **Bords de l’écran** et les filtres par bouton/position ; **Désactivé** affiche les entrées désactivées.
 
-Sélectionnez un geste et cliquez sur **Dupliquer** pour en faire une copie (Ctrl+D / ⌘+D). Donnez à la copie un tracé différent : des dessins identiques dans une même portée entrent en conflit, ne comptez donc pas sur leur ordre dans la liste pour choisir une action. Utilisez l’interrupteur **Activé** / **Désactivé** de l’éditeur, ou la barre d’espace sur une ligne sélectionnée de la liste, pour désactiver un geste sans le supprimer. Les liaisons désactivées ne réservent plus leur déclencheur par elles-mêmes.
+Faites un clic droit sur un geste dans la liste et choisissez **Dupliquer**, ou sélectionnez-le et appuyez sur Ctrl+D / ⌘+D. **Copier vers / Déplacer vers…** dans le menu contextuel place un geste dans d’autres applications ; voir [règles par application](per-app.md). Donnez à la copie un tracé différent : des dessins identiques dans une même portée entrent en conflit, ne comptez donc pas sur leur ordre dans la liste pour choisir une action. Utilisez l’interrupteur **Activé** / **Désactivé** de l’éditeur, ou la barre d’espace sur une ligne sélectionnée de la liste, pour désactiver un geste sans le supprimer. Les liaisons désactivées ne réservent plus leur déclencheur par elles-mêmes.
 
 Suivant : [bibliothèque de gestes](gesture-library.md), [bords de l’écran](screen-edges.md), [règles par application](per-app.md), [syntaxe d’envoi de touches](key-sequences.md).

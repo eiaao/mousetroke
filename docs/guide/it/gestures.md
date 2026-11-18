@@ -36,12 +36,12 @@ Sotto **Preferenze → Riconoscimento**:
 | Sensibilità del tracciato | Predefinito 30 px; cursore 10–80 px. Valori più bassi riconoscono tracciati più corti ma rendono più facili i gesti involontari. |
 | I gesti agiscono su | Scegli **la finestra sotto il cursore** (predefinito) o **la finestra attiva**. |
 
-Sotto **Aspetto**, **Mostra la scia**, **Spessore della scia**, **Colore della scia**, **Al riconoscimento**, **Sfuma al termine**, **Mostra il nome del gesto mentre disegni** e **Colore del nome** controllano il feedback. Qui non c'è un cursore per la soglia di riconoscimento delle forme.
+Sotto **Aspetto**, **Tema dell’interfaccia** (**Sistema**, **Chiaro** o **Scuro**; si applica subito alla finestra delle impostazioni), **Mostra la scia**, **Spessore della scia**, **Colore della scia**, **Al riconoscimento**, **Sfuma al termine**, **Mostra il nome del gesto mentre disegni**, **Dimensione del testo di avviso** (16–96 px, predefinito 24 px; può essere aumentata sugli schermi ad alta risoluzione) e **Colore del nome** controllano il feedback. Qui non c'è un cursore per la soglia di riconoscimento delle forme.
 
 ## Trovare, copiare e disattivare
 
 Premi **Ctrl+F** su Windows o **⌘+F** su Mac per cercare nell'elenco attuale per nome, tracciato o azione. Usa **Gesti del mouse** / **Bordi dello schermo** e i filtri per pulsante/posizione; **Disattivati** mostra le voci disattivate.
 
-Seleziona un gesto e clicca **Duplica** per farne una copia (Ctrl+D / ⌘+D). Dai alla copia un tracciato diverso: disegni identici nello stesso ambito vanno in conflitto, quindi non contare sull'ordine dell'elenco per scegliere un'azione. Usa l'interruttore **Attivo** / **Disattivato** dell'editor, oppure Spazio su una riga selezionata dell'elenco, per disattivare un gesto senza eliminarlo. Le associazioni disattivate non riservano più da sole il loro attivatore.
+Fai clic con il tasto destro su un gesto nell'elenco e scegli **Duplica**, oppure selezionalo e premi Ctrl+D / ⌘+D. **Copia in / Sposta in…** nel menu contestuale mette un gesto in altre app; vedi [sostituzioni per app](per-app.md). Dai alla copia un tracciato diverso: disegni identici nello stesso ambito vanno in conflitto, quindi non contare sull'ordine dell'elenco per scegliere un'azione. Usa l'interruttore **Attivo** / **Disattivato** dell'editor, oppure Spazio su una riga selezionata dell'elenco, per disattivare un gesto senza eliminarlo. Le associazioni disattivate non riservano più da sole il loro attivatore.
 
 Successivo: [libreria dei gesti](gesture-library.md), [bordi dello schermo](screen-edges.md), [sostituzioni per app](per-app.md), [sintassi di invio dei tasti](key-sequences.md).

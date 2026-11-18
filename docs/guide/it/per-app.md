@@ -23,6 +23,8 @@ Le regole Windows possono corrispondere a un nome di eseguibile o a un percorso 
 
 Per esempio, aggiungi un browser, crea un gesto `↓→` col pulsante destro e assegnagli lì un'azione diversa. Le altre app mantengono l'azione globale di `↓→`. Per copiare una configurazione esistente, usa [Duplica](gestures.md#trovare-copiare-e-disattivare) dentro il suo ambito e modifica l'associazione. Per registrare un tracciato una sola volta e dargli un'azione diversa in ogni app, usa la [libreria dei gesti](gesture-library.md).
 
+L'editor dei gesti mostra dove è salvata l'associazione. Fai clic con il tasto destro sul gesto nell'elenco e scegli **Copia in / Sposta in…**, seleziona le app di destinazione, poi clicca **Copia** o **Sposta**. Puoi scegliere più app già aggiunte contemporaneamente o aggiungere un'app dalla finestra. Le copie hanno impostazioni indipendenti; lo spostamento rimuove l'associazione dall'ambito originale. Se una destinazione ha già lo stesso tracciato, scegli se saltarlo o sostituirlo. L'intera operazione può essere annullata dalla notifica. Un'associazione copiata in un'app con i gesti disattivati viene conservata, ma non verrà eseguita finché i gesti non vengono attivati per quell'app.
+
 ## Disattivare i gesti in un'app
 
 Seleziona l'app nella barra laterale e disattiva **Usa i gesti**. Questo disattiva i gesti propri dell'app, i gesti globali e gli attivatori di bordo. I pulsanti destro, centrale e laterali passano normalmente. Le associazioni salvate restano; riattivando **Usa i gesti** si ripristinano. Il pulsante cestino **Rimuovi questa app**, in alto a destra nella pagina dell'app, elimina l'ambito specifico dell'app.
