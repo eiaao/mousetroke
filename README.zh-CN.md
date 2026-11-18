@@ -11,7 +11,7 @@ Mac 卸载：从菜单栏退出，删除应用、`~/Library/Application Support/
 
 **[产品主页](https://mousetroke.com/) · [下载](https://github.com/eiaao/mousetroke/releases/latest) · [English](README.md)**
 
-文档 / Documentation：[使用指南](docs/guide/zh-CN/index.md) · [User guide](docs/guide/en/index.md)
+文档 / Documentation：[使用指南](docs/guide/zh-CN/index.md) · [User guide](docs/guide/en/index.md) · [繁體中文指南](docs/guide/zh-TW/index.md)
 
 ![Mousetroke 演示：画手势复制信息、调节音量、录制新手势](docs/images/mousetroke-demo.gif)
 
