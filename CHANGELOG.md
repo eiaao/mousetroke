@@ -2,6 +2,22 @@
 
 Each version lists its highlights in English, then in Chinese. The release page, the in-app update notes and the website changelog are all generated from this file.
 
+## Unreleased
+
+### English
+
+- Traditional Chinese (Taiwan) interface and user guide. **System default** picks it for Taiwan, Hong Kong, Macau and Traditional Chinese system languages, and documentation links open the Traditional Chinese guide on the website. Contributed by Amppa. (#88, #96)
+- Right-click a gesture in the list and choose **Copy to / Move to…** to put it into one or more other apps. If an app already has the same drawing, choose to skip or replace it; the whole operation can be undone. **Duplicate** moved into the same right-click menu (Ctrl+D / ⌘+D still works). Contributed by Amppa. (#90)
+- **Preferences → Appearance** adds **Interface theme** (System, Light or Dark) and **Prompt text size** for the gesture name shown while drawing (16–96 px, default 24 px). Contributed by Amppa. (#89, #92)
+- The gesture editor now floats over the list instead of narrowing it; click outside the editor to close it. Contributed by Amppa. (#91)
+
+### 中文
+
+- 新增繁体中文（台湾）界面和使用指南。系统语言为台湾、香港、澳门或繁体中文时，“跟随系统”会选用繁体；文档链接打开网站上的繁体指南。由 Amppa 贡献。（#88、#96）
+- 在手势列表中右键单击手势，选择“复制到／移动到…”，可放到一个或多个其他程序。目标程序已有相同画法时可选择跳过或取代，整次操作可撤销。“复制一份”移入同一右键菜单（仍可按 Ctrl+D／⌘+D）。由 Amppa 贡献。（#90）
+- “偏好设置 → 外观”新增“界面主题”（跟随系统、浅色、深色）和画手势时手势名的“提示文字大小”（16–96 px，默认 24 px）。由 Amppa 贡献。（#89、#92）
+- 手势编辑面板改为浮在列表上方，不再挤窄列表；点击面板外即可收起。由 Amppa 贡献。（#91）
+
 ## 0.3.3 — 2026-11-16
 
 ### English
