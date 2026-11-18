@@ -12,7 +12,7 @@ Voreinstellungen beschreiben, was Sie tun möchten, etwa einen Tab schließen od
 
 1. Erstellen oder wählen Sie eine Geste und klicken Sie auf **Aktion auswählen** oder bei einer vorhandenen Aktion auf **Ersetzen**.
 2. Suchen Sie nach Name, Beschreibung, Alias oder Tastenkürzel, etwa `ctrl+w` unter Windows oder `cmd+w` / `⌘w` auf dem Mac. Die Suche umfasst alle Kategorien. Ohne Suchbegriff können Sie **Häufig**, **Browser**, **Bearbeiten**, **Text**, **Fenster**, **Desktop & System**, **Medien**, **Öffnen** oder **Mousetroke** durchsehen.
-3. Wählen Sie ein Ergebnis. Aktionen mit Parametern öffnen ein Formular: Geben Sie Text ein, wählen Sie ein Datumsformat oder einen Suchdienst, oder geben Sie eine URL an bzw. wählen Sie eine Datei, einen Ordner oder eine App. Bestätigen Sie mit **Diese Aktion verwenden**. Nicht verfügbare Aktionen sind deaktiviert; ein Hinweis erklärt die Plattformbeschränkung oder die geplante Umsetzung in der zweiten Phase.
+3. Wählen Sie ein Ergebnis. Aktionen mit Parametern öffnen ein Formular: Geben Sie Text ein, wählen Sie ein Datumsformat oder einen Suchdienst, oder geben Sie eine URL an bzw. wählen Sie eine Datei, einen Ordner oder eine App. Bestätigen Sie mit **Diese Aktion verwenden**. Nicht verfügbare Aktionen sind deaktiviert; ein Hinweis erklärt die Plattformbeschränkung.
 4. Testen Sie die Geste außerhalb der Einstellungen. Ein leerer Gestenname übernimmt den Namen der gewählten Aktion. Menüeinträge verwenden denselben Auswahldialog.
 
 Beim Öffnen erhält das Suchfeld den Fokus. Mit den Pfeiltasten nach oben und unten wechseln Sie zwischen verfügbaren Ergebnissen, mit Enter wählen Sie eines aus. Esc schließt zuerst das Parameterformular, dann den Auswahldialog. In mehrzeiligen Textfeldern bestätigt Ctrl+Enter oder Command+Enter das Formular.
@@ -29,7 +29,7 @@ Beim Öffnen erhält das Suchfeld den Fokus. Mit den Pfeiltasten nach oben und u
 
 ## Katalog
 
-Die folgenden Tabellen werden aus der Registrierung erzeugt und enthalten alle 87 Einträge. ✓ bedeutet, dass die Aktion auf dieser Plattform umgesetzt ist; die Verfügbarkeit hängt weiterhin von App, Hardware und nötigen Berechtigungen ab. Die Gesten-Kurzübersicht ist für die zweite Phase vorgesehen.
+Die folgenden Tabellen werden aus der Registrierung erzeugt und enthalten alle 87 Einträge. ✓ bedeutet, dass die Aktion auf dieser Plattform umgesetzt ist; die Verfügbarkeit hängt weiterhin von App, Hardware und nötigen Berechtigungen ab.
 
 <!-- action-library:generated:start -->
 
@@ -158,7 +158,7 @@ Die folgenden Tabellen werden aus der Registrierung erzeugt und enthalten alle 8
 |---|---|---|---|---|
 | Gesten pausieren / fortsetzen<br>`mousetroke.toggle_pause` | Pausiert oder aktiviert die Gestenerkennung in Mousetroke. | — | ✓ | ✓ |
 | Einstellungen öffnen<br>`mousetroke.settings` | Öffnet die Mousetroke-Einstellungen. | — | ✓ | ✓ |
-| Gestenliste anzeigen<br>`mousetroke.cheatsheet` | Zeigt Gesten für die aktuelle App; für Phase 2 geplant. | — | Diese Aktion ist für Phase 2 geplant. | Diese Aktion ist für Phase 2 geplant. |
+| Gestenliste anzeigen<br>`mousetroke.cheatsheet` | Listet die Gesten der aktuellen App am Mauszeiger auf; ein Klick führt die Geste aus. | — | ✓ | ✓ |
 
 <!-- action-library:generated:end -->
 

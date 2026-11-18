@@ -25,6 +25,7 @@ pub enum NativePreset {
     Sleep,
     TogglePause,
     Settings,
+    Cheatsheet,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -43,6 +44,8 @@ pub enum NativeAction {
     Sleep,
     TogglePause,
     Settings,
+    /// 引擎执行前已按当前目标展开为手势菜单（见 [`crate::cheatsheet`]），平台不会收到。
+    Cheatsheet,
 }
 
 #[derive(Debug, Clone, PartialEq)]
@@ -65,6 +68,7 @@ impl NativeAction {
             Self::Sleep => "system.sleep",
             Self::TogglePause => "mousetroke.toggle_pause",
             Self::Settings => "mousetroke.settings",
+            Self::Cheatsheet => "mousetroke.cheatsheet",
         }
     }
 

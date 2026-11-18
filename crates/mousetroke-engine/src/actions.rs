@@ -44,9 +44,7 @@ mod tests {
         for (platform, keys) in [(Platform::Windows, "^c"), (Platform::Macos, "#c")] {
             assert!(matches!(prepare_action(preset("edit.copy"), platform, Lang::EnUs), Some(PreparedAction::Advanced(Action::KeySequence { keys: actual, .. })) if actual == keys));
             assert!(matches!(prepare_action(preset("window.snap_left"), platform, Lang::EnUs), Some(PreparedAction::Native(_))));
-            for id in ["future.preset", "mousetroke.cheatsheet"] {
-                assert!(prepare_action(preset(id), platform, Lang::EnUs).is_none());
-            }
+            assert!(prepare_action(preset("future.preset"), platform, Lang::EnUs).is_none());
             assert!(prepare_action(Action::Unknown(Default::default()), platform, Lang::EnUs).is_none());
         }
         assert!(prepare_action(preset("window.toggle_topmost"), Platform::Macos, Lang::EnUs).is_none());

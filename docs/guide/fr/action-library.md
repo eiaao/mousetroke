@@ -12,7 +12,7 @@ Les actions prédéfinies décrivent ce que vous voulez faire, par exemple ferme
 
 1. Créez ou sélectionnez un geste, puis cliquez sur **Choisir une action**, ou sur **Remplacer** pour une action existante.
 2. Recherchez un nom, une description, un alias ou la notation d’un raccourci, comme `ctrl+w` sous Windows ou `cmd+w` / `⌘w` sur Mac. La recherche couvre toutes les catégories. Sans recherche, parcourez **Fréquentes**, **Navigateur**, **Édition**, **Texte**, **Fenêtres**, **Bureau et système**, **Médias**, **Ouvrir** ou **Mousetroke**.
-3. Choisissez un résultat. Les actions avec paramètres ouvrent un formulaire : saisissez du texte, choisissez un format de date ou un service de recherche, ou indiquez une URL, un fichier, un dossier ou une application. Cliquez sur **Utiliser cette action** pour confirmer. Les actions indisponibles sont désactivées et précisent la limite de la plateforme ou leur mise en œuvre prévue dans une deuxième phase.
+3. Choisissez un résultat. Les actions avec paramètres ouvrent un formulaire : saisissez du texte, choisissez un format de date ou un service de recherche, ou indiquez une URL, un fichier, un dossier ou une application. Cliquez sur **Utiliser cette action** pour confirmer. Les actions indisponibles sont désactivées et précisent la limite de la plateforme.
 4. Essayez le geste en dehors des paramètres. Un nom de geste vide reprend le nom de l’action choisie. Les éléments de menu utilisent le même sélecteur.
 
 À l’ouverture du sélecteur, le champ de recherche reçoit le focus. Les flèches haut et bas parcourent les résultats disponibles et Entrée en sélectionne un. Échap ferme d’abord le formulaire de paramètres, puis le sélecteur. Dans un champ de texte multiligne, Ctrl+Enter ou Command+Enter confirme le formulaire.
@@ -29,7 +29,7 @@ Les actions prédéfinies décrivent ce que vous voulez faire, par exemple ferme
 
 ## Catalogue
 
-Les tableaux ci-dessous sont générés à partir du registre et comprennent les 87 entrées. ✓ signifie que l’action est implémentée sur cette plateforme ; sa disponibilité dépend toujours de l’application, du matériel et des autorisations nécessaires. L’aide-mémoire des gestes est prévu pour la deuxième phase.
+Les tableaux ci-dessous sont générés à partir du registre et comprennent les 87 entrées. ✓ signifie que l’action est implémentée sur cette plateforme ; sa disponibilité dépend toujours de l’application, du matériel et des autorisations nécessaires.
 
 <!-- action-library:generated:start -->
 
@@ -158,7 +158,7 @@ Les tableaux ci-dessous sont générés à partir du registre et comprennent les
 |---|---|---|---|---|
 | Suspendre / reprendre les gestes<br>`mousetroke.toggle_pause` | Suspend ou reprend la reconnaissance des gestes de Mousetroke. | — | ✓ | ✓ |
 | Ouvrir les réglages<br>`mousetroke.settings` | Ouvre les réglages de Mousetroke. | — | ✓ | ✓ |
-| Afficher la liste des gestes<br>`mousetroke.cheatsheet` | Liste les gestes de l’app actuelle ; prévu pour la phase 2. | — | Cette action est prévue pour la phase 2. | Cette action est prévue pour la phase 2. |
+| Afficher la liste des gestes<br>`mousetroke.cheatsheet` | Liste les gestes de l’app actuelle sous le curseur ; choisissez-en un pour l’exécuter. | — | ✓ | ✓ |
 
 <!-- action-library:generated:end -->
 

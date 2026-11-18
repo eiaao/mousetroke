@@ -12,7 +12,7 @@ As ações predefinidas descrevem o que você quer fazer, como fechar uma aba ou
 
 1. Crie ou selecione um gesto e clique em **Escolher ação**, ou em **Trocar** em uma ação existente.
 2. Pesquise por nome, descrição, apelido ou escrita do atalho, como `ctrl+w` no Windows ou `cmd+w` / `⌘w` no Mac. A pesquisa abrange todas as categorias. Sem pesquisar, explore **Frequentes**, **Navegador**, **Edição**, **Texto**, **Janelas**, **Área de trabalho e sistema**, **Mídia**, **Abrir** ou **Mousetroke**.
-3. Escolha um resultado. Ações com parâmetros abrem um formulário: digite texto, escolha um formato de data ou serviço de pesquisa, ou informe uma URL, um arquivo, uma pasta ou um aplicativo. Clique em **Usar esta ação** para confirmar. Ações indisponíveis ficam desativadas e informam a limitação da plataforma ou a implementação prevista para a segunda fase.
+3. Escolha um resultado. Ações com parâmetros abrem um formulário: digite texto, escolha um formato de data ou serviço de pesquisa, ou informe uma URL, um arquivo, uma pasta ou um aplicativo. Clique em **Usar esta ação** para confirmar. Ações indisponíveis ficam desativadas e informam a limitação da plataforma.
 4. Experimente o gesto fora das configurações. Se o nome do gesto estiver vazio, ele acompanha o nome da ação selecionada. Os itens de menu usam o mesmo seletor.
 
 Ao abrir o seletor, o campo de pesquisa recebe o foco. Use as setas para cima e para baixo para percorrer os resultados disponíveis e Enter para selecionar. Esc fecha primeiro o formulário de parâmetros e depois o seletor. Em campos de texto com várias linhas, Ctrl+Enter ou Command+Enter confirma o formulário.
@@ -29,7 +29,7 @@ Ao abrir o seletor, o campo de pesquisa recebe o foco. Use as setas para cima e 
 
 ## Catálogo
 
-As tabelas abaixo são geradas a partir do registro e incluem todas as 87 entradas. ✓ indica que a ação está implementada naquela plataforma; a disponibilidade ainda depende do aplicativo, do hardware e das permissões necessárias. A consulta rápida de gestos está prevista para a segunda fase.
+As tabelas abaixo são geradas a partir do registro e incluem todas as 87 entradas. ✓ indica que a ação está implementada naquela plataforma; a disponibilidade ainda depende do aplicativo, do hardware e das permissões necessárias.
 
 <!-- action-library:generated:start -->
 
@@ -158,7 +158,7 @@ As tabelas abaixo são geradas a partir do registro e incluem todas as 87 entrad
 |---|---|---|---|---|
 | Pausar / retomar gestos<br>`mousetroke.toggle_pause` | Pausa ou retoma o reconhecimento de gestos no Mousetroke. | — | ✓ | ✓ |
 | Abrir configurações<br>`mousetroke.settings` | Abre as configurações do Mousetroke. | — | ✓ | ✓ |
-| Mostrar lista de gestos<br>`mousetroke.cheatsheet` | Lista gestos do app atual; previsto para a fase 2. | — | Esta ação está prevista para a fase 2. | Esta ação está prevista para a fase 2. |
+| Mostrar lista de gestos<br>`mousetroke.cheatsheet` | Lista os gestos do app atual junto ao cursor; escolha um para executá-lo. | — | ✓ | ✓ |
 
 <!-- action-library:generated:end -->
 

@@ -11,6 +11,7 @@
 //! - [`edge`]：屏幕边/角编码（与旧格式 RectEdge/RectCorner 一致）与命中判定
 //! - [`legacy`]：旧格式 gestures/prefs.json → 原生配置的导入器（迁移用）
 //! - [`library`]：手势库（共享手势的引用维护、内置建库、整理导入分析）
+//! - [`cheatsheet`]：「显示手势列表」的菜单项（当前目标可用的手势）
 //! - [`keyseq`]：按键序列语法解析（AutoIt/SendKeys 风格语法）
 //! - [`matcher`]：捕获会话 → 步骤序列 → 作用域选择与绑定匹配
 //! - [`recognizer`]：轨迹量化与折线匹配
@@ -23,6 +24,7 @@ pub mod action_text;
 pub mod edge;
 pub mod i18n;
 pub mod caps;
+pub mod cheatsheet;
 pub mod keymap;
 pub mod legacy;
 pub mod library;

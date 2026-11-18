@@ -58,6 +58,8 @@ pub(crate) fn execute(
             Ok(())
         }),
         NativeAction::Settings => crate::settings::open_checked(),
+        // 引擎执行前已展开为菜单。
+        NativeAction::Cheatsheet => Ok(()),
     }
 }
 
