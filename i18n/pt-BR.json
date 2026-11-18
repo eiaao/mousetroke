@@ -692,6 +692,7 @@
   "overlay.brightness": "Brilho {value}%",
   "overlay.brightness_unsupported": "Este monitor não permite ajuste de brilho",
   "overlay.elevated_target": "Esta janela está sendo executada como administrador. Execute o Mousetroke também como administrador para controlá-la.",
+  "toast.restart_as_admin": "Reiniciar como administrador",
   "ui.picker.live_hint": "Clique na janela do aplicativo a configurar · Esc ou clique direito cancela",
   "cli.help": "Mousetroke {version} — gestos de mouse globais para Windows\n\nUso:\n  mousetroke import <gestures.json> [prefs.json] [-o <saída>]\n  mousetroke [run] [--config <caminho>]         inicia o motor de gestos (recarrega mudanças de configuração)\n  mousetroke autostart on|off|status\n  mousetroke settings [caminho da configuração] abre as configurações\n  mousetroke lua <script.lua>                   executa direto um script Lua\n  mousetroke diag                               diagnóstico: outras ferramentas de mouse, alvo sob o cursor, tela cheia",
   "cli.unknown_command": "Comando desconhecido: {cmd}",

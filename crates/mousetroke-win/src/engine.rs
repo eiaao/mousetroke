@@ -161,16 +161,19 @@ pub(crate) fn elevated_beyond_us(pid: u32) -> bool {
         && targeting::is_elevated(pid) == Some(true)
 }
 
-/// 目标是管理员窗口时按键等动作会静默失效、手势也无法在其中触发：每个目标进程提示一次。
+/// 管理员窗口会让按键等动作静默失效、手势也无法在其中触发：本次运行只提示一次，
+/// 用系统通知（可点"以管理员身份重启"），通知不可用时退回光标旁提示。
 pub(crate) fn warn_if_elevated(pid: u32) {
-    static WARNED: std::sync::Mutex<Vec<u32>> = std::sync::Mutex::new(Vec::new());
-    if !elevated_beyond_us(pid) {
+    static WARNED: std::sync::atomic::AtomicBool = std::sync::atomic::AtomicBool::new(false);
+    if !elevated_beyond_us(pid) || WARNED.swap(true, std::sync::atomic::Ordering::Relaxed) {
         return;
     }
-    let Ok(mut warned) = WARNED.lock() else { return };
-    if !warned.contains(&pid) {
-        warned.push(pid);
-        crate::log!("前台/目标进程 {pid} 以管理员身份运行，已提示");
+    crate::log!("前台/目标进程 {pid} 以管理员身份运行，已提示");
+    let restart = || {
+        std::thread::spawn(crate::tray::restart_elevated);
+    };
+    if let Err(e) = crate::toast::show_elevated(restart) {
+        crate::log!("系统通知失败，改用光标旁提示: {e}");
         push_toast(mousetroke_core::i18n::t(mousetroke_core::i18n::keys::OVERLAY_ELEVATED_TARGET).into(), 4000);
     }
 }

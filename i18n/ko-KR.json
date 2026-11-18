@@ -672,6 +672,7 @@
   "overlay.brightness": "밝기 {value}%",
   "overlay.brightness_unsupported": "이 디스플레이는 밝기 조절을 지원하지 않습니다",
   "overlay.elevated_target": "이 창은 관리자 권한으로 실행 중입니다. 제어하려면 Mousetroke도 관리자 권한으로 실행하세요.",
+  "toast.restart_as_admin": "관리자 권한으로 다시 시작",
   "ui.picker.live_hint": "설정할 앱 창을 클릭하세요 · Esc나 오른쪽 클릭으로 취소",
   "cli.help": "Mousetroke {version} — Windows용 전역 마우스 제스처\n\n사용법:\n  mousetroke import <gestures.json> [prefs.json] [-o <출력>]\n  mousetroke [run] [--config <경로>]          제스처 엔진 시작(설정 변경 자동 반영)\n  mousetroke autostart on|off|status\n  mousetroke settings [설정 경로]             설정 창 열기\n  mousetroke lua <script.lua>                  Lua 스크립트 바로 실행\n  mousetroke diag                              진단: 다른 마우스 도구, 커서 아래 대상, 전체 화면 판정",
   "cli.unknown_command": "알 수 없는 명령: {cmd}",

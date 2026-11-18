@@ -1,4 +1,4 @@
-//! 新版本系统通知：Windows 通知中心的"提醒"类通知，带"查看更新""忽略此版本"按钮。
+//! 系统通知：新版本（Windows 通知中心的"提醒"类通知，带"查看更新""忽略此版本"按钮）与管理员窗口提示（带"以管理员身份重启"按钮）。
 //! 未打包的程序需要先在注册表登记应用身份（AUMID）才能发通知；失败时由调用方回退到托盘气泡。
 use mousetroke_core::i18n::{keys, t, tf};
 use std::path::PathBuf;
@@ -127,4 +127,43 @@ pub fn ignore(config: Option<PathBuf>, version: String) {
         crate::log!("忽略版本写入失败");
     }
     crate::update::wake();
+}
+
+/// 管理员窗口在前台、手势无法使用时的通知；点按钮调用 `on_restart`（通知线程）。
+/// 普通通知几秒后转入通知中心；持有对象直到用户处理，从通知中心点击仍能回调。
+pub fn show_elevated(on_restart: impl Fn() + Send + Sync + 'static) -> windows::core::Result<()> {
+    register()?;
+    let xml = format!(
+        r#"<toast><visual><binding template="ToastGeneric"><text>Mousetroke</text><text>{body}</text></binding></visual><actions><action content="{restart}" arguments="restart" activationType="foreground"/></actions></toast>"#,
+        body = escape(t(keys::OVERLAY_ELEVATED_TARGET)),
+        restart = escape(t(keys::TOAST_RESTART_AS_ADMIN)),
+    );
+    let doc = XmlDocument::new()?;
+    doc.LoadXml(&HSTRING::from(xml))?;
+    let toast = ToastNotification::CreateToastNotification(&doc)?;
+    let handled = Arc::new(AtomicBool::new(false));
+    let done = handled.clone();
+    toast.Activated(&TypedEventHandler::<ToastNotification, windows::core::IInspectable>::new(move |_, args| {
+        done.store(true, Ordering::Release);
+        let arguments = args.as_ref().and_then(|a| a.cast::<ToastActivatedEventArgs>().ok()).and_then(|a| a.Arguments().ok());
+        if arguments.is_some_and(|a| a == "restart") {
+            on_restart();
+        }
+        Ok(())
+    }))?;
+    let done = handled.clone();
+    toast.Dismissed(&TypedEventHandler::<ToastNotification, ToastDismissedEventArgs>::new(move |_, args| {
+        if args.as_ref().and_then(|a| a.Reason().ok()) == Some(ToastDismissalReason::UserCanceled) {
+            done.store(true, Ordering::Release);
+        }
+        Ok(())
+    }))?;
+    ToastNotificationManager::CreateToastNotifierWithId(&HSTRING::from(AUMID))?.Show(&toast)?;
+    std::thread::spawn(move || {
+        let _toast = toast;
+        while !handled.load(Ordering::Acquire) {
+            std::thread::sleep(KEEP_ALIVE_POLL);
+        }
+    });
+    Ok(())
 }
