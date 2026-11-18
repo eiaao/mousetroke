@@ -171,28 +171,20 @@ fn elevated_foreground() -> Option<u32> {
     (pid != 0 && crate::engine::elevated_beyond_us(pid)).then_some(pid)
 }
 
-/// 自上次调用以来是否按过左键以外的鼠标键（手势键只能是这些）。每次定时都调用，
-/// 让 `GetAsyncKeyState` 的“按过”位只反映最近一个周期。
-fn gesture_button_pressed() -> bool {
-    use windows::Win32::UI::Input::KeyboardAndMouse::{GetAsyncKeyState, VK_MBUTTON, VK_RBUTTON, VK_XBUTTON1, VK_XBUTTON2};
-    [VK_RBUTTON, VK_MBUTTON, VK_XBUTTON1, VK_XBUTTON2]
-        .into_iter()
-        .fold(false, |any, vk| (unsafe { GetAsyncKeyState(vk.0 as i32) } != 0) | any)
-}
-
 /// 定时调用（引擎线程）：钩子被系统摘除时重新安装。
 pub fn check_hooks() {
     let mut info = LASTINPUTINFO { cbSize: std::mem::size_of::<LASTINPUTINFO>() as u32, dwTime: 0 };
     if unsafe { !GetLastInputInfo(&mut info).as_bool() } {
         return;
     }
-    // 管理员窗口在前台时钩子收不到按键，手势无从触发：用户按下手势键时提示原因
-    if let Some(pid) = gesture_button_pressed().then(elevated_foreground).flatten() {
+    // 管理员窗口在前台时钩子收不到按键，手势无从触发：它到前台时提示原因（每个进程一次）
+    let elevated = elevated_foreground();
+    if let Some(pid) = elevated {
         crate::engine::warn_if_elevated(pid);
     }
     let now = unsafe { GetTickCount() };
     let last_hook = LAST_HOOK_TICK.load(Ordering::Relaxed);
-    if !hooks_lost(last_hook, info.dwTime, now, LAST_INSTALL_TICK.get()) || elevated_foreground().is_some() {
+    if !hooks_lost(last_hook, info.dwTime, now, LAST_INSTALL_TICK.get()) || elevated.is_some() {
         return;
     }
     unhook();

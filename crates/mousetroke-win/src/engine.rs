@@ -170,6 +170,7 @@ pub(crate) fn warn_if_elevated(pid: u32) {
     let Ok(mut warned) = WARNED.lock() else { return };
     if !warned.contains(&pid) {
         warned.push(pid);
+        crate::log!("前台/目标进程 {pid} 以管理员身份运行，已提示");
         push_toast(mousetroke_core::i18n::t(mousetroke_core::i18n::keys::OVERLAY_ELEVATED_TARGET).into(), 4000);
     }
 }
