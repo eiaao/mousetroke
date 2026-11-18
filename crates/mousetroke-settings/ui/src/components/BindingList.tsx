@@ -338,9 +338,9 @@ export function BindingList({
       ) : (
         <ul key={`${tab}-${activeFilter}`} ref={listRef} className={`rows ${off ? "dimmed" : ""}`} role="listbox" aria-label={t("ui.list.rows_aria")} tabIndex={0} onKeyDown={onListKey}>
           {visible.map(({ b, i }, n) => (
-            <Row key={i} n={n} b={b} on={selected === i} clash={clash.has(i)} onClick={() => onSelect(i)} onToggle={() => onToggle(i)}
+            <Row key={i} n={n} b={b} on={selected === i} menu={!!b.uiId && context?.uiId === b.uiId} clash={clash.has(i)} onClick={() => onSelect(i)} onToggle={() => onToggle(i)}
               onContextMenu={(x, y) => {
-                onSelect(i);
+                // 右键只弹菜单，不选中（不打开详情面板）
                 if (b.uiId) setContext({ uiId: b.uiId, x, y });
               }} />
           ))}
@@ -360,7 +360,7 @@ export function BindingList({
   );
 }
 
-function Row({ n, b, on, clash, onClick, onToggle, onContextMenu }: { n: number; b: Binding; on: boolean; clash: boolean; onClick: () => void; onToggle: () => void; onContextMenu: (x: number, y: number) => void }) {
+function Row({ n, b, on, menu, clash, onClick, onToggle, onContextMenu }: { n: number; b: Binding; on: boolean; menu: boolean; clash: boolean; onClick: () => void; onToggle: () => void; onContextMenu: (x: number, y: number) => void }) {
   const name = displayName(b.name, b.name_key);
   const enabled = !b.disabled || !!b.draft;
   const incomplete = !!b.draft && !hasConflictPattern(b.pattern);
@@ -368,7 +368,7 @@ function Row({ n, b, on, clash, onClick, onToggle, onContextMenu }: { n: number;
     <li
       role="option"
       aria-selected={on}
-      className={`row ${on ? "on" : ""} ${!enabled ? "off" : ""}`}
+      className={`row ${on ? "on" : ""} ${menu ? "ctx" : ""} ${!enabled ? "off" : ""}`}
       style={{ "--i": Math.min(n, 12) } as React.CSSProperties}
       onClick={onClick}
       onContextMenu={(e) => { e.preventDefault(); onContextMenu(e.clientX, e.clientY); }}
