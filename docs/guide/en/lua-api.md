@@ -157,6 +157,15 @@ local text = ms.read_text("config.json")
 ms.log(text and #text or 0)
 ```
 
+### Windows legacy extras
+
+Only the Windows legacy `WG` table provides these (no Mac equivalent):
+
+- `WG.GetExplorerPath(wid) -> string | nil`: `wid` is a window handle (as returned by `ms.find_win_by_class`). Returns the folder path shown by that File Explorer window; `nil` for non-Explorer windows or virtual folders without a filesystem path.
+- `WG.ToggleKeys(keys)`: parses `keys` like `ms.keys_down` and flips every key: released if currently pressed, pressed otherwise.
+- `WG.GetClipboardData(fmt)` / `WG.SetClipboardData(fmt, data)`: `fmt` is `"text"`, `"html"` (an HTML fragment string) or `"files"` (an array of paths). Get returns `nil` when there is no data or the format is unknown; Set returns success and replaces all clipboard contents.
+- `WG.GetTriggerState` / `WG.SetTriggerState` only log and do nothing.
+
 ## Windows
 
 ### `ms.find_win_by_class`

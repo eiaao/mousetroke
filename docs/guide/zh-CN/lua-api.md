@@ -157,6 +157,15 @@ local text = ms.read_text("config.json")
 ms.log(text and #text or 0)
 ```
 
+### Windows 旧接口扩展
+
+仅 Windows 的旧格式 `WG` 表提供以下函数（Mac 无对应）：
+
+- `WG.GetExplorerPath(wid) -> string | nil`：`wid` 为窗口句柄（同 `ms.find_win_by_class` 返回值）。返回该文件资源管理器窗口当前文件夹的路径；非资源管理器窗口或无文件系统路径的虚拟文件夹返回 `nil`。
+- `WG.ToggleKeys(keys)`：按 `ms.keys_down` 的语法解析，对其中每个键取反：已按下则抬起，否则按下。
+- `WG.GetClipboardData(fmt)` / `WG.SetClipboardData(fmt, data)`：`fmt` 为 `"text"`、`"html"`（HTML 片段字符串）或 `"files"`（路径数组）。Get 无数据或格式未知返回 `nil`；Set 返回是否成功，会替换剪贴板全部内容。
+- `WG.GetTriggerState` / `WG.SetTriggerState` 仅记录日志，不执行任何操作。
+
 ## 窗口
 
 ### `ms.find_win_by_class`
