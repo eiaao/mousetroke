@@ -92,7 +92,7 @@ ms.keys("Hello", true)
 
 `ms.keys_down(sequence: string) -> nil`
 
-Windows only: parses in key mode and presses keys/modifiers without releasing. Repeats are not repeated in this phase; wheel actions fire once. Invalid syntax raises a Lua error. Pair with `keys_up` to release. Mac logs unsupported and does nothing. No return value.
+Parses in key mode and presses keys/modifiers without releasing. Repeats are not repeated in this phase; Windows fires wheel actions once, Mac skips mouse and wheel actions. Invalid syntax raises a Lua error. Pair with `keys_up` to release. Mac posts tagged events directly from the script worker thread, bypassing the input queue; sleep steps still wait. No return value.
 
 ```lua
 ms.keys_down("^a")
@@ -104,7 +104,7 @@ ms.keys_up("^a")
 
 `ms.keys_up(sequence: string) -> nil`
 
-Windows only: releases the parsed sequence in reverse action order, with modifiers released last. Sleep steps still wait. Syntax errors raise a Lua error. Mac logs unsupported and does nothing. No return value.
+Releases the parsed sequence in reverse action order, with modifiers released last. Sleep steps still wait. Syntax errors raise a Lua error. Mac posts directly from the script worker thread and skips mouse and wheel actions. No return value.
 
 ```lua
 ms.keys_down("{SHIFT}")
@@ -263,7 +263,7 @@ if s then ms.log(s.right - s.left, s.bottom - s.top) end
 
 `ms.get_brightness(pos?: table) -> integer | nil`
 
-Optional `{x=integer,y=integer}` chooses the screen; omitted/nil or an incomplete position falls back to the current cursor. Returns **0–100 percent on success, nil on failure** on either platform. Windows uses DDC/CI with WMI fallback. WMI uses its first brightness device, not a cursor-matched monitor. Mac currently returns nil and logs once: its existing brightness backend only sends built-in-display brightness key events, which cannot read a percentage. External DDC is unsupported. Only the Windows legacy `WG.GetBrightness` wrapper retains -1 on failure.
+Optional `{x=integer,y=integer}` chooses the screen; omitted/nil or an incomplete position falls back to the current cursor. Returns **0–100 percent on success, nil on failure** on either platform. Windows uses DDC/CI with WMI fallback. WMI uses its first brightness device, not a cursor-matched monitor. Mac supports the built-in display only, read through the private DisplayServices framework loaded at runtime; `pos` is ignored and the screen under the cursor is not matched. It returns nil and logs once when there is no built-in display, the framework is unavailable or the read fails. External DDC is unsupported. Only the Windows legacy `WG.GetBrightness` wrapper retains -1 on failure.
 
 ```lua
 local value = ms.get_brightness()
@@ -274,7 +274,7 @@ if value ~= nil then ms.show_toast(tostring(value)) end
 
 `ms.set_brightness(pos: table | nil, delta: integer) -> integer | nil`
 
-Despite the name, this adjusts by `delta` percentage points; it does not set an absolute percentage. Pass a named `{x=...,y=...}` table or **nil as the first argument** to use the cursor. Success returns the new **0–100 percentage**, clamped to that range; failure returns **nil on both platforms**. Windows uses the same DDC/CI and WMI selection as `get_brightness`. Only the Windows legacy `WG.SetBrightness` wrapper retains -1 on failure. Mac returns nil and logs once: the existing Media & system backend only sends built-in-display brightness keys, with no numeric readback or percentage-point control. No brightness change is made by this Lua call; use those built-in actions for brightness keys. External DDC remains unsupported.
+Despite the name, this adjusts by `delta` percentage points; it does not set an absolute percentage. Pass a named `{x=...,y=...}` table or **nil as the first argument** to use the cursor. Success returns the new **0–100 percentage**, clamped to that range; failure returns **nil on both platforms**. Windows uses the same DDC/CI and WMI selection as `get_brightness`. Only the Windows legacy `WG.SetBrightness` wrapper retains -1 on failure. Mac adjusts the built-in display only, through the private DisplayServices framework loaded at runtime; `pos` is ignored. It returns nil and logs once when there is no built-in display, the framework is unavailable or the call fails. External DDC remains unsupported.
 
 ```lua
 local value = ms.set_brightness(nil, 5)
