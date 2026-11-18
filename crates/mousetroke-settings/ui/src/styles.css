@@ -71,7 +71,7 @@
   --trail-ink: #7ad8ff;
   --trail-soft: rgba(46, 197, 255, 0.13);
   --accent: #1679b8;
-  --accent-hover: #1f87c8;
+  --accent-hover: #126aa3;
   --hit: #ff8a2a;
   --danger: #ff6b5e;
   --ok: #4cc27f;
@@ -97,7 +97,7 @@
     --trail-ink: #7ad8ff;
     --trail-soft: rgba(46, 197, 255, 0.13);
     --accent: #1679b8;
-    --accent-hover: #1f87c8;
+    --accent-hover: #126aa3;
     --hit: #ff8a2a;
     --danger: #ff6b5e;
     --ok: #4cc27f;
@@ -1232,7 +1232,8 @@ select.lang-select {
 
 .btn.primary {
   border-color: color-mix(in srgb, var(--accent) 80%, #000);
-  background: linear-gradient(color-mix(in srgb, var(--accent) 92%, #fff), var(--accent));
+  /* 渐变两端都保持白字对比度 ≥ 4.5:1：从底色到略深，不混白 */
+  background: linear-gradient(var(--accent), color-mix(in srgb, var(--accent) 90%, #000));
   color: #fff;
   font-weight: 600;
   box-shadow: 0 1px 2px rgba(0, 80, 120, 0.25), inset 0 1px 0 rgba(255, 255, 255, 0.18);

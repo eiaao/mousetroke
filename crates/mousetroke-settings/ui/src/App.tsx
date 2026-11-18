@@ -188,9 +188,10 @@ function Main({ init }: { init: InitState }) {
     setToast((t) => {
       if (!t?.action) return t;
       if (t.rev === undefined) return { ...t, rev: store.revision };
-      return t.rev === store.revision ? t : null;
+      // 恢复默认配置等会清空撤销记录而不改版本：此时撤销已无对象，同样收起
+      return t.rev === store.revision && store.canUndo ? t : null;
     });
-  }, [toast?.id, store.revision]);
+  }, [toast?.id, store.revision, store.canUndo]);
 
   // ---- 手势库引用的兜底提示：加载时（手改配置）与编辑时（界面漏改）
   useEffect(() => {
