@@ -95,6 +95,8 @@ interface ToastMsg {
   action?: string;
   onAction?: () => void;
   extra?: ToastExtra;
+  /** 带撤销的提示出现时的配置版本；之后再有修改，撤销就不再对应这次操作。 */
+  rev?: number;
 }
 
 function Main({ init }: { init: InitState }) {
@@ -180,6 +182,15 @@ function Main({ init }: { init: InitState }) {
   }, []);
 
   const notify = useCallback((text: string, action?: string, onAction?: () => void, extra?: ToastExtra) => setToast({ id: Date.now(), text, action, onAction, extra }), []);
+  // 提示条上的"撤销"只撤销它报告的那次操作：记下出现时的版本，之后有任何修改（含 Ctrl+Z）就收起提示，
+  // 避免点撤销却撤掉了后来的修改。连续撤销仍可用 Ctrl+Z。
+  useEffect(() => {
+    setToast((t) => {
+      if (!t?.action) return t;
+      if (t.rev === undefined) return { ...t, rev: store.revision };
+      return t.rev === store.revision ? t : null;
+    });
+  }, [toast?.id, store.revision]);
 
   // ---- 手势库引用的兜底提示：加载时（手改配置）与编辑时（界面漏改）
   useEffect(() => {
