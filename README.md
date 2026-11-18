@@ -9,7 +9,7 @@ opens the context menu.
 
 **[Website](https://mousetroke.com/) · [Download](https://github.com/eiaao/mousetroke/releases/latest) · [简体中文](README.zh-CN.md)**
 
-Documentation / 文档: [User guide](docs/guide/en/index.md) · [使用指南](docs/guide/zh-CN/index.md)
+Documentation / 文档: [User guide](docs/guide/en/index.md) · [使用指南](docs/guide/zh-CN/index.md) · [繁體中文指南](docs/guide/zh-TW/index.md)
 
 ![Mousetroke demo: draw a gesture to copy, adjust volume, and record a new gesture (Chinese UI)](docs/images/mousetroke-demo.gif)
 

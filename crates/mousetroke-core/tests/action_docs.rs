@@ -28,7 +28,11 @@ fn localized_text(lang: Lang) -> DocText {
             "必填", "默认", "简体中文界面默认百度，其他语言默认 Google",
             "；仅当{field}为{choice}时",
         ),
-        Lang::ZhTw => unreachable!("Traditional Chinese guide is not part of this documentation set"),
+        Lang::ZhTw => (
+            "| 動作 / ID | 用途與適用範圍 | 參數 | Windows | Mac |\n",
+            "必填", "預設", "簡體中文介面預設百度，其他語言預設 Google",
+            "；僅當{field}為{choice}時",
+        ),
         Lang::DeDe => (
             "| Aktion / ID | Funktion und Einsatzbereich | Parameter | Windows | Mac |\n",
             "erforderlich", "Standard:", "Baidu bei vereinfachter chinesischer Oberfläche, sonst Google",
@@ -191,6 +195,7 @@ fn action_library_tables_match_registry() {
     let root = Path::new(env!("CARGO_MANIFEST_DIR")).join("../..");
     for (dir, tag, lang) in [
         ("en", "en-US", Lang::EnUs), ("zh-CN", "zh-CN", Lang::ZhCn),
+        ("zh-TW", "zh-TW", Lang::ZhTw),
         ("de", "de-DE", Lang::DeDe), ("es", "es-ES", Lang::EsEs),
         ("fr", "fr-FR", Lang::FrFr), ("it", "it-IT", Lang::ItIt),
         ("ja", "ja-JP", Lang::JaJp), ("ko", "ko-KR", Lang::KoKr),
