@@ -161,8 +161,8 @@ pub(crate) fn elevated_beyond_us(pid: u32) -> bool {
         && targeting::is_elevated(pid) == Some(true)
 }
 
-/// 目标是管理员窗口时按键等动作会静默失效：每个目标进程提示一次。
-fn warn_if_elevated(pid: u32) {
+/// 目标是管理员窗口时按键等动作会静默失效、手势也无法在其中触发：每个目标进程提示一次。
+pub(crate) fn warn_if_elevated(pid: u32) {
     static WARNED: std::sync::Mutex<Vec<u32>> = std::sync::Mutex::new(Vec::new());
     if !elevated_beyond_us(pid) {
         return;
