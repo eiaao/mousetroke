@@ -111,6 +111,12 @@ pub fn exe_of(pid: u32) -> Option<String> {
     }
 }
 
+/// 本程序是否以管理员身份运行（启动后不变，缓存）。
+pub fn self_elevated() -> bool {
+    static SELF: std::sync::OnceLock<bool> = std::sync::OnceLock::new();
+    *SELF.get_or_init(|| is_elevated(std::process::id()).unwrap_or(false))
+}
+
 /// 进程是否以管理员身份（提权）运行；打不开进程或令牌时为 None。
 pub fn is_elevated(pid: u32) -> Option<bool> {
     use windows::Win32::Security::{GetTokenInformation, TokenElevation, TOKEN_ELEVATION, TOKEN_QUERY};

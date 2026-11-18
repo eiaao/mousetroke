@@ -156,9 +156,7 @@ pub fn sync_display() {
 /// 进程以管理员身份运行而本程序没有：系统（UIPI）会拦下发给它的注入输入，
 /// 它在前台时也不把输入交给我们的 LL 钩子。打不开进程时按否处理。
 pub(crate) fn elevated_beyond_us(pid: u32) -> bool {
-    static SELF_ELEVATED: std::sync::OnceLock<bool> = std::sync::OnceLock::new();
-    !*SELF_ELEVATED.get_or_init(|| targeting::is_elevated(std::process::id()).unwrap_or(false))
-        && targeting::is_elevated(pid) == Some(true)
+    !targeting::self_elevated() && targeting::is_elevated(pid) == Some(true)
 }
 
 /// 管理员窗口会让按键等动作静默失效、手势也无法在其中触发：本次运行只提示一次，

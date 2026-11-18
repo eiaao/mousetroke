@@ -284,27 +284,8 @@ pub fn run_shell(script: &str) {
         wShowWindow: SW_HIDE.0 as u16,
         ..Default::default()
     };
-    let mut pi = PROCESS_INFORMATION::default();
-    let ok = unsafe {
-        CreateProcessW(
-            windows::core::PCWSTR(app.as_ptr()),
-            Some(windows::core::PWSTR(wide.as_mut_ptr())),
-            None,
-            None,
-            false,
-            windows::Win32::System::Threading::CREATE_NO_WINDOW,
-            None,
-            None,
-            &si,
-            &mut pi,
-        )
-    };
-    if let Ok(()) = ok {
-        unsafe {
-            let _ = CloseHandle(pi.hProcess);
-            let _ = CloseHandle(pi.hThread);
-        }
-    } else {
+    let ok = spawn(windows::core::PCWSTR(app.as_ptr()), &mut wide, si);
+    if !ok {
         // 不记命令全文：展开后可能含选中文字、剪贴板内容
         crate::log!("命令启动失败（{} 字符）", script.chars().count());
     }
@@ -435,6 +416,14 @@ pub fn system_exe(rel: &str) -> std::path::PathBuf {
 
 /// ShellExecuteW 封装。verb: "open" / "runas"。成功返回 true。
 pub fn shell_execute(verb: &str, target: &str, params: &str) -> bool {
+    // 管理员身份下 ShellExecute 打开的程序也会是管理员：改由外壳的子进程打开
+    if verb != "runas" && crate::targeting::self_elevated() {
+        return if params.is_empty() {
+            run_app_process(&system_exe("explorer.exe").to_string_lossy(), &format!("\"{target}\""))
+        } else {
+            run_app_process(target, params)
+        };
+    }
     unsafe {
         let mut v = wide(verb);
         let mut t = wide(target);
@@ -615,34 +604,67 @@ fn run_app_process(exe: &str, args: &str) -> bool {
         format!("\"{exe}\" {args}")
     };
     let mut wide_cmd: Vec<u16> = cmdline.encode_utf16().chain([0]).collect();
-    let si = STARTUPINFOW {
-        cb: std::mem::size_of::<STARTUPINFOW>() as u32,
-        ..Default::default()
+    let si = STARTUPINFOW { cb: std::mem::size_of::<STARTUPINFOW>() as u32, ..Default::default() };
+    spawn(windows::core::PCWSTR::null(), &mut wide_cmd, si)
+}
+
+/// 创建进程（不等待）。本程序以管理员身份运行时，把桌面外壳（Explorer）设为父进程，
+/// 新进程继承外壳的普通权限：只有勾选了“以管理员身份运行”的动作才提权。
+fn spawn(app: windows::core::PCWSTR, cmdline: &mut [u16], si: STARTUPINFOW) -> bool {
+    use windows::Win32::System::Threading::{
+        DeleteProcThreadAttributeList, InitializeProcThreadAttributeList, OpenProcess, UpdateProcThreadAttribute,
+        CREATE_NO_WINDOW, EXTENDED_STARTUPINFO_PRESENT, LPPROC_THREAD_ATTRIBUTE_LIST, PROCESS_CREATE_PROCESS,
+        PROC_THREAD_ATTRIBUTE_PARENT_PROCESS, STARTUPINFOEXW,
     };
     let mut pi = PROCESS_INFORMATION::default();
+    let shell = crate::targeting::self_elevated().then(shell_process).flatten();
     let ok = unsafe {
-        CreateProcessW(
-            windows::core::PCWSTR::null(),
-            Some(windows::core::PWSTR(wide_cmd.as_mut_ptr())),
-            None,
-            None,
-            false,
-            windows::Win32::System::Threading::CREATE_NO_WINDOW,
-            None,
-            None,
-            &si,
-            &mut pi,
-        )
+        match shell {
+            None => CreateProcessW(app, Some(windows::core::PWSTR(cmdline.as_mut_ptr())), None, None, false, CREATE_NO_WINDOW, None, None, &si, &mut pi),
+            Some(pid) => {
+                let Ok(parent) = OpenProcess(PROCESS_CREATE_PROCESS, false, pid) else { return false };
+                let mut size = 0;
+                let _ = InitializeProcThreadAttributeList(None, 1, None, &mut size);
+                let mut buf = vec![0u8; size];
+                let list = LPPROC_THREAD_ATTRIBUTE_LIST(buf.as_mut_ptr().cast());
+                let result = InitializeProcThreadAttributeList(Some(list), 1, None, &mut size)
+                    .and_then(|()| {
+                        let r = UpdateProcThreadAttribute(
+                            list,
+                            0,
+                            PROC_THREAD_ATTRIBUTE_PARENT_PROCESS as usize,
+                            Some((&parent as *const HANDLE).cast()),
+                            std::mem::size_of::<HANDLE>(),
+                            None,
+                            None,
+                        );
+                        let six = STARTUPINFOEXW { StartupInfo: STARTUPINFOW { cb: std::mem::size_of::<STARTUPINFOEXW>() as u32, ..si }, lpAttributeList: list };
+                        r.and_then(|()| {
+                            CreateProcessW(app, Some(windows::core::PWSTR(cmdline.as_mut_ptr())), None, None, false,
+                                CREATE_NO_WINDOW | EXTENDED_STARTUPINFO_PRESENT, None, None, &six.StartupInfo, &mut pi)
+                        })
+                    });
+                DeleteProcThreadAttributeList(list);
+                let _ = CloseHandle(parent);
+                result
+            }
+        }
     };
     if ok.is_ok() {
         unsafe {
             let _ = CloseHandle(pi.hProcess);
             let _ = CloseHandle(pi.hThread);
         }
-        true
-    } else {
-        false
     }
+    ok.is_ok()
+}
+
+/// 桌面外壳（Explorer）的进程号。
+fn shell_process() -> Option<u32> {
+    use windows::Win32::UI::WindowsAndMessaging::{GetShellWindow, GetWindowThreadProcessId};
+    let mut pid = 0;
+    unsafe { GetWindowThreadProcessId(GetShellWindow(), Some(&mut pid)) };
+    (pid != 0).then_some(pid)
 }
 
 /// 注入系统功能键（媒体键）。
