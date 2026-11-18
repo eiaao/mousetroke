@@ -84,7 +84,14 @@ impl Host for SystemHost {
         std::thread::spawn(move || if click { input::replay_click(btn) } else { input::replay_down(btn) });
     }
     fn execute(&self, action: Action, target: Option<Target>, vars: Vars, pos: (i32, i32)) {
-        std::thread::spawn(move || execute(action, target.map(Into::into), vars, pos));
+        std::thread::spawn(move || {
+            // 只有会向目标窗口发送输入或操作窗口的动作才受 UIPI 影响；启动程序、打开网址等不提示
+            let to_window = matches!(action, Action::KeySequence { .. } | Action::WindowOp { .. } | Action::Preset { .. } | Action::Lua { .. });
+            if let (true, Some(t)) = (to_window, &target) {
+                warn_if_elevated(t.pid);
+            }
+            execute(action, target.map(Into::into), vars, pos)
+        });
     }
     fn label_anchor(&self, x: i32, y: i32) -> (i32, i32) {
         use windows::Win32::Graphics::Gdi::{GetMonitorInfoW, MonitorFromPoint, MONITORINFO, MONITOR_DEFAULTTONEAREST};
@@ -144,6 +151,27 @@ pub fn sync_display() {
             e.on_display_change();
         }
     });
+}
+
+/// 进程以管理员身份运行而本程序没有：系统（UIPI）会拦下发给它的注入输入，
+/// 它在前台时也不把输入交给我们的 LL 钩子。打不开进程时按否处理。
+pub(crate) fn elevated_beyond_us(pid: u32) -> bool {
+    static SELF_ELEVATED: std::sync::OnceLock<bool> = std::sync::OnceLock::new();
+    !*SELF_ELEVATED.get_or_init(|| targeting::is_elevated(std::process::id()).unwrap_or(false))
+        && targeting::is_elevated(pid) == Some(true)
+}
+
+/// 目标是管理员窗口时按键等动作会静默失效：每个目标进程提示一次。
+fn warn_if_elevated(pid: u32) {
+    static WARNED: std::sync::Mutex<Vec<u32>> = std::sync::Mutex::new(Vec::new());
+    if !elevated_beyond_us(pid) {
+        return;
+    }
+    let Ok(mut warned) = WARNED.lock() else { return };
+    if !warned.contains(&pid) {
+        warned.push(pid);
+        push_toast(mousetroke_core::i18n::t(mousetroke_core::i18n::keys::OVERLAY_ELEVATED_TARGET).into(), 4000);
+    }
 }
 
 /// 执行动作（工作线程）。

@@ -405,6 +405,7 @@ unsafe extern "system" fn tray_wndproc(hwnd: HWND, msg: u32, wparam: WPARAM, lpa
                 let _ = ack.send(shown);
             }
             with_engine(|e| e.toast_tick());
+            crate::hooks::check_hooks();
             LRESULT(0)
         }
         WM_TIMER if wparam.0 == CONFIG_TIMER_ID => {

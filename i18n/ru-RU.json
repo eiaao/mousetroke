@@ -731,6 +731,7 @@
   "overlay.gesture_too_long": "Вот это каракули! Не считается.",
   "overlay.brightness": "Яркость {value}%",
   "overlay.brightness_unsupported": "Этот монитор не поддерживает регулировку яркости",
+  "overlay.elevated_target": "Это окно запущено от имени администратора. Чтобы управлять им, запустите Mousetroke тоже от имени администратора.",
   "ui.picker.live_hint": "Щёлкните по окну настраиваемой программы · Esc или правый щелчок — отмена",
   "cli.help": "Mousetroke {version} — глобальные жесты мышью для Windows\n\nИспользование:\n  mousetroke import <gestures.json> [prefs.json] [-o <вывод>]\n  mousetroke [run] [--config <путь>]          запуск движка жестов (изменения настроек подхватываются на лету)\n  mousetroke autostart on|off|status\n  mousetroke settings [путь настроек]         открыть окно настроек\n  mousetroke lua <script.lua>                  выполнить Lua-скрипт напрямую\n  mousetroke diag                              диагностика: другие мышиные утилиты, цель под курсором, полноэкранность",
   "cli.unknown_command": "Неизвестная команда: {cmd}",

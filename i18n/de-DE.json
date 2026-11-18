@@ -691,6 +691,7 @@
   "overlay.gesture_too_long": "Kritzelkunst? Die zählt nicht!",
   "overlay.brightness": "Helligkeit {value} %",
   "overlay.brightness_unsupported": "Dieser Bildschirm unterstützt keine Helligkeitseinstellung",
+  "overlay.elevated_target": "Dieses Fenster läuft als Administrator. Führe Mousetroke ebenfalls als Administrator aus, um es zu steuern.",
   "ui.picker.live_hint": "Auf das einzurichtende App-Fenster klicken · Esc oder Rechtsklick bricht ab",
   "cli.help": "Mousetroke {version} — globale Mausgesten für Windows\n\nAufruf:\n  mousetroke import <gestures.json> [prefs.json] [-o <Ausgabe>]\n  mousetroke [run] [--config <Pfad>]          startet die Gesten-Engine (lädt Konfigurationsänderungen automatisch neu)\n  mousetroke autostart on|off|status\n  mousetroke settings [Konfigurationspfad]     öffnet die Einstellungen\n  mousetroke lua <script.lua>                  führt direkt ein Lua-Skript aus\n  mousetroke diag                              Diagnose: andere Mauswerkzeuge, Ziel unter dem Cursor, Vollbild",
   "cli.unknown_command": "Unbekannter Befehl: {cmd}",

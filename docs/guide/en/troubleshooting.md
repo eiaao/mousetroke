@@ -17,7 +17,7 @@ First test a simple built-in gesture in a normal, non-fullscreen browser window.
 - Move promptly after pressing the button and draw a longer stroke. Tune **Hold-still time before treating it as a click** and **Stroke sensitivity** under Preferences.
 - If feedback is missing, check **Show the trail** and **Show the gesture name while drawing**. A hidden trail does not itself mean recognition is off.
 
-On Windows, input uses `SendInput`. A normally launched instance may be unable to send keys/clicks into an elevated app because of Windows UIPI. Test against a non-elevated app first; if you need to control an administrator window, run Mousetroke at the corresponding elevation. This does not enable sending to the secure desktop.
+On Windows, input uses `SendInput`. A normally launched instance may be unable to send keys/clicks into an elevated app because of Windows UIPI. Test against a non-elevated app first; if you need to control an administrator window, run Mousetroke at the corresponding elevation. This does not enable sending to the secure desktop. When a gesture acts on an administrator window while Mousetroke is not elevated, Mousetroke shows a one-time on-screen hint.
 
 On Mac, check **Accessibility** for the installed copy. If setup still asks for **Input Monitoring**, grant it too. Permission changes can take a few seconds to be detected. Use **Restart Mousetroke** when offered if input still does not start. Screen Recording is not required. Moving or replacing a copy through the browser can require first-open approval again.
 

@@ -111,6 +111,31 @@ pub fn exe_of(pid: u32) -> Option<String> {
     }
 }
 
+/// 进程是否以管理员身份（提权）运行；打不开进程或令牌时为 None。
+pub fn is_elevated(pid: u32) -> Option<bool> {
+    use windows::Win32::Security::{GetTokenInformation, TokenElevation, TOKEN_ELEVATION, TOKEN_QUERY};
+    use windows::Win32::System::Threading::OpenProcessToken;
+    unsafe {
+        let process = OpenProcess(PROCESS_QUERY_LIMITED_INFORMATION, false, pid).ok()?;
+        let mut token = windows::Win32::Foundation::HANDLE::default();
+        let opened = OpenProcessToken(process, TOKEN_QUERY, &mut token);
+        let _ = CloseHandle(process);
+        opened.ok()?;
+        let mut elevation = TOKEN_ELEVATION::default();
+        let mut size = 0;
+        let ok = GetTokenInformation(
+            token,
+            TokenElevation,
+            Some(&mut elevation as *mut _ as *mut _),
+            std::mem::size_of::<TOKEN_ELEVATION>() as u32,
+            &mut size,
+        );
+        let _ = CloseHandle(token);
+        ok.ok()?;
+        Some(elevation.TokenIsElevated != 0)
+    }
+}
+
 // HWND 内部为裸指针；这里仅传递句柄值到工作线程（Win32 句柄跨线程合法）。
 unsafe impl Send for Target {}
 
@@ -306,4 +331,20 @@ pub fn own_exe_name() -> String {
         .ok()
         .and_then(|p| p.file_name().map(|n| n.to_string_lossy().into_owned()))
         .unwrap_or_else(|| "mousetroke.exe".into())
+}
+
+#[cfg(test)]
+mod tests {
+    /// 手动验证：`MT_ELEVATED_PID=<管理员进程 pid> cargo test -p mousetroke-win -- --ignored elevation`
+    #[test]
+    #[ignore]
+    fn elevation_of_explorer_and_an_elevated_process() {
+        let mut explorer = 0;
+        unsafe {
+            super::GetWindowThreadProcessId(windows::Win32::UI::WindowsAndMessaging::GetShellWindow(), Some(&mut explorer));
+        }
+        assert_eq!(super::is_elevated(explorer), Some(false));
+        let pid: u32 = std::env::var("MT_ELEVATED_PID").expect("MT_ELEVATED_PID").parse().unwrap();
+        assert_eq!(super::is_elevated(pid), Some(true));
+    }
 }

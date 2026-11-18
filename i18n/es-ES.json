@@ -691,6 +691,7 @@
   "overlay.gesture_too_long": "¡Vaya garabato! Este no cuenta.",
   "overlay.brightness": "Brillo {value}%",
   "overlay.brightness_unsupported": "Esta pantalla no admite ajuste de brillo",
+  "overlay.elevated_target": "Esta ventana se ejecuta como administrador. Ejecuta Mousetroke también como administrador para controlarla.",
   "ui.picker.live_hint": "Haz clic en la ventana de una aplicación para configurarla · Esc o clic derecho cancela",
   "cli.help": "Mousetroke {version} — gestos de ratón globales para Windows\n\nUso:\n  mousetroke import <gestures.json> [prefs.json] [-o <salida>]\n  mousetroke [run] [--config <ruta>]          inicia el motor de gestos (recarga los cambios de configuración)\n  mousetroke autostart on|off|status\n  mousetroke settings [ruta de configuración]  abre la interfaz de ajustes\n  mousetroke lua <script.lua>                  ejecuta directamente un script de Lua\n  mousetroke diag                              diagnóstico: otras herramientas de ratón, destino bajo el cursor, pantalla completa",
   "cli.unknown_command": "Comando desconocido: {cmd}",

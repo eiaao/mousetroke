@@ -691,6 +691,7 @@
   "overlay.gesture_too_long": "Che scarabocchio! Questo non vale.",
   "overlay.brightness": "Luminosità {value}%",
   "overlay.brightness_unsupported": "Questo schermo non supporta la regolazione della luminosità",
+  "overlay.elevated_target": "Questa finestra è in esecuzione come amministratore. Esegui anche Mousetroke come amministratore per controllarla.",
   "ui.picker.live_hint": "Clicca sulla finestra dell’app da configurare · Esc o clic destro annulla",
   "cli.help": "Mousetroke {version} — gesti del mouse globali per Windows\n\nUso:\n  mousetroke import <gestures.json> [prefs.json] [-o <output>]\n  mousetroke [run] [--config <percorso>]           avvia il motore dei gesti (ricarica le modifiche alla configurazione)\n  mousetroke autostart on|off|status\n  mousetroke settings [percorso configurazione]    apre l’interfaccia delle impostazioni\n  mousetroke lua <script.lua>                       esegue direttamente uno script Lua\n  mousetroke diag                                   diagnostica: altri strumenti del mouse, obiettivo sotto il cursore, schermo intero",
   "cli.unknown_command": "Comando sconosciuto: {cmd}",

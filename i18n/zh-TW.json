@@ -691,6 +691,7 @@
   "overlay.gesture_too_long": "畫嗨了吧？這一筆不算～",
   "overlay.brightness": "亮度 {value}%",
   "overlay.brightness_unsupported": "這台顯示器不支援調節亮度",
+  "overlay.elevated_target": "這個視窗以管理員身份執行，Mousetroke 也需要以管理員身份執行才能控制它",
   "ui.picker.live_hint": "點選要單獨設定的程式視窗 · Esc 或右鍵取消",
   "cli.help": "Mousetroke {version} — Windows 全域滑鼠手勢\n\n用法:\n  mousetroke import <gestures.json> [prefs.json] [-o <輸出>]\n  mousetroke [run] [--config <路徑>]     啟動手勢引擎（設定改動自動熱載入）\n  mousetroke autostart on|off|status\n  mousetroke settings [設定路徑]          開啟設定介面\n  mousetroke lua <script.lua>            直接執行一段 Lua 手勢指令碼\n  mousetroke diag                        診斷：其他滑鼠工具、滑鼠下目標、全螢幕判定",
   "cli.unknown_command": "未知命令：{cmd}",

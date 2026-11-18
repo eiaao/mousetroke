@@ -691,6 +691,7 @@
   "overlay.gesture_too_long": "Joli gribouillis ! On passe.",
   "overlay.brightness": "Luminosité {value}%",
   "overlay.brightness_unsupported": "Cet écran ne prend pas en charge le réglage de la luminosité",
+  "overlay.elevated_target": "Cette fenêtre s’exécute en tant qu’administrateur. Exécutez aussi Mousetroke en tant qu’administrateur pour la contrôler.",
   "ui.picker.live_hint": "Cliquez sur la fenêtre d’une application à configurer · Échap ou clic droit annule",
   "cli.help": "Mousetroke {version} — gestes de souris globaux pour Windows\n\nUtilisation :\n  mousetroke import <gestures.json> [prefs.json] [-o <sortie>]\n  mousetroke [run] [--config <chemin>]          lance le moteur de gestes (recharge la configuration modifiée)\n  mousetroke autostart on|off|status\n  mousetroke settings [chemin de configuration]  ouvre l’interface des paramètres\n  mousetroke lua <script.lua>                   exécute directement un script Lua\n  mousetroke diag                               diagnostic : autres outils souris, cible sous le curseur, plein écran",
   "cli.unknown_command": "Commande inconnue : {cmd}",
