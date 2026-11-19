@@ -671,6 +671,8 @@
   "overlay.gesture_too_long": "お絵描きタイム? 今のはノーカン!",
   "overlay.brightness": "明るさ {value}%",
   "overlay.brightness_unsupported": "このディスプレイは明るさ調節に対応していません",
+  "overlay.elevated_target": "このウィンドウは管理者として実行されています。操作するには Mousetroke も管理者として実行してください。",
+  "toast.restart_as_admin": "管理者として再起動",
   "ui.picker.live_hint": "設定したいアプリのウィンドウをクリック · Esc か右クリックでキャンセル",
   "cli.help": "Mousetroke {version} — Windows 用グローバルマウスジェスチャ\n\n使い方:\n  mousetroke import <gestures.json> [prefs.json] [-o <出力>]\n  mousetroke [run] [--config <パス>]          ジェスチャエンジンを起動（設定の変更は自動で再読み込み）\n  mousetroke autostart on|off|status\n  mousetroke settings [設定のパス]            設定画面を開く\n  mousetroke lua <script.lua>                  Lua スクリプトを直接実行\n  mousetroke diag                              診断：他のマウスツール、カーソル下のターゲット、フルスクリーン判定",
   "cli.unknown_command": "不明なコマンド：{cmd}",

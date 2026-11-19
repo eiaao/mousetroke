@@ -405,6 +405,7 @@ unsafe extern "system" fn tray_wndproc(hwnd: HWND, msg: u32, wparam: WPARAM, lpa
                 let _ = ack.send(shown);
             }
             with_engine(|e| e.toast_tick());
+            crate::hooks::check_hooks();
             LRESULT(0)
         }
         WM_TIMER if wparam.0 == CONFIG_TIMER_ID => {
@@ -439,6 +440,24 @@ pub fn engine_window() -> Option<(HWND, u32)> {
 /// 跨进程复用托盘「退出」，由消息循环卸载钩子并关闭设置窗口。
 pub fn request_exit(hwnd: HWND) -> bool {
     unsafe { PostMessageW(Some(hwnd), WM_COMMAND, WPARAM(MENU_QUIT as usize), LPARAM(0)).is_ok() }
+}
+
+/// 以管理员身份重启：沿用更新后的重启参数，新进程等本进程退出再接管单实例。
+/// 用户在 UAC 里取消时 ShellExecute 失败，本进程照常运行。
+pub fn restart_elevated() {
+    let Ok(exe) = std::env::current_exe() else { return };
+    let mut params = format!("--after-update {} 0", std::process::id());
+    if let Some(cfg) = cfg_path() {
+        params.push_str(&format!(" --config \"{}\"", cfg.display()));
+    }
+    if !crate::input::shell_execute("runas", &exe.to_string_lossy(), &params) {
+        crate::log!("以管理员身份重启未完成（UAC 取消或失败）");
+        return;
+    }
+    crate::log!("以管理员身份重启");
+    if let Some((hwnd, _)) = engine_window() {
+        request_exit(hwnd);
+    }
 }
 
 unsafe fn show_menu(hwnd: HWND) {

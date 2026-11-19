@@ -84,7 +84,14 @@ impl Host for SystemHost {
         std::thread::spawn(move || if click { input::replay_click(btn) } else { input::replay_down(btn) });
     }
     fn execute(&self, action: Action, target: Option<Target>, vars: Vars, pos: (i32, i32)) {
-        std::thread::spawn(move || execute(action, target.map(Into::into), vars, pos));
+        std::thread::spawn(move || {
+            // 只有会向目标窗口发送输入或操作窗口的动作才受 UIPI 影响；启动程序、打开网址等不提示
+            let to_window = matches!(action, Action::KeySequence { .. } | Action::WindowOp { .. } | Action::Preset { .. } | Action::Lua { .. });
+            if let (true, Some(t)) = (to_window, &target) {
+                warn_if_elevated(t.pid);
+            }
+            execute(action, target.map(Into::into), vars, pos)
+        });
     }
     fn label_anchor(&self, x: i32, y: i32) -> (i32, i32) {
         use windows::Win32::Graphics::Gdi::{GetMonitorInfoW, MonitorFromPoint, MONITORINFO, MONITOR_DEFAULTTONEAREST};
@@ -144,6 +151,29 @@ pub fn sync_display() {
             e.on_display_change();
         }
     });
+}
+
+/// 进程以管理员身份运行而本程序没有：系统（UIPI）会拦下发给它的注入输入，
+/// 它在前台时也不把输入交给我们的 LL 钩子。打不开进程时按否处理。
+pub(crate) fn elevated_beyond_us(pid: u32) -> bool {
+    !targeting::self_elevated() && targeting::is_elevated(pid) == Some(true)
+}
+
+/// 管理员窗口会让按键等动作静默失效、手势也无法在其中触发：本次运行只提示一次，
+/// 用系统通知（可点"以管理员身份重启"），通知不可用时退回光标旁提示。
+pub(crate) fn warn_if_elevated(pid: u32) {
+    static WARNED: std::sync::atomic::AtomicBool = std::sync::atomic::AtomicBool::new(false);
+    if !elevated_beyond_us(pid) || WARNED.swap(true, std::sync::atomic::Ordering::Relaxed) {
+        return;
+    }
+    crate::log!("前台/目标进程 {pid} 以管理员身份运行，已提示");
+    let restart = || {
+        std::thread::spawn(crate::tray::restart_elevated);
+    };
+    if let Err(e) = crate::toast::show_elevated(restart) {
+        crate::log!("系统通知失败，改用光标旁提示: {e}");
+        push_toast(mousetroke_core::i18n::t(mousetroke_core::i18n::keys::OVERLAY_ELEVATED_TARGET).into(), 4000);
+    }
 }
 
 /// 执行动作（工作线程）。

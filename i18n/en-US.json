@@ -691,6 +691,8 @@
   "overlay.gesture_too_long": "Nice doodle! Let’s skip this one.",
   "overlay.brightness": "Brightness {value}%",
   "overlay.brightness_unsupported": "This display doesn’t support brightness control",
+  "overlay.elevated_target": "This window runs as administrator. Run Mousetroke as administrator too to control it.",
+  "toast.restart_as_admin": "Restart as administrator",
   "ui.picker.live_hint": "Click an app window to set up · Esc or right-click cancels",
   "cli.help": "Mousetroke {version} — global mouse gestures for Windows\n\nUsage:\n  mousetroke import <gestures.json> [prefs.json] [-o <output>]\n  mousetroke [run] [--config <path>]          start the gesture engine (hot-reloads config changes)\n  mousetroke autostart on|off|status\n  mousetroke settings [config path]            open the settings UI\n  mousetroke lua <script.lua>                  run a Lua gesture script directly\n  mousetroke diag                              diagnostics: other mouse tools, target under cursor, fullscreen",
   "cli.unknown_command": "Unknown command: {cmd}",
