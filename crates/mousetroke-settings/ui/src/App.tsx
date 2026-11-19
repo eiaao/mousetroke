@@ -367,7 +367,16 @@ function Main({ init }: { init: InitState }) {
     }
     if (first < 0) return -1;
     if (scopes.some((s, i) => s !== config.scopes[i])) {
-      edit((c) => ({ ...c, scopes: [...c.scopes.map((s, i) => (disable && scopes[i]?.id === s.id ? scopes[i] : s)), ...scopes.slice(c.scopes.length)] }));
+      const key = `add-apps-${uid()}`;
+      edit((c) => ({ ...c, scopes: [...c.scopes.map((s, i) => (disable && scopes[i]?.id === s.id ? scopes[i] : s)), ...scopes.slice(c.scopes.length)] }), key);
+      // mac 的程序标识是 bundle id：换成访达里的显示名（与添加合并为一步撤销）
+      const added = scopes.slice(config.scopes.length).filter((s) => !s.name_key && s.app && s.name === fileName(s.app.exe).replace(/\.exe$/i, ""));
+      if (isMac() && added.length) {
+        api.appNames(added.map((s) => s.app!.exe)).then((names) => {
+          const rename = new Map(added.flatMap((s) => (names[s.app!.exe] ? [[s.id, names[s.app!.exe]!]] : [])));
+          if (rename.size) edit((c) => ({ ...c, scopes: c.scopes.map((s) => (rename.has(s.id) && s.name === fileName(s.app?.exe ?? "") ? { ...s, name: rename.get(s.id)! } : s)) }), key);
+        }, () => {});
+      }
     }
     if (!navigate) return first;
     setView({ kind: "scope", index: first });

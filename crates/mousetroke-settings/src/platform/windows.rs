@@ -42,6 +42,11 @@ pub fn refresh_texts(_window: &tauri::WebviewWindow) {}
 pub fn running_apps() -> Vec<RunningApp> {
     mousetroke_win::targeting::running_apps().into_iter().map(|(exe, title)| RunningApp { exe, title }).collect()
 }
+/// Windows 的作用域名称直接用文件名，不另取显示名。
+pub fn app_display_name(_identity: &str) -> Option<String> {
+    None
+}
+
 pub fn installed_apps() -> Vec<RunningApp> {
     picker::installed_apps().into_iter().map(|(exe, title)| RunningApp { exe, title }).collect()
 }
