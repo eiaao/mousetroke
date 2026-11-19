@@ -66,6 +66,9 @@ pub fn refresh_texts(window: &tauri::WebviewWindow) {
     menu::refresh(window.app_handle());
 }
 
+/// mac 暂不列出已安装程序；界面只显示正在运行的程序。
+pub fn installed_apps() -> Vec<RunningApp> { Vec::new() }
+
 pub fn running_apps() -> Vec<RunningApp> {
     use objc2_app_kit::NSApplicationActivationPolicy;
     NSWorkspace::sharedWorkspace()

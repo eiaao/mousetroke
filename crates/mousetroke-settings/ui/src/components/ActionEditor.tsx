@@ -8,6 +8,7 @@ import { currentLang, t, type MsgKey } from "../i18n";
 import { api, errText } from "../api";
 import { Caps, KeysInput } from "./KeysInput";
 import { ActionPicker } from "./ActionPicker";
+import { LaunchAppPicker } from "./Dialogs";
 
 const VARS: { v: string; key: "ui.var.selected_text" | "ui.var.clipboard" | "ui.var.app_name" | "ui.var.pid" | "ui.var.win_title" }[] = [
   { v: "%MS_SELECTED_TEXT%", key: "ui.var.selected_text" },
@@ -106,7 +107,16 @@ function PresetCard({ action, preset, onChange, depth = 0 }: { action: PresetAct
   const impl = isMac() ? preset.macos : preset.windows;
   const canExpand = presetCanExpand(preset);
   const values = presetParamValues(preset, action);
+  // 管理员开关在卡片里直接切换，不进摘要文字；只有 Windows 能提权
+  const elevateParam = isMac() ? undefined : visibleParams(preset, values).find((param) => param.kind.type === "elevate");
+  const setElevate = (on: boolean) => {
+    const params = { ...(action.params ?? {}) };
+    if (on) params[elevateParam!.name] = "true";
+    else delete params[elevateParam!.name];
+    onChange({ ...action, params });
+  };
   const filled = visibleParams(preset, values)
+    .filter((param) => param.kind.type !== "elevate")
     .map((param) => {
       const value = values[param.name] ?? "";
       const choice = param.kind.type === "choice" ? param.kind.choices.find((c) => c.value === value) : undefined;
@@ -137,6 +147,12 @@ function PresetCard({ action, preset, onChange, depth = 0 }: { action: PresetAct
         {presetKeys(preset) && <Caps keys={presetKeys(preset)!} />}
         {filled.length > 0 && (
           <p className="action-card-params">{paramsText}</p>
+        )}
+        {elevateParam && (
+          <label className="check">
+            <input type="checkbox" checked={values[elevateParam.name] === "true"} disabled={busy} data-param={elevateParam.name} onChange={(e) => setElevate(e.target.checked)} />
+            {t(elevateParam.label_key as MsgKey)}
+          </label>
         )}
         {impl.status !== "implemented" && (
           <p className="field-warn">{t((impl.value.reason_key as MsgKey) ?? "preset.status.pending")}</p>
@@ -218,6 +234,7 @@ function insertAt(el: HTMLInputElement | HTMLTextAreaElement | null, value: stri
 
 function ActionFields({ action, onChange, depth }: { action: AdvancedAction; onChange: (a: Action, coalesce?: string) => void; depth: number }) {
   const textRef = useRef<HTMLTextAreaElement & HTMLInputElement>(null);
+  const [appList, setAppList] = useState(false);
   switch (action.type) {
     case "key_sequence":
       return (
@@ -264,17 +281,11 @@ function ActionFields({ action, onChange, depth }: { action: AdvancedAction; onC
             <label className="field-label">{t("ui.action.exe_label")}</label>
             <div className="input-row">
               <input value={action.exe} spellCheck={false} placeholder={isMac() ? t("mac.ui.action.app_ph") : "C:\Program Files\…\app.exe"} onChange={(e) => onChange({ ...action, exe: e.target.value }, "exe")} />
-              <button
-                type="button"
-                className="btn small"
-                onClick={async () => {
-                  const p = await api.pickFile("exe", false, t("ui.action.pick_exe"));
-                  if (p) onChange({ ...action, exe: p });
-                }}
-              >
-                {t("common.browse")}
+              <button type="button" className="btn small" onClick={() => setAppList(true)}>
+                {t("ui.picker.from_list")}
               </button>
             </div>
+            {appList && <LaunchAppPicker onPick={(exe) => onChange({ ...action, exe })} onClose={() => setAppList(false)} />}
           </div>
           <div className="field">
             <label className="field-label">{t("ui.action.args_label")}</label>

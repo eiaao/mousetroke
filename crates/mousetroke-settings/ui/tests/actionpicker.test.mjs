@@ -992,6 +992,54 @@ test("Folder and File parameters dispatch to distinct native pickers (C6)", asyn
 });
 
 
+test("open app picks from running and installed lists; elevate is Windows-only and saved only when checked", async () => {
+  setup();
+  const template = actions.findPreset("open.website");
+  const app = { ...template, id: "open.app", params: [
+    { name: "app", label_key: "preset.param.app", kind: { type: "app" }, default: { kind: "literal", value: "" } },
+    { name: "elevate", label_key: "ui.action.elevate", kind: { type: "elevate" }, default: { kind: "literal", value: "false" } },
+  ] };
+  actions.initActionCatalog({ ...fixture, presets: [...fixture.presets, app] });
+  const original = { running: api.runningApps, installed: api.installedApps, icons: api.appIcons };
+  api.runningApps = async () => [{ exe: "C:\\A\\run.exe", title: "Running" }];
+  api.appIcons = async () => ({});
+  api.installedApps = async () => [{ exe: "C:\\A\\run.exe", title: "Dup" }, { exe: "C:\\B\\inst.exe", title: "Installed App" }];
+  try {
+    const view = await mount(createElement(ActionPicker, { initialId: "open.app", onPick() {}, onClose() {} }));
+    await click(button(view.el, t("ui.picker.from_list")));
+    const rows = [...document.querySelectorAll(".app-list li > button")];
+    // 已在运行的不在"已安装"里重复
+    assert.deepEqual(rows.map((b) => b.title), ["C:\\A\\run.exe", "C:\\B\\inst.exe"]);
+    await click(rows[1]);
+    assert.equal(document.querySelector(".app-list"), null);
+    assert.equal(view.el.querySelector("#param-app").value, "C:\\B\\inst.exe");
+    const box = view.el.querySelector('input[data-param="elevate"]');
+    assert.equal(box.checked, false);
+    await view.close();
+    assert.deepEqual(actions.cleanPresetParams(app, { app: "x.exe", elevate: "false" }), { app: "x.exe" });
+    assert.deepEqual(actions.cleanPresetParams(app, { app: "x.exe", elevate: "true" }), { app: "x.exe", elevate: "true" });
+    // 详情卡片里随时切换，未勾选时也显示；摘要文字里不出现
+    const changes = [];
+    const card = await mount(createElement(ActionEditor, { action: { type: "preset", id: "open.app", params: { app: "x.exe" } }, onChange: (a) => changes.push(a) }));
+    const cardBox = card.el.querySelector('input[data-param="elevate"]');
+    assert.equal(cardBox.checked, false);
+    assert.ok(!card.el.querySelector(".action-card-params").textContent.includes(t("ui.action.elevate")));
+    await click(cardBox);
+    assert.deepEqual(changes.at(-1).params, { app: "x.exe", elevate: "true" });
+    await card.render(createElement(ActionEditor, { action: changes.at(-1), onChange: (a) => changes.push(a) }));
+    await click(card.el.querySelector('input[data-param="elevate"]'));
+    assert.deepEqual(changes.at(-1).params, { app: "x.exe" });
+    await card.close();
+    platform.initPlatform("macos");
+    const macCard = await mount(createElement(ActionEditor, { action: { type: "preset", id: "open.app", params: { app: "x.exe" } }, onChange() {} }));
+    assert.equal(macCard.el.querySelector('input[data-param="elevate"]'), null);
+    await macCard.close();
+    const mac = await mount(createElement(ActionPicker, { initialId: "open.app", onPick() {}, onClose() {} }));
+    assert.equal(mac.el.querySelector('input[data-param="elevate"]'), null);
+    await mac.close();
+  } finally { api.runningApps = original.running; api.installedApps = original.installed; api.appIcons = original.icons; platform.initPlatform("windows"); }
+});
+
 test("clicking a nonactive parameter row activates it before opening its form", async () => {
   setup();
   const view = await mount(createElement(ActionPicker, { onPick() {}, onClose() {} }));

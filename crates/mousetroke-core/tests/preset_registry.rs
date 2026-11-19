@@ -70,6 +70,12 @@ fn app_identity_activation_is_explicit_and_never_skips_launch_arguments() {
         if let Action::LaunchApp { args, .. } = &mut preset { *args = Some(String::new()); }
         assert!(!preset.activates_app_identity());
     }
+    // 管理员启动在 Windows 上生效并放弃按身份切换；mac 不支持提权，忽略该参数。
+    let params = serde_json::from_value(json!({"app":"editor","elevate":"true"})).unwrap();
+    let win = expand("open.app", Platform::Windows, &params, Lang::EnUs).unwrap();
+    assert!(matches!(win, Action::LaunchApp { elevate: true, activate_by_identity: false, .. }));
+    let mac = expand("open.app", Platform::Macos, &params, Lang::EnUs).unwrap();
+    assert!(matches!(mac, Action::LaunchApp { elevate: false, activate_by_identity: true, .. }));
     for exe in ["explorer.exe", "notepad.exe", "code.exe", "com.apple.TextEdit"] {
         for args in [Value::Null, json!("document.txt")] {
             let legacy: Action = serde_json::from_value(json!({"type":"launch_app","exe":exe,"args":args})).unwrap();
@@ -190,7 +196,7 @@ fn invalid_parameters_are_rejected_without_losing_future_fields() {
         ("text.search", json!({"engine":"custom", "url":"file:///%MS_SELECTED_TEXT%"})),
         ("text.translate", json!({"target_language":"unknown"})),
         ("open.folder", json!({"path":""})), ("open.file", json!({"path":"bad\u{0000}path"})),
-        ("open.app", json!({"app":""})),
+        ("open.app", json!({"app":""})), ("open.app", json!({"app":"editor.exe", "elevate":"yes"})),
         ("text.type", json!({"text":""})), ("text.type", json!({"text":"bad\u{0000}text"})),
         ("text.type", json!({"text":"ok", "method":"invalid"})),
         ("text.datetime", json!({"format":"invalid"})),

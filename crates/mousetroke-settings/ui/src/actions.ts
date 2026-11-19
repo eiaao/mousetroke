@@ -265,7 +265,7 @@ export function visibleParams(p: ActionPreset, values: Record<string, string>): 
 
 /** 自定义选项下的输入仍需明确填写，不能因字面默认值非空而回落到默认内容。 */
 export function presetParamRequired(param: ActionPreset["params"][number]): boolean {
-  return param.kind.type !== "choice" && ((param.default.kind === "literal" && param.default.value === "") || param.visible_when?.equals === "custom");
+  return param.kind.type !== "choice" && param.kind.type !== "elevate" && ((param.default.kind === "literal" && param.default.value === "") || param.visible_when?.equals === "custom");
 }
 
 /** 只检查当前可见的必填参数；多行文字保留空白。 */
@@ -294,7 +294,8 @@ export function cleanPresetParams(p: ActionPreset, values: Record<string, string
   const out: Record<string, string> = {};
   for (const param of visibleParams(p, values)) {
     const v = param.kind.type === "multiline_text" ? (values[param.name] ?? "") : (values[param.name] ?? "").trim();
-    if (v) out[param.name] = v;
+    // 未勾选的管理员开关不写入配置
+    if (v && !(param.kind.type === "elevate" && v !== "true")) out[param.name] = v;
   }
   return out;
 }

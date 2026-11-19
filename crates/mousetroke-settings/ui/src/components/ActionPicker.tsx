@@ -24,7 +24,8 @@ import {
 import { defaultAction } from "../gesture";
 import { currentLang, t, type MsgKey } from "../i18n";
 import { api, errText, type Msg } from "../api";
-import { Modal } from "./Dialogs";
+import { LaunchAppPicker, Modal } from "./Dialogs";
+import { isMac } from "../platform";
 import { Caps, KeysInput } from "./KeysInput";
 
 /**
@@ -398,6 +399,7 @@ function categoryKey(c: PickerCategory): MsgKey {
 /** 按参数类型渲染表单字段；路径带"浏览"，程序带"浏览/点选窗口"。 */
 function ParamField({ param, value, onChange }: { param: ActionPreset["params"][number]; value: string; onChange: (v: string) => void }) {
   const inputRef = useRef<HTMLInputElement>(null);
+  const [listOpen, setListOpen] = useState(false);
   const label = t(param.label_key as MsgKey);
   const selectionLabel = `{${t("ui.var.selected_text")}}`;
   const customUrl = param.label_key === "preset.param.search_url";
@@ -505,29 +507,21 @@ function ParamField({ param, value, onChange }: { param: ActionPreset["params"][
               data-param={param.name}
               onChange={(e) => onChange(e.target.value)}
             />
-            <button
-              type="button"
-              className="btn small"
-              onClick={async () => {
-                const p = await api.pickFile("exe", false, label);
-                if (p) onChange(p);
-              }}
-            >
-              {t("common.browse")}
-            </button>
-            <button
-              type="button"
-              className="btn small"
-              onClick={async () => {
-                const p = await api.pickWindow();
-                if (p) onChange(p.exe);
-              }}
-            >
-              {t("ui.picker.pick_window")}
+            <button type="button" className="btn small" onClick={() => setListOpen(true)}>
+              {t("ui.picker.from_list")}
             </button>
           </div>
+          {listOpen && <LaunchAppPicker onPick={onChange} onClose={() => setListOpen(false)} />}
           {error}
         </div>
+      );
+    case "elevate":
+      // 只有 Windows 能提权
+      return isMac() ? null : (
+        <label className="check">
+          <input type="checkbox" checked={value === "true"} data-param={param.name} onChange={(e) => onChange(e.target.checked ? "true" : "false")} />
+          {label}
+        </label>
       );
     default:
       // text / url

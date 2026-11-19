@@ -1,5 +1,6 @@
 import { appIdentity, isMac } from "../platform";
 import { useEffect, useMemo, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import { AppIcon, NavIcon } from "./Icons";
 import type { Config, PresetApp, RunningApp, Scope } from "../types";
 import { api, errText } from "../api";
@@ -159,6 +160,86 @@ export function AppPicker({
         </button>
       </footer>
     </Modal>
+  );
+}
+
+/** 给"打开程序"选程序：正在运行的在前，开始菜单里已安装的在后；也能点选窗口或浏览 exe。
+ *  挂到 body 上，按键不冒泡到外层动作选择器（避免 Enter/方向键触发外层列表）。 */
+export function LaunchAppPicker({ onPick, onClose }: { onPick: (exe: string) => void; onClose: () => void }) {
+  const [running, setRunning] = useState<RunningApp[] | null>(null);
+  const [installed, setInstalled] = useState<RunningApp[] | null>(null);
+  const [q, setQ] = useState("");
+  const [picking, setPicking] = useState(false);
+  const [pickError, setPickError] = useState<string | null>(null);
+  useEffect(() => {
+    api.runningApps().then(setRunning, () => setRunning([]));
+    api.installedApps().then(setInstalled, () => setInstalled([]));
+  }, []);
+  const k = q.trim().toLowerCase();
+  const match = (a: RunningApp) => !k || a.exe.toLowerCase().includes(k) || a.title.toLowerCase().includes(k);
+  const shownRunning = useMemo(() => (running ?? []).filter(match), [running, k]);
+  // 已在上面列出的不重复（只按当前显示的运行项去重，搜索已安装名时仍能找到）
+  const shownInstalled = useMemo(() => {
+    const seen = new Set(shownRunning.map((a) => a.exe.toLowerCase()));
+    return (installed ?? []).filter((a) => !seen.has(a.exe.toLowerCase()) && match(a));
+  }, [installed, shownRunning, k]);
+  const pick = (exe: string) => { onPick(exe); onClose(); };
+  const pickWindow = async () => {
+    setPicking(true);
+    setPickError(null);
+    try {
+      const p = await api.pickWindow();
+      if (p) pick(p.exe);
+    } catch (e) {
+      setPickError(errText(e));
+    } finally {
+      setPicking(false);
+    }
+  };
+  const row = (a: RunningApp, name: string, detail: string) => (
+    <li key={a.exe}>
+      <button type="button" onClick={() => pick(a.exe)} title={a.exe}>
+        <AppIcon exe={a.exe} size={24} />
+        <strong>{name}</strong>
+        <span className="muted">{detail}</span>
+      </button>
+    </li>
+  );
+  const loading = running === null || installed === null;
+  return createPortal(
+    <div onKeyDown={(e) => e.stopPropagation()}>
+      <Modal title={t("ui.picker.title")} onClose={onClose}>
+        <div className="modal-body">
+          <input className="search" type="search" placeholder={t("ui.picker.search_off")} value={q} onChange={(e) => setQ(e.target.value)} />
+          <ul className="app-list">
+            {shownRunning.length > 0 && <li className="app-group"><span>{t("ui.picker.running_group")}</span></li>}
+            {shownRunning.map((a) => row(a, isMac() ? a.title || a.exe : fileName(a.exe), a.title))}
+            {shownInstalled.length > 0 && <li className="app-group"><span>{t("ui.picker.installed_group")}</span></li>}
+            {shownInstalled.map((a) => row(a, a.title, fileName(a.exe)))}
+            {loading && <li className="muted">{t("ui.picker.loading")}</li>}
+            {!loading && shownRunning.length + shownInstalled.length === 0 && <li className="muted">{t("ui.picker.no_match")}</li>}
+          </ul>
+        </div>
+        <footer className="modal-foot picker-foot">
+          <span className="muted picker-hint">{pickError ?? ""}</span>
+          <button type="button" className="btn" disabled={picking} onClick={pickWindow}>
+            <NavIcon kind="pick" />
+            {picking ? t("ui.picker.picking") : t("ui.picker.pick_window")}
+          </button>
+          <button
+            type="button"
+            className="btn"
+            onClick={async () => {
+              const p = await api.pickFile("exe", false, t("ui.action.pick_exe"));
+              if (p) pick(p);
+            }}
+          >
+            {t("common.browse")}
+          </button>
+        </footer>
+      </Modal>
+    </div>,
+    document.body,
   );
 }
 

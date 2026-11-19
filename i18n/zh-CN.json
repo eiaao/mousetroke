@@ -470,6 +470,8 @@
   "ui.picker.cat_installed": "{category} · 已安装",
   "ui.picker.not_installed": "未检测到，也可以先添加",
   "ui.picker.running_group": "正在运行",
+  "ui.picker.installed_group": "已安装",
+  "ui.picker.from_list": "从列表选择",
   "ui.picker.loading": "正在读取…",
   "ui.picker.no_match": "没有匹配的程序。可以用下方「浏览」选择 exe 文件。",
   "ui.picker.added_switch_off": "已添加，选中后改为禁用",

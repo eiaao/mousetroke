@@ -470,6 +470,8 @@
   "ui.picker.cat_installed": "{category} · installed",
   "ui.picker.not_installed": "Not detected — you can still add it",
   "ui.picker.running_group": "Running",
+  "ui.picker.installed_group": "Installed",
+  "ui.picker.from_list": "Choose from list",
   "ui.picker.loading": "Reading…",
   "ui.picker.no_match": "No matching app. Use “Browse” below to pick an exe file.",
   "ui.picker.added_switch_off": "Added — pick again to turn gestures off",

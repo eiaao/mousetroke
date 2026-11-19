@@ -470,6 +470,8 @@
   "ui.picker.cat_installed": "{category} · installata",
   "ui.picker.not_installed": "Non trovata — si può aggiungere comunque",
   "ui.picker.running_group": "In esecuzione",
+  "ui.picker.installed_group": "Installate",
+  "ui.picker.from_list": "Scegli dall'elenco",
   "ui.picker.loading": "Lettura…",
   "ui.picker.no_match": "Nessuna app corrispondente. Usa «Sfoglia» qui sotto per scegliere un exe.",
   "ui.picker.added_switch_off": "Aggiunta — selezionala di nuovo per disattivare i gesti",

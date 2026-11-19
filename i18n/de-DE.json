@@ -470,6 +470,8 @@
   "ui.picker.cat_installed": "{category} · installiert",
   "ui.picker.not_installed": "Nicht gefunden — lässt sich trotzdem hinzufügen",
   "ui.picker.running_group": "Wird ausgeführt",
+  "ui.picker.installed_group": "Installiert",
+  "ui.picker.from_list": "Aus Liste wählen",
   "ui.picker.loading": "Wird gelesen…",
   "ui.picker.no_match": "Keine passende App. Wählen Sie unten über „Durchsuchen“ eine exe-Datei.",
   "ui.picker.added_switch_off": "Hinzugefügt — zum Ausschalten erneut wählen",
