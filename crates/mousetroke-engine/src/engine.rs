@@ -225,6 +225,8 @@ pub struct Engine {
     /// 设置窗口里录制画布的屏幕矩形（左、上、右、下）；按键在其中按下时放行，供画布自己画轨迹。
     settings_canvas: Option<(i32, i32, i32, i32)>,
     watch: Option<ConfigWatch>,
+    /// 使用统计（有配置文件时才记）。
+    stats: Option<crate::stats::Recorder>,
 }
 
 impl Engine {
@@ -232,7 +234,10 @@ impl Engine {
     pub fn new(cfg: Config, cfg_path: Option<PathBuf>, host: Box<dyn Host>) -> Option<Self> {
         let overlay = host.new_canvas(&cfg.settings.trail.color_normal, cfg.settings.trail.width)?;
         let shape_samples = std::env::var_os("MOUSETROKE_SHAPE_SAMPLES").as_deref() == Some(std::ffi::OsStr::new("1"));
-        Some(Self::with_parts(cfg, cfg_path, overlay, host, shape_samples))
+        let stats = cfg_path.as_deref().and_then(|p| crate::stats::Recorder::spawn(mousetroke_core::stats::path_for(p)));
+        let mut engine = Self::with_parts(cfg, cfg_path, overlay, host, shape_samples);
+        engine.stats = stats;
+        Some(engine)
     }
 
     fn with_parts(cfg: Config, cfg_path: Option<PathBuf>, overlay: Box<dyn Canvas>, host: Box<dyn Host>, shape_samples: bool) -> Self {
@@ -261,6 +266,7 @@ impl Engine {
             edge_disarmed: false,
             settings_canvas: None,
             watch: cfg_path.map(ConfigWatch::new),
+            stats: None,
         };
         engine.refresh_screens();
         engine.apply_config(cfg);
@@ -684,7 +690,7 @@ impl Engine {
                 cap.consumed = true;
             }
             self.show_label(&b, true);
-            self.run_action(b.action);
+            self.run_binding(&b);
             return Verdict::Swallow;
         }
         if self.feasible(&steps) {
@@ -801,7 +807,7 @@ impl Engine {
         if let Some(b) = self.match_steps(&steps, &[], None) {
             crate::log!("手势命中: {}（{}）", b.name, edge::name(e));
             self.show_label(&b, true);
-            self.run_action(b.action);
+            self.run_binding(&b);
             self.end_edge_capture();
         } else if !self.feasible(&steps) {
             self.end_edge_capture(); // 该作用域没有这个边角的手势
@@ -907,7 +913,7 @@ impl Engine {
                 let edge_idle = matches!(cap.trigger, Trigger::Edge(_)) && cap.held.is_empty();
                 self.overlay.set_color(&self.cfg.settings.trail.color_matched);
                 self.show_label(b, true);
-                self.run_action(b.action.clone());
+                self.run_binding(b);
                 if edge_idle {
                     // 沿边摩擦类：没有按住的键，直接结束
                     if let Some(cap) = &self.capture {
@@ -998,7 +1004,7 @@ impl Engine {
             Some(b) if !(cap.consumed && segs.is_empty() && cap.presses.len() <= cap.as_button.is_some() as usize) => {
                 crate::log!("手势命中: {}（作用域 {}）", b.name, self.scope_name());
                 self.show_label(&b, true);
-                self.run_action(b.action);
+                self.run_binding(&b);
                 self.end_visuals(true);
             }
             _ => {
@@ -1083,6 +1089,28 @@ impl Engine {
             self.echoes.push((btn, false, now + ECHO_WINDOW));
         }
         self.host.replay(btn, click);
+    }
+
+    /// 一次触发：记入使用统计，再执行动作。
+    fn run_binding(&self, b: &Binding) {
+        self.record_trigger(b);
+        self.run_action(b.action.clone());
+    }
+
+    /// 只发送事件，计数与写盘在统计线程。
+    fn record_trigger(&self, b: &Binding) {
+        let (Some(stats), Some(now)) = (&self.stats, self.host.local_now()) else { return };
+        if b.id.is_empty() {
+            return;
+        }
+        let scope = self.cfg.scopes.iter().find(|s| s.bindings.iter().any(|x| x.id == b.id)).map(|s| s.id.clone()).unwrap_or_default();
+        stats.record(mousetroke_core::stats::Event {
+            date: format!("{:04}-{:02}-{:02}", now.year, now.month, now.day),
+            hour: now.hour,
+            binding: b.id.clone(),
+            seen: mousetroke_core::stats::Seen { name: b.name.clone(), name_key: b.name_key.clone(), scope },
+            app: self.target.as_ref().and_then(|t| t.exe.clone()),
+        });
     }
 
     /// 异步执行动作（工作线程；钩子回调里绝不阻塞）。

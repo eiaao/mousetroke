@@ -267,6 +267,7 @@ mod tests {
 
     fn binding(name: &str, pattern: Vec<Step>) -> Binding {
         Binding {
+            id: String::new(),
             name: name.into(),
             name_key: None,
             gesture: None,

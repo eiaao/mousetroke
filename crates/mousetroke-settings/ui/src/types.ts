@@ -103,7 +103,9 @@ export interface MenuItem {
 }
 
 export interface Binding {
-  /** 仅界面使用；写入和导出时移除。 */
+  /** 持久标识（使用统计按它累计）；界面里与 uiId 相同，写盘时由 uiId 写回。 */
+  id?: string;
+  /** 界面标识：载入时取 id，新建/复制时换新；写入时作为 id 保存。 */
   uiId?: string;
   actionUnselected?: boolean;
   /** 仅界面使用；标记从磁盘载入的绑定（加载/导入），未形成手势时仍允许保持启用（导入的单击手势）。 */

@@ -4,7 +4,7 @@ import { currentLang, displayName, t } from "../i18n";
 import { AppIcon, NavIcon } from "./Icons";
 import { useUpdateHint } from "../updateHint";
 
-export type View = { kind: "scope"; index: number } | { kind: "gestures" } | { kind: "prefs" } | { kind: "data" } | { kind: "about" };
+export type View = { kind: "scope"; index: number } | { kind: "gestures" } | { kind: "prefs" } | { kind: "data" } | { kind: "stats" } | { kind: "about" };
 
 export function scopeTitle(s: Scope): string {
   if (s.kind === "global") return t("scope.global");
@@ -93,6 +93,10 @@ export function Sidebar({
         <button type="button" className={`nav-item ${view.kind === "data" ? "on" : ""}`} onClick={() => onView({ kind: "data" })}>
           <NavIcon kind="data" />
           {t("ui.sidebar.data")}
+        </button>
+        <button type="button" className={`nav-item ${view.kind === "stats" ? "on" : ""}`} onClick={() => onView({ kind: "stats" })}>
+          <NavIcon kind="stats" />
+          {t("ui.sidebar.stats")}
         </button>
         <button type="button" className={`nav-item ${view.kind === "about" ? "on" : ""}`} onClick={() => onView({ kind: "about" })}>
           <NavIcon kind="about" />

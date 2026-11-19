@@ -73,6 +73,10 @@ pub trait Host {
     fn new_canvas(&self, color: &str, width: f64) -> Option<Box<dyn Canvas>>;
     /// 投递固定大小校准样本；输入回调调用，队列满时丢弃，不得等待或写盘。
     fn shape_sample(&self, encoded: Vec<i32>);
+    /// 本地日期时间（使用统计按它分天、分小时）；触发时调用，须快速返回。None = 不记统计。
+    fn local_now(&self) -> Option<mousetroke_core::action_datetime::LocalDateTime> {
+        None
+    }
     /// 查询当前光标；仅提示定时器调用，须快速返回。
     fn cursor_pos(&self) -> (i32, i32);
     /// 查询系统首选语言；仅启动/配置热加载调用。

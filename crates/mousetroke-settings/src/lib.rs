@@ -274,6 +274,12 @@ fn set_recorder_area(rect: Option<CssRect>, window: WebviewWindow) {
     sync_canvas(&window, Some(rect));
 }
 
+/// 使用统计（引擎写，这里只读；没有文件时为空）。
+#[tauri::command]
+fn usage_stats(paths: State<AppPaths>) -> mousetroke_core::stats::Stats {
+    mousetroke_core::stats::Stats::load(&mousetroke_core::stats::path_for(&paths.config))
+}
+
 #[tauri::command]
 fn save_config(paths: State<AppPaths>, config: Config) -> MsgResult<()> {
     save_config_at(&paths.config, &config)
@@ -734,6 +740,7 @@ pub fn run(config: Option<PathBuf>) {
             pick_folder,
             recover_config,
             running_apps,
+            usage_stats,
             installed_apps,
             app_icons,
             resolve_app,

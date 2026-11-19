@@ -177,6 +177,9 @@ impl Host for SystemHost {
     fn shape_sample(&self, encoded: Vec<i32>) {
         mousetroke_engine::log::shape_sample(encoded);
     }
+    fn local_now(&self) -> Option<mousetroke_core::action_datetime::LocalDateTime> {
+        crate::preset_actions::local_now().ok()
+    }
     fn cursor_pos(&self) -> (i32, i32) {
         cursor_pos()
             .map(|p| (p.x as i32, p.y as i32))

@@ -126,6 +126,9 @@ impl Host for SystemHost {
     fn shape_sample(&self, encoded: Vec<i32>) {
         mousetroke_engine::log::shape_sample(encoded);
     }
+    fn local_now(&self) -> Option<mousetroke_core::action_datetime::LocalDateTime> {
+        Some(crate::preset_datetime::local_now())
+    }
 }
 
 /// LL 钩子回调与托盘消息都在引擎线程执行。
