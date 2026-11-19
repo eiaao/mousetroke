@@ -370,11 +370,16 @@ function Main({ init }: { init: InitState }) {
       const key = `add-apps-${uid()}`;
       edit((c) => ({ ...c, scopes: [...c.scopes.map((s, i) => (disable && scopes[i]?.id === s.id ? scopes[i] : s)), ...scopes.slice(c.scopes.length)] }), key);
       // mac 的程序标识是 bundle id：换成访达里的显示名（与添加合并为一步撤销）
-      const added = scopes.slice(config.scopes.length).filter((s) => !s.name_key && s.app && s.name === fileName(s.app.exe).replace(/\.exe$/i, ""));
+      const fallback = (exe: string) => fileName(exe).replace(/\.exe$/i, "");
+      const added = scopes.slice(config.scopes.length).filter((s) => !s.name_key && s.app && s.name === fallback(s.app.exe));
       if (isMac() && added.length) {
         api.appNames(added.map((s) => s.app!.exe)).then((names) => {
           const rename = new Map(added.flatMap((s) => (names[s.app!.exe] ? [[s.id, names[s.app!.exe]!]] : [])));
-          if (rename.size) edit((c) => ({ ...c, scopes: c.scopes.map((s) => (rename.has(s.id) && s.name === fileName(s.app?.exe ?? "") ? { ...s, name: rename.get(s.id)! } : s)) }), key);
+          // 查到名字前已撤销添加（或已改名）时不提交空修改，免得清掉重做记录
+          if (rename.size) edit((c) => {
+            const hit = (s: Scope) => rename.has(s.id) && s.name === fallback(s.app?.exe ?? "") && s.name !== rename.get(s.id);
+            return c.scopes.some(hit) ? { ...c, scopes: c.scopes.map((s) => (hit(s) ? { ...s, name: rename.get(s.id)! } : s)) } : c;
+          }, key);
         }, () => {});
       }
     }
