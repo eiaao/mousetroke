@@ -12,6 +12,10 @@ const { api } = await server.ssrLoadModule("/src/api.ts");
 const { StatsPage } = await server.ssrLoadModule("/src/components/StatsPage.tsx");
 const { t } = await server.ssrLoadModule("/src/i18n/index.ts");
 
+// 每个页面测试都能单独运行（--test-name-pattern），DOM 在模块加载时准备好
+const dom = new JSDOM("<!doctype html><html><body></body></html>", { url: "http://localhost/" });
+Object.assign(globalThis, { window: dom.window, document: dom.window.document, HTMLElement: dom.window.HTMLElement, location: dom.window.location, IS_REACT_ACT_ENVIRONMENT: true });
+
 const pattern = [{ type: "press", key: "mouse:right" }];
 const binding = (name, extra = {}) => ({ name, pattern, action: { type: "key_sequence", keys: "^w" }, execute_on_match: false, hide_label: false, secured: false, ...extra });
 
@@ -62,8 +66,6 @@ test("binding ids persist from the UI id; copies keep their own new id", () => {
 });
 
 test("stats page shows tiles, calendar and bars; bars follow a selected day", async () => {
-  const dom = new JSDOM("<!doctype html><html><body></body></html>", { url: "http://localhost/" });
-  Object.assign(globalThis, { window: dom.window, document: dom.window.document, HTMLElement: dom.window.HTMLElement, location: dom.window.location, IS_REACT_ACT_ENVIRONMENT: true });
   const { createRoot } = await import("react-dom/client");
   const today = stats.dayKey(new Date());
   const yesterday = stats.dayKey(stats.addDays(new Date(), -1));
@@ -87,7 +89,10 @@ test("stats page shows tiles, calendar and bars; bars follow a selected day", as
     assert.deepEqual(tiles, ["3", "8", "8", "Old gesture"]);
     // 年视图排到今天所在的那一周，今天之后的格子不可点
     const cells = [...host.querySelectorAll(".cal-year button.cal-cell")];
-    assert.equal(cells.filter((c) => !c.disabled).length, Math.floor((new Date() - new Date(new Date().getFullYear(), 0, 1)) / 864e5) + 1);
+    // 按日历日计算（不受夏令时影响）：今天是今年的第几天
+    const now = new Date();
+    const ordinal = (Date.UTC(now.getFullYear(), now.getMonth(), now.getDate()) - Date.UTC(now.getFullYear(), 0, 1)) / 864e5 + 1;
+    assert.equal(cells.filter((c) => !c.disabled).length, ordinal);
     assert.ok(cells.length - cells.filter((c) => !c.disabled).length < 7);
     const names = () => [...host.querySelectorAll(".stats-bars")][0].querySelectorAll(".stats-bar-name");
     assert.deepEqual([...names()].map((e) => e.textContent), ["Old gesture", "Close tab"]);

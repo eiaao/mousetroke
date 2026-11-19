@@ -7,6 +7,8 @@ use mousetroke_core::stats::{Event, Stats};
 
 /// 连续触发只写一次；进程退出最多丢这么久的计数，设置页也最多晚这么久看到。
 const FLUSH: Duration = Duration::from_secs(3);
+/// 写盘失败后的重试间隔。
+const RETRY: Duration = Duration::from_secs(30);
 
 pub struct Recorder {
     tx: Sender<Event>,
@@ -19,25 +21,38 @@ impl Recorder {
             .name("mousetroke-stats".into())
             .spawn(move || {
                 let mut stats = Stats::load(&path);
-                while let Ok(e) = rx.recv() {
-                    stats.record(&e);
+                // dirty：有还没写进文件的计数（写失败时定时重试，不必等下一次触发）
+                let mut dirty = false;
+                loop {
+                    let next = if dirty { rx.recv_timeout(RETRY) } else { rx.recv().map_err(|_| RecvTimeoutError::Disconnected) };
+                    match next {
+                        Ok(e) => {
+                            stats.record(&e);
+                            dirty = true;
+                        }
+                        Err(RecvTimeoutError::Timeout) => {}
+                        Err(RecvTimeoutError::Disconnected) => {
+                            if dirty {
+                                let _ = stats.save(&path);
+                            }
+                            return;
+                        }
+                    }
+                    // 攒一小段再写：连续触发只写一次
                     let deadline = Instant::now() + FLUSH;
-                    let mut closed = false;
                     loop {
                         match rx.recv_timeout(deadline.saturating_duration_since(Instant::now())) {
                             Ok(e) => stats.record(&e),
                             Err(RecvTimeoutError::Timeout) => break,
                             Err(RecvTimeoutError::Disconnected) => {
-                                closed = true;
-                                break;
+                                let _ = stats.save(&path);
+                                return;
                             }
                         }
                     }
-                    if let Err(err) = stats.save(&path) {
-                        crate::log!("写入使用统计失败: {err}");
-                    }
-                    if closed {
-                        return;
+                    match stats.save(&path) {
+                        Ok(()) => dirty = false,
+                        Err(err) => crate::log!("写入使用统计失败（稍后重试）: {err}"),
                     }
                 }
             })

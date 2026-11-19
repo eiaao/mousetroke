@@ -672,10 +672,19 @@ impl Config {
     /// 缺少或重复的绑定 id 按"作用域 id + 名称 + 画法"确定性生成：设置界面保存之前，
     /// 引擎每次加载得到同一个 id，统计能接上；保存后 id 就固定在配置里。
     pub fn assign_binding_ids(&mut self) {
+        // 先占住已有 id（同一 id 只认第一个），再给缺失或重复的生成，生成的不会抢走别人已存的 id
         let mut seen = std::collections::HashSet::new();
-        for scope in &mut self.scopes {
-            for b in &mut scope.bindings {
+        let mut keep = std::collections::HashSet::new();
+        for (si, scope) in self.scopes.iter().enumerate() {
+            for (bi, b) in scope.bindings.iter().enumerate() {
                 if !b.id.is_empty() && seen.insert(b.id.clone()) {
+                    keep.insert((si, bi));
+                }
+            }
+        }
+        for (si, scope) in self.scopes.iter_mut().enumerate() {
+            for (bi, b) in scope.bindings.iter_mut().enumerate() {
+                if keep.contains(&(si, bi)) {
                     continue;
                 }
                 let base = format!("{}\0{}\0{}", scope.id, b.name, serde_json::to_string(&b.pattern).unwrap_or_default());
@@ -979,6 +988,14 @@ mod builtin_tests {
         let c = Config::from_json(&serde_json::to_string(&c).unwrap()).unwrap();
         assert_eq!(c.scopes[0].bindings[0].id, "keep");
         assert_ne!(c.scopes[0].bindings[1].id, "keep");
+        // 没有 id 的排在前面，也不会抢走后面已存的 id（哪怕生成结果恰好相同）
+        let mut d = a.clone();
+        let derived = d.scopes[0].bindings[0].id.clone();
+        d.scopes[0].bindings[0].id.clear();
+        d.scopes[0].bindings[1].id = derived.clone();
+        let d = Config::from_json(&serde_json::to_string(&d).unwrap()).unwrap();
+        assert_eq!(d.scopes[0].bindings[1].id, derived);
+        assert_ne!(d.scopes[0].bindings[0].id, derived);
     }
 
     #[test]
