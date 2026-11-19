@@ -46,11 +46,18 @@ test("move skips conflicts unless replaced and keeps source when every target is
   original.scopes[1].bindings.push(binding("existing"));
   assert.deepEqual(transferConflicts(original.scopes[1], original.scopes[0].bindings[0]), [0]);
   assert.equal(transferBinding(original, { scope: 0, binding: 0 }, [1], "move", {}), original);
+  // 移到单个目标是同一个手势换地方：保留 id，使用统计接得上
+  const relocated = transferBinding(fixture(), { scope: 0, binding: 0 }, [1], "move", {});
+  assert.equal(relocated.scopes[1].bindings[0].uiId, "source");
+  assert.equal(relocated.scopes[0].bindings.length, 0);
   const moved = transferBinding(original, { scope: 0, binding: 0 }, [1, 2], "move", { 1: "replace" });
   assert.equal(moved.scopes[0].bindings.length, 0);
   assert.deepEqual(moved.scopes[1].bindings.map((b) => b.name), ["source"]);
   assert.deepEqual(moved.scopes[2].bindings.map((b) => b.name), ["source"]);
   assert.equal(moved.scopes[1].bindings[0].gesture, undefined);
+  // 移到多个目标：各自是新手势，id 不同，也不沿用原 id
+  const ids = [moved.scopes[1].bindings[0].uiId, moved.scopes[2].bindings[0].uiId];
+  assert.ok(!ids.includes("source") && ids[0] !== ids[1]);
 });
 
 test("the destination count uses applied scopes, including duplicates and skipped conflicts", () => {

@@ -44,8 +44,10 @@ export function transferBinding(
     const scope = scopes[index];
     const clashes = transferConflicts(scope, binding);
     if (clashes.length) scope.bindings = scope.bindings.filter((_, i) => !clashes.includes(i));
-    // Several destinations must own separate drawings; a one-target move can retain its library link.
-    scope.bindings.push({ ...structuredClone(binding), uiId: uid(), gesture: mode === "copy" || targets.length > 1 ? undefined : binding.gesture });
+    // Several destinations must own separate drawings; a one-target move is the same gesture relocated:
+    // it keeps its library link and its id (usage stats are counted per id; the source is removed below).
+    const relocate = mode === "move" && targets.length === 1;
+    scope.bindings.push({ ...structuredClone(binding), uiId: relocate ? binding.uiId : uid(), gesture: relocate ? binding.gesture : undefined });
   }
   if (mode === "move") {
     scopes[source.scope].bindings.splice(source.binding, 1);
