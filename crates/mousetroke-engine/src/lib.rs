@@ -6,6 +6,7 @@ mod actions;
 mod host;
 pub mod log;
 mod slot;
+mod stats;
 
 pub use engine::{push_toast, Engine, InputEvent, Reload, Verdict, PAUSED};
 pub use actions::{prepare_action, report_action_failure};

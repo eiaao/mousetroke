@@ -105,10 +105,14 @@ impl Host for FakeHost {
     fn shape_sample(&self, encoded: Vec<i32>) {
         self.log.borrow_mut().samples.push(encoded);
     }
+    fn local_now(&self) -> Option<mousetroke_core::action_datetime::LocalDateTime> {
+        Some(mousetroke_core::action_datetime::LocalDateTime { year: 2026, month: 11, day: 8, hour: 21, minute: 5, second: 0 })
+    }
 }
 
 fn bind(name: &str, pattern: Vec<Step>) -> Binding {
     Binding {
+        id: name.into(),
         name: name.into(),
         name_key: None,
         gesture: None,
@@ -668,6 +672,33 @@ fn shape_finish_timing_100_templates() {
             assert_eq!(t.executed().len(), if accepted { 101 } else { 0 });
         }
     }
+}
+
+#[test]
+fn every_trigger_is_recorded_for_usage_stats() {
+    let mut t = T::new(false);
+    let (tx, rx) = std::sync::mpsc::channel();
+    t.e.stats = Some(crate::stats::Recorder::from_sender(tx));
+    // 画手势
+    t.down(B::Right);
+    t.drag(960, 700);
+    t.up(B::Right);
+    // 屏幕边角
+    t.to(0, 1079);
+    t.e.edge_pending.as_mut().unwrap().1 -= EDGE_DWELL;
+    t.e.settle_edges(0, 1079);
+    assert_eq!(t.executed(), ["down", "start"]);
+    let events: Vec<_> = rx.try_iter().collect();
+    assert_eq!(events.iter().map(|e| e.binding.as_str()).collect::<Vec<_>>(), ["down", "start"]);
+    let e = &events[0];
+    assert_eq!((e.date.as_str(), e.hour, e.app.as_deref()), ("2026-11-08", 21, Some(r"C:\app\chrome.exe")));
+    assert_eq!((e.seen.name.as_str(), e.seen.scope.as_str()), ("down", "global"));
+    // 识别失败不计
+    t.to(960, 540);
+    t.down(B::Right);
+    t.drag(1160, 540);
+    t.up(B::Right);
+    assert!(rx.try_iter().next().is_none());
 }
 
 #[test]

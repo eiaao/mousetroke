@@ -379,12 +379,12 @@ macro_rules! t {
 }
 
 #[cfg(test)]
-mod tests {
+pub(crate) mod tests {
     use super::*;
     use std::sync::Mutex;
 
-    /// set_lang 是进程全局，动它的测试串行执行，避免与并行测试互相干扰。
-    static LANG_LOCK: Mutex<()> = Mutex::new(());
+    /// set_lang 是进程全局，动它（或依赖当前语言）的测试串行执行，避免与并行测试互相干扰。
+    pub(crate) static LANG_LOCK: Mutex<()> = Mutex::new(());
 
     #[test]
     fn resolve_setting_and_system() {

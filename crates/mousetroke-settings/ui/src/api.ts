@@ -1,6 +1,7 @@
 import { persistedConfig } from "./store";
 import { invoke } from "@tauri-apps/api/core";
 import type { Action, ActionCatalog, AppInfo, Config, EngineStatus, ImportPlan, ImportSource, InitState, PermissionStatus, PresetApp, RunningApp } from "./types";
+import type { UsageStats } from "./stats";
 import { t, type MsgKey } from "./i18n";
 import zh from "../../../../i18n/zh-CN.json";
 
@@ -37,6 +38,7 @@ export const api = {
   pickFolder: (title: string) => invoke<string | null>("pick_folder", { title }),
   recoverConfig: (config?: Config) => invoke<Config>("recover_config", { config: config ? persistedConfig(config) : null }),
   runningApps: () => invoke<RunningApp[]>("running_apps"),
+  usageStats: () => invoke<UsageStats>("usage_stats"),
   /** 已安装的程序（Windows 开始菜单；mac 为空）。title 为显示名。 */
   installedApps: () => invoke<RunningApp[]>("installed_apps"),
   resolveApp: (path: string) => invoke<string>("resolve_app", { path }),

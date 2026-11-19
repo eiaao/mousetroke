@@ -585,7 +585,7 @@ fn samples_compete_only_across_bindings() {
 }
 
 fn binding(name: &str, pattern: Vec<Step>) -> Binding {
-    Binding { name: name.into(), name_key: None, gesture: None, pattern,
+    Binding { id: name.into(), name: name.into(), name_key: None, gesture: None, pattern,
         action: Action::WindowOp { op: WindowOpKind::Close, allow_child: false },
         execute_on_match: false, hide_label: false, secured: false, disabled: false, draft: false }
 }
@@ -779,9 +779,9 @@ fn preset_defaults_serialization_includes_default_settings() {
         (hash ^ byte as u64).wrapping_mul(0x100000001b3)
     });
     println!("preset defaults: {} bytes, FNV-1a {fingerprint:016x}", json.len());
-    // 冻结默认配置（含 update_check、update_notify、pause_on_fullscreen 和 label.font_size）的序列化基线。
-    assert_eq!(json.len(), 36_523);
-    assert_eq!(fingerprint, 0xcea55de3d47d3155);
+    // 冻结默认配置（含 update_check、update_notify、pause_on_fullscreen、label.font_size 和绑定 id）的序列化基线。
+    assert_eq!(json.len(), 38_206);
+    assert_eq!(fingerprint, 0x15437c94e9edde2e);
     assert_eq!(Config::from_json(&json).unwrap().to_json(), json);
 }
 

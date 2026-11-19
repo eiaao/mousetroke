@@ -164,6 +164,9 @@ pub enum SpecialArea {
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(rename_all = "snake_case")]
 pub struct Binding {
+    /// 持久标识（使用统计按它累计）。旧配置没有时由 [`Config::migrate`] 按内容补上；复制出的绑定换新 id。
+    #[serde(default, skip_serializing_if = "String::is_empty")]
+    pub id: String,
     pub name: String,
     /// 内置名称的词条键（如 "builtin.gesture.close_tab"）。存在且用户没改名时按当前语言
     /// 显示；改名即清空。`name` 始终保留一份当时语言的文字，作为不认识该键时的回落。
@@ -650,6 +653,7 @@ impl Config {
         self.detached_gesture_refs += crate::library::check_gesture_refs(self);
         use crate::vars::convert_legacy_placeholders as conv;
         crate::names::attach_name_keys(self);
+        self.assign_binding_ids();
         for scope in &mut self.scopes {
             for b in &mut scope.bindings {
                 if b.draft {
@@ -661,6 +665,28 @@ impl Config {
                     Action::LaunchApp { args: Some(args), .. } => *args = conv(args),
                     _ => {}
                 });
+            }
+        }
+    }
+
+    /// 缺少或重复的绑定 id 按"作用域 id + 名称 + 画法"确定性生成：设置界面保存之前，
+    /// 引擎每次加载得到同一个 id，统计能接上；保存后 id 就固定在配置里。
+    pub fn assign_binding_ids(&mut self) {
+        let mut seen = std::collections::HashSet::new();
+        for scope in &mut self.scopes {
+            for b in &mut scope.bindings {
+                if !b.id.is_empty() && seen.insert(b.id.clone()) {
+                    continue;
+                }
+                let base = format!("{}\0{}\0{}", scope.id, b.name, serde_json::to_string(&b.pattern).unwrap_or_default());
+                let mut n = 0u32;
+                b.id = loop {
+                    let id = format!("b{:012x}", fnv1a(&format!("{base}\0{n}")) & 0xffff_ffff_ffff);
+                    if seen.insert(id.clone()) {
+                        break id;
+                    }
+                    n += 1;
+                };
             }
         }
     }
@@ -855,6 +881,11 @@ fn backup_v1(path: &std::path::Path, original: &[u8]) -> Result<(), String> {
 }
 
 /// 默认配置文件路径：Windows 使用 APPDATA；macOS 使用 Library/Application Support。
+/// FNV-1a 64 位：跨版本、跨平台结果固定（标准库的哈希不保证）。
+fn fnv1a(s: &str) -> u64 {
+    s.bytes().fold(0xcbf2_9ce4_8422_2325, |h, b| (h ^ b as u64).wrapping_mul(0x0100_0000_01b3))
+}
+
 pub fn default_config_path() -> std::path::PathBuf {
     #[cfg(windows)]
     let base = std::env::var_os("APPDATA")
@@ -930,6 +961,24 @@ mod builtin_tests {
         let base = std::env::var_os("HOME").map(|h| PathBuf::from(h).join(".config"))
             .unwrap_or_else(|| ".".into());
         assert_eq!(default_config_path(), base.join("mousetroke/config.json"));
+    }
+
+    #[test]
+    fn binding_ids_are_stable_unique_and_kept() {
+        let text = include_str!("../assets/default-config.json");
+        let a = Config::from_json(text).unwrap();
+        let b = Config::from_json(text).unwrap();
+        let ids: Vec<_> = a.all_bindings().map(|x| x.id.clone()).collect();
+        assert!(ids.iter().all(|id| !id.is_empty()));
+        assert_eq!(ids, b.all_bindings().map(|x| x.id.clone()).collect::<Vec<_>>(), "同一内容每次得到同一 id");
+        assert_eq!(ids.iter().collect::<std::collections::HashSet<_>>().len(), ids.len());
+        // 已有 id 保留；重复的第二个换新
+        let mut c = a.clone();
+        c.scopes[0].bindings[0].id = "keep".into();
+        c.scopes[0].bindings[1].id = "keep".into();
+        let c = Config::from_json(&serde_json::to_string(&c).unwrap()).unwrap();
+        assert_eq!(c.scopes[0].bindings[0].id, "keep");
+        assert_ne!(c.scopes[0].bindings[1].id, "keep");
     }
 
     #[test]

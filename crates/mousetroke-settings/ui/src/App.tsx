@@ -18,6 +18,7 @@ import { GestureDetail, GestureLibrary, conflictLines, placeText, type LibraryFi
 import { GesturePicker } from "./components/GesturePicker";
 import { ImportWizard } from "./components/ImportWizard";
 import { Sidebar, scopeTitle, type View } from "./components/Sidebar";
+import { StatsPage } from "./components/StatsPage";
 import { BindingList, type ListFilter, type ListTab } from "./components/BindingList";
 import { Editor } from "./components/Editor";
 import { TransferDialog } from "./components/TransferDialog";
@@ -684,6 +685,9 @@ function Main({ init }: { init: InitState }) {
             engine={engine}
             onAutostart={(on) => api.setAutostart(on).then(setEngine, (e) => notify(errText(e)))}
           />
+        )}
+        {view.kind === "stats" && (
+          <StatsPage config={config} onOpenBinding={(si, bi) => { setView({ kind: "scope", index: si }); setSelected(bi); }} />
         )}
         {view.kind === "about" && <About engine={engine} onShowGuide={() => setGuide(true)} notify={(tt) => notify(tt)} />}
         {view.kind === "data" && (

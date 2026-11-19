@@ -29,6 +29,7 @@ fn shape_pattern(templates: &[Vec<i32>]) -> Vec<Step> {
 
 fn binding(name: &str, pattern: Vec<Step>) -> Binding {
     Binding {
+        id: String::new(),
         name: name.into(),
         name_key: None,
         gesture: None,
@@ -58,7 +59,9 @@ fn scope(id: &str, kind: ScopeKind, bindings: Vec<Binding>) -> Scope {
 }
 
 fn config(scopes: Vec<Scope>) -> Config {
-    Config { scopes, ..Config::default() }
+    let mut cfg = Config { scopes, ..Config::default() };
+    cfg.assign_binding_ids();
+    cfg
 }
 
 const LEFT: [i32; 4] = [50, 0, 0, 0];

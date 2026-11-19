@@ -3878,3 +3878,322 @@ select.lang-select {
   margin-right: auto;
   font-size: 12.5px;
 }
+
+/* ------------------------------------------------------------ 使用统计 */
+
+.stats .pref-group,
+.stats-tiles,
+.stats-grid,
+.stats-range {
+  max-width: 880px;
+}
+
+.stats-tiles {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.stats-tile {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+  padding: 12px 16px;
+  border-radius: var(--radius-l);
+  background: var(--panel);
+}
+
+.stats-tile strong {
+  font: 600 24px var(--font-display);
+  font-variant-numeric: tabular-nums;
+}
+
+.stats-tile .stats-tile-name {
+  overflow: hidden;
+  font-size: 18px;
+  line-height: 30px;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.stats-card {
+  padding-bottom: 14px;
+}
+
+.stats-head {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding-top: 6px;
+}
+
+.stats-head h2 {
+  margin-right: auto;
+}
+
+.stats-year {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  font-variant-numeric: tabular-nums;
+}
+
+/* 色阶：单一色相由浅到深（深色主题里由暗到亮），0 = 没有触发 */
+.cal-cell {
+  --cal: var(--line-soft);
+  display: block;
+  padding: 0;
+  border: 0;
+  border-radius: 3px;
+  background: var(--cal);
+}
+.cal-cell.l1 { --cal: color-mix(in srgb, var(--trail) 28%, var(--panel)); }
+.cal-cell.l2 { --cal: color-mix(in srgb, var(--trail) 50%, var(--panel)); }
+.cal-cell.l3 { --cal: color-mix(in srgb, var(--trail) 75%, var(--panel)); }
+.cal-cell.l4 { --cal: var(--trail); }
+.cal-cell.blank { background: transparent; }
+.cal-cell:disabled { opacity: 0.45; }
+button.cal-cell:not(:disabled) { cursor: pointer; }
+button.cal-cell:not(:disabled):hover,
+.cal-cell.on {
+  outline: 2px solid var(--ink);
+  outline-offset: 1px;
+}
+
+/* 最近 30 天：日历式，每行一周 */
+.cal-month {
+  display: grid;
+  grid-template-columns: repeat(7, 34px);
+  gap: 4px;
+  margin: 10px 0 8px;
+}
+
+.cal-month .cal-weekday {
+  text-align: center;
+}
+
+.cal-month .cal-cell {
+  position: relative;
+  width: 34px;
+  height: 34px;
+  border-radius: var(--radius-s);
+}
+
+.cal-num {
+  position: absolute;
+  top: 3px;
+  left: 5px;
+  font-size: 11px;
+  color: var(--ink);
+}
+
+.cal-cell.l3 .cal-num,
+.cal-cell.l4 .cal-num {
+  color: #fff;
+}
+
+.cal-cell.today .cal-num {
+  font-weight: 700;
+}
+
+/* 年视图：GitHub 式，每列一周 */
+.cal-year-wrap {
+  overflow-x: auto;
+  overflow-y: hidden;
+  margin: 10px 0 8px;
+  padding: 3px;
+}
+
+/* 每格固定正方形；月份标签可以溢出到右边的列，不撑宽本列 */
+.cal-year {
+  --cal-size: 12px;
+  display: grid;
+  grid-auto-rows: var(--cal-size);
+  gap: 3px;
+  width: max-content;
+}
+
+.cal-year .cal-cell {
+  width: var(--cal-size);
+  height: var(--cal-size);
+}
+
+.cal-month-label {
+  overflow: visible;
+}
+
+.cal-weekday,
+.cal-month-label {
+  font-size: 11px;
+  line-height: 12px;
+  color: var(--muted);
+  white-space: nowrap;
+}
+
+.cal-year .cal-weekday {
+  padding-right: 6px;
+}
+
+.cal-legend {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 4px;
+  font-size: 12px;
+}
+
+.cal-legend .cal-cell {
+  width: 12px;
+  height: 12px;
+}
+
+.stats-range {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  margin: 4px 0 12px;
+}
+
+.stats-range strong {
+  font-variant-numeric: tabular-nums;
+}
+
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0 16px;
+}
+
+.stats-grid .pref-group {
+  min-width: 0;
+}
+
+.stats-none {
+  padding: 8px 0;
+}
+
+.stats-bars {
+  list-style: none;
+  margin: 4px 0 0;
+  padding: 0;
+}
+
+.stats-bar {
+  display: grid;
+  grid-template-columns: 24px minmax(0, 1.2fr) minmax(0, 1fr) 6ch;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  padding: 5px 6px;
+  border: 0;
+  border-radius: var(--radius-s);
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+}
+
+button.stats-bar:hover {
+  background: var(--trail-soft);
+  cursor: pointer;
+}
+
+.stats-bar-icon {
+  display: flex;
+  justify-content: center;
+}
+
+.stats-glyph-blank {
+  width: 22px;
+  height: 22px;
+}
+
+.stats-bar-label {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.stats-bar-name,
+.stats-bar-sub {
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.stats-bar-sub {
+  font-size: 11px;
+}
+
+.stats-bar-track {
+  height: 8px;
+}
+
+.stats-bar-fill {
+  display: block;
+  height: 100%;
+  border-radius: 0 4px 4px 0;
+  background: var(--trail);
+}
+
+.stats-bar-n {
+  min-width: 3ch;
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+}
+
+.stats-hours {
+  display: grid;
+  grid-template-columns: repeat(24, minmax(0, 1fr));
+  gap: 2px;
+  height: 120px;
+  margin-top: 8px;
+}
+
+.stats-hour {
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  min-width: 0;
+}
+
+.stats-hour-plot {
+  display: flex;
+  flex: 1;
+  align-items: flex-end;
+  min-height: 0;
+}
+
+.stats-hour-bar {
+  display: block;
+  width: 100%;
+  border-radius: 4px 4px 0 0;
+  background: var(--trail);
+}
+
+.stats-hour-label {
+  height: 16px;
+  margin-top: 4px;
+  font-size: 11px;
+  line-height: 16px;
+}
+
+@media (max-width: 760px) {
+  .stats-tiles { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .stats-grid { grid-template-columns: minmax(0, 1fr); }
+}
+
+/* 深色主题里最深一档是亮青色，日期数字用深色才看得清 */
+:root[data-theme="dark"] .cal-cell.l3 .cal-num,
+:root[data-theme="dark"] .cal-cell.l4 .cal-num {
+  color: var(--bg);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme]) .cal-cell.l3 .cal-num,
+  :root:not([data-theme]) .cal-cell.l4 .cal-num {
+    color: var(--bg);
+  }
+}

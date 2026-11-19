@@ -57,7 +57,7 @@ export function EdgeIcon({ edge, size = 16 }: { edge?: number; size?: number }) 
 }
 
 /** 侧栏图标。 */
-export function NavIcon({ kind }: { kind: "global" | "desktop" | "app" | "gestures" | "prefs" | "data" | "add" | "pick" | "about" }) {
+export function NavIcon({ kind }: { kind: "global" | "desktop" | "app" | "gestures" | "prefs" | "data" | "stats" | "add" | "pick" | "about" }) {
   const p = {
     global: (
       <>
@@ -93,6 +93,7 @@ export function NavIcon({ kind }: { kind: "global" | "desktop" | "app" | "gestur
       </>
     ),
     data: <path className="ico-line" d="M8 2v8M4.8 6.8 8 10l3.2-3.2M2.5 11.5v1.2c0 .7.6 1.3 1.3 1.3h8.4c.7 0 1.3-.6 1.3-1.3v-1.2" />,
+    stats: <path className="ico-line" d="M2.5 13.5h11M4.5 11V8M8 11V3.5M11.5 11V6" />,
     add: <path className="ico-line" d="M8 3v10M3 8h10" />,
     about: (
       <>

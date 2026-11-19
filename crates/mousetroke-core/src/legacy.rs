@@ -259,6 +259,7 @@ pub fn import(gestures_raw: &str, prefs_raw: Option<&str>) -> Result<Config, Str
 
 fn convert_intent(i: &LegacyIntent) -> Binding {
     Binding {
+        id: String::new(),
         name: i.name.clone(),
         name_key: None,
         gesture: None,

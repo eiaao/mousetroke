@@ -114,7 +114,7 @@ mod tests {
     }
 
     fn binding(name: &str, pattern: Vec<Step>, action: Action) -> Binding {
-        Binding { name: name.into(), name_key: None, gesture: None, pattern, action, execute_on_match: false, hide_label: false, secured: false, disabled: false, draft: false }
+        Binding { id: String::new(), name: name.into(), name_key: None, gesture: None, pattern, action, execute_on_match: false, hide_label: false, secured: false, disabled: false, draft: false }
     }
 
     fn close(name: &str, pattern: Vec<Step>) -> Binding {
@@ -157,6 +157,8 @@ mod tests {
 
     #[test]
     fn labels_fall_back_to_pattern_or_name() {
+        // 标签取当前语言；其他测试会临时切换全局语言
+        let _g = crate::i18n::tests::LANG_LOCK.lock().unwrap_or_else(|e| e.into_inner());
         let shape = Step::Shape { templates: vec![vec![0, 0]] };
         let global = scope(ScopeKind::Global, vec![
             close("", vec![RIGHT, trace(&[0, 0, 0, 50, 50, 50])]),

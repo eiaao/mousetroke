@@ -120,7 +120,7 @@ export function withBindingIds(config: Config): Config {
   return { ...config, scopes: config.scopes.map((scope) => ({ ...scope, bindings: scope.bindings.map((binding) => {
     // 未选择动作的空按键序列也会落盘；重载草稿时恢复这个仅界面标记。
     const actionUnselected = binding.actionUnselected ?? (binding.draft && binding.action.type === "key_sequence" && binding.action.keys === "" ? true : undefined);
-    const b = { ...binding, actionUnselected, uiId: binding.uiId ?? uid() };
+    const b = { ...binding, actionUnselected, uiId: binding.uiId ?? binding.id ?? uid() };
     if (!b.loaded && !b.disabled && !b.draft && !hasConflictPattern(b.pattern)) return { ...b, draft: true, disabled: true };
     return b.draft && hasConflictPattern(b.pattern) && !b.actionUnselected ? { ...b, draft: undefined, disabled: undefined } : b;
   }) })) };
@@ -133,7 +133,9 @@ export function persistedConfig(config: Config): Config {
   return { ...rest, ...(library.length ? { gestures: library } : {}), scopes: config.scopes.map((scope) => ({ ...scope, bindings: scope.bindings.map((binding) => {
     // 纵深兜底：界面新建的未完成手势不允许启用落盘，磁盘载入的单击手势除外。
     const incompleteNew = !binding.loaded && !binding.disabled && !binding.draft && !hasConflictPattern(binding.pattern);
-    const { uiId: _id, actionUnselected: _unselected, lastActionName: _name, loaded: _loaded, ...saved } = binding;
+    const { uiId, actionUnselected: _unselected, lastActionName: _name, loaded: _loaded, ...saved } = binding;
+    // 复制出的绑定带着原件的 id，以界面标识为准（复制时已换新）
+    if (uiId) saved.id = uiId;
     if (incompleteNew) {
       saved.draft = true;
       saved.disabled = true;
