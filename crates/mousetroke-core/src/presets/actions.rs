@@ -186,7 +186,6 @@ const fn launch(value: &'static str) -> Implementation { Implementation::Impleme
 const fn shell(value: &'static str) -> Implementation { Implementation::Implemented(Expansion::Shell(value)) }
 const fn implemented(value: Expansion) -> Implementation { Implementation::Implemented(value) }
 const fn native(value: NativePreset) -> Implementation { implemented(Expansion::Native(value)) }
-const PHASE2: Implementation = Implementation::Pending { reason_key: "preset.status.phase2" };
 const WINDOWS_ONLY: Implementation = Implementation::Unsupported { reason_key: "preset.status.windows_only" };
 const MAC_ONLY: Implementation = Implementation::Unsupported { reason_key: "preset.status.mac_only" };
 
@@ -294,7 +293,7 @@ pub static REGISTRY: &[Preset] = &[
     preset!("open.app", Open, implemented(Expansion::App), implemented(Expansion::App), APP_PARAMS),
     preset!("mousetroke.toggle_pause", Mousetroke, native(NativePreset::TogglePause), native(NativePreset::TogglePause)),
     preset!("mousetroke.settings", Mousetroke, native(NativePreset::Settings), native(NativePreset::Settings)),
-    preset!("mousetroke.cheatsheet", Mousetroke, PHASE2, PHASE2),
+    preset!("mousetroke.cheatsheet", Mousetroke, native(NativePreset::Cheatsheet), native(NativePreset::Cheatsheet)),
 ];
 
 pub fn find(id: &str) -> Option<&'static Preset> { REGISTRY.iter().find(|entry| entry.id == id) }
@@ -473,5 +472,6 @@ fn resolve_native(native: NativePreset, values: &Params) -> Result<NativeAction,
         NativePreset::Sleep => NativeAction::Sleep,
         NativePreset::TogglePause => NativeAction::TogglePause,
         NativePreset::Settings => NativeAction::Settings,
+        NativePreset::Cheatsheet => NativeAction::Cheatsheet,
     })
 }

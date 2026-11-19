@@ -9,8 +9,8 @@ const LANGS: &[(&str, Lang)] = &[
     ("it-IT", Lang::ItIt), ("ko-KR", Lang::KoKr),
 ];
 
-// 仅第二期速查浮层保留占位。
-const PENDING: &[&str] = &["mousetroke.cheatsheet"];
+// 目前没有待实现的占位项。
+const PENDING: &[&str] = &[];
 
 #[test]
 fn registry_is_complete_localized_and_has_valid_defaults() {
@@ -117,8 +117,8 @@ fn layout_excludes_both_shells_without_blocking_normal_app_windows() {
 #[test]
 fn each_platform_has_only_explicit_unsupported_or_pending_actions() {
     for (platform, implemented, unsupported) in [
-        (Platform::Windows, 84, vec!["app.hide", "system.force_quit_dialog"]),
-        (Platform::Macos, 83, vec!["window.toggle_topmost", "desktop.clipboard_history", "desktop.notifications"]),
+        (Platform::Windows, 85, vec!["app.hide", "system.force_quit_dialog"]),
+        (Platform::Macos, 84, vec!["window.toggle_topmost", "desktop.clipboard_history", "desktop.notifications"]),
     ] {
         let mut count = 0;
         for preset in REGISTRY {

@@ -1086,7 +1086,11 @@ impl Engine {
     }
 
     /// 异步执行动作（工作线程；钩子回调里绝不阻塞）。
-    fn run_action(&self, action: Action) {
+    fn run_action(&self, mut action: Action) {
+        if !mousetroke_core::cheatsheet::expand(&mut action, &self.active_scopes()) {
+            push_toast(mousetroke_core::i18n::t("preset.cheatsheet.empty").into(), 1600);
+            return;
+        }
         let target = self.target.clone();
         let (vars, pos) = (self.vars.clone(), self.last_pos);
         self.host.execute(action, target, vars, pos);

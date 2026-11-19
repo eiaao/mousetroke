@@ -12,7 +12,7 @@ Le azioni predefinite descrivono ciò che vuoi fare, come chiudere una scheda o 
 
 1. Crea o seleziona un gesto, poi clicca **Scegli azione**, oppure **Cambia** su un’azione esistente.
 2. Cerca per nome, descrizione, alias o notazione della scorciatoia, come `ctrl+w` su Windows o `cmd+w` / `⌘w` su Mac. La ricerca comprende tutte le categorie. Senza una ricerca puoi esplorare **Frequenti**, **Browser**, **Modifica**, **Testo**, **Finestre**, **Desktop e sistema**, **Media**, **Apri** o **Mousetroke**.
-3. Scegli un risultato. Le azioni con parametri aprono un modulo: inserisci testo, scegli un formato di data o un servizio di ricerca, oppure indica un URL, un file, una cartella o un’app. Clicca **Usa questa azione** per confermare. Le azioni non disponibili sono disabilitate e indicano il limite della piattaforma o l’implementazione prevista per la seconda fase.
+3. Scegli un risultato. Le azioni con parametri aprono un modulo: inserisci testo, scegli un formato di data o un servizio di ricerca, oppure indica un URL, un file, una cartella o un’app. Clicca **Usa questa azione** per confermare. Le azioni non disponibili sono disabilitate e indicano il limite della piattaforma.
 4. Prova il gesto fuori dalle impostazioni. Se il nome del gesto è vuoto, riprende quello dell’azione selezionata. Le voci di menu usano lo stesso selettore.
 
 All’apertura del selettore, il campo di ricerca riceve il focus. Usa le frecce su e giù per scorrere i risultati disponibili e Invio per sceglierne uno. Esc chiude prima il modulo dei parametri, poi il selettore. Nei campi di testo su più righe, Ctrl+Enter o Command+Enter conferma il modulo.
@@ -29,7 +29,7 @@ All’apertura del selettore, il campo di ricerca riceve il focus. Usa le frecce
 
 ## Catalogo
 
-Le tabelle seguenti sono generate dal registro e includono tutte le 87 voci. ✓ indica che l’azione è implementata sulla piattaforma; la disponibilità dipende comunque dall’app, dall’hardware e dalle autorizzazioni necessarie. Il promemoria dei gesti è previsto per la seconda fase.
+Le tabelle seguenti sono generate dal registro e includono tutte le 87 voci. ✓ indica che l’azione è implementata sulla piattaforma; la disponibilità dipende comunque dall’app, dall’hardware e dalle autorizzazioni necessarie.
 
 <!-- action-library:generated:start -->
 
@@ -158,7 +158,7 @@ Le tabelle seguenti sono generate dal registro e includono tutte le 87 voci. ✓
 |---|---|---|---|---|
 | Sospendi / riprendi gesti<br>`mousetroke.toggle_pause` | Sospende o riprende il riconoscimento gesti di Mousetroke. | — | ✓ | ✓ |
 | Apri impostazioni<br>`mousetroke.settings` | Apre le impostazioni di Mousetroke. | — | ✓ | ✓ |
-| Mostra elenco gesti<br>`mousetroke.cheatsheet` | Elenca i gesti dell’app attuale; previsto per la fase 2. | — | Questa azione è prevista per la fase 2. | Questa azione è prevista per la fase 2. |
+| Mostra elenco gesti<br>`mousetroke.cheatsheet` | Elenca i gesti dell’app attuale vicino al cursore; scegline uno per eseguirlo. | — | ✓ | ✓ |
 
 <!-- action-library:generated:end -->
 

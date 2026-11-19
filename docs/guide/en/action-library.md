@@ -12,7 +12,7 @@ Presets describe what you want to do, such as close a tab or center a window. Mo
 
 1. Create or select a gesture, then click **Choose action** (or **Change** on an existing action).
 2. Search by name, description, alias or shortcut spelling, such as `ctrl+w` on Windows or `cmd+w` / `⌘w` on Mac. Search covers all categories. Without a search, use **Common**, **Browser**, **Edit**, **Text**, **Window**, **Desktop & System**, **Media**, **Open** or **Mousetroke**.
-3. Pick a result. Actions with parameters open a form: enter text, choose a date format or search service, or select a URL, file, folder or app. Click **Use this action** to confirm the form. Unavailable actions are disabled with a platform or phase-two reason.
+3. Pick a result. Actions with parameters open a form: enter text, choose a date format or search service, or select a URL, file, folder or app. Click **Use this action** to confirm the form. Unavailable actions are disabled with the platform reason.
 4. Test the gesture outside settings. An empty gesture name follows the selected action name. Menu items use the same picker.
 
 The search box receives focus when the picker opens. Use Up/Down to move through available results and Enter to select. Esc closes the parameter form first, then the picker. In multiline text, Ctrl+Enter or Command+Enter confirms the form.
@@ -29,7 +29,7 @@ The search box receives focus when the picker opens. Use Up/Down to move through
 
 ## Catalogue
 
-The tables below are generated from the registry and include all 87 entries. ✓ means implemented on that platform; availability still depends on the app, hardware and required permissions. The gesture cheatsheet is reserved for phase two.
+The tables below are generated from the registry and include all 87 entries. ✓ means implemented on that platform; availability still depends on the app, hardware and required permissions.
 
 <!-- action-library:generated:start -->
 
@@ -158,7 +158,7 @@ The tables below are generated from the registry and include all 87 entries. ✓
 |---|---|---|---|---|
 | Pause / resume gestures<br>`mousetroke.toggle_pause` | Pauses or resumes gesture recognition in Mousetroke. | — | ✓ | ✓ |
 | Open settings<br>`mousetroke.settings` | Opens Mousetroke settings. | — | ✓ | ✓ |
-| Show gesture list<br>`mousetroke.cheatsheet` | Lists gestures for the current app; planned for phase 2. | — | This action is planned for phase 2. | This action is planned for phase 2. |
+| Show gesture list<br>`mousetroke.cheatsheet` | Lists the gestures for the current app at the cursor; pick one to run it. | — | ✓ | ✓ |
 
 <!-- action-library:generated:end -->
 
