@@ -178,11 +178,11 @@ export function LaunchAppPicker({ onPick, onClose }: { onPick: (exe: string) => 
   const k = q.trim().toLowerCase();
   const match = (a: RunningApp) => !k || a.exe.toLowerCase().includes(k) || a.title.toLowerCase().includes(k);
   const shownRunning = useMemo(() => (running ?? []).filter(match), [running, k]);
-  // 已在运行的不重复列出
+  // 已在上面列出的不重复（只按当前显示的运行项去重，搜索已安装名时仍能找到）
   const shownInstalled = useMemo(() => {
-    const seen = new Set((running ?? []).map((a) => a.exe.toLowerCase()));
+    const seen = new Set(shownRunning.map((a) => a.exe.toLowerCase()));
     return (installed ?? []).filter((a) => !seen.has(a.exe.toLowerCase()) && match(a));
-  }, [installed, running, k]);
+  }, [installed, shownRunning, k]);
   const pick = (exe: string) => { onPick(exe); onClose(); };
   const pickWindow = async () => {
     setPicking(true);

@@ -150,7 +150,7 @@ function PresetCard({ action, preset, onChange, depth = 0 }: { action: PresetAct
         )}
         {elevateParam && (
           <label className="check">
-            <input type="checkbox" checked={values[elevateParam.name] === "true"} data-param={elevateParam.name} onChange={(e) => setElevate(e.target.checked)} />
+            <input type="checkbox" checked={values[elevateParam.name] === "true"} disabled={busy} data-param={elevateParam.name} onChange={(e) => setElevate(e.target.checked)} />
             {t(elevateParam.label_key as MsgKey)}
           </label>
         )}
