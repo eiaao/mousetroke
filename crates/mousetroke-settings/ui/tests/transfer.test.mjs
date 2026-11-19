@@ -128,7 +128,7 @@ test("right-click offers duplicate, transfer and delete; drafts omit transfer", 
   const noop = () => {};
   await act(async () => root.render(createElement(BindingList, {
       scope: config.scopes[0], pauseOnFullscreen: false, tab: "gesture", onTab: noop, filter: "all", onFilter: noop,
-      selected: null, onSelect: noop, onAdd: noop,
+      selected: null, onSelect: (i) => actions.push(["select", i]), onAdd: noop,
       onDelete: (i) => actions.push(["delete", i]),
       onDuplicate: (i) => actions.push(["duplicate", i]),
       onToggle: noop,
@@ -140,6 +140,8 @@ test("right-click offers duplicate, transfer and delete; drafts omit transfer", 
   await act(async () => row.dispatchEvent(new dom.window.MouseEvent("contextmenu", { bubbles: true, clientX: 10, clientY: 10 })));
   const menu = document.body.querySelector(".gesture-context-menu");
   assert.ok(menu);
+  assert.ok(row.classList.contains("ctx"), "右键的行应有标记");
+  assert.deepEqual(actions, [], "右键不应选中手势（不打开详情）");
   assert.equal(menu.querySelectorAll("button").length, 3);
   assert.equal(menu.querySelectorAll('[role="separator"]').length, 1);
   await act(async () => menu.querySelector("button").click());

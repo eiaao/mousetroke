@@ -737,7 +737,8 @@ input.title-input:focus {
   transition: box-shadow 0.14s, border-color 0.14s;
 }
 
-.row:hover {
+.row:hover,
+.row.ctx {
   border-color: var(--line);
   box-shadow: var(--shadow-lift);
 }
