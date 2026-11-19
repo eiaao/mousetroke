@@ -10,6 +10,13 @@ Each version lists its highlights in English, then in Chinese. The release page,
 - Right-click a gesture in the list and choose **Copy to / Move to…** to put it into one or more other apps. If an app already has the same drawing, choose to skip or replace it; the whole operation can be undone. **Duplicate** moved into the same right-click menu (Ctrl+D / ⌘+D still works). Contributed by Amppa. (#90)
 - **Preferences → Appearance** adds **Interface theme** (System, Light or Dark) and **Prompt text size** for the gesture name shown while drawing (16–96 px, default 24 px). Contributed by Amppa. (#89, #92)
 - The gesture editor now floats over the list instead of narrowing it; click outside the editor to close it. Contributed by Amppa. (#91)
+- **Show gesture list** now works: it pops up the gestures available in the current app with their drawings, and choosing one runs it. (#102)
+- **Open or switch to app** can be set to **Run as administrator** (Windows), directly in the action list or in the gesture details. A **Choose from list** button picks the app from running programs and Start menu programs. (#104)
+- When an administrator window comes to the front and Mousetroke is not running as administrator, a system notification explains why gestures don't work there and offers **Restart as administrator**. While Mousetroke runs as administrator, apps, commands and links it opens still run with normal rights unless the action asks for administrator. (#101)
+- If Windows silently removes Mousetroke's input hooks (for example after the system was busy), they are reinstalled automatically and gestures keep working. (#101)
+- Right-clicking a gesture in the list only opens the menu; it no longer opens the details panel. (#103)
+- Lua: on Windows, `GetExplorerPath`, `ToggleKeys` and clipboard formats other than text (HTML, files) now work; on Mac, `KeysDown` / `KeysUp` and built-in display brightness. (#99, #100)
+- Solid buttons have better contrast in the dark theme. **Undo** on a notification only undoes that operation and disappears once anything else changes. (#98)
 
 ### 中文
 
@@ -17,6 +24,13 @@ Each version lists its highlights in English, then in Chinese. The release page,
 - 在手势列表中右键单击手势，选择“复制到／移动到…”，可放到一个或多个其他程序。目标程序已有相同画法时可选择跳过或取代，整次操作可撤销。“复制一份”移入同一右键菜单（仍可按 Ctrl+D／⌘+D）。由 Amppa 贡献。（#90）
 - “偏好设置 → 外观”新增“界面主题”（跟随系统、浅色、深色）和画手势时手势名的“提示文字大小”（16–96 px，默认 24 px）。由 Amppa 贡献。（#89、#92）
 - 手势编辑面板改为浮在列表上方，不再挤窄列表；点击面板外即可收起。由 Amppa 贡献。（#91）
+- “显示手势列表”动作可以用了：弹出当前程序可用的手势及画法，选中即执行。（#102）
+- “打开或切换到程序”可设置“以管理员身份运行”（Windows），在动作列表或手势详情里都能勾选；新增“从列表选择”，可从正在运行的程序和开始菜单程序中选取。（#104）
+- Mousetroke 未以管理员身份运行时，管理员窗口来到前台会弹出系统通知，说明手势在其中无法使用，并提供“以管理员身份重启”。Mousetroke 以管理员身份运行时，它打开的程序、命令和网址仍以普通权限运行，除非动作勾选了“以管理员身份运行”。（#101）
+- Windows 静默摘除 Mousetroke 的输入钩子时（例如系统繁忙之后）会自动重装，手势不再失效。（#101）
+- 在手势列表中右键单击只弹出菜单，不再打开详情面板。（#103）
+- Lua：Windows 支持 `GetExplorerPath`、`ToggleKeys` 及文本以外的剪贴板格式（HTML、文件）；Mac 支持 `KeysDown`／`KeysUp` 与内建屏幕亮度。（#99、#100）
+- 深色主题下实心按钮的对比度更高。提示条上的“撤销”只撤销对应的那次操作，之后有任何其他修改即收起。（#98）
 
 ## 0.3.3 — 2026-11-16
 
