@@ -66,6 +66,11 @@ pub fn refresh_texts(window: &tauri::WebviewWindow) {
     menu::refresh(window.app_handle());
 }
 
+/// bundle id → 访达显示名（作用域名称用）。
+pub fn app_display_name(identity: &str) -> Option<String> {
+    icons::display_name(identity)
+}
+
 /// mac 暂不列出已安装程序；界面只显示正在运行的程序。
 pub fn installed_apps() -> Vec<RunningApp> { Vec::new() }
 

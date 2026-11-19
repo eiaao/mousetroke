@@ -20,6 +20,16 @@ pub fn resolve_exe(identity: &str) -> Option<PathBuf> {
         .map(|p| PathBuf::from(p.to_string()))
 }
 
+/// 程序在访达里显示的名字（跟随系统语言，去掉 .app）；找不到程序时为 None。
+pub fn display_name(identity: &str) -> Option<String> {
+    let path = resolve_exe(identity)?;
+    let name = objc2_foundation::NSFileManager::defaultManager()
+        .displayNameAtPath(&NSString::from_str(&path.to_string_lossy()))
+        .to_string();
+    let name = name.strip_suffix(".app").unwrap_or(&name).trim();
+    (!name.is_empty()).then(|| name.to_string())
+}
+
 pub fn icon_data_url(identity: &str) -> Option<String> {
     if let Some(hit) = CACHE.with(|c| c.borrow().get(identity).cloned()) {
         return Some(hit);

@@ -182,7 +182,8 @@ fn read_text(path: &Path) -> Result<String, Msg> {
 fn init_state(paths: State<AppPaths>) -> InitState {
     use mousetroke_core::i18n;
     let path = &paths.config;
-    let (config, exists, load_error) = config_snapshot(path);
+    let (mut config, exists, load_error) = config_snapshot(path);
+    fill_app_names(&mut config);
     let system_langs = platform::system_langs();
     let resolved = i18n::resolve(&config.settings.language, &system_langs);
     // 后端自己需要的少量文字（窗口标题、点选提示条）也用这个语言
@@ -204,6 +205,30 @@ fn init_state(paths: State<AppPaths>) -> InitState {
         resolved_lang: resolved.tag().into(),
         action_catalog: action_catalog(),
     }
+}
+
+/// 名称还是程序标识（mac 的 bundle id）或为空的程序作用域，换成系统显示名；用户改过的名字不动。
+/// 只改内存里的配置，下次保存时写盘。
+fn fill_app_names(config: &mut Config) {
+    for scope in &mut config.scopes {
+        let Some(app) = &scope.app else { continue };
+        if scope.name_key.is_some() || !(scope.name.trim().is_empty() || scope.name == app.exe) {
+            continue;
+        }
+        if let Some(name) = platform::app_display_name(&app.exe) {
+            scope.name = name;
+        }
+    }
+}
+
+/// 一批程序的显示名（新添加的程序用来命名作用域；取不到为 null）。
+#[cfg_attr(windows, tauri::command(async))]
+#[cfg_attr(target_os = "macos", tauri::command)]
+fn app_names(exes: Vec<String>) -> std::collections::HashMap<String, Option<String>> {
+    exes.into_iter().map(|e| {
+        let name = platform::app_display_name(&e);
+        (e, name)
+    }).collect()
 }
 
 /// 不创建原生窗口的配置快照，也用于 CI 冒烟检查实际命令的读写路径。
@@ -740,6 +765,7 @@ pub fn run(config: Option<PathBuf>) {
             pick_folder,
             recover_config,
             running_apps,
+            app_names,
             usage_stats,
             installed_apps,
             app_icons,
