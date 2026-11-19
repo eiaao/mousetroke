@@ -41,7 +41,7 @@ Every display's outer edges and corners can trigger, meaning the places where th
 
 Windows **Brightness up** / **Brightness down** starts with the monitor under the cursor, adjusts by 10 percentage points and shows the result. It tries DDC/CI, then WMI. External displays must support and allow DDC/CI. The WMI fallback uses the first WMI brightness device, usually a built-in panel; it is not matched to the cursor's monitor. If both routes fail, an on-screen message appears. See [Lua recipes](lua-examples.md#brightness-under-the-cursor) for a smaller step.
 
-Mac **Media & system → Brightness up** / **Brightness down** sends system brightness-key events for the built-in display. It does not select the screen under the cursor and does not support external DDC/CI displays. The bottom-edge defaults are disabled. Lua brightness APIs are also unsupported on Mac.
+Mac **Media & system → Brightness up** / **Brightness down** sends system brightness-key events for the built-in display. It does not select the screen under the cursor and does not support external DDC/CI displays. The bottom-edge defaults are disabled. Mac Lua brightness APIs support the built-in display only (private DisplayServices), not external displays.
 
 On Mac, Mousetroke warns if a system Hot Corner overlaps a configured corner. Change one of the assignments to avoid competing actions. System shortcuts such as F11 or Control+Up depend on the macOS shortcut settings.
 

@@ -97,6 +97,59 @@ fn keys_pressed(seq: &KeySeq, flags: Flags, pressed: impl Fn(u16) -> bool) -> bo
     })
 }
 
+#[link(name = "CoreGraphics", kind = "framework")]
+unsafe extern "C" {
+    fn CGGetActiveDisplayList(max: u32, displays: *mut u32, count: *mut u32) -> i32;
+    fn CGDisplayIsBuiltin(display: u32) -> u32;
+}
+unsafe extern "C" {
+    fn dlopen(path: *const std::ffi::c_char, mode: i32) -> *mut std::ffi::c_void;
+    fn dlsym(handle: *mut std::ffi::c_void, name: *const std::ffi::c_char) -> *mut std::ffi::c_void;
+}
+
+type GetBrightness = unsafe extern "C" fn(u32, *mut f32) -> i32;
+type SetBrightness = unsafe extern "C" fn(u32, f32) -> i32;
+
+/// 私有 DisplayServices 在运行时加载；缺失或无内建屏幕时返回 None。
+fn builtin_brightness() -> Option<(u32, GetBrightness, SetBrightness)> {
+    let mut ids = [0u32; 16];
+    let mut count = 0u32;
+    // 安全：缓冲区容量与传入的 max 一致，count 指针在调用期间有效。
+    if unsafe { CGGetActiveDisplayList(16, ids.as_mut_ptr(), &mut count) } != 0 {
+        return None;
+    }
+    let id = ids[..(count as usize).min(16)]
+        .iter()
+        .copied()
+        // 安全：id 来自系统返回的活动显示器列表。
+        .find(|id| unsafe { CGDisplayIsBuiltin(*id) } != 0)?;
+    // 安全：路径与符号名为 NUL 结尾常量；RTLD_LAZY=1；句柄故意不关闭，函数指针需常驻。
+    let (get, set) = unsafe {
+        let lib = dlopen(
+            c"/System/Library/PrivateFrameworks/DisplayServices.framework/DisplayServices".as_ptr(),
+            1,
+        );
+        if lib.is_null() {
+            return None;
+        }
+        (
+            dlsym(lib, c"DisplayServicesGetBrightness".as_ptr()),
+            dlsym(lib, c"DisplayServicesSetBrightness".as_ptr()),
+        )
+    };
+    if get.is_null() || set.is_null() {
+        return None;
+    }
+    // 安全：符号签名与 DisplayServices 的 C 声明一致。
+    Some(unsafe { (id, std::mem::transmute(get), std::mem::transmute(set)) })
+}
+
+fn read_brightness(id: u32, get: GetBrightness) -> Option<f32> {
+    let mut value = 0f32;
+    // 安全：value 指针在调用期间有效。
+    (unsafe { get(id, &mut value) } == 0).then_some(value)
+}
+
 struct MacPlatform;
 impl LuaPlatform for MacPlatform {
     fn log(&self, message: &str) {
@@ -108,7 +161,7 @@ impl LuaPlatform for MacPlatform {
             // i18n:allow-begin 仅写运行日志的 Lua 能力诊断，不用于界面。
             let reason = match name {
                 "set_win_top" => "macOS 没有公开的跨应用置顶 API",
-                "get_brightness" | "set_brightness" => "现有 macOS 亮度后端仅发送内建屏幕亮度键，不能读取百分比或按百分点调整；不支持外接 DDC",
+                "get_brightness" | "set_brightness" => "仅支持通过 DisplayServices 调节内建屏幕；不支持外接 DDC",
                 _ => "not supported on macOS",
             };
             // i18n:allow-end
@@ -136,11 +189,7 @@ impl LuaPlatform for MacPlatform {
     }
     fn send_keys(&self, seq: &KeySeq, phase: KeyPhase) {
         if !matches!(phase, KeyPhase::DownUp) {
-            self.unsupported(if matches!(phase, KeyPhase::Down) {
-                "keys_down"
-            } else {
-                "keys_up"
-            });
+            crate::input::post_phase(seq, matches!(phase, KeyPhase::Down));
             return;
         }
         let seq = seq.clone();
@@ -293,12 +342,21 @@ impl LuaPlatform for MacPlatform {
         self.unsupported("set_win_top");
     }
     fn get_brightness(&self, _x: i32, _y: i32) -> Option<i64> {
-        self.unsupported("get_brightness");
-        None
+        let Some((id, get, _)) = builtin_brightness() else {
+            self.unsupported("get_brightness");
+            return None;
+        };
+        read_brightness(id, get).map(|v| (v * 100.0).round().clamp(0.0, 100.0) as i64)
     }
-    fn adjust_brightness(&self, _x: i32, _y: i32, _delta: i32) -> Option<i64> {
-        self.unsupported("set_brightness");
-        None
+    fn adjust_brightness(&self, _x: i32, _y: i32, delta: i32) -> Option<i64> {
+        let Some((id, get, set)) = builtin_brightness() else {
+            self.unsupported("set_brightness");
+            return None;
+        };
+        let current = (read_brightness(id, get)? * 100.0).round();
+        let target = (current + delta as f32).clamp(0.0, 100.0);
+        // 安全：id 与函数指针均来自 builtin_brightness。
+        (unsafe { set(id, target / 100.0) } == 0).then_some(target as i64)
     }
 }
 

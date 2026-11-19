@@ -92,7 +92,7 @@ ms.keys("你好", true)
 
 `ms.keys_down(sequence: string) -> nil`
 
-仅 Windows：按按键模式解析，只按下按键／修饰键，不松开。该阶段不重复次数，滚轮动作发送一次。语法无效会抛出 Lua 错误。请配合 `keys_up` 释放。Mac 记录不支持并无操作，无返回值。
+按按键模式解析，只按下按键／修饰键，不松开。该阶段不重复次数；Windows 滚轮动作发送一次，Mac 跳过鼠标和滚轮动作。语法无效会抛出 Lua 错误。请配合 `keys_up` 释放。Mac 在脚本工作线程直接投递带标记的事件，不经过输入队列；延时步骤同样会等待。无返回值。
 
 ```lua
 ms.keys_down("^a")
@@ -104,7 +104,7 @@ ms.keys_up("^a")
 
 `ms.keys_up(sequence: string) -> nil`
 
-仅 Windows：按动作逆序释放解析出的序列，修饰键最后释放；延时步骤仍会等待。语法错误会抛出 Lua 错误。Mac 记录不支持并无操作，无返回值。
+按动作逆序释放解析出的序列，修饰键最后释放；延时步骤仍会等待。语法错误会抛出 Lua 错误。Mac 在脚本工作线程直接投递，跳过鼠标和滚轮动作。无返回值。
 
 ```lua
 ms.keys_down("{SHIFT}")
@@ -263,7 +263,7 @@ if s then ms.log(s.right - s.left, s.bottom - s.top) end
 
 `ms.get_brightness(pos?: table) -> integer | nil`
 
-可选 `{x=整数,y=整数}` 指定屏幕，省略／nil 或位置不完整时使用当前鼠标。两平台统一为**成功返回 0–100 的亮度百分比，失败返回 nil**。Windows 使用 DDC/CI，失败回退 WMI；WMI 使用第一个亮度设备，并未按鼠标所在显示器匹配。Mac 当前返回 nil 并仅记录一次日志：现有亮度后端仅发送内建屏幕亮度键，不能读取百分比，也不支持外接 DDC。仅 Windows 旧接口 `WG.GetBrightness` 保留失败返回 -1。
+可选 `{x=整数,y=整数}` 指定屏幕，省略／nil 或位置不完整时使用当前鼠标。两平台统一为**成功返回 0–100 的亮度百分比，失败返回 nil**。Windows 使用 DDC/CI，失败回退 WMI；WMI 使用第一个亮度设备，并未按鼠标所在显示器匹配。Mac 仅支持内建屏幕：通过运行时加载的私有 DisplayServices 读取，忽略 `pos`，不按鼠标所在屏幕选择。无内建屏幕、系统不提供该框架或读取失败时返回 nil 并仅记录一次日志；不支持外接 DDC。仅 Windows 旧接口 `WG.GetBrightness` 保留失败返回 -1。
 
 ```lua
 local value = ms.get_brightness()
@@ -274,7 +274,7 @@ if value ~= nil then ms.show_toast(tostring(value)) end
 
 `ms.set_brightness(pos: table | nil, delta: integer) -> integer | nil`
 
-虽然叫 set，但它是增减 `delta` 个百分点，不是设置绝对亮度。第一参传命名字段表 `{x=...,y=...}`，或**明确传 nil** 使用当前鼠标。成功返回限制在 **0–100 的新亮度百分比**，两平台失败均为 **nil**。Windows 的 DDC/CI 与 WMI 设备选择同 `get_brightness`；仅 Windows 旧接口 `WG.SetBrightness` 保留失败返回 -1。Mac 返回 nil 并仅记录一次日志：现有“媒体与系统”后端只发送内建屏幕亮度键，没有数值读回或按百分点控制能力。本 Lua 调用不改变亮度；亮度键请使用内建动作，外接 DDC 仍不支持。
+虽然叫 set，但它是增减 `delta` 个百分点，不是设置绝对亮度。第一参传命名字段表 `{x=...,y=...}`，或**明确传 nil** 使用当前鼠标。成功返回限制在 **0–100 的新亮度百分比**，两平台失败均为 **nil**。Windows 的 DDC/CI 与 WMI 设备选择同 `get_brightness`；仅 Windows 旧接口 `WG.SetBrightness` 保留失败返回 -1。Mac 仅调节内建屏幕：通过运行时加载的私有 DisplayServices 读取并写入，忽略 `pos`。无内建屏幕、系统不提供该框架或调用失败时返回 nil 并仅记录一次日志；外接 DDC 仍不支持。
 
 ```lua
 local value = ms.set_brightness(nil, 5)

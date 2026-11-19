@@ -274,6 +274,36 @@ fn post_chord(vk: u16, mods: &[ModKey], dry_run: bool) -> bool {
     true
 }
 
+/// Lua KeysDown/KeysUp：在调用线程同步投递（CGEvent 可跨线程）。Up 逆序遍历，修饰键最后抬起。
+pub fn post_phase(seq: &keyseq::KeySeq, down: bool) {
+    let steps: Vec<&Step> = if down { seq.actions.iter().collect() } else { seq.actions.iter().rev().collect() };
+    for step in steps {
+        match step {
+            Step::SleepMs(ms) => std::thread::sleep(Duration::from_millis(*ms as u64)),
+            Step::Text(text) => {
+                if down {
+                    text.chars().for_each(|ch| {
+                        post_text(ch, false);
+                    });
+                }
+            }
+            Step::Key { key: Key::Vk(vk), mods, .. } => {
+                let Some(chord) = chord(*vk, mods) else { continue };
+                // chord = 修饰键按下 × n、键按下、键抬起、修饰键抬起 × n，共 2n+2 项。
+                let split = (chord.len() - 2) / 2 + 1;
+                let part = if down { &chord[..split] } else { &chord[split..] };
+                let Some(events) = part.iter().map(|&(code, d, flags)| event(code, d, flags)).collect::<Option<Vec<_>>>() else {
+                    continue;
+                };
+                for event in events {
+                    CGEvent::post(CGEventTapLocation::HIDEventTap, Some(&event));
+                }
+            }
+            Step::Key { .. } => {}
+        }
+    }
+}
+
 /// 仅由异步选区状态机调用，沿用普通按键的注入标记与完整释放组。
 pub fn copy_selection() -> bool {
     post_chord(0x43, &[ModKey::Win], false)
