@@ -3962,50 +3962,6 @@ button.cal-cell:not(:disabled):hover,
   outline-offset: 1px;
 }
 
-/* 最近 30 天：日历式，每行一周 */
-.cal-month {
-  display: grid;
-  grid-template-columns: repeat(7, 34px);
-  gap: 4px;
-  margin: 10px 0 8px;
-}
-
-.cal-month .cal-weekday {
-  text-align: center;
-}
-
-.cal-month .cal-cell {
-  position: relative;
-  width: 34px;
-  height: 34px;
-  border-radius: var(--radius-s);
-}
-
-.cal-num {
-  position: absolute;
-  top: 3px;
-  left: 5px;
-  font-size: 11px;
-  color: var(--ink);
-}
-
-.cal-cell.l3 .cal-num,
-.cal-cell.l4 .cal-num {
-  color: #fff;
-}
-
-.cal-cell.today .cal-num {
-  font-weight: 700;
-}
-
-/* 年视图：GitHub 式，每列一周 */
-.cal-year-wrap {
-  overflow-x: auto;
-  overflow-y: hidden;
-  margin: 10px 0 8px;
-  padding: 3px;
-}
-
 /* 每格固定正方形；月份标签可以溢出到右边的列，不撑宽本列 */
 .cal-year {
   --cal-size: 12px;
@@ -4164,6 +4120,7 @@ button.stats-bar:hover {
   flex: 1;
   align-items: flex-end;
   min-height: 0;
+  border-bottom: 1px solid var(--line);
 }
 
 .stats-hour-bar {
@@ -4185,15 +4142,3 @@ button.stats-bar:hover {
   .stats-grid { grid-template-columns: minmax(0, 1fr); }
 }
 
-/* 深色主题里最深一档是亮青色，日期数字用深色才看得清 */
-:root[data-theme="dark"] .cal-cell.l3 .cal-num,
-:root[data-theme="dark"] .cal-cell.l4 .cal-num {
-  color: var(--bg);
-}
-
-@media (prefers-color-scheme: dark) {
-  :root:not([data-theme]) .cal-cell.l3 .cal-num,
-  :root:not([data-theme]) .cal-cell.l4 .cal-num {
-    color: var(--bg);
-  }
-}

@@ -43,9 +43,11 @@ test("levels, calendar grids and selectable years", () => {
   const recent = stats.lastDays(new Date(2026, 10, 18), 30);
   assert.equal(stats.dayKey(recent[0]), "2026-10-20");
   assert.equal(stats.dayKey(recent[29]), "2026-11-18");
-  const cal = stats.calendarWeeks(recent);
-  assert.equal(cal.flat().filter(Boolean).length, 30);
-  assert.equal(cal[0].findIndex(Boolean), 1, "10 月 20 日是周二");
+  // 今年只排到今天所在的那一周：11 月 18 日是周三，这一列补齐到周日
+  const current = stats.yearWeeks(2026, new Date(2026, 10, 18, 21));
+  const last = current[current.length - 1].map((d) => d && stats.dayKey(d));
+  assert.deepEqual([last[0], last[2], last[6]], ["2026-11-16", "2026-11-18", "2026-11-22"]);
+  assert.equal(stats.yearWeeks(2025, new Date(2026, 10, 18)).flat().filter(Boolean).length, 365);
   assert.deepEqual(stats.statsYears({ days: { "2024-05-01": {} }, bindings: {} }, new Date(2026, 0, 1)), [2024, 2025, 2026]);
   assert.deepEqual(stats.statsYears({ days: {}, bindings: {} }, new Date(2026, 0, 1)), [2026]);
 });
@@ -83,7 +85,10 @@ test("stats page shows tiles, calendar and bars; bars follow a selected day", as
     await act(async () => root.render(createElement(StatsPage, { config, onOpenBinding: (s, b) => opened.push([s, b]) })));
     const tiles = [...host.querySelectorAll(".stats-tile strong")].map((e) => e.textContent);
     assert.deepEqual(tiles, ["3", "8", "8", "Old gesture"]);
-    assert.equal(host.querySelectorAll(".cal-month button.cal-cell").length, 30);
+    // 年视图排到今天所在的那一周，今天之后的格子不可点
+    const cells = [...host.querySelectorAll(".cal-year button.cal-cell")];
+    assert.equal(cells.filter((c) => !c.disabled).length, Math.floor((new Date() - new Date(new Date().getFullYear(), 0, 1)) / 864e5) + 1);
+    assert.ok(cells.length - cells.filter((c) => !c.disabled).length < 7);
     const names = () => [...host.querySelectorAll(".stats-bars")][0].querySelectorAll(".stats-bar-name");
     assert.deepEqual([...names()].map((e) => e.textContent), ["Old gesture", "Close tab"]);
     // 已删除的手势不能跳转；现有的跳到它所在的位置
@@ -96,11 +101,6 @@ test("stats page shows tiles, calendar and bars; bars follow a selected day", as
     assert.deepEqual([...names()].map((e) => e.textContent), ["Close tab"]);
     await act(async () => host.querySelector(".cal-cell.today").click());
     assert.equal(names().length, 2);
-    // 年视图
-    const yearBtn = [...host.querySelectorAll(".segmented button")].find((b) => b.textContent === t("ui.stats.by_year"));
-    await act(async () => yearBtn.click());
-    assert.ok(host.querySelector(".cal-year"));
-    assert.ok(host.querySelectorAll(".cal-year button.cal-cell").length >= 365);
   } finally {
     await act(async () => root.unmount());
     api.usageStats = original.usage;
@@ -108,7 +108,7 @@ test("stats page shows tiles, calendar and bars; bars follow a selected day", as
   }
 });
 
-test("stats page explains when nothing is recorded", async () => {
+test("without any data the calendar and charts still render empty", async () => {
   const { createRoot } = await import("react-dom/client");
   const original = api.usageStats;
   api.usageStats = async () => ({ days: {}, bindings: {} });
@@ -116,7 +116,11 @@ test("stats page explains when nothing is recorded", async () => {
   const root = createRoot(host);
   try {
     await act(async () => root.render(createElement(StatsPage, { config: { version: 2, settings: {}, scopes: [] }, onOpenBinding() {} })));
-    assert.equal(host.querySelector(".stats-empty p").textContent, t("ui.stats.empty"));
+    assert.ok(host.querySelectorAll(".cal-year button.cal-cell.l0").length > 0);
+    assert.ok(!host.querySelector(".cal-year .cal-cell:not(.l0):not(.blank)"));
+    assert.equal(host.querySelectorAll(".stats-hour").length, 24);
+    assert.equal(host.querySelectorAll(".stats-none").length, 2);
+    assert.deepEqual([...host.querySelectorAll(".stats-tile strong")].map((e) => e.textContent), ["0", "0", "0", "—"]);
   } finally {
     await act(async () => root.unmount());
     api.usageStats = original;

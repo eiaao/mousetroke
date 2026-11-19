@@ -4,7 +4,7 @@ import { api } from "../api";
 import { fileName } from "../gesture";
 import { currentLang, displayName, t } from "../i18n";
 import { appIdentity } from "../platform";
-import { calendarWeeks, dayKey, dayTotal, lastDays, level, statsYears, summarize, yearWeeks, type UsageStats } from "../stats";
+import { dayKey, dayTotal, lastDays, level, statsYears, summarize, yearWeeks, type UsageStats } from "../stats";
 import { AppIcon } from "./Icons";
 import { PatternGlyph } from "./Glyph";
 import { scopeTitle } from "./Sidebar";
@@ -13,11 +13,9 @@ import { scopeTitle } from "./Sidebar";
 const REFRESH_MS = 5000;
 const TOP = 10;
 
-type CalendarView = { kind: "recent" } | { kind: "year"; year: number };
-
 export function StatsPage({ config, onOpenBinding }: { config: Config; onOpenBinding: (scope: number, binding: number) => void }) {
   const [stats, setStats] = useState<UsageStats | null>(null);
-  const [view, setView] = useState<CalendarView>({ kind: "recent" });
+  const [year, setYear] = useState(() => new Date().getFullYear());
   const [day, setDay] = useState<string | null>(null);
   useEffect(() => {
     const load = () => api.usageStats().then(setStats, () => setStats({ days: {}, bindings: {} }));
@@ -33,18 +31,10 @@ export function StatsPage({ config, onOpenBinding }: { config: Config; onOpenBin
 
   if (!stats) return <section className="prefs stats" aria-busy />;
   const allKeys = Object.keys(stats.days);
-  if (!allKeys.some((k) => dayTotal(stats.days[k]) > 0)) {
-    return (
-      <section className="prefs stats">
-        <h1>{t("ui.stats.title")}</h1>
-        <div className="pref-group stats-empty"><p className="muted">{t("ui.stats.empty")}</p></div>
-      </section>
-    );
-  }
 
-  // 柱状图的范围：选中的那一天，否则跟随日历视图（最近 30 天 / 所选年份）
-  const rangeKeys = day ? [day] : view.kind === "recent" ? recent.map(dayKey) : allKeys.filter((k) => k.startsWith(`${view.year}-`));
-  const rangeLabel = day ? fullFmt.format(parseKey(day)) : view.kind === "recent" ? t("ui.stats.last30") : t("ui.stats.year", { year: view.year });
+  // 柱状图的范围：选中的那一天，否则是日历所示的年份
+  const rangeKeys = day ? [day] : allKeys.filter((k) => k.startsWith(`${year}-`));
+  const rangeLabel = day ? fullFmt.format(parseKey(day)) : t("ui.stats.year", { year });
   const range = summarize(stats, rangeKeys);
   const overall = summarize(stats, allKeys);
   const top = overall.bindings[0];
@@ -68,9 +58,8 @@ export function StatsPage({ config, onOpenBinding }: { config: Config; onOpenBin
   };
 
   const years = statsYears(stats, today);
-  const year = view.kind === "year" ? view.year : today.getFullYear();
   const yearIdx = years.indexOf(year);
-  const weeks = view.kind === "recent" ? calendarWeeks(recent) : yearWeeks(year);
+  const weeks = yearWeeks(year, today);
   const shown = weeks.flat().filter((d): d is Date => !!d);
   const max = Math.max(0, ...shown.map((d) => dayTotal(stats.days[dayKey(d)])));
   const cell = (d: Date | null, i: number) => {
@@ -89,9 +78,7 @@ export function StatsPage({ config, onOpenBinding }: { config: Config; onOpenBin
         aria-label={tip}
         data-tip={future ? undefined : tip}
         onClick={() => setDay(day === key ? null : key)}
-      >
-        {view.kind === "recent" && <span className="cal-num">{d.getDate()}</span>}
-      </button>
+      />
     );
   };
   const weekdays = Array.from({ length: 7 }, (_, i) => new Intl.DateTimeFormat(currentLang(), { weekday: "narrow" }).format(new Date(2024, 0, 1 + i)));
@@ -113,43 +100,26 @@ export function StatsPage({ config, onOpenBinding }: { config: Config; onOpenBin
       <div className="pref-group stats-card">
         <div className="stats-head">
           <h2>{t("ui.stats.calendar")}</h2>
-          {view.kind === "year" && (
-            <div className="stats-year">
-              <button type="button" className="btn icon subtle" aria-label={t("ui.stats.prev_year")} disabled={yearIdx <= 0} onClick={() => { setView({ kind: "year", year: years[yearIdx - 1] }); setDay(null); }}>‹</button>
-              <span>{year}</span>
-              <button type="button" className="btn icon subtle" aria-label={t("ui.stats.next_year")} disabled={yearIdx >= years.length - 1} onClick={() => { setView({ kind: "year", year: years[yearIdx + 1] }); setDay(null); }}>›</button>
-            </div>
-          )}
-          <div className="segmented" role="radiogroup" aria-label={t("ui.stats.calendar")}>
-            <button type="button" role="radio" aria-checked={view.kind === "recent"} className={view.kind === "recent" ? "on" : ""} onClick={() => { setView({ kind: "recent" }); setDay(null); }}>
-              {t("ui.stats.last30")}
-            </button>
-            <button type="button" role="radio" aria-checked={view.kind === "year"} className={view.kind === "year" ? "on" : ""} onClick={() => { setView({ kind: "year", year: today.getFullYear() }); setDay(null); }}>
-              {t("ui.stats.by_year")}
-            </button>
+          <div className="stats-year">
+            <button type="button" className="btn icon subtle" aria-label={t("ui.stats.prev_year")} disabled={yearIdx <= 0} onClick={() => { setYear(years[yearIdx - 1]); setDay(null); }}>‹</button>
+            <span>{year}</span>
+            <button type="button" className="btn icon subtle" aria-label={t("ui.stats.next_year")} disabled={yearIdx >= years.length - 1} onClick={() => { setYear(years[yearIdx + 1]); setDay(null); }}>›</button>
           </div>
         </div>
-        {view.kind === "recent" ? (
-          <div className="cal-month">
-            {weekdays.map((w, i) => <span key={`w${i}`} className="cal-weekday">{w}</span>)}
-            {weeks.flat().map(cell)}
+        <div className="cal-year-wrap">
+          <div className="cal-year" style={{ gridTemplateColumns: `auto repeat(${weeks.length}, var(--cal-size))` }}>
+            <span />
+            {weeks.map((w, i) => {
+              // 含某月 1 日的那一列标月份
+              const first = w.find((d) => d?.getDate() === 1);
+              return <span key={`m${i}`} className="cal-month-label">{first ? monthFmt.format(first) : ""}</span>;
+            })}
+            {Array.from({ length: 7 }, (_, row) => [
+              <span key={`r${row}`} className="cal-weekday">{row % 2 === 0 ? weekdays[row] : ""}</span>,
+              ...weeks.map((w, col) => cell(w[row], row * 100 + col)),
+            ])}
           </div>
-        ) : (
-          <div className="cal-year-wrap">
-            <div className="cal-year" style={{ gridTemplateColumns: `auto repeat(${weeks.length}, var(--cal-size))` }}>
-              <span />
-              {weeks.map((w, i) => {
-                // 含某月 1 日的那一列标月份
-                const first = w.find((d) => d?.getDate() === 1);
-                return <span key={`m${i}`} className="cal-month-label">{first ? monthFmt.format(first) : ""}</span>;
-              })}
-              {Array.from({ length: 7 }, (_, row) => [
-                <span key={`r${row}`} className="cal-weekday">{row % 2 === 0 ? weekdays[row] : ""}</span>,
-                ...weeks.map((w, col) => cell(w[row], row * 100 + col)),
-              ])}
-            </div>
-          </div>
-        )}
+        </div>
         <div className="cal-legend muted">
           <span>{t("ui.stats.less")}</span>
           {[0, 1, 2, 3, 4].map((l) => <span key={l} className={`cal-cell l${l}`} aria-hidden />)}
@@ -250,12 +220,12 @@ function Bars({ rows }: { rows: BarRow[] }) {
 /** 24 小时柱状图：每根柱自带悬停提示；隔 6 小时标一次刻度。 */
 function Hours({ hours }: { hours: number[] }) {
   const max = Math.max(...hours);
-  if (max <= 0) return <p className="muted stats-none">{t("ui.stats.none")}</p>;
+  // 没有数据时也画出 24 格刻度，只是没有柱
   return (
     <div className="stats-hours">
       {hours.map((n, h) => (
         <div key={h} className="stats-hour" data-tip={`${String(h).padStart(2, "0")}:00 · ${t("ui.stats.count", { count: n })}`} aria-label={`${h}:00 ${t("ui.stats.count", { count: n })}`}>
-          <span className="stats-hour-plot"><span className="stats-hour-bar" style={{ height: `${n ? Math.max(4, (n / max) * 100) : 0}%` }} /></span>
+          <span className="stats-hour-plot"><span className="stats-hour-bar" style={{ height: `${n && max ? Math.max(4, (n / max) * 100) : 0}%` }} /></span>
           <span className="stats-hour-label muted">{h % 6 === 0 ? h : ""}</span>
         </div>
       ))}

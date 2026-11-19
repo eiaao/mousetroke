@@ -63,26 +63,19 @@ export function level(count: number, max: number): number {
   return Math.min(4, Math.max(1, Math.ceil((count / max) * 4)));
 }
 
-/** 年视图（GitHub 式）：每列一周、周一在上；不在该年的格子为 null。 */
-export function yearWeeks(year: number): (Date | null)[][] {
+/** 年视图（GitHub 式）：每列一周、周一在上；不在该年的格子为 null。
+ *  until 落在该年时只排到它所在的那一周（那一列补齐，之后的周不显示）。 */
+export function yearWeeks(year: number, until?: Date): (Date | null)[][] {
   const first = new Date(year, 0, 1);
   const start = addDays(first, -((first.getDay() + 6) % 7));
+  const end = until && until.getFullYear() === year ? until : new Date(year, 11, 31);
   const weeks: (Date | null)[][] = [];
-  for (let d = start; d.getFullYear() <= year; ) {
+  for (let d = start; d <= end; ) {
     const week: (Date | null)[] = [];
     for (let i = 0; i < 7; i++, d = addDays(d, 1)) week.push(d.getFullYear() === year ? d : null);
     weeks.push(week);
   }
   return weeks;
-}
-
-/** 30 天视图（日历式）：每行一周、周一在左；范围外的格子为 null。 */
-export function calendarWeeks(days: Date[]): (Date | null)[][] {
-  if (!days.length) return [];
-  const lead = (days[0].getDay() + 6) % 7;
-  const cells: (Date | null)[] = [...Array<null>(lead).fill(null), ...days];
-  while (cells.length % 7) cells.push(null);
-  return Array.from({ length: cells.length / 7 }, (_, i) => cells.slice(i * 7, i * 7 + 7));
 }
 
 /** 有数据的年份到今年（年视图可切换的范围）。 */
