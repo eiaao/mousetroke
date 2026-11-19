@@ -107,7 +107,16 @@ function PresetCard({ action, preset, onChange, depth = 0 }: { action: PresetAct
   const impl = isMac() ? preset.macos : preset.windows;
   const canExpand = presetCanExpand(preset);
   const values = presetParamValues(preset, action);
+  // 管理员开关在卡片里直接切换，不进摘要文字；只有 Windows 能提权
+  const elevateParam = isMac() ? undefined : visibleParams(preset, values).find((param) => param.kind.type === "elevate");
+  const setElevate = (on: boolean) => {
+    const params = { ...(action.params ?? {}) };
+    if (on) params[elevateParam!.name] = "true";
+    else delete params[elevateParam!.name];
+    onChange({ ...action, params });
+  };
   const filled = visibleParams(preset, values)
+    .filter((param) => param.kind.type !== "elevate")
     .map((param) => {
       const value = values[param.name] ?? "";
       const choice = param.kind.type === "choice" ? param.kind.choices.find((c) => c.value === value) : undefined;
@@ -138,6 +147,12 @@ function PresetCard({ action, preset, onChange, depth = 0 }: { action: PresetAct
         {presetKeys(preset) && <Caps keys={presetKeys(preset)!} />}
         {filled.length > 0 && (
           <p className="action-card-params">{paramsText}</p>
+        )}
+        {elevateParam && (
+          <label className="check">
+            <input type="checkbox" checked={values[elevateParam.name] === "true"} data-param={elevateParam.name} onChange={(e) => setElevate(e.target.checked)} />
+            {t(elevateParam.label_key as MsgKey)}
+          </label>
         )}
         {impl.status !== "implemented" && (
           <p className="field-warn">{t((impl.value.reason_key as MsgKey) ?? "preset.status.pending")}</p>

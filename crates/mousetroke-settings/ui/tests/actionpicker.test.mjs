@@ -1018,7 +1018,22 @@ test("open app picks from running and installed lists; elevate is Windows-only a
     await view.close();
     assert.deepEqual(actions.cleanPresetParams(app, { app: "x.exe", elevate: "false" }), { app: "x.exe" });
     assert.deepEqual(actions.cleanPresetParams(app, { app: "x.exe", elevate: "true" }), { app: "x.exe", elevate: "true" });
+    // 详情卡片里随时切换，未勾选时也显示；摘要文字里不出现
+    const changes = [];
+    const card = await mount(createElement(ActionEditor, { action: { type: "preset", id: "open.app", params: { app: "x.exe" } }, onChange: (a) => changes.push(a) }));
+    const cardBox = card.el.querySelector('input[data-param="elevate"]');
+    assert.equal(cardBox.checked, false);
+    assert.ok(!card.el.querySelector(".action-card-params").textContent.includes(t("ui.action.elevate")));
+    await click(cardBox);
+    assert.deepEqual(changes.at(-1).params, { app: "x.exe", elevate: "true" });
+    await card.render(createElement(ActionEditor, { action: changes.at(-1), onChange: (a) => changes.push(a) }));
+    await click(card.el.querySelector('input[data-param="elevate"]'));
+    assert.deepEqual(changes.at(-1).params, { app: "x.exe" });
+    await card.close();
     platform.initPlatform("macos");
+    const macCard = await mount(createElement(ActionEditor, { action: { type: "preset", id: "open.app", params: { app: "x.exe" } }, onChange() {} }));
+    assert.equal(macCard.el.querySelector('input[data-param="elevate"]'), null);
+    await macCard.close();
     const mac = await mount(createElement(ActionPicker, { initialId: "open.app", onPick() {}, onClose() {} }));
     assert.equal(mac.el.querySelector('input[data-param="elevate"]'), null);
     await mac.close();
