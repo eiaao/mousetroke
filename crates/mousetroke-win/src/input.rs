@@ -928,6 +928,214 @@ pub fn is_vk_pressed(key: mousetroke_core::keyseq::Key) -> bool {
     (unsafe { GetAsyncKeyState(vk) } as u16 & 0x8000) != 0
 }
 
+/// 对序列里的每个键（含修饰键）取反：按下则抬起，未按下则按下（Lua ToggleKeys 用）。
+pub fn toggle_keyseq(seq: &KeySeq) {
+    for action in &seq.actions {
+        if let Action::Key { key: Key::Vk(vk), mods, .. } = action {
+            for m in mods {
+                send_vk(mod_vk(*m), !is_vk_pressed(Key::Vk(mod_vk(*m))));
+            }
+            send_vk(*vk, !is_vk_pressed(Key::Vk(*vk)));
+        }
+    }
+}
+
+/// 构造 CF_HTML 数据（含按字节偏移的头部）。
+pub fn build_cf_html(fragment: &str) -> Vec<u8> {
+    const PREFIX: &str = "<html><body>\r\n<!--StartFragment-->";
+    const SUFFIX: &str = "<!--EndFragment-->\r\n</body></html>";
+    let header_len = "Version:0.9\r\nStartHTML:0000000000\r\nEndHTML:0000000000\r\nStartFragment:0000000000\r\nEndFragment:0000000000\r\n".len();
+    let start_fragment = header_len + PREFIX.len();
+    let end_fragment = start_fragment + fragment.len();
+    let end_html = end_fragment + SUFFIX.len();
+    format!(
+        "Version:0.9\r\nStartHTML:{header_len:010}\r\nEndHTML:{end_html:010}\r\nStartFragment:{start_fragment:010}\r\nEndFragment:{end_fragment:010}\r\n{PREFIX}{fragment}{SUFFIX}"
+    )
+    .into_bytes()
+}
+
+/// 从 CF_HTML 数据取出 StartFragment/EndFragment 之间的片段。
+pub fn parse_cf_html(data: &[u8]) -> Option<String> {
+    let text = String::from_utf8_lossy(data);
+    let field = |name: &str| -> Option<usize> {
+        let rest = &text[text.find(name)? + name.len()..];
+        rest[..rest.find(['\r', '\n'])?].trim().parse().ok()
+    };
+    let (start, end) = (field("StartFragment:")?, field("EndFragment:")?);
+    std::str::from_utf8(data.get(start..end)?).ok().map(str::to_owned)
+}
+
+/// 构造 CF_HDROP 数据：DROPFILES 头（宽字符）+ 以双 NUL 结尾的路径列表。
+pub fn build_dropfiles(paths: &[String]) -> Vec<u8> {
+    let mut out = Vec::new();
+    out.extend_from_slice(&20u32.to_le_bytes()); // pFiles
+    out.extend_from_slice(&[0; 8]); // pt
+    out.extend_from_slice(&0u32.to_le_bytes()); // fNC
+    out.extend_from_slice(&1u32.to_le_bytes()); // fWide
+    for p in paths {
+        p.encode_utf16().chain([0]).for_each(|u| out.extend_from_slice(&u.to_le_bytes()));
+    }
+    out.extend_from_slice(&0u16.to_le_bytes());
+    out
+}
+
+/// 解析 CF_HDROP 数据；仅支持宽字符。
+pub fn parse_dropfiles(data: &[u8]) -> Option<Vec<String>> {
+    let offset = u32::from_le_bytes(data.get(0..4)?.try_into().ok()?) as usize;
+    if u32::from_le_bytes(data.get(16..20)?.try_into().ok()?) == 0 {
+        return None;
+    }
+    let units: Vec<u16> = data.get(offset..)?.chunks_exact(2).map(|c| u16::from_le_bytes([c[0], c[1]])).collect();
+    Some(units.split(|u| *u == 0).take_while(|s| !s.is_empty()).map(String::from_utf16_lossy).collect())
+}
+
+fn clipboard_format(name: &str) -> u32 {
+    let wide: Vec<u16> = name.encode_utf16().chain([0]).collect();
+    unsafe { windows::Win32::System::DataExchange::RegisterClipboardFormatW(windows::core::PCWSTR(wide.as_ptr())) }
+}
+
+fn get_clipboard_bytes(format: u32) -> Option<Vec<u8>> {
+    unsafe {
+        OpenClipboard(None).ok()?;
+        let read = || -> Option<Vec<u8>> {
+            let handle = HGLOBAL(GetClipboardData(format).ok()?.0);
+            let ptr = GlobalLock(handle) as *const u8;
+            if ptr.is_null() {
+                return None;
+            }
+            let data = std::slice::from_raw_parts(ptr, windows::Win32::System::Memory::GlobalSize(handle)).to_vec();
+            let _ = GlobalUnlock(handle);
+            Some(data)
+        };
+        let result = read();
+        let _ = CloseClipboard();
+        result
+    }
+}
+
+fn set_clipboard_bytes(format: u32, data: &[u8]) -> bool {
+    unsafe {
+        if OpenClipboard(None).is_err() {
+            return false;
+        }
+        let _ = EmptyClipboard();
+        let mut ok = false;
+        if let Ok(hglobal) = GlobalAlloc(GMEM_MOVEABLE, data.len()) {
+            let dst = GlobalLock(hglobal) as *mut u8;
+            if !dst.is_null() {
+                std::ptr::copy_nonoverlapping(data.as_ptr(), dst, data.len());
+                let _ = GlobalUnlock(hglobal);
+                ok = SetClipboardData(format, Some(HANDLE(hglobal.0))).is_ok();
+            }
+        }
+        let _ = CloseClipboard();
+        ok
+    }
+}
+
+/// 读取 CF_HTML 片段。
+pub fn get_clipboard_html() -> Option<String> {
+    parse_cf_html(&get_clipboard_bytes(clipboard_format("HTML Format"))?)
+}
+
+/// 写入 CF_HTML 片段。
+pub fn set_clipboard_html(fragment: &str) -> bool {
+    let mut data = build_cf_html(fragment);
+    data.push(0);
+    set_clipboard_bytes(clipboard_format("HTML Format"), &data)
+}
+
+/// 读取剪贴板里的文件列表（CF_HDROP）。
+pub fn get_clipboard_files() -> Option<Vec<String>> {
+    parse_dropfiles(&get_clipboard_bytes(15 /* CF_HDROP */)?)
+}
+
+/// 把文件列表写入剪贴板（CF_HDROP）。
+pub fn set_clipboard_files(paths: &[String]) -> bool {
+    set_clipboard_bytes(15 /* CF_HDROP */, &build_dropfiles(paths))
+}
+
+/// 文件资源管理器窗口当前显示的文件夹路径；非资源管理器或虚拟文件夹返回 None。
+pub fn explorer_path(hwnd: HWND) -> Option<String> {
+    use windows::core::Interface;
+    use windows::Win32::System::Com::{CoCreateInstance, CoInitializeEx, CoUninitialize, IServiceProvider, CLSCTX_ALL, COINIT_APARTMENTTHREADED};
+    use windows::Win32::System::Variant::VARIANT;
+    use windows::Win32::UI::Shell::{
+        IFolderView, IPersistFolder2, IShellBrowser, IShellWindows, IWebBrowserApp, SHGetPathFromIDListW, ShellWindows,
+    };
+    unsafe {
+        // 工作线程默认没有 COM；S_FALSE 也要配对 Uninitialize，线程模式冲突时则不能
+        let init = CoInitializeEx(None, COINIT_APARTMENTTHREADED).is_ok();
+        let find = || -> Option<String> {
+            let windows: IShellWindows = CoCreateInstance(&ShellWindows, None, CLSCTX_ALL).ok()?;
+            for i in 0..windows.Count().ok()? {
+                let Ok(item) = windows.Item(&VARIANT::from(i)) else { continue };
+                let Ok(app) = item.cast::<IWebBrowserApp>() else { continue };
+                if app.HWND().map(|h| h.0).ok() != Some(hwnd.0 as isize) {
+                    continue;
+                }
+                let Ok(provider) = app.cast::<IServiceProvider>() else { continue };
+                let Ok(browser) = provider.QueryService::<IShellBrowser>(&windows::Win32::UI::Shell::SID_STopLevelBrowser) else { continue };
+                let Ok(view) = browser.QueryActiveShellView() else { continue };
+                // 多标签页共用顶层 HWND，只取当前可见的那一页
+                if !view.GetWindow().is_ok_and(|w| windows::Win32::UI::WindowsAndMessaging::IsWindowVisible(w).as_bool()) {
+                    continue;
+                }
+                let folder = view.cast::<IFolderView>().ok()?.GetFolder::<IPersistFolder2>().ok()?;
+                let pidl = folder.GetCurFolder().ok()?;
+                let mut buf = [0u16; 260];
+                let ok = SHGetPathFromIDListW(pidl, &mut buf).as_bool();
+                windows::Win32::System::Com::CoTaskMemFree(Some(pidl as *const _));
+                let len = buf.iter().position(|c| *c == 0).unwrap_or(buf.len());
+                return ok.then(|| String::from_utf16_lossy(&buf[..len]));
+            }
+            None
+        };
+        let result = find();
+        if init {
+            CoUninitialize();
+        }
+        result
+    }
+}
+
+#[cfg(test)]
+mod clipboard_format_tests {
+    use super::*;
+
+    #[test]
+    fn cf_html_offsets_point_at_the_fragment() {
+        let data = build_cf_html("<b>héllo</b>");
+        let text = String::from_utf8(data.clone()).unwrap();
+        let num = |name: &str| -> usize {
+            let rest = &text[text.find(name).unwrap() + name.len()..];
+            rest[..10].parse().unwrap()
+        };
+        assert_eq!(&data[num("StartFragment:")..num("EndFragment:")], "<b>héllo</b>".as_bytes());
+        assert_eq!(num("EndHTML:"), data.len());
+        assert!(text[num("StartHTML:")..].starts_with("<html>"));
+        assert_eq!(parse_cf_html(&data).as_deref(), Some("<b>héllo</b>"));
+    }
+
+    #[test]
+    #[ignore = "需要已打开的资源管理器窗口"]
+    fn explorer_path_of_open_windows() {
+        for (title, h) in find_windows_by(Some("CabinetWClass"), None, false) {
+            eprintln!("{title}: {:?}", explorer_path(HWND(h as *mut core::ffi::c_void)));
+        }
+    }
+
+    #[test]
+    fn dropfiles_layout_is_wide_and_double_nul_terminated() {
+        let data = build_dropfiles(&["C:\\a".into(), "D:\\b".into()]);
+        assert_eq!(&data[..4], &20u32.to_le_bytes());
+        assert_eq!(&data[16..20], &1u32.to_le_bytes());
+        assert_eq!(data.len(), 20 + (5 + 5 + 1) * 2);
+        assert_eq!(&data[data.len() - 4..], &[0, 0, 0, 0]);
+        assert_eq!(parse_dropfiles(&data), Some(vec!["C:\\a".to_string(), "D:\\b".to_string()]));
+    }
+}
+
 #[cfg(test)]
 mod app_identity_tests {
     use super::{app_activation_class_eligible, app_exe_matches, expand_environment};

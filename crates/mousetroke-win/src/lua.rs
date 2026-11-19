@@ -132,6 +132,13 @@ impl LuaPlatform for WindowsPlatform {
     }
 }
 
+fn warn_clipboard_format_once(fmt: &str) {
+    static WARNED: std::sync::atomic::AtomicBool = std::sync::atomic::AtomicBool::new(false);
+    if !WARNED.swap(true, std::sync::atomic::Ordering::Relaxed) {
+        crate::log!("Lua: 剪贴板格式 {fmt} 不支持（可用 text/html/files）");
+    }
+}
+
 fn install_legacy(lua: &Lua, ms: &Table) -> mlua::Result<()> {
     // 兼容表：旧格式 PascalCase API 名映射到 snake_case 实现
     const LEGACY_NAMES: &[(&str, &str)] = &[
@@ -184,10 +191,6 @@ fn install_legacy(lua: &Lua, ms: &Table) -> mlua::Result<()> {
     for stub in [
         "GetTriggerState",
         "SetTriggerState",
-        "GetExplorerPath",
-        "ToggleKeys",
-        "GetClipboardData",
-        "SetClipboardData",
     ] {
         let name = stub.to_string();
         let _ = legacy.set(
@@ -198,6 +201,59 @@ fn install_legacy(lua: &Lua, ms: &Table) -> mlua::Result<()> {
             })?,
         );
     }
+    legacy.set(
+        "GetExplorerPath",
+        lua.create_function(|_, wid: i64| Ok(input::explorer_path(HWND(wid as *mut core::ffi::c_void))))?,
+    )?;
+    legacy.set(
+        "ToggleKeys",
+        lua.create_function(|_, keys: String| {
+            let seq = mousetroke_core::keyseq::parse(&keys, false)
+                .map_err(|e| mlua::Error::external(format!("按键序列错误: {e:?}")))?; // i18n:allow Lua 运行时错误，面向脚本作者
+            input::toggle_keyseq(&seq);
+            Ok(())
+        })?,
+    )?;
+    legacy.set(
+        "GetClipboardData",
+        lua.create_function(|lua, fmt: String| -> mlua::Result<Value> {
+            Ok(match fmt.to_ascii_lowercase().as_str() {
+                "text" => lua.pack(input::get_clipboard_text())?,
+                "html" => lua.pack(input::get_clipboard_html())?,
+                "files" => lua.pack(input::get_clipboard_files())?,
+                _ => {
+                    warn_clipboard_format_once(&fmt);
+                    Value::Nil
+                }
+            })
+        })?,
+    )?;
+    legacy.set(
+        "SetClipboardData",
+        lua.create_function(|_, (fmt, data): (String, Value)| -> mlua::Result<bool> {
+            Ok(match fmt.to_ascii_lowercase().as_str() {
+                "text" | "html" => {
+                    let Value::String(s) = data else { return Ok(false) };
+                    let s = s.to_string_lossy();
+                    if fmt.eq_ignore_ascii_case("text") {
+                        input::set_clipboard_text(&s);
+                        true
+                    } else {
+                        input::set_clipboard_html(&s)
+                    }
+                }
+                "files" => {
+                    let Value::Table(t) = data else { return Ok(false) };
+                    let paths = t.sequence_values::<String>().collect::<mlua::Result<Vec<_>>>()?;
+                    input::set_clipboard_files(&paths)
+                }
+                _ => {
+                    warn_clipboard_format_once(&fmt);
+                    false
+                }
+            })
+        })?,
+    )?;
     let _ = lua.globals().set("WG", legacy); // 旧格式脚本里的全局表名，必须保持原样
 
     // User32 / luanet / import：旧格式 NLua 互操作的最小桩
