@@ -2,6 +2,18 @@
 
 Each version lists its highlights in English, then in Chinese. The release page, the in-app update notes and the website changelog are all generated from this file.
 
+## 0.3.5 — 2026-11-19
+
+### English
+
+- Mac: apps in the sidebar and settings now show their name as in Finder (for example "Windows App") instead of a bundle identifier such as `com.microsoft.rdc.macos`. Apps added earlier are renamed when settings opens; names you changed yourself are kept. (#108)
+- Moving a gesture to a single other app with **Move to…** keeps its usage stats together. Previously the stats split into two rows and the old one showed as deleted. (#109)
+
+### 中文
+
+- Mac：侧栏和设置中的程序显示访达里的名称（例如“Windows App”），不再显示 `com.microsoft.rdc.macos` 这类程序标识。之前添加的程序在打开设置时自动改名，你自己改过的名称保持不变。（#108）
+- 用“移动到…”把手势移到另一个程序时，使用统计保持为同一条；之前会拆成两条，旧的一条显示为“已删除”。（#109）
+
 ## 0.3.4 — 2026-11-18
 
 ### English
