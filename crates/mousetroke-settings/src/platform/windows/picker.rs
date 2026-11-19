@@ -89,6 +89,39 @@ fn expand_env(s: &str) -> String {
     String::from_utf16_lossy(&buf[..n.saturating_sub(1)])
 }
 
+// ---------------------------------------------------------------- 已安装程序
+
+/// 开始菜单里指向 exe 的快捷方式：(程序路径, 快捷方式名)。按路径去重，跳过卸载程序。
+pub fn installed_apps() -> Vec<(String, String)> {
+    let mut seen = std::collections::HashSet::new();
+    let mut out = Vec::new();
+    for var in ["ProgramData", "APPDATA"] {
+        let Some(base) = std::env::var_os(var) else { continue };
+        let mut stack = vec![Path::new(&base).join(r"Microsoft\Windows\Start Menu\Programs")];
+        while let Some(dir) = stack.pop() {
+            let Ok(rd) = std::fs::read_dir(&dir) else { continue };
+            for entry in rd.flatten() {
+                let p = entry.path();
+                if p.is_dir() {
+                    stack.push(p);
+                    continue;
+                }
+                if !p.extension().is_some_and(|e| e.eq_ignore_ascii_case("lnk")) { continue }
+                let name = p.file_stem().map(|s| s.to_string_lossy().into_owned()).unwrap_or_default();
+                if name.to_lowercase().contains("uninstall") { continue }
+                let Some(target) = shortcut_target(&p.to_string_lossy()) else { continue };
+                let exe = file_name(&target).to_ascii_lowercase();
+                if !exe.ends_with(".exe") || exe.contains("unins") || !Path::new(&target).exists() { continue }
+                if seen.insert(target.to_lowercase()) {
+                    out.push((target, name));
+                }
+            }
+        }
+    }
+    out.sort_by_key(|(_, name)| name.to_lowercase());
+    out
+}
+
 // ---------------------------------------------------------------- 点选窗口
 
 const TIMEOUT: Duration = Duration::from_secs(60);
@@ -358,6 +391,16 @@ mod tests {
         let lnk = lnk.expect("开始菜单里应至少有一个指向 exe 的快捷方式");
         let exe = resolve_app(&lnk.to_string_lossy()).unwrap();
         assert!(Path::new(&exe).exists(), "{lnk:?} → {exe}");
+    }
+
+    #[test]
+    fn lists_installed_apps_without_uninstallers() {
+        let apps = installed_apps();
+        assert!(!apps.is_empty(), "开始菜单里应至少有一个程序");
+        for (exe, name) in &apps {
+            assert!(Path::new(exe).exists(), "{name} → {exe}");
+            assert!(!file_name(exe).to_ascii_lowercase().contains("unins"), "{exe}");
+        }
     }
 
     fn walk(dir: &Path) -> Vec<std::path::PathBuf> {

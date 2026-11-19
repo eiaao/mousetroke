@@ -437,6 +437,13 @@ fn running_apps() -> Vec<RunningApp> {
     apps
 }
 
+/// 已安装的程序（Windows：开始菜单快捷方式）。读快捷方式较慢，在线程池里跑。
+#[cfg_attr(windows, tauri::command(async))]
+#[cfg_attr(target_os = "macos", tauri::command)]
+fn installed_apps() -> Vec<RunningApp> {
+    platform::installed_apps()
+}
+
 /// 一批程序的图标（data URL；取不到为 null）。在线程池里跑，不卡界面。
 #[cfg_attr(windows, tauri::command(async))]
 #[cfg_attr(target_os = "macos", tauri::command)]
@@ -727,6 +734,7 @@ pub fn run(config: Option<PathBuf>) {
             pick_folder,
             recover_config,
             running_apps,
+            installed_apps,
             app_icons,
             resolve_app,
             preset_apps,

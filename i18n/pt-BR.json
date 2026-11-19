@@ -470,6 +470,8 @@
   "ui.picker.cat_installed": "{category} · instalado",
   "ui.picker.not_installed": "Não detectado — dá para adicionar mesmo assim",
   "ui.picker.running_group": "Em execução",
+  "ui.picker.installed_group": "Instalados",
+  "ui.picker.from_list": "Escolher da lista",
   "ui.picker.loading": "Lendo…",
   "ui.picker.no_match": "Nenhum aplicativo corresponde. Use “Procurar” abaixo para escolher um exe.",
   "ui.picker.added_switch_off": "Adicionado — escolha de novo para desativar os gestos",

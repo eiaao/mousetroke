@@ -37,6 +37,8 @@ export const api = {
   pickFolder: (title: string) => invoke<string | null>("pick_folder", { title }),
   recoverConfig: (config?: Config) => invoke<Config>("recover_config", { config: config ? persistedConfig(config) : null }),
   runningApps: () => invoke<RunningApp[]>("running_apps"),
+  /** 已安装的程序（Windows 开始菜单；mac 为空）。title 为显示名。 */
+  installedApps: () => invoke<RunningApp[]>("installed_apps"),
   resolveApp: (path: string) => invoke<string>("resolve_app", { path }),
   pickWindow: () => invoke<{ exe: string; title: string } | null>("pick_window"),
   presetApps: () => invoke<PresetApp[]>("preset_apps"),

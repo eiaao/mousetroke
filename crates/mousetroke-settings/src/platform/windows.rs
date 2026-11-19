@@ -42,6 +42,9 @@ pub fn refresh_texts(_window: &tauri::WebviewWindow) {}
 pub fn running_apps() -> Vec<RunningApp> {
     mousetroke_win::targeting::running_apps().into_iter().map(|(exe, title)| RunningApp { exe, title }).collect()
 }
+pub fn installed_apps() -> Vec<RunningApp> {
+    picker::installed_apps().into_iter().map(|(exe, title)| RunningApp { exe, title }).collect()
+}
 pub fn set_autostart(on: bool, exe: &Path) -> Result<(), String> {
     mousetroke_win::autostart::set_for(on, &exe.to_string_lossy()).map(|_| ())
 }

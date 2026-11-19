@@ -500,6 +500,8 @@
   "ui.picker.cat_installed": "{category} · установлена",
   "ui.picker.not_installed": "Не найдена — можно добавить и так",
   "ui.picker.running_group": "Запущенные",
+  "ui.picker.installed_group": "Установленные",
+  "ui.picker.from_list": "Выбрать из списка",
   "ui.picker.loading": "Чтение…",
   "ui.picker.no_match": "Подходящих программ нет. Выберите exe-файл кнопкой «Обзор» ниже.",
   "ui.picker.added_switch_off": "Добавлена — выберите снова, чтобы отключить жесты",

@@ -455,6 +455,8 @@
   "ui.picker.cat_installed": "{category} · インストール済み",
   "ui.picker.not_installed": "見つかりませんでしたが、追加はできます",
   "ui.picker.running_group": "実行中",
+  "ui.picker.installed_group": "インストール済み",
+  "ui.picker.from_list": "一覧から選択",
   "ui.picker.loading": "読み込み中…",
   "ui.picker.no_match": "一致するアプリはありません。下の「参照」で exe ファイルを選んでください。",
   "ui.picker.added_switch_off": "追加済み。選ぶとオフに変更できます",

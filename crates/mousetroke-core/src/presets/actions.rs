@@ -32,6 +32,8 @@ pub enum ParamKind {
     Url,
     Path { kind: PathKind },
     App,
+    /// 以管理员身份运行（"true"/"false"）；只有 Windows 支持，界面在 mac 上隐藏。
+    Elevate,
 }
 
 #[derive(Debug, Clone, Copy, Serialize)]
@@ -172,7 +174,10 @@ const TRANSLATE_PARAMS: &[Param] = &[
 const WEBSITE_PARAMS: &[Param] = &[Param { name: "url", label_key: "preset.param.url", kind: ParamKind::Url, default: ParamDefault::Literal("https://mousetroke.com/"), visible_when: None }];
 const FOLDER_PARAMS: &[Param] = &[Param { name: "path", label_key: "preset.param.path", kind: ParamKind::Path { kind: PathKind::Folder }, default: ParamDefault::Literal(""), visible_when: None }];
 const FILE_PARAMS: &[Param] = &[Param { name: "path", label_key: "preset.param.path", kind: ParamKind::Path { kind: PathKind::File }, default: ParamDefault::Literal(""), visible_when: None }];
-const APP_PARAMS: &[Param] = &[Param { name: "app", label_key: "preset.param.app", kind: ParamKind::App, default: ParamDefault::Literal(""), visible_when: None }];
+const APP_PARAMS: &[Param] = &[
+    Param { name: "app", label_key: "preset.param.app", kind: ParamKind::App, default: ParamDefault::Literal(""), visible_when: None },
+    Param { name: "elevate", label_key: "ui.action.elevate", kind: ParamKind::Elevate, default: ParamDefault::Literal("false"), visible_when: None },
+];
 
 const fn keys(value: &'static str) -> Implementation { Implementation::Implemented(Expansion::Keys(value)) }
 const fn window(value: WindowOpKind) -> Implementation { Implementation::Implemented(Expansion::Window(value)) }
@@ -327,6 +332,7 @@ pub fn validate_params(preset: &Preset, params: &Params) -> Result<(), PresetErr
         if let ParamKind::Choice { choices } = schema.kind {
             if !choices.iter().any(|c| c.value == text) { return Err(invalid(schema.name)); }
         }
+        if matches!(schema.kind, ParamKind::Elevate) && !matches!(text, "true" | "false") { return Err(invalid(schema.name)); }
     }
     Ok(())
 }
@@ -421,7 +427,9 @@ pub fn resolve(id: &str, platform: Platform, params: &Params, ui_lang: Lang) -> 
         }
         Expansion::App => {
             let mut action = launch_action(required(&values, "app")?, None);
-            if let Action::LaunchApp { activate_by_identity, .. } = &mut action { *activate_by_identity = true; }
+            // 管理员启动不按程序身份切换（schema 的 activates_app_identity 也要求 elevate=false）；mac 不支持提权。
+            let elevated = platform == Platform::Windows && values.get("elevate").and_then(Value::as_str) == Some("true");
+            if let Action::LaunchApp { activate_by_identity, elevate, .. } = &mut action { *elevate = elevated; *activate_by_identity = !elevated; }
             action
         }
     }))

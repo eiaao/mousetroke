@@ -455,6 +455,8 @@
   "ui.picker.cat_installed": "{category} · 설치됨",
   "ui.picker.not_installed": "발견되지 않았지만 추가할 수 있습니다",
   "ui.picker.running_group": "실행 중",
+  "ui.picker.installed_group": "설치됨",
+  "ui.picker.from_list": "목록에서 선택",
   "ui.picker.loading": "읽는 중…",
   "ui.picker.no_match": "일치하는 앱이 없습니다. 아래 “찾아보기”로 exe 파일을 선택하세요.",
   "ui.picker.added_switch_off": "추가됨 — 다시 선택하면 끌 수 있습니다",
