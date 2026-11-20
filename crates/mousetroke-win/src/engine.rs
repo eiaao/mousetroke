@@ -218,7 +218,12 @@ fn execute(action: Action, target: Option<targeting::Target>, vars: Vars, pos: (
         }
         Action::OpenUrl { url_template, browser } => {
             let mut v = vars.clone();
-            fill_lazy_vars(&url_template, &mut v);
+            // 搜索、翻译、打开选中的链接：没读到这次选中的文字就提示并停止，不打开网页
+            if !fill_lazy_vars(&url_template, &mut v) {
+                crate::log!("没有读到选中的文字，未打开网页");
+                push_toast(mousetroke_core::i18n::t(mousetroke_core::i18n::keys::OVERLAY_NO_SELECTION).into(), 1600);
+                return;
+            }
             input::open_url(&vars::expand_url(&url_template, &v), browser.as_deref());
         }
         Action::LaunchApp { exe, args, elevate, win_class, win_title, regex, if_running, .. } => {
@@ -261,14 +266,19 @@ fn execute(action: Action, target: Option<targeting::Target>, vars: Vars, pos: (
 }
 
 /// 惰性变量：模板引用了但上下文没有 → 现场采集。
-fn fill_lazy_vars(template: &str, vars: &mut Vars) {
+/// 返回 false 表示模板需要选中文字但没有读到（此时填入空串）。
+fn fill_lazy_vars(template: &str, vars: &mut Vars) -> bool {
+    let mut selected = true;
     if template.contains("%MS_SELECTED_TEXT%") && !vars.contains_key("MS_SELECTED_TEXT") {
-        vars.insert("MS_SELECTED_TEXT".into(), input::capture_selected_text().unwrap_or_default());
+        let text = input::capture_selected_text();
+        selected = text.is_some();
+        vars.insert("MS_SELECTED_TEXT".into(), text.unwrap_or_default());
     }
     if template.contains("%MS_CLIPBOARD_TEXT%") && !vars.contains_key("MS_CLIPBOARD_TEXT") {
         let text = input::get_clipboard_text().unwrap_or_default();
         vars.insert("MS_CLIPBOARD_TEXT".into(), text);
     }
+    selected
 }
 
 #[cfg(test)]

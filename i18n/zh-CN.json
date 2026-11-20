@@ -713,6 +713,7 @@
   "overlay.gesture_too_long": "画嗨了吧？这一笔不算～",
   "overlay.brightness": "亮度 {value}%",
   "overlay.brightness_unsupported": "这台显示器不支持调节亮度",
+  "overlay.no_selection": "没有读到选中的文字",
   "overlay.elevated_target": "这个窗口以管理员身份运行，Mousetroke 也需要以管理员身份运行才能控制它",
   "toast.restart_as_admin": "以管理员身份重启",
   "ui.picker.live_hint": "点击要单独设置的程序窗口 · Esc 或右键取消",

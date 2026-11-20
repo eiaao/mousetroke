@@ -713,6 +713,7 @@
   "overlay.gesture_too_long": "Virou rabisco! Essa não vale.",
   "overlay.brightness": "Brilho {value}%",
   "overlay.brightness_unsupported": "Este monitor não permite ajuste de brilho",
+  "overlay.no_selection": "Nenhum texto selecionado encontrado",
   "overlay.elevated_target": "Esta janela está sendo executada como administrador. Execute o Mousetroke também como administrador para controlá-la.",
   "toast.restart_as_admin": "Reiniciar como administrador",
   "ui.picker.live_hint": "Clique na janela do aplicativo a configurar · Esc ou clique direito cancela",

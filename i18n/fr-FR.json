@@ -713,6 +713,7 @@
   "overlay.gesture_too_long": "Joli gribouillis ! On passe.",
   "overlay.brightness": "Luminosité {value}%",
   "overlay.brightness_unsupported": "Cet écran ne prend pas en charge le réglage de la luminosité",
+  "overlay.no_selection": "Aucun texte sélectionné trouvé",
   "overlay.elevated_target": "Cette fenêtre s’exécute en tant qu’administrateur. Exécutez aussi Mousetroke en tant qu’administrateur pour la contrôler.",
   "toast.restart_as_admin": "Redémarrer en tant qu’administrateur",
   "ui.picker.live_hint": "Cliquez sur la fenêtre d’une application à configurer · Échap ou clic droit annule",

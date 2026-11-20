@@ -713,6 +713,7 @@
   "overlay.gesture_too_long": "Kritzelkunst? Die zählt nicht!",
   "overlay.brightness": "Helligkeit {value} %",
   "overlay.brightness_unsupported": "Dieser Bildschirm unterstützt keine Helligkeitseinstellung",
+  "overlay.no_selection": "Kein markierter Text gefunden",
   "overlay.elevated_target": "Dieses Fenster läuft als Administrator. Führe Mousetroke ebenfalls als Administrator aus, um es zu steuern.",
   "toast.restart_as_admin": "Als Administrator neu starten",
   "ui.picker.live_hint": "Auf das einzurichtende App-Fenster klicken · Esc oder Rechtsklick bricht ab",
