@@ -397,6 +397,9 @@ pub fn capture_selected_text() -> Option<String> {
     use std::time::{Duration, Instant};
     use windows::Win32::System::DataExchange::GetClipboardSequenceNumber;
     let seq = mousetroke_core::keyseq::parse("^{C}", false).ok()?;
+    // 先读一次：上一位所有者"延迟提供"的文字会在此刻补写（补写也会让序号前进），
+    // 免得它在等待期间补写、被误当成这次复制的结果
+    let _ = get_clipboard_text();
     let before = unsafe { GetClipboardSequenceNumber() };
     inject_keyseq(&seq);
     let deadline = Instant::now() + Duration::from_millis(500);
@@ -1281,6 +1284,12 @@ mod selection_capture_tests {
     #[ignore = "真机：会打开记事本并临时改写剪贴板（结束后恢复）"]
     fn stale_clipboard_is_not_taken_as_selection() {
         use windows::Win32::UI::WindowsAndMessaging::{GetForegroundWindow, GetWindowThreadProcessId};
+        // 已有记事本在运行就跳过：只对本测试打开的记事本输入和关闭，不碰用户的文档
+        let running = std::process::Command::new("tasklist").args(["/FI", "IMAGENAME eq notepad.exe", "/NH"]).output().map(|o| String::from_utf8_lossy(&o.stdout).to_ascii_lowercase().contains("notepad.exe")).unwrap_or(true);
+        if running {
+            eprintln!("已有记事本在运行，跳过");
+            return;
+        }
         let saved = super::get_clipboard_text();
         super::set_clipboard_text("MT-OLD-CLIPBOARD");
         let mut child = std::process::Command::new(super::system_exe(r"System32\notepad.exe")).spawn().unwrap();
