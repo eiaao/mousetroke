@@ -713,6 +713,7 @@
   "overlay.gesture_too_long": "Nice doodle! Let’s skip this one.",
   "overlay.brightness": "Brightness {value}%",
   "overlay.brightness_unsupported": "This display doesn’t support brightness control",
+  "overlay.no_selection": "No selected text found",
   "overlay.elevated_target": "This window runs as administrator. Run Mousetroke as administrator too to control it.",
   "toast.restart_as_admin": "Restart as administrator",
   "ui.picker.live_hint": "Click an app window to set up · Esc or right-click cancels",

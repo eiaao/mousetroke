@@ -692,6 +692,7 @@
   "overlay.gesture_too_long": "낙서 삼매경? 이번 건 패스!",
   "overlay.brightness": "밝기 {value}%",
   "overlay.brightness_unsupported": "이 디스플레이는 밝기 조절을 지원하지 않습니다",
+  "overlay.no_selection": "선택한 텍스트를 찾지 못했습니다",
   "overlay.elevated_target": "이 창은 관리자 권한으로 실행 중입니다. 제어하려면 Mousetroke도 관리자 권한으로 실행하세요.",
   "toast.restart_as_admin": "관리자 권한으로 다시 시작",
   "ui.picker.live_hint": "설정할 앱 창을 클릭하세요 · Esc나 오른쪽 클릭으로 취소",

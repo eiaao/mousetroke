@@ -713,6 +713,7 @@
   "overlay.gesture_too_long": "¡Vaya garabato! Este no cuenta.",
   "overlay.brightness": "Brillo {value}%",
   "overlay.brightness_unsupported": "Esta pantalla no admite ajuste de brillo",
+  "overlay.no_selection": "No se encontró texto seleccionado",
   "overlay.elevated_target": "Esta ventana se ejecuta como administrador. Ejecuta Mousetroke también como administrador para controlarla.",
   "toast.restart_as_admin": "Reiniciar como administrador",
   "ui.picker.live_hint": "Haz clic en la ventana de una aplicación para configurarla · Esc o clic derecho cancela",

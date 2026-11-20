@@ -713,6 +713,7 @@
   "overlay.gesture_too_long": "Che scarabocchio! Questo non vale.",
   "overlay.brightness": "Luminosità {value}%",
   "overlay.brightness_unsupported": "Questo schermo non supporta la regolazione della luminosità",
+  "overlay.no_selection": "Nessun testo selezionato trovato",
   "overlay.elevated_target": "Questa finestra è in esecuzione come amministratore. Esegui anche Mousetroke come amministratore per controllarla.",
   "toast.restart_as_admin": "Riavvia come amministratore",
   "ui.picker.live_hint": "Clicca sulla finestra dell’app da configurare · Esc o clic destro annulla",

@@ -391,12 +391,30 @@ pub fn get_clipboard_text() -> Option<String> {
 }
 
 /// 通过 Ctrl+C 采集当前选中文字（会覆盖剪贴板，与旧格式语义一致）。
+/// 只认这次复制写入的内容：剪贴板序号在时限内没有变化（没有选中文字、复制失败或太慢）就返回 None，
+/// 绝不把剪贴板里原有的内容当成选中文字（否则可能把它发给搜索或翻译网站）。
 pub fn capture_selected_text() -> Option<String> {
-    if let Ok(seq) = mousetroke_core::keyseq::parse("^{C}", false) {
-        inject_keyseq(&seq);
-        std::thread::sleep(std::time::Duration::from_millis(120));
+    use std::time::{Duration, Instant};
+    use windows::Win32::System::DataExchange::GetClipboardSequenceNumber;
+    let seq = mousetroke_core::keyseq::parse("^{C}", false).ok()?;
+    // 先读一次：上一位所有者"延迟提供"的文字会在此刻补写（补写也会让序号前进），
+    // 免得它在等待期间补写、被误当成这次复制的结果
+    let _ = get_clipboard_text();
+    let before = unsafe { GetClipboardSequenceNumber() };
+    inject_keyseq(&seq);
+    let deadline = Instant::now() + Duration::from_millis(500);
+    loop {
+        std::thread::sleep(Duration::from_millis(20));
+        // 序号变了也可能刚清空、还没写入文字：读到为止或到时限
+        if unsafe { GetClipboardSequenceNumber() } != before {
+            if let Some(text) = get_clipboard_text().filter(|s| !s.trim().is_empty()) {
+                return Some(text);
+            }
+        }
+        if Instant::now() >= deadline {
+            return None;
+        }
     }
-    get_clipboard_text().filter(|s| !s.trim().is_empty())
 }
 
 fn wide(s: &str) -> Vec<u16> {
@@ -1254,5 +1272,58 @@ mod scan_code_tests {
         assert!(home != 0 && ext);
         assert_eq!(scan_code(0x24, map).0, scan_code(0x67, map).0);
         assert!(scan_code(0x52, map).0 != 0);
+    }
+}
+
+#[cfg(test)]
+mod selection_capture_tests {
+    /// 真机复现：没有选中文字时，不应把剪贴板里原有的内容当成选中文字。
+    /// 只在记事本确实是前台窗口时注入按键，避免把 Ctrl+C 发给别的窗口。
+    /// 运行：cargo test -p mousetroke-win stale_clipboard -- --ignored --nocapture
+    #[test]
+    #[ignore = "真机：会打开记事本并临时改写剪贴板（结束后恢复）"]
+    fn stale_clipboard_is_not_taken_as_selection() {
+        use windows::Win32::UI::WindowsAndMessaging::{GetForegroundWindow, GetWindowThreadProcessId};
+        // 已有记事本在运行就跳过：只对本测试打开的记事本输入和关闭，不碰用户的文档
+        let running = std::process::Command::new("tasklist").args(["/FI", "IMAGENAME eq notepad.exe", "/NH"]).output().map(|o| String::from_utf8_lossy(&o.stdout).to_ascii_lowercase().contains("notepad.exe")).unwrap_or(true);
+        if running {
+            eprintln!("已有记事本在运行，跳过");
+            return;
+        }
+        let saved = super::get_clipboard_text();
+        super::set_clipboard_text("MT-OLD-CLIPBOARD");
+        let mut child = std::process::Command::new(super::system_exe(r"System32\notepad.exe")).spawn().unwrap();
+        std::thread::sleep(std::time::Duration::from_millis(2500));
+        let fg = unsafe { GetForegroundWindow() };
+        let mut pid = 0u32;
+        unsafe { GetWindowThreadProcessId(fg, Some(&mut pid)) };
+        let exe = crate::targeting::exe_of(pid).unwrap_or_default();
+        let result = exe.to_ascii_lowercase().ends_with("notepad.exe").then(|| {
+            // 先在正文区点一下，确保输入焦点在编辑区（Win11 记事本打开时焦点可能在标签栏）
+            let mut r = windows::Win32::Foundation::RECT::default();
+            unsafe { let _ = windows::Win32::UI::WindowsAndMessaging::GetWindowRect(fg, &mut r); }
+            let (x, y) = ((r.left + r.right) / 2, (r.top + r.bottom) / 2);
+            unsafe { let _ = windows::Win32::UI::WindowsAndMessaging::SetCursorPos(x, y); }
+            super::send_mouse(mousetroke_core::schema::MouseButton::Left, true);
+            super::send_mouse(mousetroke_core::schema::MouseButton::Left, false);
+            std::thread::sleep(std::time::Duration::from_millis(300));
+            let none = super::capture_selected_text();
+            // 正常情况：输入一段文字、全选后能取到
+            let typed = mousetroke_core::keyseq::parse("mtselected^a", false).unwrap();
+            super::inject_keyseq(&typed);
+            std::thread::sleep(std::time::Duration::from_millis(300));
+            (none, super::capture_selected_text())
+        });
+        let _ = child.kill();
+        let _ = child.wait();
+        let _ = std::process::Command::new("taskkill").args(["/F", "/IM", "Notepad.exe", "/FI", &format!("PID eq {}", pid)]).output();
+        if let Some(text) = saved { super::set_clipboard_text(&text); }
+        let Some(captured) = result else {
+            eprintln!("记事本没有成为前台窗口（前台是 {exe}），跳过");
+            return;
+        };
+        eprintln!("没有选中文字 / 全选后取到的内容: {captured:?}");
+        assert_eq!(captured.0, None, "把剪贴板里的旧内容当成了选中文字");
+        assert_eq!(captured.1.as_deref(), Some("mtselected"));
     }
 }
