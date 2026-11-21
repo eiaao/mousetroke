@@ -1290,6 +1290,16 @@ mod selection_capture_tests {
             eprintln!("已有记事本在运行，跳过");
             return;
         }
+        // Win11 记事本会恢复上次未保存的标签页：有保存的标签页（可能是用户的）就跳过，免得粘贴进去
+        let tabs = std::env::var_os("LOCALAPPDATA").map(|d| std::path::Path::new(&d).join(r"Packages\Microsoft.WindowsNotepad_8wekyb3d8bbwe\LocalState\TabState"));
+        let listing = |dir: &Option<std::path::PathBuf>| -> Vec<std::path::PathBuf> {
+            dir.as_ref().and_then(|d| std::fs::read_dir(d).ok()).map(|r| r.flatten().map(|e| e.path()).collect()).unwrap_or_default()
+        };
+        let before_tabs = listing(&tabs);
+        if !before_tabs.is_empty() {
+            eprintln!("记事本有保存的标签页，跳过");
+            return;
+        }
         let saved = super::get_clipboard_text();
         super::set_clipboard_text("MT-OLD-CLIPBOARD");
         let mut child = std::process::Command::new(super::system_exe(r"System32\notepad.exe")).spawn().unwrap();
@@ -1308,22 +1318,34 @@ mod selection_capture_tests {
             super::send_mouse(mousetroke_core::schema::MouseButton::Left, false);
             std::thread::sleep(std::time::Duration::from_millis(300));
             let none = super::capture_selected_text();
-            // 正常情况：输入一段文字、全选后能取到
-            let typed = mousetroke_core::keyseq::parse("mtselected^a", false).unwrap();
-            super::inject_keyseq(&typed);
+            // 正常情况：放入一段文字、全选后能取到。用粘贴而不是逐字输入：
+            // 中文输入法会把逐字输入的字母当成拼音拦下，粘贴和快捷键不受影响
+            super::set_clipboard_text("mtselected");
+            super::inject_keyseq(&mousetroke_core::keyseq::parse("^v", false).unwrap());
+            std::thread::sleep(std::time::Duration::from_millis(300));
+            super::set_clipboard_text("MT-OLD-CLIPBOARD");
+            super::inject_keyseq(&mousetroke_core::keyseq::parse("^a", false).unwrap());
             std::thread::sleep(std::time::Duration::from_millis(300));
             (none, super::capture_selected_text())
         });
         let _ = child.kill();
         let _ = child.wait();
         let _ = std::process::Command::new("taskkill").args(["/F", "/IM", "Notepad.exe", "/FI", &format!("PID eq {}", pid)]).output();
-        if let Some(text) = saved { super::set_clipboard_text(&text); }
+        // 只删本次测试产生的标签页（开始前为空）
+        std::thread::sleep(std::time::Duration::from_millis(500));
+        for path in listing(&tabs) {
+            let _ = std::fs::remove_file(path);
+        }
+        match saved {
+            Some(text) => super::set_clipboard_text(&text),
+            None => super::set_clipboard_text(""),
+        }
         let Some(captured) = result else {
             eprintln!("记事本没有成为前台窗口（前台是 {exe}），跳过");
             return;
         };
         eprintln!("没有选中文字 / 全选后取到的内容: {captured:?}");
         assert_eq!(captured.0, None, "把剪贴板里的旧内容当成了选中文字");
-        assert_eq!(captured.1.as_deref(), Some("mtselected"));
+        assert_eq!(captured.1.as_deref(), Some("mtselected"), "全选后应取到刚放进去的文字");
     }
 }
