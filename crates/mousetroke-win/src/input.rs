@@ -1292,15 +1292,33 @@ mod selection_capture_tests {
         }
         // Win11 记事本会恢复上次未保存的标签页：有保存的标签页（可能是用户的）就跳过，免得粘贴进去
         let tabs = std::env::var_os("LOCALAPPDATA").map(|d| std::path::Path::new(&d).join(r"Packages\Microsoft.WindowsNotepad_8wekyb3d8bbwe\LocalState\TabState"));
-        let listing = |dir: &Option<std::path::PathBuf>| -> Vec<std::path::PathBuf> {
-            dir.as_ref().and_then(|d| std::fs::read_dir(d).ok()).map(|r| r.flatten().map(|e| e.path()).collect()).unwrap_or_default()
+        // 目录不存在 = 没有标签页；读不了就返回 None（不当成空，宁可跳过）
+        let listing = |dir: &Option<std::path::PathBuf>| -> Option<Vec<std::path::PathBuf>> {
+            let Some(dir) = dir else { return Some(Vec::new()) };
+            if !dir.exists() {
+                return Some(Vec::new());
+            }
+            std::fs::read_dir(dir).ok()?.map(|e| e.map(|e| e.path())).collect::<Result<Vec<_>, _>>().ok()
         };
-        let before_tabs = listing(&tabs);
-        if !before_tabs.is_empty() {
-            eprintln!("记事本有保存的标签页，跳过");
+        if listing(&tabs).is_none_or(|t| !t.is_empty()) {
+            eprintln!("记事本有保存的标签页（或无法确认），跳过");
             return;
         }
-        let saved = super::get_clipboard_text();
+        // 只在能原样恢复时才动剪贴板：有文字就必须读得到；有图片等非文字内容则跳过
+        use windows::Win32::System::DataExchange::{CountClipboardFormats, IsClipboardFormatAvailable};
+        let has_text = unsafe { IsClipboardFormatAvailable(13 /* CF_UNICODETEXT */) }.is_ok();
+        let saved = if has_text {
+            let Some(text) = (0..5).find_map(|_| super::get_clipboard_text().or_else(|| { std::thread::sleep(std::time::Duration::from_millis(100)); None })) else {
+                eprintln!("读不到剪贴板文字，跳过");
+                return;
+            };
+            Some(text)
+        } else if unsafe { CountClipboardFormats() } > 0 {
+            eprintln!("剪贴板里有非文字内容，跳过");
+            return;
+        } else {
+            None
+        };
         super::set_clipboard_text("MT-OLD-CLIPBOARD");
         let mut child = std::process::Command::new(super::system_exe(r"System32\notepad.exe")).spawn().unwrap();
         std::thread::sleep(std::time::Duration::from_millis(2500));
@@ -1333,7 +1351,7 @@ mod selection_capture_tests {
         let _ = std::process::Command::new("taskkill").args(["/F", "/IM", "Notepad.exe", "/FI", &format!("PID eq {}", pid)]).output();
         // 只删本次测试产生的标签页（开始前为空）
         std::thread::sleep(std::time::Duration::from_millis(500));
-        for path in listing(&tabs) {
+        for path in listing(&tabs).unwrap_or_default() {
             let _ = std::fs::remove_file(path);
         }
         match saved {
