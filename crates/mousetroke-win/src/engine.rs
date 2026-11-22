@@ -84,14 +84,7 @@ impl Host for SystemHost {
         std::thread::spawn(move || if click { input::replay_click(btn) } else { input::replay_down(btn) });
     }
     fn execute(&self, action: Action, target: Option<Target>, vars: Vars, pos: (i32, i32)) {
-        std::thread::spawn(move || {
-            // 只有会向目标窗口发送输入或操作窗口的动作才受 UIPI 影响；启动程序、打开网址等不提示
-            let to_window = matches!(action, Action::KeySequence { .. } | Action::WindowOp { .. } | Action::Preset { .. } | Action::Lua { .. });
-            if let (true, Some(t)) = (to_window, &target) {
-                warn_if_elevated(t.pid);
-            }
-            execute(action, target.map(Into::into), vars, pos)
-        });
+        std::thread::spawn(move || execute(action, target.map(Into::into), vars, pos));
     }
     fn label_anchor(&self, x: i32, y: i32) -> (i32, i32) {
         use windows::Win32::Graphics::Gdi::{GetMonitorInfoW, MonitorFromPoint, MONITORINFO, MONITOR_DEFAULTTONEAREST};
@@ -181,6 +174,12 @@ pub(crate) fn warn_if_elevated(pid: u32) {
 
 /// 执行动作（工作线程）。
 fn execute(action: Action, target: Option<targeting::Target>, vars: Vars, pos: (i32, i32)) {
+    // 只有会向目标窗口发送输入或操作窗口的动作才受 UIPI 影响；启动程序、打开网址等不提示。
+    // 放在这里而不是 Host::execute：弹出菜单里选中的动作也走这里，同样要检查。
+    let to_window = matches!(action, Action::KeySequence { .. } | Action::WindowOp { .. } | Action::Preset { .. } | Action::Lua { .. });
+    if let (true, Some(t)) = (to_window, &target) {
+        warn_if_elevated(t.pid);
+    }
     let Some(action) = mousetroke_engine::prepare_action(action, mousetroke_core::caps::Platform::Windows, mousetroke_core::i18n::lang()) else { return };
     let action = match action {
         PreparedAction::Advanced(action) => action,

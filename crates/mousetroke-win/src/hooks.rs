@@ -111,12 +111,16 @@ fn engine_main(cfg: Config, cfg_path: Option<std::path::PathBuf>) -> Result<(), 
 }
 
 /// 钩子最近一次收到事件的系统 tick（鼠标、键盘共用）。
+/// 共用意味着只丢了鼠标钩子、而用户一直在打字时看不出缺口；一旦有鼠标输入，
+/// 系统输入就比钩子新，缺口出现，约 1 秒后重装。手势本来就要用鼠标，只是恢复晚一点，不会一直失效。
 static LAST_HOOK_TICK: AtomicU32 = AtomicU32::new(0);
 
 thread_local! {
     /// 当前钩子句柄（鼠标, 键盘），只在引擎线程读写。
     static HOOKS: Cell<Option<(HHOOK, HHOOK)>> = const { Cell::new(None) };
     static LAST_INSTALL_TICK: Cell<u32> = const { Cell::new(0) };
+    /// 第一次发现"系统输入比钩子新"的时刻；缺口消失时清空。
+    static GAP_SINCE: Cell<Option<u32>> = const { Cell::new(None) };
 }
 
 /// 安装两个 LL 钩子；必须在跑消息循环的引擎线程调用。
@@ -149,18 +153,21 @@ fn unhook() {
     }
 }
 
-/// 系统输入（`GetLastInputInfo`）早于此毫秒数、钩子却没见到 → 判定钩子已被系统摘除。
+/// "系统输入比钩子新"持续这么久 → 判定钩子已被系统摘除（短暂的回调排队不算）。
 const HOOK_SETTLE_MS: u32 = 1000;
 /// 两次重装的最小间隔。
 const HOOK_RETRY_MS: u32 = 30_000;
 
-/// 钩子是否已被系统摘除（回调超过 LowLevelHooksTimeout 时 Windows 会静默卸掉 LL 钩子）。
-/// 系统有比钩子更新的输入、且这条输入已过去足够久（钩子活着早该收到），并距上次安装够久。
-/// tick 为 `GetTickCount` 的 u32 毫秒，按回绕差值比较。
-fn hooks_lost(last_hook: u32, last_input: u32, now: u32, last_install: u32) -> bool {
+/// 系统有比钩子更新的输入（钩子没见到）。tick 为 `GetTickCount` 的 u32 毫秒，按回绕差值比较。
+fn input_unseen(last_hook: u32, last_input: u32) -> bool {
     (last_input.wrapping_sub(last_hook) as i32) > 0
-        && now.wrapping_sub(last_input) >= HOOK_SETTLE_MS
-        && now.wrapping_sub(last_install) >= HOOK_RETRY_MS
+}
+
+/// 钩子是否已被系统摘除（回调超过 LowLevelHooksTimeout 时 Windows 会静默卸掉 LL 钩子）。
+/// 从第一次发现缺口算起已过去足够久（钩子活着早该收到），并距上次安装够久。
+/// 按缺口出现的时刻计时，而不是按最近一次输入：持续操作不会把重装一直往后推。
+fn hooks_lost(gap_since: u32, now: u32, last_install: u32) -> bool {
+    now.wrapping_sub(gap_since) >= HOOK_SETTLE_MS && now.wrapping_sub(last_install) >= HOOK_RETRY_MS
 }
 
 /// 前台是管理员窗口（而本程序不是）时返回其进程号：系统不调用我们的钩子，钩子没见到输入是正常的。
@@ -184,12 +191,23 @@ pub fn check_hooks() {
     }
     let now = unsafe { GetTickCount() };
     let last_hook = LAST_HOOK_TICK.load(Ordering::Relaxed);
-    if !hooks_lost(last_hook, info.dwTime, now, LAST_INSTALL_TICK.get()) || elevated.is_some() {
+    if elevated.is_some() || !input_unseen(last_hook, info.dwTime) {
+        GAP_SINCE.set(None);
+        return;
+    }
+    let gap_since = GAP_SINCE.get().unwrap_or(now);
+    GAP_SINCE.set(Some(gap_since));
+    if !hooks_lost(gap_since, now, LAST_INSTALL_TICK.get()) {
         return;
     }
     unhook();
+    GAP_SINCE.set(None);
     match install_hooks() {
-        Ok(()) => crate::log!("钩子疑似被系统摘除（{}ms 未收到输入），已重新安装", now.wrapping_sub(last_hook)),
+        Ok(()) => {
+            // 丢钩子时可能正在画手势（松开没收到）：清掉残留的捕获，下一次按下从头开始
+            crate::engine::with_engine(|e| e.cancel_capture());
+            crate::log!("钩子疑似被系统摘除（{}ms 未收到输入），已重新安装", now.wrapping_sub(last_hook))
+        }
         Err(e) => {
             LAST_INSTALL_TICK.set(now);
             crate::log!("钩子疑似被系统摘除，重新安装失败：{e}");
@@ -289,28 +307,28 @@ mod tests {
     use super::*;
 
     #[test]
-    fn hooks_lost_only_when_input_went_unseen_long_enough() {
+    fn input_unseen_compares_ticks_with_wraparound() {
         let t = 100_000;
-        // 钩子见到了最新输入
-        assert!(!hooks_lost(t, t, t + 5000, 0));
-        assert!(!hooks_lost(t + 10, t, t + 5000, 0));
-        // 系统有更新的输入、已过去 1s 以上、钩子没见到
-        assert!(hooks_lost(t, t + 10, t + 1010, 0));
-        // 输入刚到，钩子回调可能还在排队
-        assert!(!hooks_lost(t, t + 10, t + 500, 0));
-        // 距上次安装不足 30s：限频
-        assert!(!hooks_lost(t, t + 10, t + 1010, t + 1010 - 29_999));
-        assert!(hooks_lost(t, t + 10, t + 1010, t + 1010 - 30_000));
+        assert!(!input_unseen(t, t));
+        assert!(!input_unseen(t + 10, t));
+        assert!(input_unseen(t, t + 10));
+        // 输入在回绕之后：仍判定为更新；钩子 tick 在回绕之后：钩子见到了
+        assert!(input_unseen(u32::MAX - 100, 50));
+        assert!(!input_unseen(50, u32::MAX - 100));
     }
 
     #[test]
-    fn hooks_lost_handles_tick_wraparound() {
-        let hook = u32::MAX - 100;
-        // 输入在回绕之后：仍判定为更新
-        assert!(hooks_lost(hook, 50, 2000, u32::MAX - 40_000));
-        // 钩子 tick 在回绕之后、系统输入在之前：钩子见到了
-        assert!(!hooks_lost(50, hook, 5000, u32::MAX - 40_000));
-        // 限频跨回绕
-        assert!(!hooks_lost(hook, 50, 2000, u32::MAX - 1000));
+    fn hooks_lost_counts_from_when_the_gap_started() {
+        let t = 100_000;
+        // 缺口刚出现：钩子回调可能还在排队
+        assert!(!hooks_lost(t, t + 500, 0));
+        // 缺口持续 1s 以上（期间是否还有新输入不影响）
+        assert!(hooks_lost(t, t + 1000, 0));
+        // 距上次安装不足 30s：限频
+        assert!(!hooks_lost(t, t + 1000, t + 1000 - 29_999));
+        assert!(hooks_lost(t, t + 1000, t + 1000 - 30_000));
+        // 跨回绕
+        assert!(hooks_lost(u32::MAX - 500, 600, u32::MAX - 40_000));
+        assert!(!hooks_lost(u32::MAX - 500, 400, u32::MAX - 40_000));
     }
 }
