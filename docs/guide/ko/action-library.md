@@ -150,7 +150,7 @@ order: 5.5
 | 웹사이트 열기<br>`open.website` | 지정한 URL을 기본 브라우저로 열기. | URL (`url`): 기본값: `https://mousetroke.com/` | ✓ | ✓ |
 | 폴더 열기<br>`open.folder` | 지정한 경로를 시스템 기본 앱으로 열기. | 경로 (`path`): 필수 | ✓ | ✓ |
 | 파일 열기<br>`open.file` | 지정한 경로를 시스템 기본 앱으로 열기. | 경로 (`path`): 필수 | ✓ | ✓ |
-| 앱 열기 또는 전환<br>`open.app` | 앱을 열거나 기존 창으로 전환. | 앱 (`app`): 필수<br>관리자 권한으로 실행 (`elevate`): 기본값: `false` | ✓ | ✓ |
+| 앱 열기 또는 전환<br>`open.app` | 앱을 열거나 기존 창으로 전환. | 앱 (`app`): 필수<br>관리자 권한으로 실행 (`elevate`): 기본값: `false`; Windows 전용. 켜면 열린 창으로 전환하지 않고 항상 관리자 권한으로 새로 실행 | ✓ | ✓ |
 
 ### Mousetroke
 

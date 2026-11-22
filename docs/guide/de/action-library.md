@@ -150,7 +150,7 @@ Die folgenden Tabellen werden aus der Registrierung erzeugt und enthalten alle 8
 | Website öffnen<br>`open.website` | Öffnet die URL im Standardbrowser. | URL (`url`): Standard: `https://mousetroke.com/` | ✓ | ✓ |
 | Ordner öffnen<br>`open.folder` | Öffnet den Pfad mit der Standard-App des Systems. | Pfad (`path`): erforderlich | ✓ | ✓ |
 | Datei öffnen<br>`open.file` | Öffnet den Pfad mit der Standard-App des Systems. | Pfad (`path`): erforderlich | ✓ | ✓ |
-| App öffnen oder aktivieren<br>`open.app` | Öffnet die App oder aktiviert ihr vorhandenes Fenster. | App (`app`): erforderlich<br>Als Administrator ausführen (`elevate`): Standard: `false` | ✓ | ✓ |
+| App öffnen oder aktivieren<br>`open.app` | Öffnet die App oder aktiviert ihr vorhandenes Fenster. | App (`app`): erforderlich<br>Als Administrator ausführen (`elevate`): Standard: `false`; nur Windows; wenn aktiviert, wird immer eine neue Instanz als Administrator gestartet statt zu einem offenen Fenster zu wechseln | ✓ | ✓ |
 
 ### Mousetroke
 

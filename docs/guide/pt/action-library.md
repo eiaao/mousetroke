@@ -150,7 +150,7 @@ As tabelas abaixo são geradas a partir do registro e incluem todas as 87 entrad
 | Abrir site<br>`open.website` | Abre a URL indicada no navegador padrão. | URL (`url`): padrão: `https://mousetroke.com/` | ✓ | ✓ |
 | Abrir pasta<br>`open.folder` | Abre o caminho indicado com o app padrão do sistema. | Caminho (`path`): obrigatório | ✓ | ✓ |
 | Abrir arquivo<br>`open.file` | Abre o caminho indicado com o app padrão do sistema. | Caminho (`path`): obrigatório | ✓ | ✓ |
-| Abrir ou alternar para aplicativo<br>`open.app` | Abre o app ou ativa sua janela existente. | Aplicativo (`app`): obrigatório<br>Executar como administrador (`elevate`): padrão: `false` | ✓ | ✓ |
+| Abrir ou alternar para aplicativo<br>`open.app` | Abre o app ou ativa sua janela existente. | Aplicativo (`app`): obrigatório<br>Executar como administrador (`elevate`): padrão: `false`; somente Windows; se ativado, sempre inicia uma nova instância como administrador em vez de alternar para uma janela aberta | ✓ | ✓ |
 
 ### Mousetroke
 

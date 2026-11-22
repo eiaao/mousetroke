@@ -150,7 +150,7 @@ Le tabelle seguenti sono generate dal registro e includono tutte le 87 voci. ✓
 | Apri sito web<br>`open.website` | Apre l’URL specificato nel browser predefinito. | URL (`url`): predefinito: `https://mousetroke.com/` | ✓ | ✓ |
 | Apri cartella<br>`open.folder` | Apre il percorso specificato con l’app predefinita di sistema. | Percorso (`path`): obbligatorio | ✓ | ✓ |
 | Apri file<br>`open.file` | Apre il percorso specificato con l’app predefinita di sistema. | Percorso (`path`): obbligatorio | ✓ | ✓ |
-| Apri o attiva app<br>`open.app` | Apre l’app o attiva la finestra esistente. | App (`app`): obbligatorio<br>Esegui come amministratore (`elevate`): predefinito: `false` | ✓ | ✓ |
+| Apri o attiva app<br>`open.app` | Apre l’app o attiva la finestra esistente. | App (`app`): obbligatorio<br>Esegui come amministratore (`elevate`): predefinito: `false`; solo Windows; se attivo, avvia sempre una nuova istanza come amministratore invece di passare a una finestra aperta | ✓ | ✓ |
 
 ### Mousetroke
 
