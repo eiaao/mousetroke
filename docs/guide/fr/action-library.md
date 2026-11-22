@@ -150,7 +150,7 @@ Les tableaux ci-dessous sont générés à partir du registre et comprennent les
 | Ouvrir un site<br>`open.website` | Ouvre l’URL indiquée dans le navigateur par défaut. | URL (`url`): par défaut : `https://mousetroke.com/` | ✓ | ✓ |
 | Ouvrir un dossier<br>`open.folder` | Ouvre le chemin indiqué avec l’app système par défaut. | Chemin (`path`): obligatoire | ✓ | ✓ |
 | Ouvrir un fichier<br>`open.file` | Ouvre le chemin indiqué avec l’app système par défaut. | Chemin (`path`): obligatoire | ✓ | ✓ |
-| Ouvrir ou activer une application<br>`open.app` | Ouvre l’app ou active sa fenêtre existante. | Application (`app`): obligatoire<br>Exécuter en tant qu’administrateur (`elevate`): par défaut : `false` | ✓ | ✓ |
+| Ouvrir ou activer une application<br>`open.app` | Ouvre l’app ou active sa fenêtre existante. | Application (`app`): obligatoire<br>Exécuter en tant qu’administrateur (`elevate`): par défaut : `false` ; Windows uniquement ; activé, lance toujours une nouvelle instance en administrateur au lieu de basculer vers une fenêtre ouverte | ✓ | ✓ |
 
 ### Mousetroke
 

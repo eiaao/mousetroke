@@ -14,67 +14,80 @@ struct DocText {
     default: &'static str,
     search_default: &'static str,
     visible_when: &'static str,
+    /// "以管理员身份运行"参数的说明：仅 Windows；勾选后不再切换到已打开的窗口。
+    elevate_note: &'static str,
 }
 
 fn localized_text(lang: Lang) -> DocText {
-    let (headings, required, default, search_default, visible_when) = match lang {
+    let (headings, required, default, search_default, visible_when, elevate_note) = match lang {
         Lang::EnUs | Lang::QpsPloc => (
             "| Action / ID | What it does / where it works | Parameters | Windows | Mac |\n",
             "required", "default", "Baidu for Simplified Chinese UI; Google otherwise",
             "; only when {field} is {choice}",
+            "; Windows only; when on, always starts a new elevated instance instead of switching to an open window",
         ),
         Lang::ZhCn => (
             "| 动作 / ID | 用途与适用范围 | 参数 | Windows | Mac |\n",
             "必填", "默认", "简体中文界面默认百度，其他语言默认 Google",
             "；仅当{field}为{choice}时",
+            "；仅 Windows；勾选后总是以管理员身份启动新实例，不再切换到已打开的窗口",
         ),
         Lang::ZhTw => (
             "| 動作 / ID | 用途與適用範圍 | 參數 | Windows | Mac |\n",
             "必填", "預設", "簡體中文介面預設百度，其他語言預設 Google",
             "；僅當{field}為{choice}時",
+            "；僅 Windows；勾選後一律以系統管理員身分啟動新執行個體，不再切換到已開啟的視窗",
         ),
         Lang::DeDe => (
             "| Aktion / ID | Funktion und Einsatzbereich | Parameter | Windows | Mac |\n",
             "erforderlich", "Standard:", "Baidu bei vereinfachter chinesischer Oberfläche, sonst Google",
             "; nur bei {field}: {choice}",
+            "; nur Windows; wenn aktiviert, wird immer eine neue Instanz als Administrator gestartet statt zu einem offenen Fenster zu wechseln",
         ),
         Lang::EsEs => (
             "| Acción / ID | Función y ámbito de uso | Parámetros | Windows | Mac |\n",
             "obligatorio", "predeterminado:", "Baidu con la interfaz en chino simplificado; Google en los demás idiomas",
             "; solo si {field} es {choice}",
+            "; solo Windows; si se activa, siempre inicia una nueva instancia como administrador en lugar de cambiar a una ventana abierta",
         ),
         Lang::FrFr => (
             "| Action / ID | Fonction et contexte d’utilisation | Paramètres | Windows | Mac |\n",
             "obligatoire", "par défaut :", "Baidu avec l’interface en chinois simplifié ; Google sinon",
             " ; uniquement si {field} vaut {choice}",
+            " ; Windows uniquement ; activé, lance toujours une nouvelle instance en administrateur au lieu de basculer vers une fenêtre ouverte",
         ),
         Lang::ItIt => (
             "| Azione / ID | Funzione e ambito d’uso | Parametri | Windows | Mac |\n",
             "obbligatorio", "predefinito:", "Baidu con l’interfaccia in cinese semplificato; Google nelle altre lingue",
             "; solo se {field} è {choice}",
+            "; solo Windows; se attivo, avvia sempre una nuova istanza come amministratore invece di passare a una finestra aperta",
         ),
         Lang::JaJp => (
             "| 動作 / ID | 機能と利用範囲 | パラメーター | Windows | Mac |\n",
             "必須", "既定値:", "簡体字中国語の画面では Baidu、それ以外では Google が既定",
             "；{field}が{choice}の場合のみ",
+            "；Windows のみ。オンにすると、開いているウィンドウに切り替えず、常に管理者として新しく起動",
         ),
         Lang::KoKr => (
             "| 동작 / ID | 기능과 사용 범위 | 매개변수 | Windows | Mac |\n",
             "필수", "기본값:", "중국어 간체 UI는 Baidu, 나머지 언어는 Google이 기본값",
             "; {field} 항목이 {choice}일 때만 표시",
+            "; Windows 전용. 켜면 열린 창으로 전환하지 않고 항상 관리자 권한으로 새로 실행",
         ),
         Lang::PtBr => (
             "| Ação / ID | Função e onde usar | Parâmetros | Windows | Mac |\n",
             "obrigatório", "padrão:", "Baidu na interface em chinês simplificado; Google nos demais idiomas",
             "; somente se {field} for {choice}",
+            "; somente Windows; se ativado, sempre inicia uma nova instância como administrador em vez de alternar para uma janela aberta",
         ),
         Lang::RuRu => (
             "| Действие / ID | Назначение и область применения | Параметры | Windows | Mac |\n",
             "обязательно", "по умолчанию:", "Baidu для интерфейса на упрощённом китайском, иначе Google",
             "; только при выборе «{choice}» в поле «{field}»",
+            "; только Windows; если включено, всегда запускает новый экземпляр от имени администратора вместо переключения на открытое окно",
         ),
     };
-    DocText { headings, required, default, search_default, visible_when }
+    DocText { headings, required, default, search_default, visible_when, elevate_note }
 }
 
 fn cell(text: &str) -> String {
@@ -129,8 +142,9 @@ fn parameters(preset: &Preset, lang: Lang, catalog: &BTreeMap<String, String>) -
                 let choice = choices.iter().find(|c| c.value == condition.equals).unwrap();
                 text.visible_when.replace("{field}", &cell(&catalog[field.label_key])).replace("{choice}", &cell(&catalog[choice.label_key]))
             }).unwrap_or_default();
+            let note = if matches!(param.kind, ParamKind::Elevate) { text.elevate_note } else { "" };
             format!(
-                "{label} (`{}`): {}{detail}{condition}",
+                "{label} (`{}`): {}{detail}{condition}{note}",
                 param.name,
                 if choices.is_empty() {
                     String::new()

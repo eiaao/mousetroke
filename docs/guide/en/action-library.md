@@ -150,7 +150,7 @@ The tables below are generated from the registry and include all 87 entries. ✓
 | Open website<br>`open.website` | Opens the specified URL in the default browser. | URL (`url`): default `https://mousetroke.com/` | ✓ | ✓ |
 | Open folder<br>`open.folder` | Opens the specified path with the system default app. | Path (`path`): required | ✓ | ✓ |
 | Open file<br>`open.file` | Opens the specified path with the system default app. | Path (`path`): required | ✓ | ✓ |
-| Open or switch to app<br>`open.app` | Opens the app, or activates its existing window. | App (`app`): required<br>Run as administrator (`elevate`): default `false` | ✓ | ✓ |
+| Open or switch to app<br>`open.app` | Opens the app, or activates its existing window. | App (`app`): required<br>Run as administrator (`elevate`): default `false`; Windows only; when on, always starts a new elevated instance instead of switching to an open window | ✓ | ✓ |
 
 ### Mousetroke
 
