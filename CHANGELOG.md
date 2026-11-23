@@ -2,6 +2,22 @@
 
 Each version lists its highlights in English, then in Chinese. The release page, the in-app update notes and the website changelog are all generated from this file.
 
+## 0.3.6 — 2026-11-23
+
+### English
+
+- New **Fun** category in the action picker with nine full-screen animations: **Fireworks**, **Confetti**, **Throw a bomb**, **Money rain**, **Hearts**, **Black hole**, **Snow**, **Cracked screen** and **Meteor shower**. They play on the screen under the cursor on top of everything, don't affect any window and let clicks pass through. Select one and click **Try it** to preview it. On Mac the screen isn't captured, so the bomb and the black hole play without breaking apart or warping the desktop. (#121)
+- Scribbling now stops after 50 direction changes instead of 100, with a new message, and a bomb is thrown at the cursor. The bomb appears at most once every 30 seconds and never in full-screen apps; turn it off in **Preferences → Appearance → Throw a bomb at scribbles (easter egg)**. (#121)
+- Windows: **Search**, **Translate** and other actions that use the selected text no longer send old clipboard text when nothing is selected; they show “No selected text found” instead. (#111)
+- Windows: the warning about administrator windows now also covers actions chosen from pop-up menus, and gestures recover more reliably after Windows removes the input hooks. (#113)
+
+### 中文
+
+- 动作选择器新增“趣味”分类，有 9 个全屏动画：放烟花、撒礼花、扔炸弹、红包雨、比心、黑洞、下雪、裂屏、流星雨。动画在光标所在的屏幕上最上层播放，不影响任何窗口，鼠标点击照常穿透。选中后点“试一下”可以先看效果。Mac 上不截屏，扔炸弹和黑洞不会把桌面炸碎或扭曲。（#121）
+- 乱画的上限从方向变化 100 次改为 50 次，取消时换了新提示，并在光标处扔一颗炸弹。炸弹 30 秒内最多出现一次，全屏程序里不会出现；可在“偏好设置 → 外观 → 乱画时扔炸弹（彩蛋）”关闭。（#121）
+- Windows：搜索、翻译等用到选中文字的动作，在没有选中文字时不再把剪贴板里的旧内容发出去，改为提示“没有读到选中的文字”。（#111）
+- Windows：管理员窗口的提示也覆盖弹出菜单里选中的动作；系统摘除输入钩子后，手势恢复得更可靠。（#113）
+
 ## 0.3.5 — 2026-11-19
 
 ### English
