@@ -123,18 +123,23 @@ impl Effect for Crack {
         c.soft(ax, ay, 34.0 * s, Rgb(235.0, 240.0, 248.0), 0.55 * impact);
         c.soft(ax, ay, 14.0 * s, Rgb(255.0, 255.0, 255.0), 0.7 * impact);
         for g in &self.segs {
-            if g.d0 > reach {
+            // 只画离撞击点 reach 以内的部分；两端谁近就从谁那头截（同心线的两端远近不定）
+            if reach < 0.5 || g.d0.min(g.d1) > reach {
                 continue;
             }
-            let k = if g.d1 > reach { ((reach - g.d0) / (g.d1 - g.d0).max(0.5)).clamp(0.0, 1.0) } else { 1.0 };
-            let b = (g.a.0 + (g.b.0 - g.a.0) * k, g.a.1 + (g.b.1 - g.a.1) * k);
-            let a = if healing { 0.9 } else { 1.0 };
-            if g.width > 1.2 {
-                c.line(g.a, b, g.width * 0.55, Rgb(14.0, 15.0, 18.0), 0.75 * a, false);
-            } else {
-                c.thin(g.a, b, Rgb(14.0, 15.0, 18.0), 0.8 * a, false);
+            let (near, far, dn, df) = if g.d0 <= g.d1 { (g.a, g.b, g.d0, g.d1) } else { (g.b, g.a, g.d1, g.d0) };
+            let k = if df > reach { ((reach - dn) / (df - dn).max(0.5)).clamp(0.0, 1.0) } else { 1.0 };
+            let (a, b) = (near, (near.0 + (far.0 - near.0) * k, near.1 + (far.1 - near.1) * k));
+            if (b.0 - a.0).abs() + (b.1 - a.1).abs() < 0.5 {
+                continue;
             }
-            c.thin((g.a.0 + 1.0, g.a.1 + 1.0), (b.0 + 1.0, b.1 + 1.0), Rgb(235.0, 242.0, 255.0), 0.65 * a, true);
+            let alpha = if healing { 0.9 } else { 1.0 };
+            if g.width > 1.2 {
+                c.line(a, b, g.width * 0.55, Rgb(14.0, 15.0, 18.0), 0.75 * alpha, false);
+            } else {
+                c.thin(a, b, Rgb(14.0, 15.0, 18.0), 0.8 * alpha, false);
+            }
+            c.thin((a.0 + 1.0, a.1 + 1.0), (b.0 + 1.0, b.1 + 1.0), Rgb(235.0, 242.0, 255.0), 0.65 * alpha, true);
         }
         // 愈合的前沿：一圈细碎闪光
         if healing && reach > 2.0 {

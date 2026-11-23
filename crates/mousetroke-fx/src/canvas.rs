@@ -163,6 +163,7 @@ impl Canvas<'_> {
 
     /// 全屏加一层颜色（整数运算）。
     pub fn add_all(&mut self, c: Rgb, a: f32) {
+        let (c, a) = (c.clamped(), a.clamp(0.0, 1.0));
         let (r, g, b) = ((c.0 * a) as u32, (c.1 * a) as u32, (c.2 * a) as u32);
         let al = (a * 255.0) as u32;
         for p in self.px.iter_mut() {

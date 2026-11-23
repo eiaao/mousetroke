@@ -40,11 +40,11 @@ pub fn play(effect: FunEffect, at: Option<(i32, i32)>) {
         struct Reset;
         impl Drop for Reset {
             fn drop(&mut self) {
-                // 无论成功与否都关窗、复位
-                let _ = crate::preset_actions::on_main(|| {
-                    close();
-                    Ok(())
-                });
+                // 无论成功与否都关窗、复位。关窗排进主队列、不等待也不会被取消：
+                // 主线程卡住时窗口晚点关；下一次播放的 open 也会先关掉旧窗口。
+                let block = RcBlock::new(|| objc2::rc::autoreleasepool(|_| close()));
+                // 安全：块不捕获任何数据，只在主线程执行一次。
+                unsafe { NSOperationQueue::mainQueue().addOperationWithBlock(&block) };
                 PLAYING.store(false, Ordering::Release);
             }
         }

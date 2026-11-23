@@ -509,7 +509,8 @@ impl Effect for Bomb {
         let shake = (amp * (t * 97.0).sin(), amp * (t * 83.0 + 1.3).cos());
         // 背景（随震屏平移）
         let (w, h) = (self.w, self.h);
-        let (sx, sy) = (shake.0.round() as i32, shake.1.round() as i32);
+        // 窄画布上抖动可能超过行宽，夹住以免越界
+        let (sx, sy) = ((shake.0.round() as i32).clamp(-w, w), shake.1.round() as i32);
         for y in 0..h {
             let row = &mut c.px[(y * w) as usize..((y + 1) * w) as usize];
             let src_y = (y - sy).clamp(0, h - 1);

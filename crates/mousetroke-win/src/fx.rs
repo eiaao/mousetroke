@@ -6,7 +6,7 @@ use std::time::{Duration, Instant};
 use windows::core::w;
 use windows::Win32::Foundation::{COLORREF, HWND, LPARAM, LRESULT, POINT, SIZE, WPARAM};
 use windows::Win32::Graphics::Gdi::{
-    BitBlt, CreateCompatibleDC, CreateDIBSection, DeleteDC, DeleteObject, GetDC, GetMonitorInfoW, MonitorFromPoint, ReleaseDC,
+    BitBlt, CreateCompatibleDC, CreateDIBSection, DeleteDC, DeleteObject, GdiFlush, GetDC, GetMonitorInfoW, MonitorFromPoint, ReleaseDC,
     SelectObject, AC_SRC_ALPHA, AC_SRC_OVER, BITMAPINFO, BITMAPINFOHEADER, BI_RGB, BLENDFUNCTION, CAPTUREBLT, DIB_RGB_COLORS,
     HBITMAP, HDC, HGDIOBJ, MONITORINFO, MONITOR_DEFAULTTONEAREST, ROP_CODE, SRCCOPY,
 };
@@ -168,6 +168,8 @@ impl Surface {
             let screen = GetDC(None);
             let _ = BitBlt(self.dc, 0, 0, self.w, self.h, Some(screen), self.x, self.y, ROP_CODE(SRCCOPY.0 | CAPTUREBLT.0));
             ReleaseDC(None, screen);
+            // 直接读 DIB 像素前先让 GDI 把排队的绘制做完
+            let _ = GdiFlush();
         }
         let tex = self.pixels().iter().map(|p| p | 0xFF00_0000).collect();
         self.pixels().fill(0);
