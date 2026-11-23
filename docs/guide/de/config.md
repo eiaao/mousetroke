@@ -19,6 +19,8 @@ Protokolle wechseln nach dem Überschreiten von 1 MB zu `mousetroke.log.old`. **
 
 `settings.pause_on_fullscreen` ist ein boolescher Wert mit Standard `true`. `fullscreen_policy` im App-Bereich akzeptiert `"inherit"` (Standard, globale Einstellung), `"allow"` (im Vollbild aktiv lassen) oder `"pause"` (im Vollbild pausieren). Beide Einstellungen gelten für Mausgesten und Rand-Auslöser. Fehlende Felder erhalten das bisherige Pausenverhalten.
 
+`settings.scribble_bomb` ist ein boolescher Wert mit Standard `true`: Überschreitet eine Geste 50 Segmente und wird abgebrochen, wird am Cursor eine Bombe geworfen (höchstens einmal alle 30 Sekunden und nie, solange eine Vollbild-App im Vordergrund ist).
+
 ## Exportieren, Importieren und Wiederherstellen
 
 Klicken Sie unter **Import und Export → Mousetroke-Konfigurationsdatei** auf **Exportieren…** und speichern Sie ein JSON-Backup. **Aus Datei importieren…** liest eine Mousetroke-Konfigurations-JSON und ersetzt die aktuelle Konfiguration, einschließlich der Einstellungen. Sie führt diese Datei nicht mit Ihren aktuellen Bindungen zusammen. Eine Zusammenführungsoption für die native Konfiguration gibt es in diesem Ablauf nicht. Sie können den Import mit Strg+Z unter Windows oder ⌘+Z auf dem Mac rückgängig machen, solange die Einstellungen geöffnet sind.

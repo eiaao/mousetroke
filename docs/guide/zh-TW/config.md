@@ -19,6 +19,8 @@ order: 11
 
 `settings.pause_on_fullscreen` 為布林值，預設為 `true`。程式作用域的 `fullscreen_policy` 可取 `"inherit"`（預設，跟隨全域）、`"allow"`（全螢幕保持啟用）或 `"pause"`（全螢幕暫停）。這兩個設定同時作用於滑鼠手勢和觸發角，舊設定缺欄位時保持原來的全螢幕暫停行為。
 
+`settings.scribble_bomb` 為布林值，預設為 `true`：手勢超過 50 段被取消時，在游標處丟一顆炸彈（30 秒內最多一次，前景為全螢幕程式時不丟）。
+
 ## 匯出、匯入與還原
 
 「匯入與匯出 → Mousetroke 設定檔案」中點「匯出…」，儲存 JSON 備份。「從檔案匯入…」讀取 Mousetroke 設定 JSON，替換包含偏好設定的整份目前設定，不會將檔案中的綁定合併進來。這個流程沒有原生設定合併選項。設定視窗仍開啟時，可用 Windows 的 Ctrl+Z 或 Mac 的 ⌘+Z 復原匯入。

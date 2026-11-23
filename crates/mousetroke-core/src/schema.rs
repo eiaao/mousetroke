@@ -533,6 +533,9 @@ pub struct Settings {
     /// 自动检查首次发现某个新版本时发系统通知（Windows），每个版本一次。
     #[serde(default = "yes")]
     pub update_notify: bool,
+    /// 彩蛋：手势乱画到超长被取消时，在光标处扔一颗炸弹（默认开启）。
+    #[serde(default = "yes")]
+    pub scribble_bomb: bool,
     pub trail: Trail,
     pub label: Label,
 }
@@ -600,6 +603,7 @@ impl Default for Settings {
             show_tray: true,
             update_check: true,
             update_notify: true,
+            scribble_bomb: true,
             trail: Trail {
                 show: true,
                 width: 2.0,

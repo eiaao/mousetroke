@@ -106,6 +106,11 @@ function PresetCard({ action, preset, onChange, depth = 0 }: { action: PresetAct
   const [error, setError] = useState<string | null>(null);
   const impl = isMac() ? preset.macos : preset.windows;
   const canExpand = presetCanExpand(preset);
+  const isFun = preset.category === "fun";
+  const preview = () => {
+    setError(null);
+    api.previewEffect(action.id).catch((e) => setError(errText(e)));
+  };
   const values = presetParamValues(preset, action);
   // 管理员开关在卡片里直接切换，不进摘要文字；只有 Windows 能提权
   const elevateParam = isMac() ? undefined : visibleParams(preset, values).find((param) => param.kind.type === "elevate");
@@ -177,7 +182,12 @@ function PresetCard({ action, preset, onChange, depth = 0 }: { action: PresetAct
                 {t("ui.actpick.to_advanced")}
               </button>
             )}
-            {impl.status === "implemented" && !canExpand && (
+            {isFun && impl.status === "implemented" && (
+              <button type="button" className="btn small" onClick={preview}>
+                {t("ui.actpick.try_effect")}
+              </button>
+            )}
+            {impl.status === "implemented" && !canExpand && !isFun && (
               <span className="field-help">{t(preset.advanced_expansion.reason_key as MsgKey)}</span>
             )}
           </div>

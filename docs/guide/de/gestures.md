@@ -36,7 +36,7 @@ Unter **Einstellungen → Erkennung**:
 | Empfindlichkeit der Zeichenfolge | Standard 30 px; Regler 10–80 px. Kleinere Werte erkennen kürzere Striche, erleichtern aber versehentliche Gesten. |
 | Gesten wirken auf | Wählen Sie **das Fenster unter dem Cursor** (Standard) oder **das aktive Fenster**. |
 
-Unter **Erscheinungsbild** steuern **Oberflächendesign** (**System**, **Hell** oder **Dunkel**; gilt sofort für das Einstellungsfenster), **Spur anzeigen**, **Spurbreite**, **Spurfarbe**, **Bei Treffer**, **Am Ende ausblenden**, **Gestenname beim Zeichnen anzeigen**, **Größe des Hinweistextes** (16–96 px, Standard 24 px; auf hochauflösenden Bildschirmen vergrößerbar) und **Farbe des Gestennamens** das Feedback. Ein Schwellwertsregler für die Formerkennung steht hier nicht zur Verfügung.
+Unter **Erscheinungsbild** steuern **Oberflächendesign** (**System**, **Hell** oder **Dunkel**; gilt sofort für das Einstellungsfenster), **Spur anzeigen**, **Spurbreite**, **Spurfarbe**, **Bei Treffer**, **Am Ende ausblenden**, **Gestenname beim Zeichnen anzeigen**, **Größe des Hinweistextes** (16–96 px, Standard 24 px; auf hochauflösenden Bildschirmen vergrößerbar), **Farbe des Gestennamens** und **Bombe bei Gekritzel werfen (Easter Egg)** das Feedback. Die letzte Option ist standardmäßig aktiv: Wird eine Geste zu lang und abgebrochen, landet eine Bombe am Cursor, höchstens einmal alle 30 Sekunden und nie in Vollbild-Apps. Ein Schwellwertsregler für die Formerkennung steht hier nicht zur Verfügung.
 
 ## Suchen, duplizieren und deaktivieren
 

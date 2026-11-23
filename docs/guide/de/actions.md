@@ -6,7 +6,7 @@ order: 5
 
 # Aktionen
 
-Wählen oder erstellen Sie eine Geste und klicken Sie unter **Aktion** auf **Aktion auswählen**. Suchen Sie nach der gewünschten Aufgabe oder sehen Sie eine Kategorie durch, legen Sie die nötigen Parameter fest und klicken Sie auf **Diese Aktion verwenden**. Die [Aktionsbibliothek](action-library.md) enthält alle Voreinstellungen und ihre Verfügbarkeit unter Windows und Mac, einschließlich Text, Datum und Uhrzeit, Fensterlayouts und Energieaktionen.
+Wählen oder erstellen Sie eine Geste und klicken Sie unter **Aktion** auf **Aktion auswählen**. Suchen Sie nach der gewünschten Aufgabe oder sehen Sie eine Kategorie durch, legen Sie die nötigen Parameter fest und klicken Sie auf **Diese Aktion verwenden**. Die [Aktionsbibliothek](action-library.md) enthält alle Voreinstellungen und ihre Verfügbarkeit unter Windows und Mac, einschließlich Text, Datum und Uhrzeit, Fensterlayouts und Energieaktionen. Die Kategorie **Spaß** enthält Vollbild-Animationen wie Feuerwerk, eine Bombe oder Geldregen; sie werden nur über dem Bildschirm abgespielt und beeinflussen kein Fenster. Wählen Sie eine aus und klicken Sie auf **Ausprobieren**, um sie in der Vorschau zu sehen.
 
 Vorhandene Aktionen zeigen **Ersetzen**. Voreinstellungen, die sich als bearbeitbare erweiterte Aktion darstellen lassen, bieten außerdem **In erweiterte Aktion umwandeln**; native Voreinstellungen erklären, warum die Umwandlung nicht verfügbar ist. **Tastenkürzel senden…** oben in der Auswahl nimmt eine Tastenkombination direkt auf; die Kategorie **Erweitert** öffnet Befehle, Lua und Menüs. Die folgenden Editoren bleiben verfügbar, auch über **Aktionstyp ändern**.
 

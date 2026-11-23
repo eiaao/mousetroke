@@ -126,6 +126,9 @@ pub fn cursor_pos() -> Option<CGPoint> {
 
 pub struct SystemHost;
 impl Host for SystemHost {
+    fn play_effect(&self, effect: mousetroke_core::presets::native::FunEffect, x: i32, y: i32) {
+        crate::fx::play(effect, Some((x, y)));
+    }
     fn screens(&self) -> Vec<mousetroke_core::edge::ScreenRect> {
         screen_rects()
     }

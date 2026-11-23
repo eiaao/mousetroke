@@ -60,6 +60,11 @@ pub(crate) fn execute(
         NativeAction::Settings => crate::settings::open_checked(),
         // 引擎执行前已展开为菜单。
         NativeAction::Cheatsheet => Ok(()),
+        // 在鼠标所在的屏幕上播放（不用手势起点：动作可能来自弹出菜单）。
+        NativeAction::Effect(effect) => {
+            crate::fx::play(effect, None);
+            Ok(())
+        }
     }
 }
 

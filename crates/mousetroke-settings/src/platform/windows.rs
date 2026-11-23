@@ -27,6 +27,10 @@ pub fn engine_status() -> EngineStatus {
 }
 
 pub fn bring_to_front() {}
+
+pub fn play_effect(effect: mousetroke_core::presets::native::FunEffect) {
+    mousetroke_win::fx::play(effect, None);
+}
 /// 当前引擎控制窗口；引擎重启后会变，用于重发录制画布位置。
 pub fn engine_id() -> Option<isize> {
     mousetroke_win::tray::engine_window().map(|(hwnd, _)| hwnd.0 as isize)

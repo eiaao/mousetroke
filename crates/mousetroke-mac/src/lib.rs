@@ -30,6 +30,8 @@ mod tap_recovery;
 #[cfg(target_os = "macos")]
 mod events;
 #[cfg(target_os = "macos")]
+pub mod fx;
+#[cfg(target_os = "macos")]
 mod host;
 #[cfg(target_os = "macos")]
 mod input;

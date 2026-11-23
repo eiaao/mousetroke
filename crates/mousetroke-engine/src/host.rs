@@ -85,4 +85,6 @@ pub trait Host {
     fn refresh_texts(&self);
     /// 空闲时归还工作集；仅提示定时器调用，默认无需处理。
     fn trim_memory(&self) {}
+    /// 在 (x, y) 所在的显示器上播放趣味特效（涂鸦彩蛋用）；须立即返回，正在播放时可忽略。
+    fn play_effect(&self, _effect: mousetroke_core::presets::native::FunEffect, _x: i32, _y: i32) {}
 }

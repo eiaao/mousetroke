@@ -36,7 +36,7 @@ Under **Preferences → Recognition**:
 | Stroke sensitivity | Default 30 px; slider 10–80 px. Smaller values recognize shorter strokes but make accidental gestures easier. |
 | Gestures act on | Choose **the window under the cursor** (default) or **the active window**. |
 
-Under **Appearance**, **Interface theme** (**System**, **Light** or **Dark**; applies to the settings window immediately), **Show the trail**, **Trail width**, **Trail color**, **When recognized**, **Fade out when done**, **Show the gesture name while drawing**, **Prompt text size** (16–96 px, default 24 px; can be increased on high-resolution screens) and **Gesture name color** control feedback. There is no shape-recognition threshold slider here.
+Under **Appearance**, **Interface theme** (**System**, **Light** or **Dark**; applies to the settings window immediately), **Show the trail**, **Trail width**, **Trail color**, **When recognized**, **Fade out when done**, **Show the gesture name while drawing**, **Prompt text size** (16–96 px, default 24 px; can be increased on high-resolution screens), **Gesture name color** and **Throw a bomb at scribbles (easter egg)** control feedback. The last one is on by default: when a gesture gets too long and is canceled, a bomb lands at the cursor, at most once every 30 seconds and never in full-screen apps. There is no shape-recognition threshold slider here.
 
 ## Find, copy and turn off
 

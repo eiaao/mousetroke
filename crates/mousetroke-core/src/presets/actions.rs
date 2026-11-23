@@ -1,5 +1,5 @@
 //! 动作库：稳定 ID、选择器元数据与平台展开共用此表。
-use super::native::{LayoutOp, NativeAction, NativePreset, PreparedAction, TextMethod};
+use super::native::{FunEffect, LayoutOp, NativeAction, NativePreset, PreparedAction, TextMethod};
 use crate::caps::Platform;
 use crate::i18n::Lang;
 use crate::schema::{Action, IfRunning, SendMode, WindowOpKind};
@@ -10,7 +10,7 @@ pub type Params = Map<String, Value>;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize)]
 #[serde(rename_all = "snake_case")]
-pub enum Category { Browser, Edit, Text, Window, Desktop, Media, Open, Mousetroke }
+pub enum Category { Browser, Edit, Text, Window, Desktop, Media, Open, Fun, Mousetroke }
 
 #[derive(Debug, Clone, Copy, Serialize)]
 pub struct Choice {
@@ -121,6 +121,9 @@ const fn platform_notes(id: &str) -> PlatformNotes {
     // 窗口原生能力的权限说明只出现在 Mac；Windows 无额外备注。
     let macos = if matches!(id.as_bytes(), b"window.snap_left" | b"window.snap_right" | b"window.center" | b"window.next_monitor" | b"window.minimize" | b"window.toggle_maximize" | b"window.close") {
         Some("preset.note.accessibility")
+    } else if matches!(id.as_bytes(), b"fun.bomb" | b"fun.black_hole") {
+        // Mac 不截屏（免屏幕录制权限），这两个特效退化为不动桌面的版本。
+        Some("preset.note.fun_no_capture")
     } else { None };
     PlatformNotes { windows: None, macos }
 }
@@ -186,6 +189,7 @@ const fn launch(value: &'static str) -> Implementation { Implementation::Impleme
 const fn shell(value: &'static str) -> Implementation { Implementation::Implemented(Expansion::Shell(value)) }
 const fn implemented(value: Expansion) -> Implementation { Implementation::Implemented(value) }
 const fn native(value: NativePreset) -> Implementation { implemented(Expansion::Native(value)) }
+const fn fun(effect: FunEffect) -> Implementation { native(NativePreset::Effect(effect)) }
 const WINDOWS_ONLY: Implementation = Implementation::Unsupported { reason_key: "preset.status.windows_only" };
 const MAC_ONLY: Implementation = Implementation::Unsupported { reason_key: "preset.status.mac_only" };
 
@@ -291,6 +295,15 @@ pub static REGISTRY: &[Preset] = &[
     preset!("open.folder", Open, implemented(Expansion::OpenPath), implemented(Expansion::OpenPath), FOLDER_PARAMS),
     preset!("open.file", Open, implemented(Expansion::OpenPath), implemented(Expansion::OpenPath), FILE_PARAMS),
     preset!("open.app", Open, implemented(Expansion::App), implemented(Expansion::App), APP_PARAMS),
+    preset!("fun.fireworks", Fun, fun(FunEffect::Fireworks), fun(FunEffect::Fireworks)),
+    preset!("fun.confetti", Fun, fun(FunEffect::Confetti), fun(FunEffect::Confetti)),
+    preset!("fun.bomb", Fun, fun(FunEffect::Bomb), fun(FunEffect::Bomb)),
+    preset!("fun.money_rain", Fun, fun(FunEffect::MoneyRain), fun(FunEffect::MoneyRain)),
+    preset!("fun.hearts", Fun, fun(FunEffect::Hearts), fun(FunEffect::Hearts)),
+    preset!("fun.black_hole", Fun, fun(FunEffect::BlackHole), fun(FunEffect::BlackHole)),
+    preset!("fun.snow", Fun, fun(FunEffect::Snow), fun(FunEffect::Snow)),
+    preset!("fun.crack", Fun, fun(FunEffect::Crack), fun(FunEffect::Crack)),
+    preset!("fun.meteors", Fun, fun(FunEffect::Meteors), fun(FunEffect::Meteors)),
     preset!("mousetroke.toggle_pause", Mousetroke, native(NativePreset::TogglePause), native(NativePreset::TogglePause)),
     preset!("mousetroke.settings", Mousetroke, native(NativePreset::Settings), native(NativePreset::Settings)),
     preset!("mousetroke.cheatsheet", Mousetroke, native(NativePreset::Cheatsheet), native(NativePreset::Cheatsheet)),
@@ -473,5 +486,6 @@ fn resolve_native(native: NativePreset, values: &Params) -> Result<NativeAction,
         NativePreset::TogglePause => NativeAction::TogglePause,
         NativePreset::Settings => NativeAction::Settings,
         NativePreset::Cheatsheet => NativeAction::Cheatsheet,
+        NativePreset::Effect(effect) => NativeAction::Effect(effect),
     })
 }

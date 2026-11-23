@@ -6,7 +6,7 @@ order: 5
 
 # Ações
 
-Selecione ou crie um gesto e clique em **Escolher ação** em **Ação**. Pesquise o que quer fazer ou explore uma categoria, preencha os parâmetros necessários e clique em **Usar esta ação**. A [biblioteca de ações](action-library.md) lista todas as ações predefinidas e a disponibilidade no Windows e no Mac, incluindo texto literal, data e hora, disposição de janelas e energia.
+Selecione ou crie um gesto e clique em **Escolher ação** em **Ação**. Pesquise o que quer fazer ou explore uma categoria, preencha os parâmetros necessários e clique em **Usar esta ação**. A [biblioteca de ações](action-library.md) lista todas as ações predefinidas e a disponibilidade no Windows e no Mac, incluindo texto literal, data e hora, disposição de janelas e energia. A categoria **Diversão** reúne animações em tela cheia, como fogos de artifício, uma bomba ou chuva de dinheiro; elas só são exibidas sobre a tela e não afetam nenhuma janela. Selecione uma e clique em **Testar** para visualizar.
 
 As ações existentes mostram **Trocar**. As ações predefinidas que correspondem a uma ação avançada editável também oferecem **Converter em ação avançada**; as nativas explicam por que a conversão não está disponível. **Enviar um atalho…**, no topo do seletor, grava uma combinação de teclas na hora; a categoria **Avançadas** abre comandos, Lua e menus. Os editores abaixo continuam disponíveis, inclusive por **Alterar tipo de ação**.
 

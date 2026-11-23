@@ -19,6 +19,8 @@ order: 11
 
 `settings.pause_on_fullscreen` 为布尔值，缺省为 `true`。程序作用域的 `fullscreen_policy` 可取 `"inherit"`（默认，跟随全局）、`"allow"`（全屏保持启用）或 `"pause"`（全屏暂停）。这两个设置同时作用于鼠标手势和触发角，旧配置缺字段时保持原来的全屏暂停行为。
 
+`settings.scribble_bomb` 为布尔值，缺省为 `true`：手势超过 50 段被取消时在光标处扔一颗炸弹（30 秒内最多一次，前台全屏时不扔）。
+
 ## 导出、导入与恢复
 
 “导入与导出 → Mousetroke 配置文件”中点“导出…”，保存 JSON 备份。“从文件导入…”读取 Mousetroke 配置 JSON，替换包含偏好设置的整份当前配置，不会将文件中的绑定合并进来。这个流程没有原生配置合并选项。设置窗口仍打开时，可用 Windows 的 Ctrl+Z 或 Mac 的 ⌘+Z 撤销导入。

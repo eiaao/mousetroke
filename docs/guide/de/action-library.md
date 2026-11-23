@@ -152,6 +152,20 @@ Die folgenden Tabellen werden aus der Registrierung erzeugt und enthalten alle 8
 | Datei öffnen<br>`open.file` | Öffnet den Pfad mit der Standard-App des Systems. | Pfad (`path`): erforderlich | ✓ | ✓ |
 | App öffnen oder aktivieren<br>`open.app` | Öffnet die App oder aktiviert ihr vorhandenes Fenster. | App (`app`): erforderlich<br>Als Administrator ausführen (`elevate`): Standard: `false`; nur Windows; wenn aktiviert, wird immer eine neue Instanz als Administrator gestartet statt zu einem offenen Fenster zu wechseln | ✓ | ✓ |
 
+### Spaß
+
+| Aktion / ID | Funktion und Einsatzbereich | Parameter | Windows | Mac |
+|---|---|---|---|---|
+| Feuerwerk<br>`fun.fireworks` | Zündet auf dem Bildschirm unter dem Mauszeiger ein Feuerwerk, etwa 4 Sekunden. | — | ✓ | ✓ |
+| Konfetti<br>`fun.confetti` | Konfettiregen aus beiden unteren Ecken, etwa 4 Sekunden. | — | ✓ | ✓ |
+| Bombe werfen<br>`fun.bomb` | Wirft eine Bombe, die den Bildschirm zerreißt, etwa 5 Sekunden. | — | ✓ | ✓<br>Auf dem Mac wird der Bildschirm nicht aufgenommen, daher bricht oder verzerrt sich der Desktop selbst nicht. |
+| Geldregen<br>`fun.money_rain` | Rote Umschläge und Goldmünzen regnen herab, etwa 4 Sekunden. | — | ✓ | ✓ |
+| Herzen<br>`fun.hearts` | Eine Reihe Herzen steigt vom Mauszeiger auf, etwa 4 Sekunden. | — | ✓ | ✓ |
+| Schwarzes Loch<br>`fun.black_hole` | Ein schwarzes Loch am Mauszeiger verschluckt den Bildschirm und spuckt ihn wieder aus, etwa 3 Sekunden. | — | ✓ | ✓<br>Auf dem Mac wird der Bildschirm nicht aufgenommen, daher bricht oder verzerrt sich der Desktop selbst nicht. |
+| Schnee<br>`fun.snow` | Schnee rieselt über den Bildschirm, etwa 10 Sekunden. | — | ✓ | ✓ |
+| Gesprungener Bildschirm<br>`fun.crack` | Der Bildschirm bekommt am Mauszeiger Risse und heilt dann wieder, etwa 3 Sekunden. | — | ✓ | ✓ |
+| Sternschnuppen<br>`fun.meteors` | Der Bildschirm wird dunkel und einige Sternschnuppen ziehen vorbei, etwa 5 Sekunden. | — | ✓ | ✓ |
+
 ### Mousetroke
 
 | Aktion / ID | Funktion und Einsatzbereich | Parameter | Windows | Mac |

@@ -36,7 +36,7 @@ En **Preferencias → Reconocimiento**:
 | Sensibilidad del trazado | Predeterminado: 30 px; control deslizante de 10–80 px. Los valores más pequeños reconocen trazos más cortos, pero facilitan los gestos accidentales. |
 | Los gestos actúan sobre | Elige **la ventana bajo el cursor** (predeterminado) o **la ventana activa**. |
 
-En **Aspecto**, **Tema de la interfaz** (**Sistema**, **Claro** u **Oscuro**; se aplica de inmediato a la ventana de ajustes), **Mostrar el rastro**, **Grosor del rastro**, **Color del rastro**, **Al reconocerse**, **Desvanecer al terminar**, **Mostrar el nombre del gesto al dibujar**, **Tamaño del texto de aviso** (16–96 px, 24 px por defecto; se puede aumentar en pantallas de alta resolución) y **Color del nombre del gesto** controlan la respuesta visual. Aquí no hay ningún control deslizante de umbral de reconocimiento de formas.
+En **Aspecto**, **Tema de la interfaz** (**Sistema**, **Claro** u **Oscuro**; se aplica de inmediato a la ventana de ajustes), **Mostrar el rastro**, **Grosor del rastro**, **Color del rastro**, **Al reconocerse**, **Desvanecer al terminar**, **Mostrar el nombre del gesto al dibujar**, **Tamaño del texto de aviso** (16–96 px, 24 px por defecto; se puede aumentar en pantallas de alta resolución), **Color del nombre del gesto** y **Lanzar una bomba al garabatear (sorpresa)** controlan la respuesta visual. La última está activada por defecto: cuando un gesto se alarga demasiado y se cancela, cae una bomba en el cursor, como máximo una vez cada 30 segundos y nunca en aplicaciones a pantalla completa. Aquí no hay ningún control deslizante de umbral de reconocimiento de formas.
 
 ## Buscar, copiar y desactivar
 

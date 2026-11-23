@@ -19,6 +19,7 @@ pub use mousetroke_engine as __engine;
 pub mod autostart;
 pub mod brightness;
 pub mod engine;
+pub mod fx;
 pub mod hooks;
 pub mod input;
 pub mod log;

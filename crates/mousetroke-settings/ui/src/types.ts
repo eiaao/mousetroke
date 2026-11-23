@@ -78,7 +78,7 @@ export type PresetImplementation =
   | { status: "unsupported" | "pending"; value: { reason_key: string } };
 export interface ActionPreset {
   id: string;
-  category: "browser" | "edit" | "text" | "window" | "desktop" | "media" | "open" | "mousetroke";
+  category: "browser" | "edit" | "text" | "window" | "desktop" | "media" | "open" | "fun" | "mousetroke";
   name_key: string;
   description_key: string;
   aliases_key: string;
@@ -159,6 +159,8 @@ export interface Settings {
   update_check?: boolean;
   /** 发现新版本时是否打开窗口提示。缺省 = true */
   update_notify?: boolean;
+  /** 彩蛋：乱画到手势超长时扔一颗炸弹。缺省 = true */
+  scribble_bomb?: boolean;
   /** auto | zh-CN | en-US */
   language?: string;
   /** 缺省 = system */

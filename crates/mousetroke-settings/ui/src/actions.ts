@@ -218,7 +218,7 @@ export function matchPreset(p: ActionPreset, query: string): boolean {
 // ---------------------------------------------------------------- 分类与参数
 
 /** 注册表分类（选择器分类 chips 的中间段）。 */
-export const PRESET_CATEGORIES = ["browser", "edit", "text", "window", "desktop", "media", "open", "mousetroke"] as const;
+export const PRESET_CATEGORIES = ["browser", "edit", "text", "window", "desktop", "media", "open", "fun", "mousetroke"] as const;
 
 /** 选择器分类："常用" + 注册表分类 + "高级"。 */
 export type PickerCategory = "common" | (typeof PRESET_CATEGORIES)[number] | "advanced";

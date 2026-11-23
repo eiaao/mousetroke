@@ -152,6 +152,20 @@ The tables below are generated from the registry and include all 87 entries. ✓
 | Open file<br>`open.file` | Opens the specified path with the system default app. | Path (`path`): required | ✓ | ✓ |
 | Open or switch to app<br>`open.app` | Opens the app, or activates its existing window. | App (`app`): required<br>Run as administrator (`elevate`): default `false`; Windows only; when on, always starts a new elevated instance instead of switching to an open window | ✓ | ✓ |
 
+### Fun
+
+| Action / ID | What it does / where it works | Parameters | Windows | Mac |
+|---|---|---|---|---|
+| Fireworks<br>`fun.fireworks` | Sets off fireworks on the screen under the cursor, about 4 seconds. | — | ✓ | ✓ |
+| Confetti<br>`fun.confetti` | Bursts of confetti from both bottom corners, about 4 seconds. | — | ✓ | ✓ |
+| Throw a bomb<br>`fun.bomb` | Throws in a bomb that blows the screen apart, about 5 seconds. | — | ✓ | ✓<br>On Mac the screen isn’t captured, so the desktop itself doesn’t break apart or warp. |
+| Money rain<br>`fun.money_rain` | Red envelopes and gold coins rain down, about 4 seconds. | — | ✓ | ✓ |
+| Hearts<br>`fun.hearts` | A stream of hearts floats up from the cursor, about 4 seconds. | — | ✓ | ✓ |
+| Black hole<br>`fun.black_hole` | A black hole at the cursor swallows the screen, then spits it back out, about 3 seconds. | — | ✓ | ✓<br>On Mac the screen isn’t captured, so the desktop itself doesn’t break apart or warp. |
+| Snow<br>`fun.snow` | Snow drifts down the screen, about 10 seconds. | — | ✓ | ✓ |
+| Cracked screen<br>`fun.crack` | The screen cracks at the cursor, then heals itself, about 3 seconds. | — | ✓ | ✓ |
+| Meteor shower<br>`fun.meteors` | The screen dims and a few meteors streak across, about 5 seconds. | — | ✓ | ✓ |
+
 ### Mousetroke
 
 | Action / ID | What it does / where it works | Parameters | Windows | Mac |

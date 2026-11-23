@@ -152,6 +152,20 @@ Le tabelle seguenti sono generate dal registro e includono tutte le 87 voci. ✓
 | Apri file<br>`open.file` | Apre il percorso specificato con l’app predefinita di sistema. | Percorso (`path`): obbligatorio | ✓ | ✓ |
 | Apri o attiva app<br>`open.app` | Apre l’app o attiva la finestra esistente. | App (`app`): obbligatorio<br>Esegui come amministratore (`elevate`): predefinito: `false`; solo Windows; se attivo, avvia sempre una nuova istanza come amministratore invece di passare a una finestra aperta | ✓ | ✓ |
 
+### Divertimento
+
+| Azione / ID | Funzione e ambito d’uso | Parametri | Windows | Mac |
+|---|---|---|---|---|
+| Fuochi d’artificio<br>`fun.fireworks` | Lancia fuochi d’artificio sullo schermo del cursore, circa 4 secondi. | — | ✓ | ✓ |
+| Coriandoli<br>`fun.confetti` | Getti di coriandoli dai due angoli in basso, circa 4 secondi. | — | ✓ | ✓ |
+| Lancia una bomba<br>`fun.bomb` | Lancia una bomba che manda in pezzi lo schermo, circa 5 secondi. | — | ✓ | ✓<br>Su Mac lo schermo non viene catturato, quindi il desktop in sé non si spezza né si deforma. |
+| Pioggia di soldi<br>`fun.money_rain` | Piovono buste rosse e monete d’oro, circa 4 secondi. | — | ✓ | ✓ |
+| Cuori<br>`fun.hearts` | Una scia di cuori sale dal cursore, circa 4 secondi. | — | ✓ | ✓ |
+| Buco nero<br>`fun.black_hole` | Un buco nero sul cursore inghiotte lo schermo e poi lo risputa, circa 3 secondi. | — | ✓ | ✓<br>Su Mac lo schermo non viene catturato, quindi il desktop in sé non si spezza né si deforma. |
+| Neve<br>`fun.snow` | La neve scende sullo schermo, circa 10 secondi. | — | ✓ | ✓ |
+| Schermo rotto<br>`fun.crack` | Lo schermo si crepa sul cursore e poi si ripara da solo, circa 3 secondi. | — | ✓ | ✓ |
+| Pioggia di meteore<br>`fun.meteors` | Lo schermo si scurisce e qualche meteora lo attraversa, circa 5 secondi. | — | ✓ | ✓ |
+
 ### Mousetroke
 
 | Azione / ID | Funzione e ambito d’uso | Parametri | Windows | Mac |

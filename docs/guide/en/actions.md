@@ -6,7 +6,7 @@ order: 5
 
 # Actions
 
-Select or create a gesture, then click **Choose action** under **Action**. Search for what you want to do, or browse a category; fill any parameters and click **Use this action**. The [action library](action-library.md) lists all presets and their Windows/Mac availability, including literal text, date/time, window layout and power actions.
+Select or create a gesture, then click **Choose action** under **Action**. Search for what you want to do, or browse a category; fill any parameters and click **Use this action**. The [action library](action-library.md) lists all presets and their Windows/Mac availability, including literal text, date/time, window layout and power actions. The **Fun** category holds full-screen animations such as fireworks, a bomb and money rain; they only play on top of the screen and don’t affect any window. Select one and click **Try it** to preview it.
 
 Existing actions show **Change**. Presets that map to an editable advanced action also offer **Convert to advanced action**; native presets explain why conversion is unavailable. **Send a shortcut…** at the top of the picker records a key combination on the spot; the **Advanced** category opens commands, Lua and menus. The editors below remain available, including through **Change action type**.
 

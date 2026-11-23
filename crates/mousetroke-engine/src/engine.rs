@@ -67,8 +67,10 @@ const TOO_LONG_LABEL: Duration = Duration::from_millis(1500);
 const CLICK_SLOP_MIN: i32 = 6;
 /// 原始路径复用固定容量；满时原地隔点抽稀，钩子内不扩容。
 const SHAPE_PATH_CAP: usize = 2048;
-/// 内置手势最长仅 4 段；放宽到 100 段容纳复杂笔画，仍能及时截断无休止的涂画。
-const MAX_STROKE_SEGMENTS: usize = 100;
+/// 内置手势最长仅 4 段；放宽到 50 段容纳复杂笔画，超过就当作乱画截断（并可能触发涂鸦彩蛋）。
+const MAX_STROKE_SEGMENTS: usize = 50;
+/// 涂鸦彩蛋的冷却时间。
+const SCRIBBLE_BOMB_COOLDOWN: Duration = Duration::from_secs(30);
 
 /// 钩子回调送入的输入事件（坐标为屏幕坐标）。
 #[derive(Debug, Clone, Copy)]
@@ -216,6 +218,8 @@ pub struct Engine {
     echoes: Vec<(MouseButton, bool, Instant)>,
     /// 最近几次补发单击的时刻（回声识别失效时的熔断）。
     recent_replays: VecDeque<Instant>,
+    /// 上次涂鸦彩蛋扔炸弹的时刻（冷却用）。
+    last_scribble_bomb: Option<Instant>,
     /// 驻留中的边角：(边角, 开始时刻, 所在屏幕)。
     edge_pending: Option<(u8, Instant, ScreenRect)>,
     /// 显示器矩形缓存（启动与布局变化时刷新）。
@@ -261,6 +265,7 @@ impl Engine {
             active_at: None,
             echoes: Vec::new(),
             recent_replays: VecDeque::new(),
+            last_scribble_bomb: None,
             edge_pending: None,
             screens: Vec::new(),
             edge_disarmed: false,
@@ -833,10 +838,12 @@ impl Engine {
     }
 
     /// 超长笔画立即清除；已吞下的按键仍等到释放，避免把孤立的抬起交给应用。
-    fn cancel_long_stroke(&mut self) {
+    fn cancel_long_stroke(&mut self, x: i32, y: i32) {
         let Some(cap) = &mut self.capture else { return };
         cap.state = CaptureState::Cancelled;
-        if matches!(cap.trigger, Trigger::Edge(_)) && cap.held.is_empty() {
+        // 不按键贴着屏幕边缘来回蹭也会超长，那多半不是有意乱画，不扔炸弹
+        let rubbing = matches!(cap.trigger, Trigger::Edge(_)) && cap.held.is_empty();
+        if rubbing {
             self.end_edge_capture();
         } else {
             self.overlay.finish();
@@ -850,7 +857,21 @@ impl Engine {
             let color = self.cfg.settings.label.color_normal.clone();
             self.show_text(text, &color, Some(TOO_LONG_LABEL));
         }
-        crate::log!("手势过长（超过 {MAX_STROKE_SEGMENTS} 段），已取消");
+        let bomb = !rubbing && self.scribble_bomb(x, y);
+        crate::log!("手势过长（超过 {MAX_STROKE_SEGMENTS} 段），已取消{}", if bomb { "，触发涂鸦彩蛋" } else { "" });
+    }
+
+    /// 涂鸦彩蛋：乱画到超长时在光标处扔一颗炸弹。偏好可关；冷却期内或前台全屏时不扔。
+    fn scribble_bomb(&mut self, x: i32, y: i32) -> bool {
+        if !self.cfg.settings.scribble_bomb || self.last_scribble_bomb.is_some_and(|at| at.elapsed() < SCRIBBLE_BOMB_COOLDOWN) {
+            return false;
+        }
+        if self.host.fullscreen_target().is_some() {
+            return false;
+        }
+        self.last_scribble_bomb = Some(Instant::now());
+        self.host.play_effect(mousetroke_core::presets::native::FunEffect::Bomb, x, y);
+        true
     }
 
     /// 与量化追踪器同时起笔，包括边缘捕获首次按键时的重置。
@@ -880,7 +901,7 @@ impl Engine {
         self.tracker.add_point(x as f64, y as f64);
         let after = self.tracker.segments().len();
         if after > MAX_STROKE_SEGMENTS {
-            self.cancel_long_stroke();
+            self.cancel_long_stroke(x, y);
             return;
         }
         self.record_point(x, y);

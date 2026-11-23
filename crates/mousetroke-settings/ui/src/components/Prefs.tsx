@@ -236,6 +236,7 @@ export function Prefs({
         <ColorField label={t("ui.prefs.trail_matched")} value={s.trail.color_matched} onChange={(v) => onChange((x) => ({ ...x, trail: { ...x.trail, color_matched: v } }), "tm")} />
         <Toggle label={t("ui.prefs.fade_out")} checked={s.trail.fade_out} onChange={(v) => onChange((x) => ({ ...x, trail: { ...x.trail, fade_out: v } }))} />
         <Toggle label={t("ui.prefs.show_label")} checked={s.label.show} onChange={(v) => onChange((x) => ({ ...x, label: { ...x.label, show: v } }))} />
+        <Toggle label={t("ui.prefs.scribble_bomb")} help={t("ui.prefs.scribble_bomb_help")} checked={s.scribble_bomb ?? true} onChange={(v) => onChange((x) => ({ ...x, scribble_bomb: v }))} />
         <Slider label={t("ui.prefs.label_font_size")} value={s.label.font_size ?? 24} min={16} max={96} step={4} unit=" px" onChange={(v) => onChange((x) => ({ ...x, label: { ...x.label, font_size: v } }), "lfs")} />
         <ColorField label={t("ui.prefs.label_color")} value={s.label.color_normal} onChange={(v) => onChange((x) => ({ ...x, label: { ...x.label, color_normal: v } }), "lc")} />
       </div>

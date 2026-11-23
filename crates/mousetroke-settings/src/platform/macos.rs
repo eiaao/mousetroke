@@ -32,6 +32,10 @@ pub fn engine_status() -> EngineStatus {
     }
 }
 
+pub fn play_effect(effect: mousetroke_core::presets::native::FunEffect) {
+    mousetroke_mac::fx::play(effect, None);
+}
+
 pub fn setup(app: &tauri::App) {
     if let Some(mtm) = MainThreadMarker::new() {
         // 引擎的 bundle 是 LSUIElement；独立设置进程仍需原生标题栏与正常键盘焦点。
