@@ -772,6 +772,7 @@ fn preset_defaults_serialization_includes_default_settings() {
     let cfg = Config::from_json(fixture).unwrap();
     assert!(cfg.settings.update_check);
     assert!(cfg.settings.update_notify);
+    assert!(cfg.settings.scribble_bomb);
     assert!(cfg.settings.pause_on_fullscreen);
     assert_eq!(cfg.settings.label.font_size, 24);
     let json = cfg.to_json();
@@ -779,9 +780,9 @@ fn preset_defaults_serialization_includes_default_settings() {
         (hash ^ byte as u64).wrapping_mul(0x100000001b3)
     });
     println!("preset defaults: {} bytes, FNV-1a {fingerprint:016x}", json.len());
-    // 冻结默认配置（含 update_check、update_notify、pause_on_fullscreen、label.font_size 和绑定 id）的序列化基线。
-    assert_eq!(json.len(), 38_206);
-    assert_eq!(fingerprint, 0x15437c94e9edde2e);
+    // 冻结默认配置（含 update_check、update_notify、scribble_bomb、pause_on_fullscreen、label.font_size 和绑定 id）的序列化基线。
+    assert_eq!(json.len(), 38_233);
+    assert_eq!(fingerprint, 0x3168d0c46ab722f5);
     assert_eq!(Config::from_json(&json).unwrap().to_json(), json);
 }
 

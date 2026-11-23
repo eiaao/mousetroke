@@ -1,0 +1,10 @@
+[package]
+name = "mousetroke-fx"
+description = "Mousetroke 趣味特效：与平台无关的软件绘制（预乘 ARGB 像素缓冲）"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+homepage.workspace = true
+
+[dependencies]

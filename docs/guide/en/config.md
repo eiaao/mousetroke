@@ -19,6 +19,8 @@ Logs rotate to `mousetroke.log.old` after exceeding 1 MB. **About → File locat
 
 `settings.pause_on_fullscreen` is a boolean, defaulting to `true`. An app scope’s `fullscreen_policy` accepts `"inherit"` (default, follow global), `"allow"` (keep enabled in fullscreen) or `"pause"` (pause in fullscreen). Both settings apply to mouse gestures and screen-edge triggers. Missing fields preserve the previous fullscreen pause behavior.
 
+`settings.scribble_bomb` is a boolean, defaulting to `true`: when a gesture passes 50 segments and is canceled, a bomb is thrown at the cursor (at most once every 30 seconds, never while a full-screen app is in front).
+
 ## Export, import and restore
 
 Under **Import & export → Mousetroke config file**, click **Export…** and save a JSON backup. **Import from file…** reads a Mousetroke config JSON and replaces the current configuration, including preferences. It does not merge that file into your current bindings. There is no native-config merge option in this workflow. You can undo the import with Ctrl+Z on Windows or ⌘+Z on Mac while settings is open.

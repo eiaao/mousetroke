@@ -152,6 +152,20 @@ Les tableaux ci-dessous sont générés à partir du registre et comprennent les
 | Ouvrir un fichier<br>`open.file` | Ouvre le chemin indiqué avec l’app système par défaut. | Chemin (`path`): obligatoire | ✓ | ✓ |
 | Ouvrir ou activer une application<br>`open.app` | Ouvre l’app ou active sa fenêtre existante. | Application (`app`): obligatoire<br>Exécuter en tant qu’administrateur (`elevate`): par défaut : `false` ; Windows uniquement ; activé, lance toujours une nouvelle instance en administrateur au lieu de basculer vers une fenêtre ouverte | ✓ | ✓ |
 
+### Amusement
+
+| Action / ID | Fonction et contexte d’utilisation | Paramètres | Windows | Mac |
+|---|---|---|---|---|
+| Feu d’artifice<br>`fun.fireworks` | Lance un feu d’artifice sur l’écran du curseur, environ 4 secondes. | — | ✓ | ✓ |
+| Confettis<br>`fun.confetti` | Des jets de confettis jaillissent des deux coins du bas, environ 4 secondes. | — | ✓ | ✓ |
+| Lancer une bombe<br>`fun.bomb` | Lance une bombe qui fait voler l’écran en éclats, environ 5 secondes. | — | ✓ | ✓<br>Sur Mac, l’écran n’est pas capturé : le bureau lui-même ne se brise ni ne se déforme. |
+| Pluie d’argent<br>`fun.money_rain` | Des enveloppes rouges et des pièces d’or tombent du ciel, environ 4 secondes. | — | ✓ | ✓ |
+| Cœurs<br>`fun.hearts` | Une série de cœurs s’élève depuis le curseur, environ 4 secondes. | — | ✓ | ✓ |
+| Trou noir<br>`fun.black_hole` | Un trou noir au niveau du curseur avale l’écran puis le recrache, environ 3 secondes. | — | ✓ | ✓<br>Sur Mac, l’écran n’est pas capturé : le bureau lui-même ne se brise ni ne se déforme. |
+| Neige<br>`fun.snow` | La neige tombe sur l’écran, environ 10 secondes. | — | ✓ | ✓ |
+| Écran brisé<br>`fun.crack` | L’écran se fissure au niveau du curseur, puis se répare, environ 3 secondes. | — | ✓ | ✓ |
+| Pluie de météores<br>`fun.meteors` | L’écran s’assombrit et quelques météores le traversent, environ 5 secondes. | — | ✓ | ✓ |
+
 ### Mousetroke
 
 | Action / ID | Fonction et contexte d’utilisation | Paramètres | Windows | Mac |

@@ -2140,6 +2140,10 @@ dependencies = [
 ]
 
 [[package]]
+name = "mousetroke-fx"
+version = "0.3.5"
+
+[[package]]
 name = "mousetroke-lua"
 version = "0.3.5"
 dependencies = [
@@ -2154,6 +2158,7 @@ dependencies = [
  "block2",
  "mousetroke-core",
  "mousetroke-engine",
+ "mousetroke-fx",
  "mousetroke-lua",
  "objc2",
  "objc2-app-kit",
@@ -2192,6 +2197,7 @@ dependencies = [
  "mlua",
  "mousetroke-core",
  "mousetroke-engine",
+ "mousetroke-fx",
  "mousetroke-lua",
  "regex",
  "serde",

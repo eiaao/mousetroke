@@ -36,7 +36,7 @@ Sotto **Preferenze → Riconoscimento**:
 | Sensibilità del tracciato | Predefinito 30 px; cursore 10–80 px. Valori più bassi riconoscono tracciati più corti ma rendono più facili i gesti involontari. |
 | I gesti agiscono su | Scegli **la finestra sotto il cursore** (predefinito) o **la finestra attiva**. |
 
-Sotto **Aspetto**, **Tema dell’interfaccia** (**Sistema**, **Chiaro** o **Scuro**; si applica subito alla finestra delle impostazioni), **Mostra la scia**, **Spessore della scia**, **Colore della scia**, **Al riconoscimento**, **Sfuma al termine**, **Mostra il nome del gesto mentre disegni**, **Dimensione del testo di avviso** (16–96 px, predefinito 24 px; può essere aumentata sugli schermi ad alta risoluzione) e **Colore del nome** controllano il feedback. Qui non c'è un cursore per la soglia di riconoscimento delle forme.
+Sotto **Aspetto**, **Tema dell’interfaccia** (**Sistema**, **Chiaro** o **Scuro**; si applica subito alla finestra delle impostazioni), **Mostra la scia**, **Spessore della scia**, **Colore della scia**, **Al riconoscimento**, **Sfuma al termine**, **Mostra il nome del gesto mentre disegni**, **Dimensione del testo di avviso** (16–96 px, predefinito 24 px; può essere aumentata sugli schermi ad alta risoluzione), **Colore del nome** e **Lancia una bomba se scarabocchi (easter egg)** controllano il feedback. L’ultima è attiva per impostazione predefinita: quando un gesto diventa troppo lungo e viene annullato, una bomba cade sul cursore, al massimo una volta ogni 30 secondi e mai nelle app a schermo intero. Qui non c'è un cursore per la soglia di riconoscimento delle forme.
 
 ## Trovare, copiare e disattivare
 

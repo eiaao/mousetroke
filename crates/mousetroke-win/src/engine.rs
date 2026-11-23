@@ -61,6 +61,9 @@ impl Canvas for Overlay {
 pub(crate) struct SystemHost;
 
 impl Host for SystemHost {
+    fn play_effect(&self, effect: mousetroke_core::presets::native::FunEffect, x: i32, y: i32) {
+        crate::fx::play(effect, Some((x, y)));
+    }
     fn screens(&self) -> Vec<mousetroke_core::edge::ScreenRect> {
         input::monitor_rects()
     }
@@ -176,7 +179,9 @@ pub(crate) fn warn_if_elevated(pid: u32) {
 fn execute(action: Action, target: Option<targeting::Target>, vars: Vars, pos: (i32, i32)) {
     // 只有会向目标窗口发送输入或操作窗口的动作才受 UIPI 影响；启动程序、打开网址等不提示。
     // 放在这里而不是 Host::execute：弹出菜单里选中的动作也走这里，同样要检查。
-    let to_window = matches!(action, Action::KeySequence { .. } | Action::WindowOp { .. } | Action::Preset { .. } | Action::Lua { .. });
+    // 趣味特效只是盖一层动画，不向目标发输入，不用提示。
+    let to_window = matches!(&action, Action::KeySequence { .. } | Action::WindowOp { .. } | Action::Lua { .. })
+        || matches!(&action, Action::Preset { id, .. } if !id.starts_with("fun."));
     if let (true, Some(t)) = (to_window, &target) {
         warn_if_elevated(t.pid);
     }

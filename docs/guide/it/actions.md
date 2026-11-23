@@ -6,7 +6,7 @@ order: 5
 
 # Azioni
 
-Seleziona o crea un gesto, poi clicca **Scegli azione** sotto **Azione**. Cerca ciò che vuoi fare o esplora una categoria, compila i parametri necessari e clicca **Usa questa azione**. La [libreria delle azioni](action-library.md) elenca tutte le azioni predefinite e la loro disponibilità su Windows e Mac, inclusi testo letterale, data e ora, disposizione delle finestre e alimentazione.
+Seleziona o crea un gesto, poi clicca **Scegli azione** sotto **Azione**. Cerca ciò che vuoi fare o esplora una categoria, compila i parametri necessari e clicca **Usa questa azione**. La [libreria delle azioni](action-library.md) elenca tutte le azioni predefinite e la loro disponibilità su Windows e Mac, inclusi testo letterale, data e ora, disposizione delle finestre e alimentazione. La categoria **Divertimento** contiene animazioni a schermo intero, come fuochi d’artificio, una bomba o una pioggia di soldi; vengono riprodotte solo sopra lo schermo e non influiscono su nessuna finestra. Selezionane una e clicca **Provalo** per vedere l’anteprima.
 
 Le azioni esistenti mostrano **Cambia**. Le azioni predefinite che corrispondono a un’azione avanzata modificabile offrono anche **Converti in azione avanzata**; quelle native spiegano perché la conversione non è disponibile. **Invia una scorciatoia…**, in cima al selettore, registra subito una combinazione di tasti; la categoria **Avanzate** apre comandi, Lua e menu. Gli editor seguenti restano disponibili, anche da **Cambia tipo di azione**.
 

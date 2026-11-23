@@ -36,7 +36,7 @@ Em **Preferências → Reconhecimento**:
 | Sensibilidade do traçado | Padrão de 30 px; controle de 10–80 px. Valores menores reconhecem traçados mais curtos, mas facilitam gestos acidentais. |
 | Os gestos agem sobre | Escolha **a janela sob o cursor** (padrão) ou **a janela ativa**. |
 
-Em **Aparência**, **Tema da interface** (**Sistema**, **Claro** ou **Escuro**; aplica-se imediatamente à janela de configurações), **Mostrar o rastro**, **Espessura do rastro**, **Cor do rastro**, **Ao reconhecer**, **Desvanecer ao terminar**, **Mostrar o nome do gesto ao desenhar**, **Tamanho do texto de aviso** (16–96 px, padrão 24 px; pode ser aumentado em telas de alta resolução) e **Cor do nome do gesto** controlam o retorno visual. Não há aqui um controle de limite para o reconhecimento de formas.
+Em **Aparência**, **Tema da interface** (**Sistema**, **Claro** ou **Escuro**; aplica-se imediatamente à janela de configurações), **Mostrar o rastro**, **Espessura do rastro**, **Cor do rastro**, **Ao reconhecer**, **Desvanecer ao terminar**, **Mostrar o nome do gesto ao desenhar**, **Tamanho do texto de aviso** (16–96 px, padrão 24 px; pode ser aumentado em telas de alta resolução), **Cor do nome do gesto** e **Jogar uma bomba ao rabiscar (easter egg)** controlam o retorno visual. A última vem ativada por padrão: quando um gesto fica longo demais e é cancelado, uma bomba cai no cursor, no máximo uma vez a cada 30 segundos e nunca em aplicativos em tela cheia. Não há aqui um controle de limite para o reconhecimento de formas.
 
 ## Encontrar, copiar e desativar
 

@@ -152,6 +152,20 @@ As tabelas abaixo são geradas a partir do registro e incluem todas as 87 entrad
 | Abrir arquivo<br>`open.file` | Abre o caminho indicado com o app padrão do sistema. | Caminho (`path`): obrigatório | ✓ | ✓ |
 | Abrir ou alternar para aplicativo<br>`open.app` | Abre o app ou ativa sua janela existente. | Aplicativo (`app`): obrigatório<br>Executar como administrador (`elevate`): padrão: `false`; somente Windows; se ativado, sempre inicia uma nova instância como administrador em vez de alternar para uma janela aberta | ✓ | ✓ |
 
+### Diversão
+
+| Ação / ID | Função e onde usar | Parâmetros | Windows | Mac |
+|---|---|---|---|---|
+| Fogos de artifício<br>`fun.fireworks` | Solta fogos de artifício na tela do cursor, cerca de 4 segundos. | — | ✓ | ✓ |
+| Confete<br>`fun.confetti` | Jatos de confete saem dos dois cantos de baixo, cerca de 4 segundos. | — | ✓ | ✓ |
+| Jogar uma bomba<br>`fun.bomb` | Joga uma bomba que estilhaça a tela, cerca de 5 segundos. | — | ✓ | ✓<br>No Mac a tela não é capturada, então a própria área de trabalho não se parte nem se deforma. |
+| Chuva de dinheiro<br>`fun.money_rain` | Envelopes vermelhos e moedas de ouro caem do céu, cerca de 4 segundos. | — | ✓ | ✓ |
+| Corações<br>`fun.hearts` | Uma sequência de corações sobe do cursor, cerca de 4 segundos. | — | ✓ | ✓ |
+| Buraco negro<br>`fun.black_hole` | Um buraco negro no cursor engole a tela e depois a cospe de volta, cerca de 3 segundos. | — | ✓ | ✓<br>No Mac a tela não é capturada, então a própria área de trabalho não se parte nem se deforma. |
+| Neve<br>`fun.snow` | A neve cai pela tela, cerca de 10 segundos. | — | ✓ | ✓ |
+| Tela trincada<br>`fun.crack` | A tela trinca no cursor e depois se recompõe, cerca de 3 segundos. | — | ✓ | ✓ |
+| Chuva de meteoros<br>`fun.meteors` | A tela escurece e alguns meteoros cruzam o céu, cerca de 5 segundos. | — | ✓ | ✓ |
+
 ### Mousetroke
 
 | Ação / ID | Função e onde usar | Parâmetros | Windows | Mac |

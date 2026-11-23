@@ -6,7 +6,7 @@ order: 5
 
 # Actions
 
-Sélectionnez ou créez un geste, puis cliquez sur **Choisir une action** sous **Action**. Recherchez ce que vous voulez faire ou parcourez une catégorie, renseignez les paramètres nécessaires et cliquez sur **Utiliser cette action**. La [bibliothèque d’actions](action-library.md) répertorie toutes les actions prédéfinies et leur disponibilité sous Windows et sur Mac, notamment le texte littéral, la date et l’heure, la disposition des fenêtres et l’alimentation.
+Sélectionnez ou créez un geste, puis cliquez sur **Choisir une action** sous **Action**. Recherchez ce que vous voulez faire ou parcourez une catégorie, renseignez les paramètres nécessaires et cliquez sur **Utiliser cette action**. La [bibliothèque d’actions](action-library.md) répertorie toutes les actions prédéfinies et leur disponibilité sous Windows et sur Mac, notamment le texte littéral, la date et l’heure, la disposition des fenêtres et l’alimentation. La catégorie **Amusement** regroupe des animations plein écran, comme un feu d’artifice, une bombe ou une pluie d’argent ; elles ne s’affichent que par-dessus l’écran et n’affectent aucune fenêtre. Sélectionnez-en une et cliquez sur **Essayer** pour la prévisualiser.
 
 Les actions existantes affichent **Remplacer**. Les actions prédéfinies qui correspondent à une action avancée modifiable proposent aussi **Convertir en action avancée** ; les actions natives expliquent pourquoi la conversion est indisponible. **Envoyer un raccourci…**, en haut du sélecteur, enregistre une combinaison de touches sur place ; la catégorie **Avancées** ouvre les commandes, Lua et les menus. Les éditeurs ci-dessous restent accessibles, y compris par **Changer le type d'action**.
 

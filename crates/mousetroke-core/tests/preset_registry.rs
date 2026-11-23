@@ -14,7 +14,7 @@ const PENDING: &[&str] = &[];
 
 #[test]
 fn registry_is_complete_localized_and_has_valid_defaults() {
-    assert_eq!(REGISTRY.len(), 87);
+    assert_eq!(REGISTRY.len(), 96);
     assert_eq!(REGISTRY.iter().map(|p| p.id).collect::<BTreeSet<_>>().len(), REGISTRY.len());
     let mut categories = BTreeMap::new();
     for preset in REGISTRY {
@@ -22,7 +22,7 @@ fn registry_is_complete_localized_and_has_valid_defaults() {
     }
     assert_eq!(categories, BTreeMap::from([
         ("browser".into(), 17), ("edit".into(), 18), ("text".into(), 6), ("window".into(), 11),
-        ("desktop".into(), 20), ("media".into(), 8), ("open".into(), 4), ("mousetroke".into(), 3),
+        ("desktop".into(), 20), ("media".into(), 8), ("open".into(), 4), ("fun".into(), 9), ("mousetroke".into(), 3),
     ]));
     for (tag, lang) in LANGS {
         let path = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("../../i18n").join(format!("{tag}.json"));
@@ -117,8 +117,8 @@ fn layout_excludes_both_shells_without_blocking_normal_app_windows() {
 #[test]
 fn each_platform_has_only_explicit_unsupported_or_pending_actions() {
     for (platform, implemented, unsupported) in [
-        (Platform::Windows, 85, vec!["app.hide", "system.force_quit_dialog"]),
-        (Platform::Macos, 84, vec!["window.toggle_topmost", "desktop.clipboard_history", "desktop.notifications"]),
+        (Platform::Windows, 94, vec!["app.hide", "system.force_quit_dialog"]),
+        (Platform::Macos, 93, vec!["window.toggle_topmost", "desktop.clipboard_history", "desktop.notifications"]),
     ] {
         let mut count = 0;
         for preset in REGISTRY {

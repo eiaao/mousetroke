@@ -36,7 +36,7 @@ Sous **Préférences → Reconnaissance** :
 | Sensibilité du tracé | 30 px par défaut ; curseur de 10 à 80 px. Des valeurs plus faibles reconnaissent les tracés plus courts mais rendent les gestes accidentels plus faciles à déclencher. |
 | Les gestes agissent sur | Choisissez **la fenêtre sous le curseur** (par défaut) ou **la fenêtre active**. |
 
-Sous **Apparence**, **Thème de l’interface** (**Système**, **Clair** ou **Sombre** ; s’applique immédiatement à la fenêtre des préférences), **Afficher la traînée**, **Épaisseur de la traînée**, **Couleur de la traînée**, **En cas de succès**, **Estomper à la fin**, **Afficher le nom du geste pendant le tracé**, **Taille du texte d’indication** (16–96 px, 24 px par défaut ; peut être augmentée sur les écrans haute résolution) et **Couleur du nom** contrôlent le retour visuel. Il n’y a pas de curseur de seuil de reconnaissance des formes ici.
+Sous **Apparence**, **Thème de l’interface** (**Système**, **Clair** ou **Sombre** ; s’applique immédiatement à la fenêtre des préférences), **Afficher la traînée**, **Épaisseur de la traînée**, **Couleur de la traînée**, **En cas de succès**, **Estomper à la fin**, **Afficher le nom du geste pendant le tracé**, **Taille du texte d’indication** (16–96 px, 24 px par défaut ; peut être augmentée sur les écrans haute résolution), **Couleur du nom** et **Lancer une bombe en cas de gribouillage (œuf de Pâques)** contrôlent le retour visuel. Cette dernière option est activée par défaut : lorsqu’un geste devient trop long et est annulé, une bombe tombe sur le curseur, au plus une fois toutes les 30 secondes et jamais dans les applications en plein écran. Il n’y a pas de curseur de seuil de reconnaissance des formes ici.
 
 ## Rechercher, copier et désactiver
 

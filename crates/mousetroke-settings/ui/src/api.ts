@@ -15,6 +15,8 @@ export interface Msg {
 export const api = {
   initState: () => invoke<InitState>("init_state"),
   actionCatalog: () => invoke<ActionCatalog>("action_catalog"),
+  /** 在鼠标所在的显示器上播放趣味特效（设置窗口里的「试一下」）。 */
+  previewEffect: (id: string) => invoke<void>("preview_effect", { id }),
   expandPreset: (id: string, params: Record<string, unknown>, uiLang: string) => invoke<Action>("expand_preset", { id, params, uiLang }),
   validatePreset: (id: string, params: Record<string, string>, uiLang: string) => invoke<void>("validate_preset", { id, params, uiLang }),
   saveConfig: (config: Config) => invoke<void>("save_config", { config: persistedConfig(config) }),

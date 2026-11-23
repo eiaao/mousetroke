@@ -299,6 +299,14 @@ fn set_recorder_area(rect: Option<CssRect>, window: WebviewWindow) {
     sync_canvas(&window, Some(rect));
 }
 
+/// 「试一下」：在鼠标所在的显示器上播放趣味特效（设置进程自己播，不经过引擎）。
+#[tauri::command]
+fn preview_effect(id: String) {
+    if let Some(effect) = mousetroke_core::presets::native::FunEffect::from_preset_id(&id) {
+        platform::play_effect(effect);
+    }
+}
+
 /// 使用统计（引擎写，这里只读；没有文件时为空）。
 #[tauri::command]
 fn usage_stats(paths: State<AppPaths>) -> mousetroke_core::stats::Stats {
@@ -747,6 +755,7 @@ pub fn run(config: Option<PathBuf>) {
             action_catalog,
             expand_preset,
             validate_preset,
+            preview_effect,
             save_config,
             set_recorder_area,
             get_engine_status,
@@ -890,7 +899,7 @@ mod tests {
     #[test]
     fn settings_catalog_exposes_future_action_presentation_and_expansion() {
         let catalog = serde_json::to_value(action_catalog()).unwrap();
-        assert_eq!(catalog["presets"].as_array().unwrap().len(), 87);
+        assert_eq!(catalog["presets"].as_array().unwrap().len(), 96);
         assert_eq!(catalog["presets"][0]["advanced_expansion"]["windows"], true);
         assert_eq!(catalog["presets"].as_array().unwrap().iter().find(|p| p["id"] == "window.snap_left").unwrap()["advanced_expansion"]["windows"], false);
         assert_eq!(catalog["unknownActionKey"], "preset.status.unknown");

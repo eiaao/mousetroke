@@ -19,6 +19,8 @@ Los registros rotan a `mousetroke.log.old` tras superar 1 MB. **Acerca de → Ub
 
 `settings.pause_on_fullscreen` es booleano y su valor predeterminado es `true`. `fullscreen_policy` en el ámbito de una aplicación admite `"inherit"` (predeterminado, seguir ajuste global), `"allow"` (mantener activos) o `"pause"` (pausar en pantalla completa). Ambos ajustes afectan a gestos del ratón y activadores de bordes. Si faltan los campos, se conserva el comportamiento anterior.
 
+`settings.scribble_bomb` es booleano y su valor predeterminado es `true`: cuando un gesto supera los 50 segmentos y se cancela, se lanza una bomba en el cursor (como máximo una vez cada 30 segundos y nunca con una aplicación a pantalla completa en primer plano).
+
 ## Exportar, importar y restaurar
 
 En **Importar y exportar → Archivo de configuración de Mousetroke**, haz clic en **Exportar…** y guarda una copia de seguridad JSON. **Importar desde un archivo…** lee un JSON de configuración de Mousetroke y sustituye la configuración actual, incluidas las preferencias. No combina ese archivo con tus asignaciones actuales. No hay ninguna opción de combinación de configuración nativa en este flujo. Puedes deshacer la importación con Ctrl+Z en Windows o ⌘+Z en Mac mientras la configuración esté abierta.

@@ -18,6 +18,7 @@ struct Log {
     label_clears: usize,
     labels: Vec<String>,
     samples: Vec<Vec<i32>>,
+    effects: Vec<(mousetroke_core::presets::native::FunEffect, i32, i32)>,
 }
 
 type Shared = Rc<RefCell<Log>>;
@@ -61,6 +62,9 @@ struct FakeHost {
 }
 
 impl Host for FakeHost {
+    fn play_effect(&self, effect: mousetroke_core::presets::native::FunEffect, x: i32, y: i32) {
+        self.log.borrow_mut().effects.push((effect, x, y));
+    }
     fn screens(&self) -> Vec<edge::ScreenRect> {
         self.screens.clone()
     }
@@ -398,7 +402,7 @@ fn shape_g_straight_scribble_and_plain_click() {
     t.draw_path(&scribble);
     t.up(B::Right);
     assert_eq!(t.executed(), ["G", "close"]);
-    assert_eq!(t.log.borrow().labels.last().map(String::as_str), Some("画嗨了吧？这一笔不算～"));
+    assert_eq!(t.log.borrow().labels.last().map(String::as_str), Some("你小子想干嘛！"));
     assert!(t.replays().is_empty());
 
     t.down(B::Right);
@@ -718,8 +722,8 @@ fn overlong_stroke_cancels_without_replay_and_next_gesture_works() {
     cfg.scopes[0].bindings.push(bind("close_tab", vec![RIGHT, trace(&DOWN_RIGHT)]));
     let mut t = T::with_samples(cfg, true);
     assert_eq!(t.down(B::Right), Verdict::Swallow);
-    t.zigzag(101);
-    assert_eq!(t.e.live_label.as_deref(), Some("画嗨了吧？这一笔不算～"));
+    t.zigzag(MAX_STROKE_SEGMENTS + 1);
+    assert_eq!(t.e.live_label.as_deref(), Some("你小子想干嘛！"));
     let deadline = t.e.label_deadline.unwrap();
     assert!(deadline > Instant::now() + Duration::from_secs(1));
     assert!(deadline <= Instant::now() + Duration::from_millis(1500));
@@ -751,11 +755,11 @@ fn overlong_stroke_cancels_without_replay_and_next_gesture_works() {
 fn overlong_stroke_stops_tracking_drawing_and_live_labels_until_release() {
     let mut t = T::new(false);
     t.down(B::Right);
-    t.zigzag(100);
-    // 第 101 段是去噪会删掉的短收笔：必须按原始段数取消。
+    t.zigzag(MAX_STROKE_SEGMENTS);
+    // 超限的那一段是去噪会删掉的短收笔：必须按原始段数取消。
     t.to(t.pos.0, t.pos.1 + t.e.cfg.settings.min_stroke_px as i32);
-    assert_eq!(t.e.tracker.segments().len(), 101);
-    assert_eq!(t.e.tracker.strokes().len(), 100);
+    assert_eq!(t.e.tracker.segments().len(), MAX_STROKE_SEGMENTS + 1);
+    assert_eq!(t.e.tracker.strokes().len(), MAX_STROKE_SEGMENTS);
     let segments = t.e.tracker.segments().to_vec();
     let path = t.e.path.clone();
     let lines = t.lines();
@@ -794,10 +798,11 @@ fn overlong_stroke_label_follows_language_and_visibility() {
         let mut cfg = config(false);
         cfg.settings.language = "en-US".into();
         cfg.settings.label.show = show;
+        cfg.settings.scribble_bomb = false;
         let mut t = T::with_config(cfg);
         t.down(B::Right);
-        t.zigzag(101);
-        assert_eq!(t.e.live_label.as_deref(), show.then_some("Nice doodle! Let’s skip this one."));
+        t.zigzag(MAX_STROKE_SEGMENTS + 1);
+        assert_eq!(t.e.live_label.as_deref(), show.then_some("Hey, what are you up to?!"));
         assert_eq!(t.e.label_deadline.is_some(), show);
         assert_eq!(t.up(B::Right), Verdict::Swallow);
         assert!(t.e.capture.is_none());
@@ -807,17 +812,60 @@ fn overlong_stroke_label_follows_language_and_visibility() {
 }
 
 #[test]
+fn overlong_scribble_throws_a_bomb_with_cooldown_and_opt_out() {
+    use mousetroke_core::presets::native::FunEffect;
+    let scribble = |t: &mut T| {
+        t.down(B::Right);
+        t.zigzag(MAX_STROKE_SEGMENTS + 1);
+        let at = t.pos;
+        assert_eq!(t.up(B::Right), Verdict::Swallow);
+        assert!(t.executed().is_empty() && t.replays().is_empty());
+        at
+    };
+    let mut cfg = config(false);
+    cfg.settings.language = "en-US".into();
+    let mut t = T::with_config(cfg.clone());
+    let at = scribble(&mut t);
+    // 在光标处扔炸弹，“手势过长”提示照常显示
+    assert_eq!(t.log.borrow().effects, [(FunEffect::Bomb, at.0, at.1)]);
+    assert_eq!(t.log.borrow().labels.last().map(String::as_str), Some("Hey, what are you up to?!"));
+    // 冷却期内再乱画：只提示，不再扔
+    scribble(&mut t);
+    assert_eq!(t.log.borrow().effects.len(), 1);
+    // 冷却过后又可以扔
+    t.e.last_scribble_bomb = Some(Instant::now() - Duration::from_secs(31));
+    scribble(&mut t);
+    assert_eq!(t.log.borrow().effects.len(), 2);
+
+    // 关闭偏好后不扔（每个 T 持有语言锁，先释放旧的）
+    drop(t);
+    cfg.settings.scribble_bomb = false;
+    let mut t = T::with_config(cfg.clone());
+    scribble(&mut t);
+    assert!(t.log.borrow().effects.is_empty());
+
+    // 前台全屏时不扔（关闭全屏暂停，确保手势本身仍可用）
+    cfg.settings.scribble_bomb = true;
+    cfg.settings.pause_on_fullscreen = false;
+    drop(t);
+    let mut t = T::with_config(cfg);
+    *t.fullscreen.borrow_mut() = Some(Target { wid: 0, pid: 0, exe: Some("game.exe".into()), is_desktop: false, class: String::new() });
+    scribble(&mut t);
+    assert!(t.log.borrow().effects.is_empty());
+}
+
+#[test]
 fn stroke_at_segment_limit_still_matches_on_release() {
     let mut points = vec![0, 0];
-    for i in 0..100 {
+    for i in 0..MAX_STROKE_SEGMENTS {
         points.extend([if i % 2 == 0 { 50 } else { 0 }, 0]);
     }
     let mut cfg = config(false);
     cfg.scopes[0].bindings.push(bind("hundred_segments", vec![RIGHT, trace(&points)]));
     let mut t = T::with_config(cfg);
     t.down(B::Right);
-    t.zigzag(100);
-    assert_eq!(t.e.tracker.segments().len(), 100);
+    t.zigzag(MAX_STROKE_SEGMENTS);
+    assert_eq!(t.e.tracker.segments().len(), MAX_STROKE_SEGMENTS);
     assert_eq!(t.e.capture.as_ref().unwrap().state, CaptureState::Active);
     assert_eq!(t.log.borrow().finishes, 0);
     assert_eq!(t.e.live_label.as_deref(), Some("hundred_segments"));
@@ -833,11 +881,11 @@ fn overlong_edge_rubbing_ends_and_stays_disarmed_until_leaving() {
     let mut t = T::with_config(cfg);
     t.dwell(960, 0);
     assert!(t.e.capture.is_some());
-    t.zigzag(101);
+    t.zigzag(MAX_STROKE_SEGMENTS + 1);
     assert!(t.e.capture.is_none());
     assert!(t.e.edge_disarmed);
     assert!(t.e.edge_pending.is_none());
-    assert_eq!(t.e.live_label.as_deref(), Some("画嗨了吧？这一笔不算～"));
+    assert_eq!(t.e.live_label.as_deref(), Some("你小子想干嘛！"));
     assert_eq!(t.log.borrow().finishes, 1);
     assert_eq!(t.lines(), 0);
     assert!(t.executed().is_empty());
@@ -856,6 +904,8 @@ fn overlong_edge_rubbing_ends_and_stays_disarmed_until_leaving() {
     assert!(t.e.tracker.is_empty());
     t.zigzag(2);
     assert_eq!(t.e.live_label.as_deref(), Some("rub"));
+    // 不按键贴边来回蹭不算乱画，不扔炸弹
+    assert!(t.log.borrow().effects.is_empty());
 }
 
 #[test]
@@ -863,9 +913,9 @@ fn overlong_edge_stroke_with_button_waits_for_swallowed_release() {
     let mut t = T::new(true);
     t.dwell(960, 0);
     assert_eq!(t.down(B::Right), Verdict::Swallow);
-    t.zigzag(101);
+    t.zigzag(MAX_STROKE_SEGMENTS + 1);
     assert!(t.e.capture.is_some());
-    assert_eq!(t.e.live_label.as_deref(), Some("画嗨了吧？这一笔不算～"));
+    assert_eq!(t.e.live_label.as_deref(), Some("你小子想干嘛！"));
     let lines = t.lines();
     t.to(960, 500);
     assert_eq!(t.lines(), lines);

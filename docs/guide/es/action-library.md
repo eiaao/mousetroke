@@ -152,6 +152,20 @@ Las tablas siguientes se generan a partir del registro e incluyen las 87 entrada
 | Abrir archivo<br>`open.file` | Abre la ruta indicada con la app predeterminada del sistema. | Ruta (`path`): obligatorio | ✓ | ✓ |
 | Abrir o cambiar a aplicación<br>`open.app` | Abre la app o activa su ventana existente. | Aplicación (`app`): obligatorio<br>Ejecutar como administrador (`elevate`): predeterminado: `false`; solo Windows; si se activa, siempre inicia una nueva instancia como administrador en lugar de cambiar a una ventana abierta | ✓ | ✓ |
 
+### Diversión
+
+| Acción / ID | Función y ámbito de uso | Parámetros | Windows | Mac |
+|---|---|---|---|---|
+| Fuegos artificiales<br>`fun.fireworks` | Lanza fuegos artificiales en la pantalla del cursor, unos 4 segundos. | — | ✓ | ✓ |
+| Confeti<br>`fun.confetti` | Chorros de confeti desde las dos esquinas inferiores, unos 4 segundos. | — | ✓ | ✓ |
+| Lanzar una bomba<br>`fun.bomb` | Lanza una bomba que hace estallar la pantalla, unos 5 segundos. | — | ✓ | ✓<br>En Mac no se captura la pantalla, así que el escritorio en sí no se rompe ni se deforma. |
+| Lluvia de dinero<br>`fun.money_rain` | Caen sobres rojos y monedas de oro, unos 4 segundos. | — | ✓ | ✓ |
+| Corazones<br>`fun.hearts` | Una oleada de corazones sube desde el cursor, unos 4 segundos. | — | ✓ | ✓ |
+| Agujero negro<br>`fun.black_hole` | Un agujero negro en el cursor se traga la pantalla y la escupe de nuevo, unos 3 segundos. | — | ✓ | ✓<br>En Mac no se captura la pantalla, así que el escritorio en sí no se rompe ni se deforma. |
+| Nieve<br>`fun.snow` | Cae una nevada por la pantalla, unos 10 segundos. | — | ✓ | ✓ |
+| Pantalla rota<br>`fun.crack` | La pantalla se agrieta en el cursor y luego se recompone, unos 3 segundos. | — | ✓ | ✓ |
+| Lluvia de meteoros<br>`fun.meteors` | La pantalla se oscurece y cruzan varios meteoros, unos 5 segundos. | — | ✓ | ✓ |
+
 ### Mousetroke
 
 | Acción / ID | Función y ámbito de uso | Parámetros | Windows | Mac |
