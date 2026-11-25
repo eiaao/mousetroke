@@ -409,7 +409,8 @@ impl Overlay {
                 unsafe {
                     for y in t..bo {
                         let row = self.pixels.add(y as usize * self.width as usize);
-                        std::ptr::write_bytes(row.add(l as usize), 0, (r - l) as usize * 4);
+                        // 计数单位是 u32 像素，不是字节（曾按字节 ×4，越界写到缓冲区之后，右下角会崩溃，#123）
+                        std::ptr::write_bytes(row.add(l as usize), 0, (r - l) as usize);
                     }
                 }
             }
@@ -851,6 +852,39 @@ mod tests {
             }
         }
         o.finish();
+    }
+
+    /// #123：右下角画完未识别的手势（淡出 + 中部提示）。清零曾按字节数当像素数写，
+    /// 每行多写三倍，靠近缓冲区末尾时越界崩溃；淡出结束后整块内容区必须为 0，区外像素不受影响。
+    #[test]
+    fn fade_near_bottom_right_stays_in_bounds() {
+        let mut o = Overlay::new("#00C2FFE0", 1.0).expect("overlay");
+        let (w, h) = (o.width, o.height);
+        let px = |o: &Overlay, x: i32, y: i32| unsafe { *o.pixels.add(y as usize * o.width as usize + x as usize) };
+        // 区外放一个哨兵像素：内容区所在行的最左侧（旧实现会越界写到下一行开头）
+        let sentinel = (10, h - 60);
+        unsafe { *o.pixels.add(sentinel.1 as usize * w as usize + sentinel.0 as usize) = 0x8000_0000 };
+        let pts = [(w - 160, h - 130), (w - 60, h - 110), (w - 140, h - 40), (w - 40, h - 20), (w - 2, h - 1)];
+        o.start_session(pts[0].0, pts[0].1);
+        for seg in pts.windows(2) {
+            let ((x0, y0), (x1, y1)) = (seg[0], seg[1]);
+            for k in 1..=15 {
+                o.line_to(x0 + (x1 - x0) * k / 15, y0 + (y1 - y0) * k / 15);
+            }
+        }
+        o.fade_out();
+        o.clear_label();
+        o.draw_label("测试", w / 2, h / 4, "#FFFFFFE6");
+        for _ in 0..FADE_FRAMES {
+            o.tick_fade();
+        }
+        for y in h - 140..h {
+            for x in w - 180..w {
+                assert_eq!(px(&o, x, y), 0, "轨迹残留于 ({x},{y})");
+            }
+        }
+        assert_eq!(px(&o, sentinel.0, sentinel.1), 0x8000_0000, "清零越过了内容区");
+        unsafe { *o.pixels.add(sentinel.1 as usize * w as usize + sentinel.0 as usize) = 0 };
     }
 
     /// 手动查看轨迹与标签渲染：`cargo test -p mousetroke-win label_render -- --ignored`，
