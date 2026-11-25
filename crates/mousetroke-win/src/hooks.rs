@@ -113,6 +113,8 @@ fn engine_main(cfg: Config, cfg_path: Option<std::path::PathBuf>) -> Result<(), 
     crate::watchdog::stop();
     unhook();
     crate::log!("引擎退出");
+    // 进程随后结束：把排队的日志写完
+    mousetroke_engine::log::shutdown();
     Ok(())
 }
 

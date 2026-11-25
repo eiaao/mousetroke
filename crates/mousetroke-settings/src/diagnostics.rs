@@ -106,7 +106,7 @@ pub fn redact(text: &str, home: Option<&str>, user: Option<&str>) -> String {
         out = replace_ci(&out, &home.replace('\\', "/"), "~", false);
         out = replace_ci(&out, &home.replace('\\', "\\\\"), "~", false);
     }
-    if let Some(user) = user.filter(|u| u.chars().count() >= 2) {
+    if let Some(user) = user.filter(|u| !u.is_empty()) {
         for sep in ['\\', '/'] {
             out = replace_ci(&out, &format!("{sep}{user}"), &format!("{sep}<user>"), true);
         }

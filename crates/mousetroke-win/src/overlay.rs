@@ -864,7 +864,9 @@ mod tests {
         // 区外放一个哨兵像素：内容区所在行的最左侧（旧实现会越界写到下一行开头）
         let sentinel = (10, h - 60);
         unsafe { *o.pixels.add(sentinel.1 as usize * w as usize + sentinel.0 as usize) = 0x8000_0000 };
-        let pts = [(w - 160, h - 130), (w - 60, h - 110), (w - 140, h - 40), (w - 40, h - 20), (w - 2, h - 1)];
+        // 画线接口用屏幕坐标（多显示器时虚拟屏原点可能为负）
+        let (vx, vy) = (o.vx, o.vy);
+        let pts = [(w - 160, h - 130), (w - 60, h - 110), (w - 140, h - 40), (w - 40, h - 20), (w - 2, h - 1)].map(|(x, y)| (vx + x, vy + y));
         o.start_session(pts[0].0, pts[0].1);
         for seg in pts.windows(2) {
             let ((x0, y0), (x1, y1)) = (seg[0], seg[1]);
@@ -874,7 +876,7 @@ mod tests {
         }
         o.fade_out();
         o.clear_label();
-        o.draw_label("测试", w / 2, h / 4, "#FFFFFFE6");
+        o.draw_label("测试", vx + w / 2, vy + h / 4, "#FFFFFFE6");
         for _ in 0..FADE_FRAMES {
             o.tick_fade();
         }

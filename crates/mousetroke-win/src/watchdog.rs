@@ -175,13 +175,32 @@ unsafe extern "system" fn unhandled(info: *const windows::Win32::System::Diagnos
     match record {
         Some(r) => {
             let addr = r.ExceptionAddress as usize;
-            let base = unsafe { windows::Win32::System::LibraryLoader::GetModuleHandleW(None) }.map(|h| h.0 as usize).unwrap_or(0);
-            let offset = if base != 0 && addr >= base { format!("mousetroke+0x{:X}", addr - base) } else { format!("0x{addr:X}") };
+            let offset = module_offset(addr).unwrap_or_else(|| format!("0x{addr:X}"));
             append_now(&format!("未处理的系统异常 0x{:08X}，地址 {offset}，进程即将退出", r.ExceptionCode.0 as u32)); // i18n:allow 运行日志（与 log! 相同），同步写盘
         }
         None => append_now("未处理的系统异常，进程即将退出"), // i18n:allow 运行日志（与 log! 相同），同步写盘
     }
     0 // EXCEPTION_CONTINUE_SEARCH：交给系统按默认方式结束进程
+}
+
+/// 地址所在模块与偏移，如 `user32.dll+0x1A2B`（地址不属于任何模块时为 None）。
+fn module_offset(addr: usize) -> Option<String> {
+    use windows::Win32::System::LibraryLoader::{GetModuleFileNameW, GetModuleHandleExW, GET_MODULE_HANDLE_EX_FLAG_FROM_ADDRESS, GET_MODULE_HANDLE_EX_FLAG_UNCHANGED_REFCOUNT};
+    let mut module = windows::Win32::Foundation::HMODULE::default();
+    // 安全：按地址查模块，不增加引用计数；缓冲区长度由切片给出。
+    unsafe {
+        GetModuleHandleExW(
+            GET_MODULE_HANDLE_EX_FLAG_FROM_ADDRESS | GET_MODULE_HANDLE_EX_FLAG_UNCHANGED_REFCOUNT,
+            windows::core::PCWSTR(addr as *const u16),
+            &mut module,
+        )
+        .ok()?;
+        let mut buf = [0u16; 260];
+        let n = GetModuleFileNameW(Some(module), &mut buf) as usize;
+        let path = String::from_utf16_lossy(&buf[..n]);
+        let name = path.rsplit(['\\', '/']).next().unwrap_or("?").to_string();
+        Some(format!("{name}+0x{:X}", addr - module.0 as usize))
+    }
 }
 
 /// 绕过后台队列，直接追加一行到日志文件。
