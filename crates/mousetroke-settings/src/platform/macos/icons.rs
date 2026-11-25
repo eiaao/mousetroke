@@ -22,7 +22,11 @@ pub fn resolve_exe(identity: &str) -> Option<PathBuf> {
 
 /// 程序在访达里显示的名字（跟随系统语言，去掉 .app）；找不到程序时为 None。
 pub fn display_name(identity: &str) -> Option<String> {
-    let path = resolve_exe(identity)?;
+    display_name_at(&resolve_exe(identity)?)
+}
+
+/// 指定路径在访达里显示的名字（跟随系统语言，去掉 .app）。
+pub fn display_name_at(path: &Path) -> Option<String> {
     let name = objc2_foundation::NSFileManager::defaultManager()
         .displayNameAtPath(&NSString::from_str(&path.to_string_lossy()))
         .to_string();
