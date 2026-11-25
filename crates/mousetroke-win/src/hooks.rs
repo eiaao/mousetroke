@@ -76,6 +76,7 @@ fn single_instance_guard() -> Result<(), String> {
 
 fn engine_main(cfg: Config, cfg_path: Option<std::path::PathBuf>) -> Result<(), String> {
     crate::log::init();
+    crate::watchdog::install_crash_logging();
     crate::log!("Mousetroke {} 启动（pid {}）", env!("CARGO_PKG_VERSION"), std::process::id());
     // 每显示器 DPI 感知：钩子坐标与虚拟屏度量保持物理像素一致
     unsafe {
@@ -95,6 +96,9 @@ fn engine_main(cfg: Config, cfg_path: Option<std::path::PathBuf>) -> Result<(), 
 
     // 托盘 + 暂停热键
     let _tray = Tray::create(show_tray, &pause_hotkey, cfg_path.clone());
+    if let Some(tray) = &_tray {
+        crate::watchdog::start(tray.hwnd());
+    }
     if let Some(path) = cfg_path { crate::update::start_automatic(path, update_check, update_notify); }
 
     install_hooks()?;
@@ -106,7 +110,9 @@ fn engine_main(cfg: Config, cfg_path: Option<std::path::PathBuf>) -> Result<(), 
             DispatchMessageW(&msg);
         }
     }
+    crate::watchdog::stop();
     unhook();
+    crate::log!("引擎退出");
     Ok(())
 }
 
@@ -255,6 +261,7 @@ unsafe extern "system" fn mouse_proc(code: i32, wparam: WPARAM, lparam: LPARAM) 
     if info.dwExtraInfo == INJECT_TAG {
         return CallNextHookEx(None, code, wparam, lparam);
     }
+    let _stage = crate::watchdog::enter(crate::watchdog::Stage::MouseHook, wparam.0 as u32);
 
     use mousetroke_core::schema::MouseButton as B;
     let (x, y) = (info.pt.x, info.pt.y);
@@ -276,6 +283,7 @@ unsafe extern "system" fn mouse_proc(code: i32, wparam: WPARAM, lparam: LPARAM) 
         _ => return CallNextHookEx(None, code, wparam, lparam),
     };
     if matches!(ev, InputEvent::MouseDown { .. }) {
+        let _stage = crate::watchdog::enter(crate::watchdog::Stage::SyncDisplay, 0);
         crate::engine::sync_display();
     }
     forward(ev, info.flags & LLMHF_INJECTED != 0, code, wparam, lparam)
@@ -290,6 +298,7 @@ unsafe extern "system" fn kbd_proc(code: i32, wparam: WPARAM, lparam: LPARAM) ->
     if info.dwExtraInfo == INJECT_TAG {
         return CallNextHookEx(None, code, wparam, lparam);
     }
+    let _stage = crate::watchdog::enter(crate::watchdog::Stage::KeyboardHook, wparam.0 as u32);
     if (wparam.0 as u32) == WM_KEYDOWN || (wparam.0 as u32) == WM_SYSKEYDOWN {
         return forward(
             InputEvent::KeyDown(info.vkCode as u16),

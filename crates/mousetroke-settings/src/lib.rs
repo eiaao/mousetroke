@@ -566,7 +566,7 @@ const GITHUB_URL: &str = "https://github.com/eiaao/mousetroke";
 const ISSUES_URL: &str = "https://github.com/eiaao/mousetroke/issues";
 const AUTHOR_X_URL: &str = "https://x.com/aming_ai";
 /// 没有 GitHub 账号的用户用邮件反馈。
-const FEEDBACK_EMAIL: &str = "feedback@mousetroke.com";
+const FEEDBACK_EMAIL: &str = "mousetroke@maiplan.site";
 
 /// 链接仅由后端白名单决定；没有对应首页的语言回退到英文。
 fn project_url(what: &str, lang: &str) -> Option<String> {

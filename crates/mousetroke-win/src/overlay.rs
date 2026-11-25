@@ -776,6 +776,7 @@ unsafe extern "system" fn overlay_wndproc(
 ) -> LRESULT {
     if msg == WM_TIMER && wparam.0 == FADE_TIMER_ID {
         // 淡出动画帧（引擎线程消息循环泵送，不阻塞钩子回调）
+        let _stage = crate::watchdog::enter(crate::watchdog::Stage::TrailFade, 0);
         crate::engine::with_engine(|e| e.overlay_tick());
         return LRESULT(0);
     }
