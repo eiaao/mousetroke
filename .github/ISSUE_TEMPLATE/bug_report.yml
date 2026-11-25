@@ -16,10 +16,10 @@ body:
       placeholder: "0.1.0"
     validations: { required: true }
   - type: input
-    id: windows
+    id: os
     attributes:
-      label: Windows version / 系统版本
-      placeholder: Windows 11 24H2
+      label: OS version / 系统版本
+      placeholder: Windows 11 24H2 / macOS 15.1
     validations: { required: true }
   - type: input
     id: app
@@ -31,7 +31,11 @@ body:
     attributes:
       label: Log excerpt / 日志片段
       description: >-
-        Settings → About → Open log. Paste the lines around the problem. The log never contains
-        typed keys, but it does contain program names — remove anything you don't want to share.
-        设置 → 关于 → 打开日志，贴出出问题前后的几行。日志不含按键内容，但有程序名，不想公开的请删掉。
+        Settings → About → Feedback → Report on GitHub copies a diagnostics report (version, system,
+        displays, settings summary, recent log) to the clipboard — paste it here. On older versions:
+        About → Open log, and paste the lines around the problem. The log never contains typed keys,
+        but it does contain program names — remove anything you don't want to share.
+        设置 → 关于 → 反馈 →「在 GitHub 提交」会把诊断信息（版本、系统、显示器、设置摘要、最近的日志）复制到剪贴板，
+        粘贴到这里即可。旧版本请在关于页打开日志，贴出出问题前后的几行。日志不含按键内容，但有程序名，不想公开的请删掉。
       render: text
+    validations: { required: true }

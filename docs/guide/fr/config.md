@@ -13,7 +13,7 @@ order: 11
 | Configuration | `%APPDATA%\mousetroke\config.json` | `~/Library/Application Support/mousetroke/config.json` |
 | Journal d’exécution | `%APPDATA%\mousetroke\mousetroke.log` | `~/Library/Logs/mousetroke/mousetroke.log` |
 
-Les journaux tournent vers `mousetroke.log.old` après avoir dépassé 1 Mo. **À propos → Emplacements des fichiers** affiche les chemins réels. **Ouvrir le dossier** ouvre le répertoire de configuration ; **Ouvrir le journal** ouvre le journal d’exécution. Sous **Importer et exporter**, **Afficher dans l’Explorateur de fichiers** sous Windows ou **Afficher dans le Finder** sur Mac révèle la configuration.
+Les journaux tournent vers `mousetroke.log.old` après avoir dépassé 1 Mo. **À propos → Emplacements des fichiers** affiche les chemins réels. **Ouvrir le dossier** ouvre le répertoire de configuration ; **Ouvrir le journal** ouvre le journal d’exécution, et **Exporter le diagnostic** enregistre la version, le système, un résumé des réglages et le journal récent dans un seul fichier à côté du journal et le copie dans le presse-papiers, à joindre lors d’un signalement. Sous **Importer et exporter**, **Afficher dans l’Explorateur de fichiers** sous Windows ou **Afficher dans le Finder** sur Mac révèle la configuration.
 
 ## Configuration de la pause en plein écran
 

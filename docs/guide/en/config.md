@@ -13,7 +13,7 @@ order: 11
 | Configuration | `%APPDATA%\mousetroke\config.json` | `~/Library/Application Support/mousetroke/config.json` |
 | Runtime log | `%APPDATA%\mousetroke\mousetroke.log` | `~/Library/Logs/mousetroke/mousetroke.log` |
 
-Logs rotate to `mousetroke.log.old` after exceeding 1 MB. **About → File locations** displays the actual paths. **Open folder** opens the config directory; **Open log** opens the runtime log. Under **Import & export**, **Show in File Explorer** on Windows or **Show in Finder** on Mac reveals the configuration.
+Logs rotate to `mousetroke.log.old` after exceeding 1 MB. **About → File locations** displays the actual paths. **Open folder** opens the config directory; **Open log** opens the runtime log, and **Export diagnostics** saves the version, OS, a settings summary and the recent log as one file next to the log and copies it to the clipboard, to attach when reporting a problem. Under **Import & export**, **Show in File Explorer** on Windows or **Show in Finder** on Mac reveals the configuration.
 
 ## Fullscreen pause configuration
 

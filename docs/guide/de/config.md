@@ -13,7 +13,7 @@ order: 11
 | Konfiguration | `%APPDATA%\mousetroke\config.json` | `~/Library/Application Support/mousetroke/config.json` |
 | Laufzeitprotokoll | `%APPDATA%\mousetroke\mousetroke.log` | `~/Library/Logs/mousetroke/mousetroke.log` |
 
-Protokolle wechseln nach dem Überschreiten von 1 MB zu `mousetroke.log.old`. **Über → Dateispeicherorte** zeigt die tatsächlichen Pfade an. **Ordner öffnen** öffnet den Konfigurationsordner; **Protokoll öffnen** das Laufzeitprotokoll. Unter **Import und Export** zeigt **Im Datei-Explorer anzeigen** unter Windows oder **Im Finder anzeigen** auf dem Mac die Konfiguration an.
+Protokolle wechseln nach dem Überschreiten von 1 MB zu `mousetroke.log.old`. **Über → Dateispeicherorte** zeigt die tatsächlichen Pfade an. **Ordner öffnen** öffnet den Konfigurationsordner; **Protokoll öffnen** das Laufzeitprotokoll, und **Diagnose exportieren** speichert Version, System, Einstellungsübersicht und letztes Protokoll als eine Datei neben dem Protokoll und kopiert sie in die Zwischenablage, damit Sie sie bei einer Fehlermeldung anhängen können. Unter **Import und Export** zeigt **Im Datei-Explorer anzeigen** unter Windows oder **Im Finder anzeigen** auf dem Mac die Konfiguration an.
 
 ## Konfiguration der Vollbild-Pause
 

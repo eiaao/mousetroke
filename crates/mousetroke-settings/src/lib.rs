@@ -8,6 +8,7 @@
 //! 以库的形式编进 `mousetroke`（`mousetroke settings [配置路径]` 启动本界面进程）：
 //! 只发布一个主程序，但界面仍是独立进程——常驻的引擎进程里没有 WebView。
 
+mod diagnostics;
 mod platform;
 #[cfg(target_os = "macos")]
 mod mac_permissions;
@@ -564,6 +565,8 @@ const HOMEPAGE_PATHS: [(&str, &str); 11] = [
 const GITHUB_URL: &str = "https://github.com/eiaao/mousetroke";
 const ISSUES_URL: &str = "https://github.com/eiaao/mousetroke/issues";
 const AUTHOR_X_URL: &str = "https://x.com/aming_ai";
+/// 没有 GitHub 账号的用户用邮件反馈。
+const FEEDBACK_EMAIL: &str = "feedback@mousetroke.com";
 
 /// 链接仅由后端白名单决定；没有对应首页的语言回退到英文。
 fn project_url(what: &str, lang: &str) -> Option<String> {
@@ -610,6 +613,75 @@ fn open_path(what: String, paths: State<AppPaths>) -> MsgResult<()> {
         }
     }
     Ok(())
+}
+
+/// 生成诊断信息：保存到日志所在文件夹并复制到剪贴板，再按 target 打开：
+/// `file` 在文件管理器里选中文件；`github` 打开预填的新 issue；`email` 选中文件并打开邮件程序。返回文件名。
+#[tauri::command]
+fn export_diagnostics(target: String, window: WebviewWindow, paths: State<AppPaths>) -> MsgResult<String> {
+    let status = engine_status();
+    let monitors = window
+        .available_monitors()
+        .unwrap_or_default()
+        .iter()
+        .map(|m| {
+            let (size, pos) = (m.size(), m.position());
+            format!("{} {}x{} @ ({},{}) scale {}", m.name().map(String::as_str).unwrap_or("?"), size.width, size.height, pos.x, pos.y, m.scale_factor())
+        })
+        .collect();
+    let env = diagnostics::Env {
+        version: env!("CARGO_PKG_VERSION").into(),
+        os: platform::os_version(),
+        arch: std::env::consts::ARCH.into(),
+        engine_running: status.running,
+        autostart: status.autostart,
+        monitors,
+    };
+    let log = platform::log_path();
+    let tail = diagnostics::log_tail(&diagnostics::read_lossy(&log), &diagnostics::read_lossy(&log.with_extension("log.old")));
+    let config = Config::load(&paths.config);
+    let (generated, stamp) = diagnostics::timestamp(std::time::SystemTime::now());
+    let report = diagnostics::render(&env, config.as_ref().map_err(String::as_str), &tail, &generated);
+    let home = std::env::var(if cfg!(windows) { "USERPROFILE" } else { "HOME" }).ok();
+    let user = std::env::var(if cfg!(windows) { "USERNAME" } else { "USER" }).ok();
+    let report = diagnostics::redact(&report, home.as_deref(), user.as_deref());
+
+    let dir = log.parent().map(Path::to_path_buf).unwrap_or_else(std::env::temp_dir);
+    let file_name = format!("mousetroke-diagnostics-{stamp}.txt");
+    let path = dir.join(&file_name);
+    std::fs::create_dir_all(&dir)
+        .and_then(|_| std::fs::write(&path, &report))
+        .map_err(|e| Msg::new(keys::ERROR_DIAGNOSTICS_SAVE, &[("err", e.to_string())]))?;
+    platform::copy_text(&report);
+    let summary = diagnostics::redact(&env.summary(), home.as_deref(), user.as_deref());
+    match target.as_str() {
+        "file" => platform::reveal_config(&path),
+        "github" => platform::open_url(&issue_url(&env.version, &env.os, &summary))?,
+        "email" => {
+            platform::reveal_config(&path);
+            platform::open_url(&mail_url(&env.version, &file_name, &summary))?;
+        }
+        _ => return Err(Msg::new(keys::ERROR_UNKNOWN_LOCATION, &[("what", target)])),
+    }
+    Ok(file_name)
+}
+
+/// 预填的 bug 报告（字段 id 见 .github/ISSUE_TEMPLATE/bug_report.yml）；完整诊断信息由用户粘贴。
+fn issue_url(version: &str, os: &str, summary: &str) -> String {
+    use mousetroke_core::vars::url_encode;
+    format!(
+        "{ISSUES_URL}/new?template=bug_report.yml&version={}&os={}&log={}",
+        url_encode(version),
+        url_encode(os),
+        url_encode(&format!("{summary}\n\n")),
+    )
+}
+
+fn mail_url(version: &str, file_name: &str, summary: &str) -> String {
+    use mousetroke_core::vars::url_encode;
+    let subject = format!("Mousetroke {version} feedback");
+    let body = format!("{}\n\n\n--\n{summary}\n", mousetroke_core::i18n::tf(keys::DIAGNOSTICS_MAIL_BODY, &[("file", file_name)]));
+    format!("mailto:{FEEDBACK_EMAIL}?subject={}&body={}", url_encode(&subject), url_encode(&body.replace('\n', "\r\n")))
 }
 
 /// 拖入的文件 → 平台应用身份（Windows 路径 / macOS bundle id 或可执行文件路径）。
@@ -794,6 +866,7 @@ pub fn run(config: Option<PathBuf>) {
             #[cfg(target_os = "macos")]
             mac_permissions::restart_engine,
             open_path,
+            export_diagnostics,
             pick_window,
             set_autostart,
             start_engine,
@@ -828,6 +901,20 @@ pub fn run(config: Option<PathBuf>) {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn feedback_links_prefill_issue_form_and_mail() {
+        let issue = issue_url("0.3.7", "Windows 11 Pro 25H2", "Mousetroke 0.3.7 · x");
+        assert!(issue.starts_with("https://github.com/eiaao/mousetroke/issues/new?template=bug_report.yml&version=0.3.7&os=Windows%2011%20Pro%2025H2&log=Mousetroke%200.3.7%20"));
+        // 字段 id 要和 issue 模板一致
+        let template = include_str!("../../../.github/ISSUE_TEMPLATE/bug_report.yml");
+        for id in ["version", "os", "log"] {
+            assert!(template.contains(&format!("id: {id}\n")), "{id}");
+        }
+        let mail = mail_url("0.3.7", "d.txt", "summary");
+        assert!(mail.starts_with(&format!("mailto:{FEEDBACK_EMAIL}?subject=Mousetroke%200.3.7%20feedback&body=")));
+        assert!(mail.contains("d.txt") && mail.contains("%0D%0A") && !mail.contains(' '));
+    }
 
     #[test]
     fn saving_requires_a_consistent_gesture_library() {

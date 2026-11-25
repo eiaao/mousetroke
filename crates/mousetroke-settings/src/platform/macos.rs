@@ -175,3 +175,17 @@ pub fn pick_window(window: tauri::WebviewWindow) -> MsgResult<Option<picker::Pic
 }
 
 pub use mousetroke_mac::update;
+
+/// 系统版本，如 `macOS Version 14.5 (Build 23F79)`。
+pub fn os_version() -> String {
+    format!("macOS {}", objc2_foundation::NSProcessInfo::processInfo().operatingSystemVersionString())
+}
+
+/// 把文本放进通用剪贴板。
+pub fn copy_text(text: &str) {
+    use objc2_app_kit::{NSPasteboard, NSPasteboardTypeString};
+    let board = NSPasteboard::generalPasteboard();
+    board.clearContents();
+    // 安全：NSPasteboardTypeString 是 AppKit 导出的常量。
+    board.setString_forType(&NSString::from_str(text), unsafe { NSPasteboardTypeString });
+}

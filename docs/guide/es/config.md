@@ -13,7 +13,7 @@ order: 11
 | Configuración | `%APPDATA%\mousetroke\config.json` | `~/Library/Application Support/mousetroke/config.json` |
 | Registro del tiempo de ejecución | `%APPDATA%\mousetroke\mousetroke.log` | `~/Library/Logs/mousetroke/mousetroke.log` |
 
-Los registros rotan a `mousetroke.log.old` tras superar 1 MB. **Acerca de → Ubicaciones de archivos** muestra las rutas reales. **Abrir carpeta** abre el directorio de configuración; **Abrir registro** abre el registro del tiempo de ejecución. En **Importar y exportar**, **Mostrar en el Explorador de archivos** en Windows o **Mostrar en Finder** en Mac revela la configuración.
+Los registros rotan a `mousetroke.log.old` tras superar 1 MB. **Acerca de → Ubicaciones de archivos** muestra las rutas reales. **Abrir carpeta** abre el directorio de configuración; **Abrir registro** abre el registro del tiempo de ejecución y **Exportar diagnóstico** guarda la versión, el sistema, un resumen de los ajustes y el registro reciente en un solo archivo junto al registro y lo copia al portapapeles, para adjuntarlo al informar de un problema. En **Importar y exportar**, **Mostrar en el Explorador de archivos** en Windows o **Mostrar en Finder** en Mac revela la configuración.
 
 ## Configuración de la pausa a pantalla completa
 

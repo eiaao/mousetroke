@@ -13,7 +13,7 @@ order: 11
 | Configurazione | `%APPDATA%\mousetroke\config.json` | `~/Library/Application Support/mousetroke/config.json` |
 | Log di runtime | `%APPDATA%\mousetroke\mousetroke.log` | `~/Library/Logs/mousetroke/mousetroke.log` |
 
-I log ruotano su `mousetroke.log.old` dopo aver superato 1 MB. **Informazioni → Posizioni dei file** mostra i percorsi effettivi. **Apri cartella** apre la cartella di configurazione; **Apri registro** apre il log di runtime. Sotto **Importa ed esporta**, **Mostra in Esplora file** su Windows o **Mostra nel Finder** su Mac rivela la configurazione.
+I log ruotano su `mousetroke.log.old` dopo aver superato 1 MB. **Informazioni → Posizioni dei file** mostra i percorsi effettivi. **Apri cartella** apre la cartella di configurazione; **Apri registro** apre il log di runtime, ed **Esporta diagnostica** salva versione, sistema, riepilogo delle impostazioni e log recente in un unico file accanto al log e lo copia negli appunti, da allegare quando segnali un problema. Sotto **Importa ed esporta**, **Mostra in Esplora file** su Windows o **Mostra nel Finder** su Mac rivela la configurazione.
 
 ## Configurazione della pausa a schermo intero
 
