@@ -43,7 +43,7 @@ export const api = {
   /** 程序显示名（mac 由 bundle id 取访达显示名；Windows 为 null）。 */
   appNames: (exes: string[]) => invoke<Record<string, string | null>>("app_names", { exes }),
   usageStats: () => invoke<UsageStats>("usage_stats"),
-  /** 已安装的程序（Windows 开始菜单；mac 为空）。title 为显示名。 */
+  /** 已安装的程序（Windows 开始菜单快捷方式；mac“应用程序”文件夹）。title 为显示名。 */
   installedApps: () => invoke<RunningApp[]>("installed_apps"),
   resolveApp: (path: string) => invoke<string>("resolve_app", { path }),
   pickWindow: () => invoke<{ exe: string; title: string } | null>("pick_window"),

@@ -75,8 +75,46 @@ pub fn app_display_name(identity: &str) -> Option<String> {
     icons::display_name(identity)
 }
 
-/// mac 暂不列出已安装程序；界面只显示正在运行的程序。
-pub fn installed_apps() -> Vec<RunningApp> { Vec::new() }
+/// 已安装的程序：“应用程序”文件夹（系统、全局、用户）里的 .app，
+/// 也看一层子文件夹（如 /Applications/Utilities、厂商套件目录）。exe 为 bundle id，title 为访达显示名。
+pub fn installed_apps() -> Vec<RunningApp> {
+    let mut roots = vec![PathBuf::from("/Applications"), PathBuf::from("/System/Applications")];
+    if let Some(home) = std::env::var_os("HOME") {
+        roots.push(Path::new(&home).join("Applications"));
+    }
+    let mut bundles = Vec::new();
+    for root in roots {
+        let Ok(entries) = std::fs::read_dir(&root) else { continue };
+        for path in entries.flatten().map(|e| e.path()) {
+            if is_app(&path) {
+                bundles.push(path);
+            } else if path.is_dir() {
+                if let Ok(inner) = std::fs::read_dir(&path) {
+                    bundles.extend(inner.flatten().map(|e| e.path()).filter(|p| is_app(p)));
+                }
+            }
+        }
+    }
+    let mut seen = std::collections::HashSet::new();
+    let mut apps: Vec<RunningApp> = bundles
+        .into_iter()
+        .filter_map(|path| {
+            let bundle = objc2_foundation::NSBundle::bundleWithPath(&NSString::from_str(&path.to_string_lossy()))?;
+            let id = bundle.bundleIdentifier()?.to_string();
+            if id.is_empty() || mousetroke_mac::ignored_bundle(&id) || !seen.insert(id.clone()) {
+                return None;
+            }
+            let title = icons::display_name_at(&path).unwrap_or_else(|| id.clone());
+            Some(RunningApp { exe: id, title })
+        })
+        .collect();
+    apps.sort_by_key(|a| a.title.to_lowercase());
+    apps
+}
+
+fn is_app(path: &Path) -> bool {
+    path.extension().is_some_and(|e| e.eq_ignore_ascii_case("app"))
+}
 
 pub fn running_apps() -> Vec<RunningApp> {
     use objc2_app_kit::NSApplicationActivationPolicy;
