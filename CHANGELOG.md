@@ -2,6 +2,22 @@
 
 Each version lists its highlights in English, then in Chinese. The release page, the in-app update notes and the website changelog are all generated from this file.
 
+## 0.3.7 — 2026-11-25
+
+### English
+
+- Windows: fixed a freeze when a gesture ended near the bottom of the screen, for example just above the taskbar. The trail stayed on screen, the mouse lagged and Mousetroke quit shortly after. It happened most often with high display scaling. (#123, #124)
+- **About → Feedback** now has **Report on GitHub** and **Send email**. Both create a diagnostics report (version, system, displays, a settings summary and the recent log), save it next to the log and copy it to the clipboard. GitHub opens a pre-filled bug report; email opens your mail app and shows the report file so you can attach it. **Export diagnostics** next to the run log saves the same report. Your user name is removed from paths; review the report before sending. (#124)
+- Windows: the run log now records when Mousetroke stops responding and what it was doing, and why it quit after a crash, so reported problems are easier to track down. (#124)
+- Mac: **Add app… → Choose from list** now also lists installed apps, not only running ones. (#115)
+
+### 中文
+
+- Windows：修复手势在屏幕底部附近（例如任务栏上方）结束时卡死的问题。之前轨迹会留在屏幕上、鼠标变卡，随后 Mousetroke 自动退出，显示缩放比例较高时更容易出现。（#123、#124）
+- “关于 → 反馈”新增“在 GitHub 提交”和“发邮件”：都会生成诊断信息（版本、系统、显示器、设置摘要、最近的日志），保存到日志旁边并复制到剪贴板。GitHub 会打开预填好的问题表单；邮件会打开邮件程序并选中诊断文件，方便作为附件发送。运行日志旁新增“导出诊断信息”，生成同样的报告。路径中的用户名会被替换掉，发送前可以先查看。（#124）
+- Windows：运行日志会记录程序卡住时正在做什么，以及崩溃退出的原因，反馈的问题更容易查清。（#124）
+- Mac：“添加程序… → 从列表选择”除了正在运行的程序，也列出已安装的程序。（#115）
+
 ## 0.3.6 — 2026-11-23
 
 ### English
