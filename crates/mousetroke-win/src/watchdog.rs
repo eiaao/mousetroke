@@ -21,6 +21,13 @@ pub enum Stage {
     ConfigTimer,
     DisplayChange,
     TrailFade,
+    /// 覆盖层操作；附加信息 1 开始 2 画线 3 结束 4 淡出 5 淡出帧 6 标签 7 清标签。
+    Overlay,
+    Screens,
+    Target,
+    Fullscreen,
+    Effect,
+    TrimMemory,
 }
 
 impl Stage {
@@ -35,11 +42,17 @@ impl Stage {
             Stage::ConfigTimer => "config poll",
             Stage::DisplayChange => "display change",
             Stage::TrailFade => "trail fade",
+            Stage::Overlay => "overlay",
+            Stage::Screens => "monitor query",
+            Stage::Target => "window under cursor",
+            Stage::Fullscreen => "fullscreen check",
+            Stage::Effect => "fun effect",
+            Stage::TrimMemory => "trim memory",
         }
     }
 
     fn from_u8(v: u8) -> Self {
-        const ALL: [Stage; 9] = [
+        const ALL: [Stage; 15] = [
             Stage::Idle,
             Stage::MouseHook,
             Stage::KeyboardHook,
@@ -49,6 +62,12 @@ impl Stage {
             Stage::ConfigTimer,
             Stage::DisplayChange,
             Stage::TrailFade,
+            Stage::Overlay,
+            Stage::Screens,
+            Stage::Target,
+            Stage::Fullscreen,
+            Stage::Effect,
+            Stage::TrimMemory,
         ];
         ALL.get(v as usize).copied().unwrap_or(Stage::Idle)
     }

@@ -33,24 +33,31 @@ impl Canvas for Overlay {
         Overlay::set_label_font_size(self, size_px)
     }
     fn start_session(&mut self, x: i32, y: i32) {
+        let _stage = crate::watchdog::enter(crate::watchdog::Stage::Overlay, 1);
         Overlay::start_session(self, x, y)
     }
     fn line_to(&mut self, x: i32, y: i32) {
+        let _stage = crate::watchdog::enter(crate::watchdog::Stage::Overlay, 2);
         Overlay::line_to(self, x, y)
     }
     fn finish(&mut self) {
+        let _stage = crate::watchdog::enter(crate::watchdog::Stage::Overlay, 3);
         Overlay::finish(self)
     }
     fn fade_out(&mut self) {
+        let _stage = crate::watchdog::enter(crate::watchdog::Stage::Overlay, 4);
         Overlay::fade_out(self)
     }
     fn tick_fade(&mut self) {
+        let _stage = crate::watchdog::enter(crate::watchdog::Stage::Overlay, 5);
         Overlay::tick_fade(self)
     }
     fn draw_label(&mut self, text: &str, x: i32, y: i32, color: &str) {
+        let _stage = crate::watchdog::enter(crate::watchdog::Stage::Overlay, 6);
         Overlay::draw_label(self, text, x, y, color)
     }
     fn clear_label(&mut self) {
+        let _stage = crate::watchdog::enter(crate::watchdog::Stage::Overlay, 7);
         Overlay::clear_label(self)
     }
     fn virtual_rect(&self) -> (i32, i32, i32, i32) {
@@ -62,12 +69,15 @@ pub(crate) struct SystemHost;
 
 impl Host for SystemHost {
     fn play_effect(&self, effect: mousetroke_core::presets::native::FunEffect, x: i32, y: i32) {
+        let _stage = crate::watchdog::enter(crate::watchdog::Stage::Effect, 0);
         crate::fx::play(effect, Some((x, y)));
     }
     fn screens(&self) -> Vec<mousetroke_core::edge::ScreenRect> {
+        let _stage = crate::watchdog::enter(crate::watchdog::Stage::Screens, 0);
         input::monitor_rects()
     }
     fn target_at(&self, x: i32, y: i32) -> Target {
+        let _stage = crate::watchdog::enter(crate::watchdog::Stage::Target, 0);
         targeting::resolve_under_cursor(x, y).into()
     }
     fn ignore_target(&self, target: &Target) -> bool {
@@ -78,9 +88,11 @@ impl Host for SystemHost {
         target.pid != std::process::id() && is_own_settings(target)
     }
     fn window_title(&self, wid: usize) -> String {
+        let _stage = crate::watchdog::enter(crate::watchdog::Stage::Target, 0);
         targeting::window_title(windows::Win32::Foundation::HWND(wid as *mut _))
     }
     fn fullscreen_target(&self) -> Option<Target> {
+        let _stage = crate::watchdog::enter(crate::watchdog::Stage::Fullscreen, 0);
         targeting::fullscreen_target().map(Into::into)
     }
     fn replay(&self, btn: MouseButton, click: bool) {
@@ -90,6 +102,7 @@ impl Host for SystemHost {
         std::thread::spawn(move || execute(action, target.map(Into::into), vars, pos));
     }
     fn label_anchor(&self, x: i32, y: i32) -> (i32, i32) {
+        let _stage = crate::watchdog::enter(crate::watchdog::Stage::Screens, 0);
         use windows::Win32::Graphics::Gdi::{GetMonitorInfoW, MonitorFromPoint, MONITORINFO, MONITOR_DEFAULTTONEAREST};
         let mut mi = MONITORINFO { cbSize: std::mem::size_of::<MONITORINFO>() as u32, ..Default::default() };
         unsafe {
@@ -105,6 +118,7 @@ impl Host for SystemHost {
         Overlay::new(color, width).map(|o| Box::new(o) as Box<dyn Canvas>)
     }
     fn trim_memory(&self) {
+        let _stage = crate::watchdog::enter(crate::watchdog::Stage::TrimMemory, 0);
         use windows::Win32::System::Threading::{GetCurrentProcess, SetProcessWorkingSetSize};
         unsafe {
             let _ = SetProcessWorkingSetSize(GetCurrentProcess(), usize::MAX, usize::MAX);
