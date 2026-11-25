@@ -13,7 +13,7 @@ order: 11
 | 設定 | `%APPDATA%\mousetroke\config.json` | `~/Library/Application Support/mousetroke/config.json` |
 | ランタイムログ | `%APPDATA%\mousetroke\mousetroke.log` | `~/Library/Logs/mousetroke/mousetroke.log` |
 
-ログは 1 MB を超えると `mousetroke.log.old` へ切り替わります。**このアプリについて → ファイルの場所**に実際のパスが表示されます。**フォルダーを開く**は設定フォルダーを、**ログを開く**はランタイムログを開きます。**インポートとエクスポート**では、Windows の**エクスプローラーで表示**か Mac の**Finder に表示**で設定ファイルを表示できます。
+ログは 1 MB を超えると `mousetroke.log.old` へ切り替わります。**このアプリについて → ファイルの場所**に実際のパスが表示されます。**フォルダーを開く**は設定フォルダーを、**ログを開く**はランタイムログを開き、**診断情報をエクスポート**はバージョン、OS、設定の概要、最近のログを 1 つのファイルにしてログの隣に保存し、クリップボードにコピーします。問題を報告するときに添付できます。**インポートとエクスポート**では、Windows の**エクスプローラーで表示**か Mac の**Finder に表示**で設定ファイルを表示できます。
 
 ## 全画面一時停止の設定
 

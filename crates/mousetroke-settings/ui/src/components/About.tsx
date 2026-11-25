@@ -36,6 +36,16 @@ export function About({ engine, onShowGuide, notify }: { engine: EngineStatus; o
     api.appInfo().then(setInfo, () => {});
   }, []);
   const open = (what: Parameters<typeof api.openPath>[0]) => api.openPath(what).catch((e) => notify(errText(e)));
+  const [exporting, setExporting] = useState(false);
+  const exportDiagnostics = async (target: Parameters<typeof api.exportDiagnostics>[0]) => {
+    setExporting(true);
+    try {
+      const fileName = await api.exportDiagnostics(target);
+      const key = target === "github" ? "ui.about.diagnostics_github" : target === "email" ? "ui.about.diagnostics_email" : "ui.about.diagnostics_saved";
+      notify(t(key, { file: fileName }));
+    } catch (e) { notify(errText(e)); }
+    finally { setExporting(false); }
+  };
   const checkUpdate = async () => {
     setBusy("check"); setError(null);
     autoChecked.current = true;
@@ -133,9 +143,14 @@ export function About({ engine, onShowGuide, notify }: { engine: EngineStatus; o
             {t("ui.about.feedback")}
             <small>{t("ui.about.feedback_help")}</small>
           </span>
-          <button type="button" className="btn small" aria-describedby="about-feedback" onClick={() => open("issues")}>
-            {t("ui.about.open_link")}
-          </button>
+          <span className="about-feedback-actions">
+            <button type="button" className="btn small" aria-describedby="about-feedback" disabled={exporting} onClick={() => exportDiagnostics("github")}>
+              {t("ui.about.feedback_github")}
+            </button>
+            <button type="button" className="btn small" aria-describedby="about-feedback" disabled={exporting} onClick={() => exportDiagnostics("email")}>
+              {t("ui.about.feedback_email")}
+            </button>
+          </span>
         </div>
         <div className="about-star">
           <p>{t("ui.about.star_prompt")}</p>
@@ -163,9 +178,14 @@ export function About({ engine, onShowGuide, notify }: { engine: EngineStatus; o
             <small className="path">{info?.logPath}</small>
             <small>{t("ui.about.log_help")}</small>
           </span>
-          <button type="button" className="btn small" onClick={() => open("log")}>
-            {t("ui.about.open_log")}
-          </button>
+          <span className="about-feedback-actions">
+            <button type="button" className="btn small" disabled={exporting} onClick={() => exportDiagnostics("file")}>
+              {t("ui.about.export_diagnostics")}
+            </button>
+            <button type="button" className="btn small" onClick={() => open("log")}>
+              {t("ui.about.open_log")}
+            </button>
+          </span>
         </div>
         <div className="pref-row">
           <span className="pref-label">

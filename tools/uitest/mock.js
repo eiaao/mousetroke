@@ -136,6 +136,7 @@
           { exe: "blender.exe", name_key: "preset.app.blender", name: "Blender", category: "3D 与设计", category_key: "preset.category.design", path: "C:\\Program Files\\Blender Foundation\\Blender 4.2\\blender.exe" },
           { exe: "acad.exe", name_key: "preset.app.acad", name: "AutoCAD", category: "3D 与设计", category_key: "preset.category.design", path: null },
         ];
+        case "export_diagnostics": return "mousetroke-diagnostics-20261125-024116.txt";
         case "app_info": return { version: "0.1.0", exePath: "D:\\Mousetroke\\mousetroke.exe", configPath: "C:\\Users\\me\\AppData\\Roaming\\mousetroke\\config.json", logPath: "C:\\Users\\me\\AppData\\Roaming\\mousetroke\\mousetroke.log" };
         case "pick_window": return { exe: "C:\\Program Files\\Mozilla Firefox\\firefox.exe", title: "Firefox" };
         default: return null;

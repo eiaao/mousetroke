@@ -99,6 +99,11 @@ struct TrayState {
 pub struct Tray;
 
 impl Tray {
+    /// 托盘的隐藏窗口（属于引擎线程）。
+    pub fn hwnd(&self) -> HWND {
+        HWND(TRAY_HWND_GLOBAL.load(std::sync::atomic::Ordering::Relaxed) as *mut _)
+    }
+
     /// 创建托盘（含热键注册与定时器）。`pause_hotkey` 为 keyseq 语法（如 `#({ESC})`）。
     pub fn create(show_icon: bool, pause_hotkey: &str, cfg_path: Option<PathBuf>) -> Option<Self> {
         unsafe {
@@ -404,16 +409,22 @@ unsafe extern "system" fn tray_wndproc(hwnd: HWND, msg: u32, wparam: WPARAM, lpa
                 };
                 let _ = ack.send(shown);
             }
-            with_engine(|e| e.toast_tick());
+            {
+                let _stage = crate::watchdog::enter(crate::watchdog::Stage::TrayTimer, 0);
+                with_engine(|e| e.toast_tick());
+            }
+            let _stage = crate::watchdog::enter(crate::watchdog::Stage::CheckHooks, 0);
             crate::hooks::check_hooks();
             LRESULT(0)
         }
         WM_TIMER if wparam.0 == CONFIG_TIMER_ID => {
+            let _stage = crate::watchdog::enter(crate::watchdog::Stage::ConfigTimer, 0);
             crate::engine::sync_display();
             poll_config(hwnd);
             LRESULT(0)
         }
         WM_DISPLAYCHANGE => {
+            let _stage = crate::watchdog::enter(crate::watchdog::Stage::DisplayChange, 0);
             with_engine(|e| e.on_display_change());
             DefWindowProcW(hwnd, msg, wparam, lparam)
         }

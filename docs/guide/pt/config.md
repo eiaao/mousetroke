@@ -13,7 +13,7 @@ order: 11
 | Configuração | `%APPDATA%\mousetroke\config.json` | `~/Library/Application Support/mousetroke/config.json` |
 | Log do tempo de execução | `%APPDATA%\mousetroke\mousetroke.log` | `~/Library/Logs/mousetroke/mousetroke.log` |
 
-Os logs são rotacionados para `mousetroke.log.old` após exceder 1 MB. **Sobre → Locais dos arquivos** exibe os caminhos reais. **Abrir pasta** abre o diretório de configuração; **Abrir log** abre o log do tempo de execução. Em **Importar e exportar**, **Mostrar no Explorador de Arquivos** no Windows ou **Mostrar no Finder** no Mac revela a configuração.
+Os logs são rotacionados para `mousetroke.log.old` após exceder 1 MB. **Sobre → Locais dos arquivos** exibe os caminhos reais. **Abrir pasta** abre o diretório de configuração; **Abrir log** abre o log do tempo de execução e **Exportar diagnóstico** salva a versão, o sistema, um resumo das configurações e o log recente em um único arquivo ao lado do log e o copia para a área de transferência, para anexar ao relatar um problema. Em **Importar e exportar**, **Mostrar no Explorador de Arquivos** no Windows ou **Mostrar no Finder** no Mac revela a configuração.
 
 ## Configuração da pausa em tela cheia
 

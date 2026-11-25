@@ -13,7 +13,7 @@ order: 11
 | 配置 | `%APPDATA%\mousetroke\config.json` | `~/Library/Application Support/mousetroke/config.json` |
 | 运行日志 | `%APPDATA%\mousetroke\mousetroke.log` | `~/Library/Logs/mousetroke/mousetroke.log` |
 
-日志超过 1 MB 后轮转为 `mousetroke.log.old`。“关于 → 文件位置”显示实际路径，“打开文件夹”打开配置目录，“打开日志”打开运行日志。“导入与导出”中，Windows 的“在资源管理器中显示”或 Mac 的“在 Finder 中显示”可定位配置。
+日志超过 1 MB 后轮转为 `mousetroke.log.old`。“关于 → 文件位置”显示实际路径，“打开文件夹”打开配置目录，“打开日志”打开运行日志，“导出诊断信息”把版本、系统、设置摘要和最近的日志存成一个文件放在日志旁边，并复制到剪贴板，供反馈问题时附上。“导入与导出”中，Windows 的“在资源管理器中显示”或 Mac 的“在 Finder 中显示”可定位配置。
 
 ## 全屏暂停配置
 

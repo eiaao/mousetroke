@@ -3261,6 +3261,7 @@ select.lang-select {
 .update-note-list { max-height: 180px; overflow-y: auto; overflow-wrap: break-word; margin: 0 0 14px; padding: 0 12px 0 22px; font-size: 13px; line-height: 1.5; }
 .update-note-list li + li { margin-top: 6px; }
 .update-actions { display: flex; flex-wrap: wrap; gap: 8px; }
+.about-feedback-actions { display: flex; flex-shrink: 0; gap: 8px; }
 .update-error { color: var(--danger, #c43e3e); }
 .update-spinner { display: inline-block; width: 12px; height: 12px; margin-right: 8px; border: 2px solid currentColor; border-right-color: transparent; border-radius: 50%; animation: update-spin .8s linear infinite; flex-shrink: 0; }
 @keyframes update-spin { to { transform: rotate(360deg); } }

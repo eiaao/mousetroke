@@ -13,7 +13,7 @@ order: 11
 | 設定 | `%APPDATA%\mousetroke\config.json` | `~/Library/Application Support/mousetroke/config.json` |
 | 執行日誌 | `%APPDATA%\mousetroke\mousetroke.log` | `~/Library/Logs/mousetroke/mousetroke.log` |
 
-日誌超過 1 MB 後輪替為 `mousetroke.log.old`。「關於 → 檔案位置」顯示實際路徑，「開啟資料夾」開啟設定目錄，「開啟日誌」開啟執行日誌。「匯入與匯出」中，Windows 的「在資源管理器中顯示」或 Mac 的「在 Finder 中顯示」可定位設定。
+日誌超過 1 MB 後輪替為 `mousetroke.log.old`。「關於 → 檔案位置」顯示實際路徑，「開啟資料夾」開啟設定目錄，「開啟日誌」開啟執行日誌，「匯出診斷資訊」把版本、系統、設定摘要和最近的日誌存成一個檔案放在日誌旁邊，並複製到剪貼簿，供回報問題時附上。「匯入與匯出」中，Windows 的「在資源管理器中顯示」或 Mac 的「在 Finder 中顯示」可定位設定。
 
 ## 全螢幕暫停設定
 

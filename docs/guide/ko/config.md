@@ -13,7 +13,7 @@ order: 11
 | 설정 | `%APPDATA%\mousetroke\config.json` | `~/Library/Application Support/mousetroke/config.json` |
 | 런타임 로그 | `%APPDATA%\mousetroke\mousetroke.log` | `~/Library/Logs/mousetroke/mousetroke.log` |
 
-로그는 1 MB를 넘으면 `mousetroke.log.old`로 순환합니다. **정보 → 파일 위치**는 실제 경로를 표시합니다. **폴더 열기**는 설정 디렉터리를 열고, **로그 열기**는 런타임 로그를 엽니다. **가져오기와 내보내기** 아래에서 Windows의 **파일 탐색기에서 표시** 또는 Mac의 **Finder에서 보기**는 설정 파일을 표시합니다.
+로그는 1 MB를 넘으면 `mousetroke.log.old`로 순환합니다. **정보 → 파일 위치**는 실제 경로를 표시합니다. **폴더 열기**는 설정 디렉터리를 열고, **로그 열기**는 런타임 로그를 열고, **진단 정보 내보내기**는 버전, 시스템, 설정 요약, 최근 로그를 하나의 파일로 로그 옆에 저장하고 클립보드에 복사합니다. 문제를 제보할 때 첨부할 수 있습니다. **가져오기와 내보내기** 아래에서 Windows의 **파일 탐색기에서 표시** 또는 Mac의 **Finder에서 보기**는 설정 파일을 표시합니다.
 
 ## 전체 화면 일시 정지 설정
 

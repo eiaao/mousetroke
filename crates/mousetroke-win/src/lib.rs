@@ -34,6 +34,7 @@ pub mod targeting;
 mod toast;
 pub mod tray;
 pub mod update;
+pub mod watchdog;
 
 use mousetroke_core::schema::Config;
 

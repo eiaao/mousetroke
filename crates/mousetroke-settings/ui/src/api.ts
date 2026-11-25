@@ -49,6 +49,8 @@ export const api = {
   pickWindow: () => invoke<{ exe: string; title: string } | null>("pick_window"),
   presetApps: () => invoke<PresetApp[]>("preset_apps"),
   appInfo: () => invoke<AppInfo>("app_info"),
+  /** 生成诊断信息（保存并复制），再按 target 选中文件、打开预填 issue 或邮件程序。 */
+  exportDiagnostics: (target: "file" | "github" | "email") => invoke<string>("export_diagnostics", { target }),
   checkUpdate: () => invoke<{ current: string; latest: string; newer: boolean; notes_url: string; notes: string[] }>("check_update"),
   downloadUpdate: () => invoke<void>("download_update"),
   installUpdate: () => invoke<void>("install_update"),
