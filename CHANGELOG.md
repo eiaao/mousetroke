@@ -2,6 +2,16 @@
 
 Each version lists its highlights in English, then in Chinese. The release page, the in-app update notes and the website changelog are all generated from this file.
 
+## 0.3.8 — 2026-11-26
+
+### English
+
+- Windows: after drawing a gesture, taskbar thumbnails and other taskbar pop-ups no longer show up behind windows when you use a taskbar replacement such as StartAllBack. The taskbar treated Mousetroke's transparent trail layer as a full-screen app. (#126, #127)
+
+### 中文
+
+- Windows：使用 StartAllBack 等任务栏替换工具时，画过手势后任务栏缩略图和其他任务栏弹出内容不再被压到窗口后面。之前任务栏把 Mousetroke 的透明轨迹层当成了全屏程序。（#126、#127）
+
 ## 0.3.7 — 2026-11-25
 
 ### English
