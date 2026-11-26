@@ -94,6 +94,7 @@ unsafe impl Send for Overlay {}
 impl Drop for Overlay {
     fn drop(&mut self) {
         unsafe {
+            unmark_not_fullscreen(self.hwnd);
             let _ = DestroyWindow(self.hwnd);
             let _ = DeleteDC(self.mem_dc);
             let _ = DeleteObject(HGDIOBJ(self._dib.0));
@@ -162,6 +163,7 @@ impl Overlay {
                 None,
             )
             .ok()?;
+            mark_not_fullscreen(hwnd);
 
             // 32bpp 顶向下 DIB，预乘 ARGB
             let mem_dc = CreateCompatibleDC(None);
@@ -757,6 +759,26 @@ impl Overlay {
             self.show(true); // 首次提交成功后再显示
         }
         self.last_present = Some(std::time::Instant::now());
+    }
+}
+
+/// 声明“不是全屏程序”。覆盖层与特效窗口铺满显示器、置顶且常驻显示，任务栏
+/// （尤其 StartAllBack 等换回 Win10 风格任务栏的工具）会把它当成全屏程序而退到普通窗口之后，
+/// 缩略图预览随之被前台窗口挡住（#126）。任务栏的全屏检测会跳过带此属性的窗口。
+pub(crate) fn mark_not_fullscreen(hwnd: HWND) {
+    use windows::Win32::UI::WindowsAndMessaging::SetPropW;
+    // 安全：属性值只作标记，不指向任何数据；窗口销毁前由 unmark_not_fullscreen 移除。
+    unsafe {
+        let _ = SetPropW(hwnd, windows::core::w!("NonRudeHWND"), Some(windows::Win32::Foundation::HANDLE(1 as _)));
+    }
+}
+
+/// 销毁窗口前移除 mark_not_fullscreen 加的属性。
+pub(crate) fn unmark_not_fullscreen(hwnd: HWND) {
+    use windows::Win32::UI::WindowsAndMessaging::RemovePropW;
+    // 安全：只移除本程序设置的标记属性。
+    unsafe {
+        let _ = RemovePropW(hwnd, windows::core::w!("NonRudeHWND"));
     }
 }
 
