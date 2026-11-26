@@ -133,6 +133,7 @@ impl Surface {
                 None,
             )
             .ok()?;
+            crate::overlay::mark_not_fullscreen(hwnd);
             let dc = CreateCompatibleDC(None);
             let bmi = BITMAPINFO {
                 bmiHeader: BITMAPINFOHEADER {
@@ -149,6 +150,7 @@ impl Surface {
             let mut bits = std::ptr::null_mut();
             let Ok(dib) = CreateDIBSection(Some(dc), &bmi, DIB_RGB_COLORS, &mut bits, None, 0) else {
                 let _ = DeleteDC(dc);
+                crate::overlay::unmark_not_fullscreen(hwnd);
                 let _ = DestroyWindow(hwnd);
                 return None;
             };
@@ -199,6 +201,7 @@ impl Surface {
 impl Drop for Surface {
     fn drop(&mut self) {
         unsafe {
+            crate::overlay::unmark_not_fullscreen(self.hwnd);
             let _ = DestroyWindow(self.hwnd);
             let _ = DeleteDC(self.dc);
             let _ = DeleteObject(HGDIOBJ(self.dib.0));
