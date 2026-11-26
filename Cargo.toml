@@ -6,7 +6,7 @@ members = ["crates/mousetroke-core", "crates/mousetroke-fx", "crates/mousetroke-
 default-members = ["crates/mousetroke-core", "crates/mousetroke-fx", "crates/mousetroke-engine", "crates/mousetroke-lua", "crates/mousetroke-win", "crates/mousetroke-mac", "crates/mousetroke"]
 
 [workspace.package]
-version = "0.3.7"
+version = "0.3.8"
 edition = "2021"
 license = "MIT"
 repository = "https://github.com/eiaao/mousetroke"
